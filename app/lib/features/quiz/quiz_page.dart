@@ -344,8 +344,13 @@ class _ResultCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final ok = outcome.correct;
+    // Blend onto the surface instead of using a translucent colour: a Card's
+    // shadow shows through transparency and turns the tint grey.
+    final accent = ok ? Colors.green : theme.colorScheme.error;
     return Card(
-      color: ok ? Colors.green.withValues(alpha: 0.12) : theme.colorScheme.errorContainer.withValues(alpha: 0.5),
+      elevation: 0,
+      color: Color.alphaBlend(accent.withValues(alpha: 0.12), theme.colorScheme.surface),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: accent.withValues(alpha: 0.4))),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
