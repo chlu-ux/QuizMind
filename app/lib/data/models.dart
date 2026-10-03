@@ -144,6 +144,16 @@ class AttemptDto {
   final int? durationMs;
   final int answeredAt;
 
+  factory AttemptDto.fromJson(Map<String, dynamic> j) => AttemptDto(
+        id: j['id'] as String,
+        questionId: j['question_id'] as String,
+        deviceId: (j['device_id'] as String?) ?? '',
+        answer: ((j['answer'] as List?) ?? const []).map((e) => (e as num).toInt()).toList(),
+        isCorrect: j['is_correct'] as bool,
+        durationMs: (j['duration_ms'] as num?)?.toInt(),
+        answeredAt: (j['answered_at'] as num).toInt(),
+      );
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'question_id': questionId,
@@ -153,6 +163,144 @@ class AttemptDto {
         'duration_ms': durationMs,
         'answered_at': answeredAt,
       };
+}
+
+/// One page of the answer log from every device.
+class AttemptsPage {
+  AttemptsPage({required this.items, required this.nextSeq, required this.hasMore});
+
+  final List<AttemptDto> items;
+  final int nextSeq;
+  final bool hasMore;
+
+  factory AttemptsPage.fromJson(Map<String, dynamic> j) => AttemptsPage(
+        items: (j['items'] as List).map((e) => AttemptDto.fromJson(e as Map<String, dynamic>)).toList(),
+        nextSeq: (j['next_seq'] as num).toInt(),
+        hasMore: j['has_more'] as bool,
+      );
+}
+
+/// One question of a handed-in paper: question id, option indexes picked (empty =
+/// left blank), right or not.
+class ExamItemRecord {
+  const ExamItemRecord({required this.questionId, required this.selected, required this.correct});
+
+  final String questionId;
+  final List<int> selected;
+  final bool correct;
+
+  Map<String, dynamic> toJson() => {'q': questionId, 's': selected, 'c': correct};
+
+  factory ExamItemRecord.fromJson(Map<String, dynamic> j) => ExamItemRecord(
+        questionId: j['q'] as String,
+        selected: ((j['s'] as List?) ?? const []).map((e) => (e as num).toInt()).toList(),
+        correct: j['c'] as bool,
+      );
+}
+
+/// A finished mock exam, synced between devices; it never changes once handed in.
+/// [items] lists the paper in order so any device can review it. Records from
+/// before per-question detail existed have it empty.
+class ExamRecord {
+  const ExamRecord({
+    required this.id,
+    required this.bankId,
+    required this.title,
+    required this.finishedAt,
+    required this.total,
+    required this.correct,
+    required this.answered,
+    required this.percent,
+    required this.passed,
+    required this.limitSec,
+    required this.usedMs,
+    this.deviceId = '',
+    this.items = const [],
+  });
+
+  final String id;
+  final String bankId;
+  final String title;
+  final int finishedAt;
+  final int total;
+  final int correct;
+
+  /// Questions that got an answer; the rest were left blank.
+  final int answered;
+
+  /// Score 0-100: correct answers over all questions, blanks counting as wrong.
+  final int percent;
+  final bool passed;
+
+  /// Time limit in seconds, null when the exam was untimed.
+  final int? limitSec;
+  final int usedMs;
+  final String deviceId;
+  final List<ExamItemRecord> items;
+
+  ExamRecord withDevice(String device) => ExamRecord(
+        id: id,
+        bankId: bankId,
+        title: title,
+        finishedAt: finishedAt,
+        total: total,
+        correct: correct,
+        answered: answered,
+        percent: percent,
+        passed: passed,
+        limitSec: limitSec,
+        usedMs: usedMs,
+        deviceId: device,
+        items: items,
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'bank_id': bankId,
+        'title': title,
+        'finished_at': finishedAt,
+        'total': total,
+        'correct': correct,
+        'answered': answered,
+        'percent': percent,
+        'passed': passed,
+        'limit_sec': limitSec,
+        'used_ms': usedMs,
+        'device_id': deviceId,
+        'items': [for (final it in items) it.toJson()],
+      };
+
+  factory ExamRecord.fromJson(Map<String, dynamic> j) => ExamRecord(
+        id: j['id'] as String,
+        bankId: j['bank_id'] as String,
+        title: (j['title'] as String?) ?? '',
+        finishedAt: (j['finished_at'] as num).toInt(),
+        total: (j['total'] as num).toInt(),
+        correct: (j['correct'] as num).toInt(),
+        answered: (j['answered'] as num).toInt(),
+        percent: (j['percent'] as num).toInt(),
+        passed: j['passed'] as bool,
+        limitSec: (j['limit_sec'] as num?)?.toInt(),
+        usedMs: (j['used_ms'] as num).toInt(),
+        deviceId: (j['device_id'] as String?) ?? '',
+        items: ((j['items'] as List?) ?? const [])
+            .map((e) => ExamItemRecord.fromJson(e as Map<String, dynamic>))
+            .toList(),
+      );
+}
+
+class ExamsPage {
+  ExamsPage({required this.items, required this.nextSeq, required this.hasMore});
+
+  final List<ExamRecord> items;
+  final int nextSeq;
+  final bool hasMore;
+
+  factory ExamsPage.fromJson(Map<String, dynamic> j) => ExamsPage(
+        items: (j['items'] as List).map((e) => ExamRecord.fromJson(e as Map<String, dynamic>)).toList(),
+        nextSeq: (j['next_seq'] as num).toInt(),
+        hasMore: j['has_more'] as bool,
+      );
 }
 
 /// A saved quiz as it travels to and from the server. [data] is the progress

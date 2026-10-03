@@ -4,9 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers.dart';
 import '../../data/database.dart';
 import '../../data/stats.dart';
+import '../exam/exam_session.dart';
 import '../quiz/quiz_page.dart';
 
-/// Practice statistics of one bank: accuracy, coverage, a 7-day chart, and the weak spots.
+/// Practice statistics of one bank: accuracy, coverage, a 7/30-day chart, exam scores, and the weak spots.
 class StatsPage extends ConsumerStatefulWidget {
   const StatsPage({super.key, required this.bank});
 
@@ -18,6 +19,10 @@ class StatsPage extends ConsumerStatefulWidget {
 
 class _StatsPageState extends ConsumerState<StatsPage> {
   late Future<BankReport> _report;
+  int _range = 7;
+
+  /// Related tags are merged by default ("UML 辨析" into "UML"); the detailed view lists them as tagged.
+  bool _merged = true;
 
   @override
   void initState() {
@@ -57,12 +62,21 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                 children: [
                   _Overview(report: r),
                   const SizedBox(height: 12),
-                  _DailyChart(days: r.daily),
+                  _DailyChart(
+                    days: _range == 7 ? r.daily : r.daily30,
+                    range: _range,
+                    onRange: (v) => setState(() => _range = v),
+                  ),
                   const SizedBox(height: 12),
                   _MeterCard(title: '按题型 / 难度', groups: [...r.byType, ...r.byDifficulty]),
+                  if (r.examTrend.isNotEmpty) ...[const SizedBox(height: 12), _ExamTrend(points: r.examTrend)],
                   if (r.byTag.isNotEmpty) ...[
                     const SizedBox(height: 12),
-                    _MeterCard(title: '知识点（薄弱的在前）', groups: r.byTag.take(8).toList()),
+                    _TagCard(
+                      groups: _merged ? r.byTagMerged : r.byTag,
+                      merged: _merged,
+                      onMerged: (v) => setState(() => _merged = v),
+                    ),
                   ],
                   if (r.weakest.isNotEmpty) ...[
                     const SizedBox(height: 12),
@@ -149,9 +163,11 @@ class _StatTile extends StatelessWidget {
 }
 
 class _DailyChart extends StatelessWidget {
-  const _DailyChart({required this.days});
+  const _DailyChart({required this.days, required this.range, required this.onRange});
 
   final List<DayStat> days;
+  final int range;
+  final ValueChanged<int> onRange;
 
   static const _barHeight = 96.0;
 
@@ -171,26 +187,36 @@ class _DailyChart extends StatelessWidget {
           children: [
             Row(
               children: [
-                Text('最近 7 天', style: theme.textTheme.titleSmall),
+                Text('最近 $range 天', style: theme.textTheme.titleSmall),
                 const Spacer(),
-                Text('共 $total 次', style: theme.textTheme.bodySmall),
+                SegmentedButton<int>(
+                  showSelectedIcon: false,
+                  style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                  segments: const [ButtonSegment(value: 7, label: Text('7 天')), ButtonSegment(value: 30, label: Text('30 天'))],
+                  selected: {range},
+                  onSelectionChanged: (s) => onRange(s.first),
+                ),
               ],
             ),
+            Text('共 $total 次作答', style: theme.textTheme.bodySmall),
             const SizedBox(height: 10),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                for (final d in days)
+                for (var i = 0; i < days.length; i++)
                   Expanded(
                     child: Column(
                       children: [
                         SizedBox(
                           height: 16,
-                          child: Text(d.attempts == 0 ? '' : '${d.percent}%', style: theme.textTheme.labelSmall),
+                          child: Text(
+                            range == 7 && days[i].attempts > 0 ? '${days[i].percent}%' : '',
+                            style: theme.textTheme.labelSmall,
+                          ),
                         ),
                         Container(
                           height: _barHeight,
-                          width: 24,
+                          width: range == 7 ? 24 : 6,
                           alignment: Alignment.bottomCenter,
                           decoration: BoxDecoration(
                             color: theme.colorScheme.surfaceContainerHighest,
@@ -200,13 +226,23 @@ class _DailyChart extends StatelessWidget {
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
-                              Container(height: _barHeight * (d.attempts - d.correct) / peak, color: bad),
-                              Container(height: _barHeight * d.correct / peak, color: ok),
+                              Container(height: _barHeight * (days[i].attempts - days[i].correct) / peak, color: bad),
+                              Container(height: _barHeight * days[i].correct / peak, color: ok),
                             ],
                           ),
                         ),
                         const SizedBox(height: 4),
-                        Text(d.label, style: theme.textTheme.labelSmall),
+                        SizedBox(
+                          height: 14,
+                          child: OverflowBox(
+                            maxWidth: 40,
+                            child: Text(
+                              range == 7 || i % 5 == 4 ? days[i].label : '',
+                              style: theme.textTheme.labelSmall,
+                              maxLines: 1,
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -232,10 +268,12 @@ class _DailyChart extends StatelessWidget {
 }
 
 class _MeterCard extends StatelessWidget {
-  const _MeterCard({required this.title, required this.groups});
+  const _MeterCard({required this.title, required this.groups, this.note, this.trailing});
 
   final String title;
   final List<GroupStat> groups;
+  final String? note;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -247,7 +285,8 @@ class _MeterCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: theme.textTheme.titleSmall),
+            Row(children: [Expanded(child: Text(title, style: theme.textTheme.titleSmall)), ?trailing]),
+            if (note != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(note!, style: theme.textTheme.bodySmall)),
             const SizedBox(height: 8),
             for (final g in groups)
               Padding(
@@ -319,4 +358,154 @@ class _Weakest extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Knowledge-point accuracy with a toggle between merged ("归类") and as-tagged ("细分") views.
+class _TagCard extends StatelessWidget {
+  const _TagCard({required this.groups, required this.merged, required this.onMerged});
+
+  final List<GroupStat> groups;
+  final bool merged;
+  final ValueChanged<bool> onMerged;
+
+  @override
+  Widget build(BuildContext context) {
+    final shown = groups.length < 8 ? groups.length : 8;
+    return _MeterCard(
+      title: '知识点（薄弱的在前）',
+      note: '共 ${groups.length} 个，显示前 $shown 个${merged ? '；相近的标签已合并（如「UML 辨析」归入「UML」）' : ''}',
+      trailing: SegmentedButton<bool>(
+        showSelectedIcon: false,
+        style: const ButtonStyle(visualDensity: VisualDensity.compact),
+        segments: const [ButtonSegment(value: true, label: Text('归类')), ButtonSegment(value: false, label: Text('细分'))],
+        selected: {merged},
+        onSelectionChanged: (s) => onMerged(s.first),
+      ),
+      groups: groups.take(8).toList(),
+    );
+  }
+}
+
+/// Exam scores as a line, oldest to newest, with the pass line dashed.
+class _ExamTrend extends StatelessWidget {
+  const _ExamTrend({required this.points});
+
+  final List<ExamPoint> points;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      margin: EdgeInsets.zero,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Text('考试成绩', style: theme.textTheme.titleSmall),
+                const Spacer(),
+                Text('最近 ${points.length} 场 · 虚线是 $passPercent 分及格线', style: theme.textTheme.bodySmall),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Semantics(
+              label: '最近 ${points.length} 场考试成绩',
+              child: SizedBox(
+                key: const ValueKey('exam-trend'),
+                height: 130,
+                width: double.infinity,
+                child: CustomPaint(
+                  painter: _TrendPainter(
+                    points: points,
+                    line: theme.colorScheme.primary,
+                    pass: Colors.green.shade600,
+                    fail: theme.colorScheme.error,
+                    grid: theme.colorScheme.outlineVariant,
+                    text: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrendPainter extends CustomPainter {
+  _TrendPainter({
+    required this.points,
+    required this.line,
+    required this.pass,
+    required this.fail,
+    required this.grid,
+    required this.text,
+  });
+
+  final List<ExamPoint> points;
+  final Color line;
+  final Color pass;
+  final Color fail;
+  final Color grid;
+  final Color text;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const left = 28.0, top = 12.0, bottom = 14.0;
+    final h = size.height - top - bottom;
+    double y(num percent) => top + (100 - percent) * h / 100;
+    double x(int i) => points.length == 1 ? size.width / 2 : left + i * (size.width - left - 12) / (points.length - 1);
+
+    final gridPaint = Paint()
+      ..color = grid
+      ..strokeWidth = 1;
+    canvas.drawLine(Offset(left, y(100)), Offset(size.width, y(100)), gridPaint);
+    canvas.drawLine(Offset(left, y(0)), Offset(size.width, y(0)), gridPaint);
+
+    // The pass line, dashed.
+    final passPaint = Paint()
+      ..color = pass
+      ..strokeWidth = 1;
+    for (var dx = left; dx < size.width; dx += 8) {
+      canvas.drawLine(Offset(dx, y(passPercent)), Offset(dx + 4, y(passPercent)), passPaint);
+    }
+
+    void label(String t, Offset at, {TextAlign align = TextAlign.left}) {
+      final tp = TextPainter(
+        text: TextSpan(text: t, style: TextStyle(color: text, fontSize: 11)),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      final dx = align == TextAlign.center ? at.dx - tp.width / 2 : at.dx;
+      tp.paint(canvas, Offset(dx, at.dy - tp.height / 2));
+    }
+
+    label('100', Offset(0, y(100)));
+    label('$passPercent', Offset(0, y(passPercent)));
+    label('0', Offset(8, y(0)));
+
+    if (points.length > 1) {
+      final path = Path()..moveTo(x(0), y(points[0].percent));
+      for (var i = 1; i < points.length; i++) {
+        path.lineTo(x(i), y(points[i].percent));
+      }
+      canvas.drawPath(
+        path,
+        Paint()
+          ..color = line
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.5
+          ..strokeJoin = StrokeJoin.round,
+      );
+    }
+    for (var i = 0; i < points.length; i++) {
+      canvas.drawCircle(Offset(x(i), y(points[i].percent)), 4, Paint()..color = points[i].passed ? line : fail);
+      label('${points[i].percent}', Offset(x(i), y(points[i].percent) - 11), align: TextAlign.center);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_TrendPainter old) => old.points != points;
 }

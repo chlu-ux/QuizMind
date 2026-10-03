@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/api.dart';
@@ -16,10 +18,11 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 
 final repositoryProvider = Provider<Repository>((ref) {
   final deviceId = ref.watch(settingsProvider.select((s) => s.deviceId));
-  return Repository(ref.watch(databaseProvider), deviceId: deviceId);
+  final repo = Repository(ref.watch(databaseProvider), deviceId: deviceId);
+  // Exam results used to be kept in shared preferences; move any left over (once).
+  unawaited(importLegacyExams(ref.read(sharedPrefsProvider), repo).then((_) {}, onError: (Object _) {}));
+  return repo;
 });
-
-final examStoreProvider = Provider<ExamStore>((ref) => ExamStore(ref.watch(sharedPrefsProvider)));
 
 final sessionStoreProvider = Provider<SessionStore>((ref) => SessionStore(ref.watch(sharedPrefsProvider)));
 

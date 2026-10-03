@@ -2,91 +2,108 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// A finished mock exam. Kept on this device only; the answers themselves sync as ordinary attempts.
-class ExamRecord {
-  const ExamRecord({
-    required this.id,
+import 'models.dart';
+import 'repository.dart';
+
+/// An exam in progress, kept on this device only so a killed app can pick it up
+/// again. The clock keeps running from [startedAt], so a timed exam's remaining
+/// time stays honest. There is at most one per bank.
+class ExamDraft {
+  const ExamDraft({
     required this.bankId,
     required this.title,
-    required this.finishedAt,
-    required this.total,
-    required this.correct,
-    required this.answered,
-    required this.percent,
-    required this.passed,
+    required this.ids,
+    required this.seed,
+    required this.startedAt,
     required this.limitSec,
-    required this.usedMs,
+    required this.index,
+    required this.answers,
+    required this.spent,
+    required this.marked,
+    required this.savedAt,
   });
 
-  final String id;
   final String bankId;
   final String title;
-  final int finishedAt;
-  final int total;
-  final int correct;
 
-  /// Questions that got an answer; the rest were left blank.
-  final int answered;
-
-  /// Score 0-100: correct answers over all questions, blanks counting as wrong.
-  final int percent;
-  final bool passed;
-
-  /// Time limit in seconds, null when the exam was untimed.
+  /// The paper, in order.
+  final List<String> ids;
+  final int seed;
+  final int startedAt;
   final int? limitSec;
-  final int usedMs;
+  final int index;
+
+  /// Option indexes picked, by question id; absent = blank.
+  final Map<String, List<int>> answers;
+
+  /// Milliseconds spent on each question, by id.
+  final Map<String, int> spent;
+
+  /// Question ids flagged "check again".
+  final List<String> marked;
+  final int savedAt;
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'bank': bankId,
-    'title': title,
-    'at': finishedAt,
-    'total': total,
-    'correct': correct,
-    'answered': answered,
-    'percent': percent,
-    'passed': passed,
-    'limit': limitSec,
-    'used': usedMs,
-  };
+        'bank': bankId,
+        'title': title,
+        'ids': ids,
+        'seed': seed,
+        'started': startedAt,
+        'limit': limitSec,
+        'index': index,
+        'answers': answers,
+        'spent': spent,
+        'marked': marked,
+        'saved': savedAt,
+      };
 
-  factory ExamRecord.fromJson(Map<String, dynamic> j) => ExamRecord(
-    id: j['id'] as String,
-    bankId: j['bank'] as String,
-    title: j['title'] as String,
-    finishedAt: (j['at'] as num).toInt(),
-    total: (j['total'] as num).toInt(),
-    correct: (j['correct'] as num).toInt(),
-    answered: (j['answered'] as num).toInt(),
-    percent: (j['percent'] as num).toInt(),
-    passed: j['passed'] as bool,
-    limitSec: (j['limit'] as num?)?.toInt(),
-    usedMs: (j['used'] as num).toInt(),
-  );
+  factory ExamDraft.fromJson(Map<String, dynamic> j) => ExamDraft(
+        bankId: j['bank'] as String,
+        title: j['title'] as String,
+        ids: (j['ids'] as List).cast<String>(),
+        seed: (j['seed'] as num).toInt(),
+        startedAt: (j['started'] as num).toInt(),
+        limitSec: (j['limit'] as num?)?.toInt(),
+        index: (j['index'] as num).toInt(),
+        answers: {
+          for (final e in (j['answers'] as Map<String, dynamic>).entries)
+            e.key: (e.value as List).map((x) => (x as num).toInt()).toList(),
+        },
+        spent: {for (final e in (j['spent'] as Map<String, dynamic>).entries) e.key: (e.value as num).toInt()},
+        marked: (j['marked'] as List).cast<String>(),
+        savedAt: (j['saved'] as num).toInt(),
+      );
 }
 
-/// Exam history per bank in shared preferences, newest first, capped so it stays small.
-class ExamStore {
-  ExamStore(this._prefs);
-
-  final SharedPreferences _prefs;
-
-  static const keep = 20;
-
-  static String _key(String bankId) => 'exam.history.$bankId';
-
-  List<ExamRecord> history(String bankId) {
-    final raw = _prefs.getString(_key(bankId));
-    if (raw == null) return const [];
+/// Exam results used to be kept in shared preferences, per bank, under
+/// `exam.history.<bank>`. This moves them into the database (queued for upload,
+/// without per-question detail) and removes the old keys. Safe to call on every
+/// start: it does nothing once the keys are gone.
+Future<int> importLegacyExams(SharedPreferences prefs, Repository repo) async {
+  var imported = 0;
+  for (final key in prefs.getKeys().where((k) => k.startsWith('exam.history.')).toList()) {
     try {
-      return [for (final j in jsonDecode(raw) as List) ExamRecord.fromJson(j as Map<String, dynamic>)];
+      for (final j in jsonDecode(prefs.getString(key) ?? '[]') as List) {
+        final m = j as Map<String, dynamic>;
+        await repo.importExam(ExamRecord(
+          id: m['id'] as String,
+          bankId: m['bank'] as String,
+          title: m['title'] as String,
+          finishedAt: (m['at'] as num).toInt(),
+          total: (m['total'] as num).toInt(),
+          correct: (m['correct'] as num).toInt(),
+          answered: (m['answered'] as num).toInt(),
+          percent: (m['percent'] as num).toInt(),
+          passed: m['passed'] as bool,
+          limitSec: (m['limit'] as num?)?.toInt(),
+          usedMs: (m['used'] as num).toInt(),
+        ));
+        imported++;
+      }
     } catch (_) {
-      return const []; // unreadable history is not worth failing an exam over
+      // Unreadable history is not worth failing a start over.
     }
+    await prefs.remove(key);
   }
-
-  Future<void> add(ExamRecord record) {
-    final list = [record, ...history(record.bankId)].take(keep).toList();
-    return _prefs.setString(_key(record.bankId), jsonEncode([for (final r in list) r.toJson()]));
-  }
+  return imported;
 }

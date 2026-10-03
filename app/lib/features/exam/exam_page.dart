@@ -7,19 +7,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../data/database.dart';
-import '../../data/progress.dart';
-import '../quiz/quiz_page.dart';
+import '../../data/exam_store.dart';
+import 'exam_result_view.dart';
 import 'exam_session.dart';
 
 /// A mock exam over [questions]: no feedback while answering, graded on hand-in.
-/// Shows the result and a per-question review once it is over.
+/// Shows the result and a per-question review once it is over. Progress is saved as
+/// it goes; pass the saved [draft] (with the questions that still exist) to pick an
+/// unfinished exam up again.
 class ExamPage extends ConsumerStatefulWidget {
-  const ExamPage({super.key, required this.bankId, required this.title, required this.questions, this.limitSec});
+  const ExamPage({
+    super.key,
+    required this.bankId,
+    required this.title,
+    required this.questions,
+    this.limitSec,
+    this.draft,
+  });
 
   final String bankId;
   final String title;
   final List<Question> questions;
   final int? limitSec;
+  final ExamDraft? draft;
 
   @override
   ConsumerState<ExamPage> createState() => _ExamPageState();
@@ -35,16 +45,27 @@ class _ExamPageState extends ConsumerState<ExamPage> {
   void initState() {
     super.initState();
     _sync = ref.read(syncProvider.notifier);
-    exam = ExamSession(
-      bankId: widget.bankId,
-      title: widget.title,
-      questions: widget.questions,
-      repo: ref.read(repositoryProvider),
-      store: ref.read(examStoreProvider),
-      limitSec: widget.limitSec,
-    );
-    if (widget.limitSec != null) {
+    final repo = ref.read(repositoryProvider);
+    final draft = widget.draft;
+    exam =
+        (draft == null ? null : ExamSession.restore(draft, widget.questions, repo)) ??
+        ExamSession(
+          bankId: widget.bankId,
+          title: widget.title,
+          questions: widget.questions,
+          repo: repo,
+          limitSec: widget.limitSec,
+        );
+    exam.save(); // so a kill before the first answer still finds it
+    if (exam.limitSec != null) {
       _ticker = Timer.periodic(const Duration(milliseconds: 500), (_) => _tick());
+      if (exam.remainingSec() == 0) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('考试时间已到，已按现有答案交卷')));
+          unawaited(_finish());
+        });
+      }
     }
   }
 
@@ -67,7 +88,14 @@ class _ExamPageState extends ConsumerState<ExamPage> {
   }
 
   Future<void> _finish() async {
-    await exam.submit();
+    try {
+      await exam.submit();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('交卷失败：$e，请再试一次')));
+      }
+      return;
+    }
     _ticker?.cancel();
     if (mounted) setState(() => _sheet = false);
   }
@@ -88,13 +116,30 @@ class _ExamPageState extends ConsumerState<ExamPage> {
 
   Future<void> _handIn() async {
     final blank = exam.length - exam.answeredCount;
-    if (await _confirm(blank > 0 ? '还有 $blank 题没有作答，确定交卷吗？' : '确定交卷吗？', ok: '交卷')) {
+    final notes = [
+      if (blank > 0) '还有 $blank 题没有作答',
+      if (exam.markedCount > 0) '有 ${exam.markedCount} 题标记了待检查',
+    ];
+    if (await _confirm(notes.isEmpty ? '确定交卷吗？' : '${notes.join('，')}，确定交卷吗？', ok: '交卷')) {
       await _finish();
     }
   }
 
+  /// Leaving keeps the progress (resume from the exam setup page); only a timed exam asks first,
+  /// because its clock keeps running.
   Future<void> _quit() async {
-    if (await _confirm('退出后本次考试不会保存，确定退出吗？', ok: '退出') && mounted) Navigator.of(context).pop();
+    if (exam.limitSec != null &&
+        !await _confirm('退出后进度会保留，可以回到「模拟考试」继续，但限时考试的计时不会暂停。确定退出吗？', ok: '退出')) {
+      return;
+    }
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _abandon() async {
+    if (!await _confirm('放弃这次考试？已作的答案不会保存，也不计入统计。', ok: '放弃')) return;
+    exam.dispose();
+    await ref.read(repositoryProvider).clearExamDraft(exam.bankId);
+    if (mounted) Navigator.of(context).pop();
   }
 
   @override
@@ -103,7 +148,7 @@ class _ExamPageState extends ConsumerState<ExamPage> {
       listenable: exam,
       builder: (context, _) {
         final result = exam.result;
-        if (result != null) return ExamResultView(result: result);
+        if (result != null) return ExamResultView(record: result.record, entries: result.entries);
         return PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, _) {
@@ -117,6 +162,7 @@ class _ExamPageState extends ConsumerState<ExamPage> {
               const SingleActivator(LogicalKeyboardKey.keyJ): exam.next,
               const SingleActivator(LogicalKeyboardKey.arrowLeft): exam.previous,
               const SingleActivator(LogicalKeyboardKey.keyK): exam.previous,
+              const SingleActivator(LogicalKeyboardKey.keyM): exam.toggleMark,
             },
             child: Focus(autofocus: true, child: _sheet ? _buildSheet(context) : _buildQuestion(context)),
           ),
@@ -171,7 +217,10 @@ class _ExamPageState extends ConsumerState<ExamPage> {
                 children: [
                   Text('答题卡', style: theme.textTheme.titleMedium),
                   const Spacer(),
-                  Text('已答 ${exam.answeredCount} / ${exam.length}', style: theme.textTheme.bodySmall),
+                  Text(
+                    '已答 ${exam.answeredCount} / ${exam.length}${exam.markedCount > 0 ? ' · 待检查 ${exam.markedCount}' : ''}',
+                    style: theme.textTheme.bodySmall,
+                  ),
                 ],
               ),
               const SizedBox(height: 12),
@@ -183,28 +232,44 @@ class _ExamPageState extends ConsumerState<ExamPage> {
                     SizedBox(
                       width: 52,
                       height: 44,
-                      child: OutlinedButton(
-                        style: OutlinedButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          backgroundColor: exam.isAnswered(i) ? theme.colorScheme.primaryContainer : null,
-                          side: BorderSide(
-                            width: i == exam.index ? 2 : 1,
-                            color: i == exam.index ? theme.colorScheme.onSurface : theme.colorScheme.outlineVariant,
+                      child: Badge(
+                        isLabelVisible: exam.isMarked(i),
+                        label: const Icon(Icons.flag, size: 10),
+                        backgroundColor: Colors.amber.shade700,
+                        child: SizedBox.expand(
+                          child: OutlinedButton(
+                            key: ValueKey('sheet-$i'),
+                            style: OutlinedButton.styleFrom(
+                              padding: EdgeInsets.zero,
+                              backgroundColor: exam.isAnswered(i) ? theme.colorScheme.primaryContainer : null,
+                              side: BorderSide(
+                                width: i == exam.index ? 2 : 1,
+                                color: i == exam.index ? theme.colorScheme.onSurface : theme.colorScheme.outlineVariant,
+                              ),
+                            ),
+                            onPressed: () {
+                              exam.go(i);
+                              setState(() => _sheet = false);
+                            },
+                            child: Text('${i + 1}'),
                           ),
                         ),
-                        onPressed: () {
-                          exam.go(i);
-                          setState(() => _sheet = false);
-                        },
-                        child: Text('${i + 1}'),
                       ),
                     ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 8),
+              Text('蓝底 = 已答，旗标 = 待检查', style: theme.textTheme.bodySmall),
+              const SizedBox(height: 16),
               FilledButton(onPressed: exam.busy ? null : _handIn, child: const Text('交卷')),
               const SizedBox(height: 8),
               OutlinedButton(onPressed: () => setState(() => _sheet = false), child: const Text('继续答题')),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: exam.busy ? null : _abandon,
+                style: TextButton.styleFrom(foregroundColor: theme.colorScheme.error),
+                child: const Text('放弃本次考试'),
+              ),
             ],
           ),
         ),
@@ -227,6 +292,14 @@ class _ExamPageState extends ConsumerState<ExamPage> {
                 Row(
                   children: [
                     Chip(label: Text(q.type == 'judge' ? '判断题' : '单选题'), visualDensity: VisualDensity.compact),
+                    const Spacer(),
+                    FilterChip(
+                      avatar: Icon(Icons.flag, size: 16, color: exam.isMarked(exam.index) ? Colors.amber.shade800 : null),
+                      label: Text(exam.isMarked(exam.index) ? '已标记待检查' : '标记待检查'),
+                      selected: exam.isMarked(exam.index),
+                      onSelected: (_) => exam.toggleMark(),
+                      visualDensity: VisualDensity.compact,
+                    ),
                   ],
                 ),
                 const SizedBox(height: 8),
@@ -316,199 +389,6 @@ class _ExamOption extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-/// Score, pass/fail, per-question marks and a review with the right answers.
-class ExamResultView extends StatelessWidget {
-  const ExamResultView({super.key, required this.result});
-
-  final ExamResult result;
-
-  String _option(Question q, int i) =>
-      q.type == 'judge' ? q.options[i] : '${String.fromCharCode(65 + i)}. ${q.options[i]}';
-
-  String _picked(ExamItem it) =>
-      it.selected.isEmpty ? '未作答' : it.selected.map((i) => _option(it.question, i)).join('、');
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final r = result.record;
-    final good = Colors.green.shade600;
-    final color = r.passed ? good : theme.colorScheme.error;
-    final secs = (r.usedMs / 1000).round();
-    final missed = result.missed;
-    return Scaffold(
-      appBar: AppBar(title: const Text('考试结果')),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Text(
-                '${r.percent}',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.displayLarge?.copyWith(color: color, fontWeight: FontWeight.w700),
-              ),
-              Text.rich(
-                TextSpan(
-                  children: [
-                    TextSpan(
-                      text: r.passed ? '及格' : '未及格',
-                      style: TextStyle(color: color, fontWeight: FontWeight.w700),
-                    ),
-                    TextSpan(text: '（$passPercent 分及格）', style: theme.textTheme.bodySmall),
-                  ],
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              Card(
-                margin: EdgeInsets.zero,
-                child: Padding(
-                  padding: const EdgeInsets.all(14),
-                  child: Column(
-                    children: [
-                      _line('答对', '${r.correct} / ${r.total} 题'),
-                      _line('未作答', '${r.total - r.answered} 题'),
-                      _line(
-                        '用时',
-                        '${secs ~/ 60} 分 ${(secs % 60).toString().padLeft(2, '0')} 秒${r.limitSec == null ? '' : ' / ${(r.limitSec! / 60).round().clamp(1, 9999)} 分钟'}',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (var i = 0; i < result.items.length; i++)
-                    Container(
-                      width: 44,
-                      height: 40,
-                      alignment: Alignment.center,
-                      decoration: BoxDecoration(
-                        color: Color.alphaBlend(
-                          (result.items[i].correct ? good : theme.colorScheme.error).withValues(alpha: 0.14),
-                          theme.colorScheme.surface,
-                        ),
-                        border: Border.all(color: result.items[i].correct ? good : theme.colorScheme.error),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        '${i + 1}',
-                        style: TextStyle(color: result.items[i].correct ? good : theme.colorScheme.error),
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (missed.isNotEmpty) ...[
-                FilledButton.icon(
-                  onPressed: () => Navigator.of(context).pushReplacement(
-                    MaterialPageRoute<void>(
-                      builder: (_) => QuizPage(title: '重做错题', questions: [for (final it in missed) it.question]),
-                    ),
-                  ),
-                  icon: const Icon(Icons.replay),
-                  label: Text('重做错题 (${missed.length})'),
-                ),
-                const SizedBox(height: 8),
-              ],
-              OutlinedButton(onPressed: () => Navigator.of(context).pop(), child: const Text('返回')),
-              const SizedBox(height: 20),
-              Text('逐题解析', style: theme.textTheme.titleSmall),
-              const SizedBox(height: 8),
-              for (var i = 0; i < result.items.length; i++)
-                _ReviewTile(
-                  index: i,
-                  item: result.items[i],
-                  picked: _picked(result.items[i]),
-                  answer: result.items[i].question.answer.map((a) => _option(result.items[i].question, a)).join('、'),
-                ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _line(String label, String value) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 3),
-    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label), Text(value)]),
-  );
-}
-
-class _ReviewTile extends StatelessWidget {
-  const _ReviewTile({required this.index, required this.item, required this.picked, required this.answer});
-
-  final int index;
-  final ExamItem item;
-  final String picked;
-  final String answer;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final q = item.question;
-    final ok = item.correct;
-    final color = ok ? Colors.green.shade600 : theme.colorScheme.error;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ExpansionTile(
-        shape: const Border(),
-        collapsedShape: const Border(),
-        leading: Icon(ok ? Icons.check_circle : Icons.cancel, color: color),
-        title: Text('${index + 1}. ${q.stem}', maxLines: 2, overflow: TextOverflow.ellipsis),
-        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-        expandedCrossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          MarkdownBody(data: q.stem, selectable: true),
-          const SizedBox(height: 8),
-          Text.rich(
-            TextSpan(
-              children: [
-                const TextSpan(text: '你的答案：'),
-                TextSpan(
-                  text: picked,
-                  style: TextStyle(color: color),
-                ),
-              ],
-            ),
-          ),
-          if (!ok)
-            Text.rich(
-              TextSpan(
-                children: [
-                  const TextSpan(text: '正确答案：'),
-                  TextSpan(
-                    text: answer,
-                    style: TextStyle(color: Colors.green.shade600),
-                  ),
-                ],
-              ),
-            ),
-          if (q.explanation.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            MarkdownBody(data: q.explanation, selectable: true),
-          ],
-          if (q.sourceQuote.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Container(
-              decoration: BoxDecoration(
-                border: Border(left: BorderSide(color: theme.colorScheme.outline, width: 3)),
-              ),
-              padding: const EdgeInsets.only(left: 10),
-              child: Text('原文：${q.sourceQuote}', style: theme.textTheme.bodySmall),
-            ),
-          ],
-        ],
       ),
     );
   }

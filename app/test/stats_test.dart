@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quizmind_app/data/database.dart';
+import 'package:quizmind_app/data/models.dart';
 import 'package:quizmind_app/data/stats.dart';
 
 Question q(String id, {String type = 'single', int difficulty = 2, List<String> tags = const []}) => Question(
@@ -137,5 +138,79 @@ void main() {
     expect(formatDuration(12 * 60000), '12 分钟');
     expect(formatDuration(65 * 60000), '1 小时 5 分');
     expect(formatDuration(120 * 60000), '2 小时');
+  });
+
+  group('longer views and ranking', () {
+    test('has a 30-day series whose last 7 entries are the weekly one', () {
+      final r = buildReport(
+        [q('a')],
+        [at('a', true, day(0)), at('a', false, day(12)), at('a', true, day(29)), at('a', true, day(30))],
+        {},
+        now,
+      );
+      expect(r.daily30, hasLength(30));
+      expect(r.daily30.last.label, '10/3');
+      expect(r.daily30.first.label, '9/4');
+      expect(r.daily30.first.attempts, 1);
+      expect(r.daily30[17].label, '9/21');
+      expect([r.daily30[17].attempts, r.daily30[17].correct], [1, 0]);
+      expect(r.daily30.fold<int>(0, (n, d) => n + d.attempts), 3, reason: 'day 30 is outside the window');
+      expect(r.daily.map((d) => d.label), r.daily30.skip(23).map((d) => d.label));
+    });
+
+    test('turns exam records into a trend, oldest first, latest 20', () {
+      ExamRecord exam(int i, int percent) => ExamRecord(
+            id: 'e$i', bankId: 'b1', title: 't', finishedAt: 1000 + i, total: 10, correct: percent ~/ 10, answered: 10,
+            percent: percent, passed: percent >= 60, limitSec: null, usedMs: 1,
+          );
+      final exams = [for (var i = 24; i >= 0; i--) exam(i, (i % 10) * 10 + 5)]; // newest first, as the repository returns them
+      final r = buildReport([q('a')], [], {}, now, exams: exams);
+      expect(r.examTrend, hasLength(20));
+      expect(r.examTrend.first.finishedAt, 1005);
+      expect([r.examTrend.last.finishedAt, r.examTrend.last.percent, r.examTrend.last.passed], [1024, 45, false]);
+      expect(buildReport([q('a')], [], {}, now).examTrend, isEmpty);
+    });
+
+    test('does not rank a single miss above a question missed 3 times in 5', () {
+      final r = buildReport(
+        [q('once'), q('often'), q('twice')],
+        [
+          at('once', false, now.subtract(const Duration(milliseconds: 100))),
+          for (final (i, ok) in [false, true, false, true, false].indexed)
+            at('often', ok, now.subtract(Duration(milliseconds: 90 - i))),
+          at('twice', false, now.subtract(const Duration(milliseconds: 50))),
+          at('twice', false, now.subtract(const Duration(milliseconds: 49))),
+        ],
+        {},
+        now,
+      );
+      expect([for (final w in r.weakest) '${w.question.id} ${w.wrong}/${w.attempts}'], ['twice 2/2', 'often 3/5', 'once 1/1']);
+    });
+
+    test('judges weakness by the latest answers only: an old miss that has been fixed drops out', () {
+      final fixed = [for (final (i, ok) in [false, false, false, true, true, true, true, true].indexed) at('a', ok, now.subtract(Duration(milliseconds: 1000 - i)))];
+      expect(buildReport([q('a')], fixed, {}, now).weakest, isEmpty);
+      final mixed = [for (final (i, ok) in [true, true, true, true, true, false].indexed) at('a', ok, now.subtract(Duration(milliseconds: 1000 - i)))];
+      final w = buildReport([q('a')], mixed, {}, now).weakest.single;
+      expect([w.wrong, w.attempts], [1, 5]);
+    });
+
+    test('folds tag spellings, and in merged view joins related tags', () {
+      final qs = [
+        q('a', tags: ['UML']),
+        q('b', tags: ['UML 辨析', 'uml']),
+        q('c', tags: ['Cache']),
+        q('d', tags: ['cache ']),
+        q('e', tags: ['OSI']),
+        q('f', tags: ['OS']),
+      ];
+      final attempts = [for (final (i, x) in qs.indexed) at(x.id, i.isEven, now.subtract(Duration(milliseconds: i)))];
+      final r = buildReport(qs, attempts, {}, now);
+      List<String> names(List<GroupStat> g) => g.map((x) => x.label.toLowerCase()).toList()..sort();
+      expect(names(r.byTag), ['cache', 'os', 'osi', 'uml', 'uml 辨析']);
+      expect(names(r.byTagMerged), ['cache', 'os', 'osi', 'uml']);
+      expect(r.byTagMerged.firstWhere((g) => g.label.toLowerCase() == 'uml').attempts, 2,
+          reason: 'question b has two tags in the UML group but counts once');
+    });
   });
 }

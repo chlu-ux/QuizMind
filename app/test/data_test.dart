@@ -223,6 +223,87 @@ void main() {
     });
   });
 
+  group('answer history and exams from other devices', () {
+    AttemptDto remote(String id, bool correct, int at) => AttemptDto(
+          id: id, questionId: 'q1', deviceId: 'phone', answer: [correct ? 1 : 0], isCorrect: correct, durationMs: 900, answeredAt: at,
+        );
+    ExamRecord exam(String id, int finished) => ExamRecord(
+          id: id, bankId: 'b1', title: '题库', finishedAt: finished, total: 2, correct: 1, answered: 2, percent: 50,
+          passed: false, limitSec: null, usedMs: 5000, deviceId: 'phone',
+          items: const [
+            ExamItemRecord(questionId: 'q1', selected: [1], correct: true),
+            ExamItemRecord(questionId: 'q2', selected: [0], correct: false),
+          ],
+        );
+
+    setUp(() async {
+      api.published.add(question('q1', answer: 1));
+      await sync.run();
+    });
+
+    test("downloads other devices' answers once, as already uploaded, so statistics cover both", () async {
+      final q = (await repo.bankQuestions('b1')).single;
+      await repo.recordAnswer(question: q, selected: [1], durationMs: 500); // this device
+      api.remoteAttempts.addAll([remote('R1', false, 1000), remote('R2', true, 2000)]);
+      final r = await sync.run();
+      expect(r.attemptsPulled, 2);
+      final rows = await db.select(db.attempts).get();
+      expect(rows, hasLength(3));
+      expect(rows.firstWhere((a) => a.id == 'R1').synced, isTrue);
+      expect((await repo.bankReport('b1')).attempts, 3);
+
+      expect((await sync.run()).attemptsPulled, 0, reason: 'cursor moved on');
+      expect(api.uploadedAttempts.map((a) => a.id), isNot(contains('R1')), reason: 'never echoed back');
+    });
+
+    test('an attempt this device uploaded and then receives back is not duplicated', () async {
+      final q = (await repo.bankQuestions('b1')).single;
+      await repo.recordAnswer(question: q, selected: [0], durationMs: 500);
+      await sync.run();
+      api.remoteAttempts.addAll(api.uploadedAttempts); // the server echoes it
+      expect((await sync.run()).attemptsPulled, 0);
+      expect(await db.select(db.attempts).get(), hasLength(1));
+    });
+
+    test('pages through a long history', () async {
+      api.remoteAttempts.addAll([for (var i = 0; i < 1200; i++) remote('R$i', true, i + 1)]);
+      expect((await sync.run()).attemptsPulled, 1200);
+    });
+
+    test("uploads finished exams once and downloads the other devices'", () async {
+      final q = (await repo.bankQuestions('b1')).single;
+      await repo.submitExam(
+        ExamRecord(
+          id: 'MINE', bankId: 'b1', title: '题库', finishedAt: 3000, total: 2, correct: 1, answered: 1, percent: 50,
+          passed: false, limitSec: null, usedMs: 1, items: const [ExamItemRecord(questionId: 'q1', selected: [1], correct: true)],
+        ),
+        [ExamAnswer(question: q, selected: const [1], durationMs: 10)],
+      );
+      expect((await db.select(db.exams).get()).single.synced, isFalse);
+      api.remoteExams.add(exam('THEIRS', 4000));
+      sync = SyncService(db, api, deviceId: 'dev1');
+      final r = await sync.run();
+      expect([r.examsUploaded, r.examsPulled], [1, 1]);
+      expect(api.uploadedExams.map((e) => e.id), ['MINE']);
+      expect(api.uploadedExams.single.deviceId, 'dev1', reason: 'filled in for exams saved without a device');
+      expect((await repo.exams('b1')).map((e) => e.id), ['THEIRS', 'MINE']);
+      expect((await repo.exam('THEIRS'))!.items, hasLength(2));
+      expect((await db.select(db.exams).get()).every((e) => e.synced), isTrue);
+
+      final again = await sync.run();
+      expect([again.examsUploaded, again.examsPulled], [0, 0]);
+    });
+
+    test('a server without these endpoints (404) does not fail the sync', () async {
+      api.historyUnsupported = true;
+      final q = (await repo.bankQuestions('b1')).single;
+      await repo.submitExam(exam('E', 1000), [ExamAnswer(question: q, selected: const [1], durationMs: 1)]);
+      final r = await sync.run();
+      expect([r.attemptsPulled, r.examsPulled, r.examsUploaded], [0, 0, 0]);
+      expect((await db.select(db.exams).get()).single.synced, isFalse, reason: 'still queued for when the server can take it');
+    });
+  });
+
   test('progress record survives garbage', () {
     expect(ProgressRecord.decode('not json').streak, 0);
     expect(ProgressRecord.decode(null).streak, 0);

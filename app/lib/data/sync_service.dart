@@ -14,6 +14,9 @@ class SyncReport {
     this.attemptsUploaded = 0,
     this.statesUploaded = 0,
     this.statesPulled = 0,
+    this.attemptsPulled = 0,
+    this.examsUploaded = 0,
+    this.examsPulled = 0,
     this.sessionsPulled = 0,
   });
 
@@ -23,6 +26,11 @@ class SyncReport {
   final int statesUploaded;
   final int statesPulled;
 
+  /// Answers other devices gave (they count towards statistics here).
+  final int attemptsPulled;
+  final int examsUploaded;
+  final int examsPulled;
+
   /// Saved quizzes taken from another device.
   final int sessionsPulled;
 
@@ -31,6 +39,8 @@ class SyncReport {
       if (questionsUpdated > 0) '新增/更新 $questionsUpdated 题',
       if (questionsRemoved > 0) '下线 $questionsRemoved 题',
       if (attemptsUploaded > 0) '上传 $attemptsUploaded 条作答',
+      if (attemptsPulled > 0) '同步了其他设备的 $attemptsPulled 条作答',
+      if (examsPulled > 0) '同步了 $examsPulled 场考试',
       if (sessionsPulled > 0) '同步了 $sessionsPulled 个题库的刷题进度',
     ];
     return parts.isEmpty ? '已是最新' : parts.join('，');
@@ -53,6 +63,8 @@ class SyncService {
 
   static const questionCursor = 'question_seq';
   static const stateCursor = 'state_seq';
+  static const attemptCursor = 'attempt_seq';
+  static const examCursor = 'exam_seq';
   static const lastSyncAt = 'last_sync_at';
   static const _batch = 500;
 
@@ -72,11 +84,14 @@ class SyncService {
     await _pushFlags();
     final statesUp = await _pushStates();
     await _pushSessions();
+    final examsUp = await _pushExams();
     final banks = await api.banks();
     final q = await _pullQuestions();
     final statesDown = await _pullStates();
     // After the states: a restored quiz shows its answers from the local state rows.
     final sessionsDown = await _pullSessions();
+    final attemptsDown = await _pullAttempts();
+    final examsDown = await _pullExams();
     await _replaceBanks(banks);
     await _setMeta(lastSyncAt, _clock().millisecondsSinceEpoch);
     return SyncReport(
@@ -85,6 +100,9 @@ class SyncService {
       attemptsUploaded: attempts,
       statesUploaded: statesUp,
       statesPulled: statesDown,
+      attemptsPulled: attemptsDown,
+      examsUploaded: examsUp,
+      examsPulled: examsDown,
       sessionsPulled: sessionsDown,
     );
   }
@@ -181,6 +199,137 @@ class SyncService {
       }
     } on ApiException catch (e) {
       if (!_unsupported(e)) rethrow;
+    }
+  }
+
+  static const _examBatch = 10; // the server's per-request limit
+
+  Future<int> _count(TableInfo<Table, dynamic> table) async {
+    final n = countAll();
+    return (await (db.selectOnly(table)..addColumns([n])).map((r) => r.read(n)!).getSingle());
+  }
+
+  Future<int> _pushExams() async {
+    var total = 0;
+    try {
+      while (true) {
+        final rows = await (db.select(db.exams)
+              ..where((e) => e.synced.equals(false))
+              ..orderBy([(e) => OrderingTerm.asc(e.finishedAt)])
+              ..limit(_examBatch))
+            .get();
+        if (rows.isEmpty) return total;
+        await api.uploadExams([
+          for (final r in rows)
+            ExamRecord(
+              id: r.id,
+              bankId: r.bankId,
+              title: r.title,
+              finishedAt: r.finishedAt,
+              total: r.total,
+              correct: r.correct,
+              answered: r.answered,
+              percent: r.percent,
+              passed: r.passed,
+              limitSec: r.limitSec,
+              usedMs: r.usedMs,
+              // Exams imported from older versions carry no device.
+              deviceId: r.deviceId.isEmpty ? deviceId : r.deviceId,
+              items: [
+                for (final j in jsonDecode(r.itemsJson) as List) ExamItemRecord.fromJson(j as Map<String, dynamic>),
+              ],
+            ),
+        ]);
+        await (db.update(db.exams)..where((e) => e.id.isIn(rows.map((r) => r.id))))
+            .write(const ExamsCompanion(synced: Value(true)));
+        total += rows.length;
+      }
+    } on ApiException catch (e) {
+      if (!_unsupported(e)) rethrow;
+      return total;
+    }
+  }
+
+  /// Answers of every device, so statistics cover everything. Attempts are an
+  /// append-only log: only unknown ids are added.
+  Future<int> _pullAttempts() async {
+    var pulled = 0;
+    var cursor = await _meta(attemptCursor);
+    try {
+      while (true) {
+        final page = await api.syncAttempts(since: cursor, limit: _batch);
+        final before = await _count(db.attempts);
+        await db.transaction(() async {
+          await db.batch((b) => b.insertAll(
+                db.attempts,
+                [
+                  for (final a in page.items)
+                    AttemptsCompanion.insert(
+                      id: a.id,
+                      questionId: a.questionId,
+                      deviceId: a.deviceId,
+                      answerJson: jsonEncode(a.answer),
+                      isCorrect: a.isCorrect,
+                      durationMs: Value(a.durationMs),
+                      answeredAt: a.answeredAt,
+                      synced: const Value(true),
+                    ),
+                ],
+                mode: InsertMode.insertOrIgnore,
+              ));
+          await _setMeta(attemptCursor, page.nextSeq);
+        });
+        pulled += await _count(db.attempts) - before;
+        cursor = page.nextSeq;
+        if (!page.hasMore) return pulled;
+      }
+    } on ApiException catch (e) {
+      if (!_unsupported(e)) rethrow;
+      return pulled;
+    }
+  }
+
+  /// Exams are immutable, so a known id is skipped.
+  Future<int> _pullExams() async {
+    var pulled = 0;
+    var cursor = await _meta(examCursor);
+    try {
+      while (true) {
+        final page = await api.syncExams(since: cursor, limit: _examBatch);
+        final before = await _count(db.exams);
+        await db.transaction(() async {
+          await db.batch((b) => b.insertAll(
+                db.exams,
+                [
+                  for (final e in page.items)
+                    ExamsCompanion.insert(
+                      id: e.id,
+                      bankId: e.bankId,
+                      title: e.title,
+                      finishedAt: e.finishedAt,
+                      total: e.total,
+                      correct: e.correct,
+                      answered: e.answered,
+                      percent: e.percent,
+                      passed: e.passed,
+                      limitSec: Value(e.limitSec),
+                      usedMs: e.usedMs,
+                      deviceId: Value(e.deviceId),
+                      itemsJson: Value(jsonEncode([for (final it in e.items) it.toJson()])),
+                      synced: const Value(true),
+                    ),
+                ],
+                mode: InsertMode.insertOrIgnore,
+              ));
+          await _setMeta(examCursor, page.nextSeq);
+        });
+        pulled += await _count(db.exams) - before;
+        cursor = page.nextSeq;
+        if (!page.hasMore) return pulled;
+      }
+    } on ApiException catch (e) {
+      if (!_unsupported(e)) rethrow;
+      return pulled;
     }
   }
 

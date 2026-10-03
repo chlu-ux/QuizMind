@@ -2444,6 +2444,1060 @@ class SyncMetaCompanion extends UpdateCompanion<SyncMetaData> {
   }
 }
 
+class $ExamsTable extends Exams with TableInfo<$ExamsTable, ExamRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ExamsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bankIdMeta = const VerificationMeta('bankId');
+  @override
+  late final GeneratedColumn<String> bankId = GeneratedColumn<String>(
+    'bank_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _finishedAtMeta = const VerificationMeta(
+    'finishedAt',
+  );
+  @override
+  late final GeneratedColumn<int> finishedAt = GeneratedColumn<int>(
+    'finished_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _totalMeta = const VerificationMeta('total');
+  @override
+  late final GeneratedColumn<int> total = GeneratedColumn<int>(
+    'total',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _correctMeta = const VerificationMeta(
+    'correct',
+  );
+  @override
+  late final GeneratedColumn<int> correct = GeneratedColumn<int>(
+    'correct',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _answeredMeta = const VerificationMeta(
+    'answered',
+  );
+  @override
+  late final GeneratedColumn<int> answered = GeneratedColumn<int>(
+    'answered',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _percentMeta = const VerificationMeta(
+    'percent',
+  );
+  @override
+  late final GeneratedColumn<int> percent = GeneratedColumn<int>(
+    'percent',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _passedMeta = const VerificationMeta('passed');
+  @override
+  late final GeneratedColumn<bool> passed = GeneratedColumn<bool>(
+    'passed',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("passed" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _limitSecMeta = const VerificationMeta(
+    'limitSec',
+  );
+  @override
+  late final GeneratedColumn<int> limitSec = GeneratedColumn<int>(
+    'limit_sec',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _usedMsMeta = const VerificationMeta('usedMs');
+  @override
+  late final GeneratedColumn<int> usedMs = GeneratedColumn<int>(
+    'used_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deviceIdMeta = const VerificationMeta(
+    'deviceId',
+  );
+  @override
+  late final GeneratedColumn<String> deviceId = GeneratedColumn<String>(
+    'device_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _itemsJsonMeta = const VerificationMeta(
+    'itemsJson',
+  );
+  @override
+  late final GeneratedColumn<String> itemsJson = GeneratedColumn<String>(
+    'items_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+    'synced',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("synced" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    bankId,
+    title,
+    finishedAt,
+    total,
+    correct,
+    answered,
+    percent,
+    passed,
+    limitSec,
+    usedMs,
+    deviceId,
+    itemsJson,
+    synced,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'exams';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ExamRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('bank_id')) {
+      context.handle(
+        _bankIdMeta,
+        bankId.isAcceptableOrUnknown(data['bank_id']!, _bankIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bankIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('finished_at')) {
+      context.handle(
+        _finishedAtMeta,
+        finishedAt.isAcceptableOrUnknown(data['finished_at']!, _finishedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_finishedAtMeta);
+    }
+    if (data.containsKey('total')) {
+      context.handle(
+        _totalMeta,
+        total.isAcceptableOrUnknown(data['total']!, _totalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_totalMeta);
+    }
+    if (data.containsKey('correct')) {
+      context.handle(
+        _correctMeta,
+        correct.isAcceptableOrUnknown(data['correct']!, _correctMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_correctMeta);
+    }
+    if (data.containsKey('answered')) {
+      context.handle(
+        _answeredMeta,
+        answered.isAcceptableOrUnknown(data['answered']!, _answeredMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_answeredMeta);
+    }
+    if (data.containsKey('percent')) {
+      context.handle(
+        _percentMeta,
+        percent.isAcceptableOrUnknown(data['percent']!, _percentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_percentMeta);
+    }
+    if (data.containsKey('passed')) {
+      context.handle(
+        _passedMeta,
+        passed.isAcceptableOrUnknown(data['passed']!, _passedMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_passedMeta);
+    }
+    if (data.containsKey('limit_sec')) {
+      context.handle(
+        _limitSecMeta,
+        limitSec.isAcceptableOrUnknown(data['limit_sec']!, _limitSecMeta),
+      );
+    }
+    if (data.containsKey('used_ms')) {
+      context.handle(
+        _usedMsMeta,
+        usedMs.isAcceptableOrUnknown(data['used_ms']!, _usedMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_usedMsMeta);
+    }
+    if (data.containsKey('device_id')) {
+      context.handle(
+        _deviceIdMeta,
+        deviceId.isAcceptableOrUnknown(data['device_id']!, _deviceIdMeta),
+      );
+    }
+    if (data.containsKey('items_json')) {
+      context.handle(
+        _itemsJsonMeta,
+        itemsJson.isAcceptableOrUnknown(data['items_json']!, _itemsJsonMeta),
+      );
+    }
+    if (data.containsKey('synced')) {
+      context.handle(
+        _syncedMeta,
+        synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ExamRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ExamRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      bankId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank_id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      finishedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}finished_at'],
+      )!,
+      total: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total'],
+      )!,
+      correct: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}correct'],
+      )!,
+      answered: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}answered'],
+      )!,
+      percent: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}percent'],
+      )!,
+      passed: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}passed'],
+      )!,
+      limitSec: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}limit_sec'],
+      ),
+      usedMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}used_ms'],
+      )!,
+      deviceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}device_id'],
+      )!,
+      itemsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}items_json'],
+      )!,
+      synced: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}synced'],
+      )!,
+    );
+  }
+
+  @override
+  $ExamsTable createAlias(String alias) {
+    return $ExamsTable(attachedDatabase, alias);
+  }
+}
+
+class ExamRow extends DataClass implements Insertable<ExamRow> {
+  final String id;
+  final String bankId;
+  final String title;
+  final int finishedAt;
+  final int total;
+  final int correct;
+  final int answered;
+  final int percent;
+  final bool passed;
+  final int? limitSec;
+  final int usedMs;
+  final String deviceId;
+  final String itemsJson;
+  final bool synced;
+  const ExamRow({
+    required this.id,
+    required this.bankId,
+    required this.title,
+    required this.finishedAt,
+    required this.total,
+    required this.correct,
+    required this.answered,
+    required this.percent,
+    required this.passed,
+    this.limitSec,
+    required this.usedMs,
+    required this.deviceId,
+    required this.itemsJson,
+    required this.synced,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['bank_id'] = Variable<String>(bankId);
+    map['title'] = Variable<String>(title);
+    map['finished_at'] = Variable<int>(finishedAt);
+    map['total'] = Variable<int>(total);
+    map['correct'] = Variable<int>(correct);
+    map['answered'] = Variable<int>(answered);
+    map['percent'] = Variable<int>(percent);
+    map['passed'] = Variable<bool>(passed);
+    if (!nullToAbsent || limitSec != null) {
+      map['limit_sec'] = Variable<int>(limitSec);
+    }
+    map['used_ms'] = Variable<int>(usedMs);
+    map['device_id'] = Variable<String>(deviceId);
+    map['items_json'] = Variable<String>(itemsJson);
+    map['synced'] = Variable<bool>(synced);
+    return map;
+  }
+
+  ExamsCompanion toCompanion(bool nullToAbsent) {
+    return ExamsCompanion(
+      id: Value(id),
+      bankId: Value(bankId),
+      title: Value(title),
+      finishedAt: Value(finishedAt),
+      total: Value(total),
+      correct: Value(correct),
+      answered: Value(answered),
+      percent: Value(percent),
+      passed: Value(passed),
+      limitSec: limitSec == null && nullToAbsent
+          ? const Value.absent()
+          : Value(limitSec),
+      usedMs: Value(usedMs),
+      deviceId: Value(deviceId),
+      itemsJson: Value(itemsJson),
+      synced: Value(synced),
+    );
+  }
+
+  factory ExamRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ExamRow(
+      id: serializer.fromJson<String>(json['id']),
+      bankId: serializer.fromJson<String>(json['bankId']),
+      title: serializer.fromJson<String>(json['title']),
+      finishedAt: serializer.fromJson<int>(json['finishedAt']),
+      total: serializer.fromJson<int>(json['total']),
+      correct: serializer.fromJson<int>(json['correct']),
+      answered: serializer.fromJson<int>(json['answered']),
+      percent: serializer.fromJson<int>(json['percent']),
+      passed: serializer.fromJson<bool>(json['passed']),
+      limitSec: serializer.fromJson<int?>(json['limitSec']),
+      usedMs: serializer.fromJson<int>(json['usedMs']),
+      deviceId: serializer.fromJson<String>(json['deviceId']),
+      itemsJson: serializer.fromJson<String>(json['itemsJson']),
+      synced: serializer.fromJson<bool>(json['synced']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'bankId': serializer.toJson<String>(bankId),
+      'title': serializer.toJson<String>(title),
+      'finishedAt': serializer.toJson<int>(finishedAt),
+      'total': serializer.toJson<int>(total),
+      'correct': serializer.toJson<int>(correct),
+      'answered': serializer.toJson<int>(answered),
+      'percent': serializer.toJson<int>(percent),
+      'passed': serializer.toJson<bool>(passed),
+      'limitSec': serializer.toJson<int?>(limitSec),
+      'usedMs': serializer.toJson<int>(usedMs),
+      'deviceId': serializer.toJson<String>(deviceId),
+      'itemsJson': serializer.toJson<String>(itemsJson),
+      'synced': serializer.toJson<bool>(synced),
+    };
+  }
+
+  ExamRow copyWith({
+    String? id,
+    String? bankId,
+    String? title,
+    int? finishedAt,
+    int? total,
+    int? correct,
+    int? answered,
+    int? percent,
+    bool? passed,
+    Value<int?> limitSec = const Value.absent(),
+    int? usedMs,
+    String? deviceId,
+    String? itemsJson,
+    bool? synced,
+  }) => ExamRow(
+    id: id ?? this.id,
+    bankId: bankId ?? this.bankId,
+    title: title ?? this.title,
+    finishedAt: finishedAt ?? this.finishedAt,
+    total: total ?? this.total,
+    correct: correct ?? this.correct,
+    answered: answered ?? this.answered,
+    percent: percent ?? this.percent,
+    passed: passed ?? this.passed,
+    limitSec: limitSec.present ? limitSec.value : this.limitSec,
+    usedMs: usedMs ?? this.usedMs,
+    deviceId: deviceId ?? this.deviceId,
+    itemsJson: itemsJson ?? this.itemsJson,
+    synced: synced ?? this.synced,
+  );
+  ExamRow copyWithCompanion(ExamsCompanion data) {
+    return ExamRow(
+      id: data.id.present ? data.id.value : this.id,
+      bankId: data.bankId.present ? data.bankId.value : this.bankId,
+      title: data.title.present ? data.title.value : this.title,
+      finishedAt: data.finishedAt.present
+          ? data.finishedAt.value
+          : this.finishedAt,
+      total: data.total.present ? data.total.value : this.total,
+      correct: data.correct.present ? data.correct.value : this.correct,
+      answered: data.answered.present ? data.answered.value : this.answered,
+      percent: data.percent.present ? data.percent.value : this.percent,
+      passed: data.passed.present ? data.passed.value : this.passed,
+      limitSec: data.limitSec.present ? data.limitSec.value : this.limitSec,
+      usedMs: data.usedMs.present ? data.usedMs.value : this.usedMs,
+      deviceId: data.deviceId.present ? data.deviceId.value : this.deviceId,
+      itemsJson: data.itemsJson.present ? data.itemsJson.value : this.itemsJson,
+      synced: data.synced.present ? data.synced.value : this.synced,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExamRow(')
+          ..write('id: $id, ')
+          ..write('bankId: $bankId, ')
+          ..write('title: $title, ')
+          ..write('finishedAt: $finishedAt, ')
+          ..write('total: $total, ')
+          ..write('correct: $correct, ')
+          ..write('answered: $answered, ')
+          ..write('percent: $percent, ')
+          ..write('passed: $passed, ')
+          ..write('limitSec: $limitSec, ')
+          ..write('usedMs: $usedMs, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('itemsJson: $itemsJson, ')
+          ..write('synced: $synced')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    bankId,
+    title,
+    finishedAt,
+    total,
+    correct,
+    answered,
+    percent,
+    passed,
+    limitSec,
+    usedMs,
+    deviceId,
+    itemsJson,
+    synced,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ExamRow &&
+          other.id == this.id &&
+          other.bankId == this.bankId &&
+          other.title == this.title &&
+          other.finishedAt == this.finishedAt &&
+          other.total == this.total &&
+          other.correct == this.correct &&
+          other.answered == this.answered &&
+          other.percent == this.percent &&
+          other.passed == this.passed &&
+          other.limitSec == this.limitSec &&
+          other.usedMs == this.usedMs &&
+          other.deviceId == this.deviceId &&
+          other.itemsJson == this.itemsJson &&
+          other.synced == this.synced);
+}
+
+class ExamsCompanion extends UpdateCompanion<ExamRow> {
+  final Value<String> id;
+  final Value<String> bankId;
+  final Value<String> title;
+  final Value<int> finishedAt;
+  final Value<int> total;
+  final Value<int> correct;
+  final Value<int> answered;
+  final Value<int> percent;
+  final Value<bool> passed;
+  final Value<int?> limitSec;
+  final Value<int> usedMs;
+  final Value<String> deviceId;
+  final Value<String> itemsJson;
+  final Value<bool> synced;
+  final Value<int> rowid;
+  const ExamsCompanion({
+    this.id = const Value.absent(),
+    this.bankId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.finishedAt = const Value.absent(),
+    this.total = const Value.absent(),
+    this.correct = const Value.absent(),
+    this.answered = const Value.absent(),
+    this.percent = const Value.absent(),
+    this.passed = const Value.absent(),
+    this.limitSec = const Value.absent(),
+    this.usedMs = const Value.absent(),
+    this.deviceId = const Value.absent(),
+    this.itemsJson = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ExamsCompanion.insert({
+    required String id,
+    required String bankId,
+    required String title,
+    required int finishedAt,
+    required int total,
+    required int correct,
+    required int answered,
+    required int percent,
+    required bool passed,
+    this.limitSec = const Value.absent(),
+    required int usedMs,
+    this.deviceId = const Value.absent(),
+    this.itemsJson = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       bankId = Value(bankId),
+       title = Value(title),
+       finishedAt = Value(finishedAt),
+       total = Value(total),
+       correct = Value(correct),
+       answered = Value(answered),
+       percent = Value(percent),
+       passed = Value(passed),
+       usedMs = Value(usedMs);
+  static Insertable<ExamRow> custom({
+    Expression<String>? id,
+    Expression<String>? bankId,
+    Expression<String>? title,
+    Expression<int>? finishedAt,
+    Expression<int>? total,
+    Expression<int>? correct,
+    Expression<int>? answered,
+    Expression<int>? percent,
+    Expression<bool>? passed,
+    Expression<int>? limitSec,
+    Expression<int>? usedMs,
+    Expression<String>? deviceId,
+    Expression<String>? itemsJson,
+    Expression<bool>? synced,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (bankId != null) 'bank_id': bankId,
+      if (title != null) 'title': title,
+      if (finishedAt != null) 'finished_at': finishedAt,
+      if (total != null) 'total': total,
+      if (correct != null) 'correct': correct,
+      if (answered != null) 'answered': answered,
+      if (percent != null) 'percent': percent,
+      if (passed != null) 'passed': passed,
+      if (limitSec != null) 'limit_sec': limitSec,
+      if (usedMs != null) 'used_ms': usedMs,
+      if (deviceId != null) 'device_id': deviceId,
+      if (itemsJson != null) 'items_json': itemsJson,
+      if (synced != null) 'synced': synced,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ExamsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? bankId,
+    Value<String>? title,
+    Value<int>? finishedAt,
+    Value<int>? total,
+    Value<int>? correct,
+    Value<int>? answered,
+    Value<int>? percent,
+    Value<bool>? passed,
+    Value<int?>? limitSec,
+    Value<int>? usedMs,
+    Value<String>? deviceId,
+    Value<String>? itemsJson,
+    Value<bool>? synced,
+    Value<int>? rowid,
+  }) {
+    return ExamsCompanion(
+      id: id ?? this.id,
+      bankId: bankId ?? this.bankId,
+      title: title ?? this.title,
+      finishedAt: finishedAt ?? this.finishedAt,
+      total: total ?? this.total,
+      correct: correct ?? this.correct,
+      answered: answered ?? this.answered,
+      percent: percent ?? this.percent,
+      passed: passed ?? this.passed,
+      limitSec: limitSec ?? this.limitSec,
+      usedMs: usedMs ?? this.usedMs,
+      deviceId: deviceId ?? this.deviceId,
+      itemsJson: itemsJson ?? this.itemsJson,
+      synced: synced ?? this.synced,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (bankId.present) {
+      map['bank_id'] = Variable<String>(bankId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (finishedAt.present) {
+      map['finished_at'] = Variable<int>(finishedAt.value);
+    }
+    if (total.present) {
+      map['total'] = Variable<int>(total.value);
+    }
+    if (correct.present) {
+      map['correct'] = Variable<int>(correct.value);
+    }
+    if (answered.present) {
+      map['answered'] = Variable<int>(answered.value);
+    }
+    if (percent.present) {
+      map['percent'] = Variable<int>(percent.value);
+    }
+    if (passed.present) {
+      map['passed'] = Variable<bool>(passed.value);
+    }
+    if (limitSec.present) {
+      map['limit_sec'] = Variable<int>(limitSec.value);
+    }
+    if (usedMs.present) {
+      map['used_ms'] = Variable<int>(usedMs.value);
+    }
+    if (deviceId.present) {
+      map['device_id'] = Variable<String>(deviceId.value);
+    }
+    if (itemsJson.present) {
+      map['items_json'] = Variable<String>(itemsJson.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExamsCompanion(')
+          ..write('id: $id, ')
+          ..write('bankId: $bankId, ')
+          ..write('title: $title, ')
+          ..write('finishedAt: $finishedAt, ')
+          ..write('total: $total, ')
+          ..write('correct: $correct, ')
+          ..write('answered: $answered, ')
+          ..write('percent: $percent, ')
+          ..write('passed: $passed, ')
+          ..write('limitSec: $limitSec, ')
+          ..write('usedMs: $usedMs, ')
+          ..write('deviceId: $deviceId, ')
+          ..write('itemsJson: $itemsJson, ')
+          ..write('synced: $synced, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ExamDraftsTable extends ExamDrafts
+    with TableInfo<$ExamDraftsTable, ExamDraftRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ExamDraftsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _bankIdMeta = const VerificationMeta('bankId');
+  @override
+  late final GeneratedColumn<String> bankId = GeneratedColumn<String>(
+    'bank_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dataJsonMeta = const VerificationMeta(
+    'dataJson',
+  );
+  @override
+  late final GeneratedColumn<String> dataJson = GeneratedColumn<String>(
+    'data_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _savedAtMeta = const VerificationMeta(
+    'savedAt',
+  );
+  @override
+  late final GeneratedColumn<int> savedAt = GeneratedColumn<int>(
+    'saved_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [bankId, dataJson, savedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'exam_drafts';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ExamDraftRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('bank_id')) {
+      context.handle(
+        _bankIdMeta,
+        bankId.isAcceptableOrUnknown(data['bank_id']!, _bankIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bankIdMeta);
+    }
+    if (data.containsKey('data_json')) {
+      context.handle(
+        _dataJsonMeta,
+        dataJson.isAcceptableOrUnknown(data['data_json']!, _dataJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dataJsonMeta);
+    }
+    if (data.containsKey('saved_at')) {
+      context.handle(
+        _savedAtMeta,
+        savedAt.isAcceptableOrUnknown(data['saved_at']!, _savedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_savedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {bankId};
+  @override
+  ExamDraftRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ExamDraftRow(
+      bankId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank_id'],
+      )!,
+      dataJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}data_json'],
+      )!,
+      savedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}saved_at'],
+      )!,
+    );
+  }
+
+  @override
+  $ExamDraftsTable createAlias(String alias) {
+    return $ExamDraftsTable(attachedDatabase, alias);
+  }
+}
+
+class ExamDraftRow extends DataClass implements Insertable<ExamDraftRow> {
+  final String bankId;
+  final String dataJson;
+  final int savedAt;
+  const ExamDraftRow({
+    required this.bankId,
+    required this.dataJson,
+    required this.savedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['bank_id'] = Variable<String>(bankId);
+    map['data_json'] = Variable<String>(dataJson);
+    map['saved_at'] = Variable<int>(savedAt);
+    return map;
+  }
+
+  ExamDraftsCompanion toCompanion(bool nullToAbsent) {
+    return ExamDraftsCompanion(
+      bankId: Value(bankId),
+      dataJson: Value(dataJson),
+      savedAt: Value(savedAt),
+    );
+  }
+
+  factory ExamDraftRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ExamDraftRow(
+      bankId: serializer.fromJson<String>(json['bankId']),
+      dataJson: serializer.fromJson<String>(json['dataJson']),
+      savedAt: serializer.fromJson<int>(json['savedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'bankId': serializer.toJson<String>(bankId),
+      'dataJson': serializer.toJson<String>(dataJson),
+      'savedAt': serializer.toJson<int>(savedAt),
+    };
+  }
+
+  ExamDraftRow copyWith({String? bankId, String? dataJson, int? savedAt}) =>
+      ExamDraftRow(
+        bankId: bankId ?? this.bankId,
+        dataJson: dataJson ?? this.dataJson,
+        savedAt: savedAt ?? this.savedAt,
+      );
+  ExamDraftRow copyWithCompanion(ExamDraftsCompanion data) {
+    return ExamDraftRow(
+      bankId: data.bankId.present ? data.bankId.value : this.bankId,
+      dataJson: data.dataJson.present ? data.dataJson.value : this.dataJson,
+      savedAt: data.savedAt.present ? data.savedAt.value : this.savedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExamDraftRow(')
+          ..write('bankId: $bankId, ')
+          ..write('dataJson: $dataJson, ')
+          ..write('savedAt: $savedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(bankId, dataJson, savedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ExamDraftRow &&
+          other.bankId == this.bankId &&
+          other.dataJson == this.dataJson &&
+          other.savedAt == this.savedAt);
+}
+
+class ExamDraftsCompanion extends UpdateCompanion<ExamDraftRow> {
+  final Value<String> bankId;
+  final Value<String> dataJson;
+  final Value<int> savedAt;
+  final Value<int> rowid;
+  const ExamDraftsCompanion({
+    this.bankId = const Value.absent(),
+    this.dataJson = const Value.absent(),
+    this.savedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ExamDraftsCompanion.insert({
+    required String bankId,
+    required String dataJson,
+    required int savedAt,
+    this.rowid = const Value.absent(),
+  }) : bankId = Value(bankId),
+       dataJson = Value(dataJson),
+       savedAt = Value(savedAt);
+  static Insertable<ExamDraftRow> custom({
+    Expression<String>? bankId,
+    Expression<String>? dataJson,
+    Expression<int>? savedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (bankId != null) 'bank_id': bankId,
+      if (dataJson != null) 'data_json': dataJson,
+      if (savedAt != null) 'saved_at': savedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ExamDraftsCompanion copyWith({
+    Value<String>? bankId,
+    Value<String>? dataJson,
+    Value<int>? savedAt,
+    Value<int>? rowid,
+  }) {
+    return ExamDraftsCompanion(
+      bankId: bankId ?? this.bankId,
+      dataJson: dataJson ?? this.dataJson,
+      savedAt: savedAt ?? this.savedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (bankId.present) {
+      map['bank_id'] = Variable<String>(bankId.value);
+    }
+    if (dataJson.present) {
+      map['data_json'] = Variable<String>(dataJson.value);
+    }
+    if (savedAt.present) {
+      map['saved_at'] = Variable<int>(savedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExamDraftsCompanion(')
+          ..write('bankId: $bankId, ')
+          ..write('dataJson: $dataJson, ')
+          ..write('savedAt: $savedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -2453,6 +3507,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $QuestionStatesTable questionStates = $QuestionStatesTable(this);
   late final $PendingFlagsTable pendingFlags = $PendingFlagsTable(this);
   late final $SyncMetaTable syncMeta = $SyncMetaTable(this);
+  late final $ExamsTable exams = $ExamsTable(this);
+  late final $ExamDraftsTable examDrafts = $ExamDraftsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -2464,6 +3520,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     questionStates,
     pendingFlags,
     syncMeta,
+    exams,
+    examDrafts,
   ];
 }
 
@@ -3809,6 +4867,548 @@ typedef $$SyncMetaTableProcessedTableManager =
       SyncMetaData,
       PrefetchHooks Function()
     >;
+typedef $$ExamsTableCreateCompanionBuilder = ExamsCompanion Function({
+  required String id,
+  required String bankId,
+  required String title,
+  required int finishedAt,
+  required int total,
+  required int correct,
+  required int answered,
+  required int percent,
+  required bool passed,
+  Value<int?> limitSec,
+  required int usedMs,
+  Value<String> deviceId,
+  Value<String> itemsJson,
+  Value<bool> synced,
+  Value<int> rowid,
+});
+typedef $$ExamsTableUpdateCompanionBuilder = ExamsCompanion Function({
+  Value<String> id,
+  Value<String> bankId,
+  Value<String> title,
+  Value<int> finishedAt,
+  Value<int> total,
+  Value<int> correct,
+  Value<int> answered,
+  Value<int> percent,
+  Value<bool> passed,
+  Value<int?> limitSec,
+  Value<int> usedMs,
+  Value<String> deviceId,
+  Value<String> itemsJson,
+  Value<bool> synced,
+  Value<int> rowid,
+});
+
+class $$ExamsTableFilterComposer extends Composer<_$AppDatabase, $ExamsTable> {
+  $$ExamsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bankId => $composableBuilder(
+    column: $table.bankId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get finishedAt => $composableBuilder(
+    column: $table.finishedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get total => $composableBuilder(
+    column: $table.total,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get correct => $composableBuilder(
+    column: $table.correct,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get answered => $composableBuilder(
+    column: $table.answered,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get percent => $composableBuilder(
+    column: $table.percent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get passed => $composableBuilder(
+    column: $table.passed,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get limitSec => $composableBuilder(
+    column: $table.limitSec,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get usedMs => $composableBuilder(
+    column: $table.usedMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemsJson => $composableBuilder(
+    column: $table.itemsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ExamsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ExamsTable> {
+  $$ExamsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bankId => $composableBuilder(
+    column: $table.bankId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get finishedAt => $composableBuilder(
+    column: $table.finishedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get total => $composableBuilder(
+    column: $table.total,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get correct => $composableBuilder(
+    column: $table.correct,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get answered => $composableBuilder(
+    column: $table.answered,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get percent => $composableBuilder(
+    column: $table.percent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get passed => $composableBuilder(
+    column: $table.passed,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get limitSec => $composableBuilder(
+    column: $table.limitSec,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get usedMs => $composableBuilder(
+    column: $table.usedMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get deviceId => $composableBuilder(
+    column: $table.deviceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemsJson => $composableBuilder(
+    column: $table.itemsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+    column: $table.synced,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ExamsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ExamsTable> {
+  $$ExamsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get bankId =>
+      $composableBuilder(column: $table.bankId, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<int> get finishedAt => $composableBuilder(
+    column: $table.finishedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get total =>
+      $composableBuilder(column: $table.total, builder: (column) => column);
+
+  GeneratedColumn<int> get correct =>
+      $composableBuilder(column: $table.correct, builder: (column) => column);
+
+  GeneratedColumn<int> get answered =>
+      $composableBuilder(column: $table.answered, builder: (column) => column);
+
+  GeneratedColumn<int> get percent =>
+      $composableBuilder(column: $table.percent, builder: (column) => column);
+
+  GeneratedColumn<bool> get passed =>
+      $composableBuilder(column: $table.passed, builder: (column) => column);
+
+  GeneratedColumn<int> get limitSec =>
+      $composableBuilder(column: $table.limitSec, builder: (column) => column);
+
+  GeneratedColumn<int> get usedMs =>
+      $composableBuilder(column: $table.usedMs, builder: (column) => column);
+
+  GeneratedColumn<String> get deviceId =>
+      $composableBuilder(column: $table.deviceId, builder: (column) => column);
+
+  GeneratedColumn<String> get itemsJson =>
+      $composableBuilder(column: $table.itemsJson, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+}
+
+class $$ExamsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ExamsTable,
+          ExamRow,
+          $$ExamsTableFilterComposer,
+          $$ExamsTableOrderingComposer,
+          $$ExamsTableAnnotationComposer,
+          $$ExamsTableCreateCompanionBuilder,
+          $$ExamsTableUpdateCompanionBuilder,
+          (ExamRow, BaseReferences<_$AppDatabase, $ExamsTable, ExamRow>),
+          ExamRow,
+          PrefetchHooks Function()
+        > {
+  $$ExamsTableTableManager(_$AppDatabase db, $ExamsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ExamsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ExamsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ExamsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> bankId = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<int> finishedAt = const Value.absent(),
+                Value<int> total = const Value.absent(),
+                Value<int> correct = const Value.absent(),
+                Value<int> answered = const Value.absent(),
+                Value<int> percent = const Value.absent(),
+                Value<bool> passed = const Value.absent(),
+                Value<int?> limitSec = const Value.absent(),
+                Value<int> usedMs = const Value.absent(),
+                Value<String> deviceId = const Value.absent(),
+                Value<String> itemsJson = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ExamsCompanion(
+                id: id,
+                bankId: bankId,
+                title: title,
+                finishedAt: finishedAt,
+                total: total,
+                correct: correct,
+                answered: answered,
+                percent: percent,
+                passed: passed,
+                limitSec: limitSec,
+                usedMs: usedMs,
+                deviceId: deviceId,
+                itemsJson: itemsJson,
+                synced: synced,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String bankId,
+                required String title,
+                required int finishedAt,
+                required int total,
+                required int correct,
+                required int answered,
+                required int percent,
+                required bool passed,
+                Value<int?> limitSec = const Value.absent(),
+                required int usedMs,
+                Value<String> deviceId = const Value.absent(),
+                Value<String> itemsJson = const Value.absent(),
+                Value<bool> synced = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ExamsCompanion.insert(
+                id: id,
+                bankId: bankId,
+                title: title,
+                finishedAt: finishedAt,
+                total: total,
+                correct: correct,
+                answered: answered,
+                percent: percent,
+                passed: passed,
+                limitSec: limitSec,
+                usedMs: usedMs,
+                deviceId: deviceId,
+                itemsJson: itemsJson,
+                synced: synced,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ExamsTable, ExamRow>(table),
+                  BaseReferences<_$AppDatabase, $ExamsTable, ExamRow>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ExamsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ExamsTable,
+      ExamRow,
+      $$ExamsTableFilterComposer,
+      $$ExamsTableOrderingComposer,
+      $$ExamsTableAnnotationComposer,
+      $$ExamsTableCreateCompanionBuilder,
+      $$ExamsTableUpdateCompanionBuilder,
+      (ExamRow, BaseReferences<_$AppDatabase, $ExamsTable, ExamRow>),
+      ExamRow,
+      PrefetchHooks Function()
+    >;
+typedef $$ExamDraftsTableCreateCompanionBuilder = ExamDraftsCompanion Function({
+  required String bankId,
+  required String dataJson,
+  required int savedAt,
+  Value<int> rowid,
+});
+typedef $$ExamDraftsTableUpdateCompanionBuilder = ExamDraftsCompanion Function({
+  Value<String> bankId,
+  Value<String> dataJson,
+  Value<int> savedAt,
+  Value<int> rowid,
+});
+
+class $$ExamDraftsTableFilterComposer
+    extends Composer<_$AppDatabase, $ExamDraftsTable> {
+  $$ExamDraftsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get bankId => $composableBuilder(
+    column: $table.bankId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get dataJson => $composableBuilder(
+    column: $table.dataJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get savedAt => $composableBuilder(
+    column: $table.savedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ExamDraftsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ExamDraftsTable> {
+  $$ExamDraftsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get bankId => $composableBuilder(
+    column: $table.bankId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get dataJson => $composableBuilder(
+    column: $table.dataJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get savedAt => $composableBuilder(
+    column: $table.savedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ExamDraftsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ExamDraftsTable> {
+  $$ExamDraftsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get bankId =>
+      $composableBuilder(column: $table.bankId, builder: (column) => column);
+
+  GeneratedColumn<String> get dataJson =>
+      $composableBuilder(column: $table.dataJson, builder: (column) => column);
+
+  GeneratedColumn<int> get savedAt =>
+      $composableBuilder(column: $table.savedAt, builder: (column) => column);
+}
+
+class $$ExamDraftsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ExamDraftsTable,
+          ExamDraftRow,
+          $$ExamDraftsTableFilterComposer,
+          $$ExamDraftsTableOrderingComposer,
+          $$ExamDraftsTableAnnotationComposer,
+          $$ExamDraftsTableCreateCompanionBuilder,
+          $$ExamDraftsTableUpdateCompanionBuilder,
+          (
+            ExamDraftRow,
+            BaseReferences<_$AppDatabase, $ExamDraftsTable, ExamDraftRow>,
+          ),
+          ExamDraftRow,
+          PrefetchHooks Function()
+        > {
+  $$ExamDraftsTableTableManager(_$AppDatabase db, $ExamDraftsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ExamDraftsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ExamDraftsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ExamDraftsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> bankId = const Value.absent(),
+                Value<String> dataJson = const Value.absent(),
+                Value<int> savedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ExamDraftsCompanion(
+                bankId: bankId,
+                dataJson: dataJson,
+                savedAt: savedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String bankId,
+                required String dataJson,
+                required int savedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => ExamDraftsCompanion.insert(
+                bankId: bankId,
+                dataJson: dataJson,
+                savedAt: savedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$ExamDraftsTable, ExamDraftRow>(table),
+                  BaseReferences<_$AppDatabase, $ExamDraftsTable, ExamDraftRow>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ExamDraftsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ExamDraftsTable,
+      ExamDraftRow,
+      $$ExamDraftsTableFilterComposer,
+      $$ExamDraftsTableOrderingComposer,
+      $$ExamDraftsTableAnnotationComposer,
+      $$ExamDraftsTableCreateCompanionBuilder,
+      $$ExamDraftsTableUpdateCompanionBuilder,
+      (
+        ExamDraftRow,
+        BaseReferences<_$AppDatabase, $ExamDraftsTable, ExamDraftRow>,
+      ),
+      ExamDraftRow,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3825,4 +5425,8 @@ class $AppDatabaseManager {
       $$PendingFlagsTableTableManager(_db, _db.pendingFlags);
   $$SyncMetaTableTableManager get syncMeta =>
       $$SyncMetaTableTableManager(_db, _db.syncMeta);
+  $$ExamsTableTableManager get exams =>
+      $$ExamsTableTableManager(_db, _db.exams);
+  $$ExamDraftsTableTableManager get examDrafts =>
+      $$ExamDraftsTableTableManager(_db, _db.examDrafts);
 }

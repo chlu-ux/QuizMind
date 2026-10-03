@@ -111,6 +111,7 @@ class BankDetail extends ConsumerStatefulWidget {
 class _BankDetailState extends ConsumerState<BankDetail> {
   late Future<BankStats> _stats;
   SavedSession? _saved;
+  bool _examInProgress = false;
 
   Bank get bank => widget.bank;
 
@@ -119,12 +120,21 @@ class _BankDetailState extends ConsumerState<BankDetail> {
     super.initState();
     _stats = ref.read(repositoryProvider).bankStats(bank.id);
     _saved = ref.read(sessionStoreProvider).load(bank.id);
+    _loadExamDraft();
   }
 
-  void _refresh() => setState(() {
-        _stats = ref.read(repositoryProvider).bankStats(bank.id);
-        _saved = ref.read(sessionStoreProvider).load(bank.id);
-      });
+  Future<void> _loadExamDraft() async {
+    final draft = await ref.read(repositoryProvider).examDraft(bank.id);
+    if (mounted && (draft != null) != _examInProgress) setState(() => _examInProgress = draft != null);
+  }
+
+  void _refresh() {
+    setState(() {
+      _stats = ref.read(repositoryProvider).bankStats(bank.id);
+      _saved = ref.read(sessionStoreProvider).load(bank.id);
+    });
+    _loadExamDraft();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +203,7 @@ class _BankDetailState extends ConsumerState<BankDetail> {
             OutlinedButton.icon(
               onPressed: () => _open(ExamSetupPage(bank: bank)),
               icon: const Icon(Icons.assignment_outlined),
-              label: const Text('模拟考试'),
+              label: Text(_examInProgress ? '模拟考试 · 有未完成的考试' : '模拟考试'),
             ),
             const SizedBox(height: 8),
             OutlinedButton.icon(

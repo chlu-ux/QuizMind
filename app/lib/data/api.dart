@@ -22,6 +22,12 @@ abstract class QuizApi {
   Future<QuestionsPage> syncQuestions({required int since, int limit = 500});
   Future<StatesPage> syncStates({required int since, int limit = 500});
   Future<void> uploadAttempts(List<AttemptDto> attempts);
+
+  /// The whole answer log, from every device; and finished mock exams. Servers
+  /// older than these answer 404, which callers treat as "not supported".
+  Future<AttemptsPage> syncAttempts({required int since, int limit = 500});
+  Future<ExamsPage> syncExams({required int since, int limit = 100});
+  Future<void> uploadExams(List<ExamRecord> exams);
   Future<void> uploadStates(List<StateDto> states);
 
   /// Saved quizzes. Servers older than the feature answer 404; callers treat that
@@ -91,6 +97,22 @@ class HttpQuizApi implements QuizApi {
   @override
   Future<void> uploadAttempts(List<AttemptDto> attempts) =>
       _call(() => _dio.post('/api/v1/sync/attempts', data: attempts.map((a) => a.toJson()).toList()), (_) {});
+
+  @override
+  Future<AttemptsPage> syncAttempts({required int since, int limit = 500}) => _call(
+        () => _dio.get('/api/v1/sync/attempts', queryParameters: {'since': since, 'limit': limit}),
+        (d) => AttemptsPage.fromJson(d as Map<String, dynamic>),
+      );
+
+  @override
+  Future<ExamsPage> syncExams({required int since, int limit = 100}) => _call(
+        () => _dio.get('/api/v1/sync/exams', queryParameters: {'since': since, 'limit': limit}),
+        (d) => ExamsPage.fromJson(d as Map<String, dynamic>),
+      );
+
+  @override
+  Future<void> uploadExams(List<ExamRecord> exams) =>
+      _call(() => _dio.post('/api/v1/sync/exams', data: exams.map((e) => e.toJson()).toList()), (_) {});
 
   @override
   Future<void> uploadStates(List<StateDto> states) =>

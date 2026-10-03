@@ -82,11 +82,58 @@ class SyncMeta extends Table {
   Set<Column> get primaryKey => {key};
 }
 
-@DriftDatabase(tables: [Banks, Questions, Attempts, QuestionStates, PendingFlags, SyncMeta])
+/// A finished mock exam. Append-only. [itemsJson] is the paper in order,
+/// `[{"q": id, "s": [picked], "c": correct}]`, so it can be reviewed on any device.
+/// [synced] false = still in the outbox.
+@DataClassName('ExamRow')
+class Exams extends Table {
+  TextColumn get id => text()(); // client ULID, idempotency key
+  TextColumn get bankId => text()();
+  TextColumn get title => text()();
+  IntColumn get finishedAt => integer()();
+  IntColumn get total => integer()();
+  IntColumn get correct => integer()();
+  IntColumn get answered => integer()();
+  IntColumn get percent => integer()();
+  BoolColumn get passed => boolean()();
+  IntColumn get limitSec => integer().nullable()();
+  IntColumn get usedMs => integer()();
+  TextColumn get deviceId => text().withDefault(const Constant(''))();
+  TextColumn get itemsJson => text().withDefault(const Constant('[]'))();
+  BoolColumn get synced => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// An exam in progress, kept on this device only so a killed app can resume it.
+/// One per bank; [dataJson] is an ExamDraft.
+@DataClassName('ExamDraftRow')
+class ExamDrafts extends Table {
+  TextColumn get bankId => text()();
+  TextColumn get dataJson => text()();
+  IntColumn get savedAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {bankId};
+}
+
+@DriftDatabase(tables: [Banks, Questions, Attempts, QuestionStates, PendingFlags, SyncMeta, Exams, ExamDrafts])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'quizmind'));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            // Exams used to live in shared preferences (see importLegacyExams).
+            await m.createTable(exams);
+            await m.createTable(examDrafts);
+          }
+        },
+      );
 }

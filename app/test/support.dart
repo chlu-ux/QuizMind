@@ -27,6 +27,14 @@ class FakeApi implements QuizApi {
   final List<StateDto> remoteStates = [];
   final List<AttemptDto> uploadedAttempts = [];
   final List<StateDto> uploadedStates = [];
+
+  /// What other devices uploaded; the pull side of attempt and exam sync.
+  final List<AttemptDto> remoteAttempts = [];
+  final List<ExamRecord> remoteExams = [];
+  final List<ExamRecord> uploadedExams = [];
+
+  /// Behave like a server from before attempt/exam download existed (404).
+  bool historyUnsupported = false;
   final List<String> flagged = [];
   int pageSize = 1000;
   Object? failWith;
@@ -70,6 +78,44 @@ class FakeApi implements QuizApi {
   Future<void> uploadAttempts(List<AttemptDto> attempts) async {
     _maybeFail();
     uploadedAttempts.addAll(attempts);
+  }
+
+  @override
+  Future<AttemptsPage> syncAttempts({required int since, int limit = 500}) async {
+    _maybeFail();
+    if (historyUnsupported) throw ApiException('not found', status: 404);
+    // The fake's sequence number is the 1-based position in the list.
+    final rows = [for (var i = 0; i < remoteAttempts.length; i++) (a: remoteAttempts[i], seq: i + 1)]
+        .where((r) => r.seq > since)
+        .toList();
+    final take = rows.take(limit).toList();
+    return AttemptsPage(
+      items: [for (final r in take) r.a],
+      nextSeq: take.isEmpty ? since : take.last.seq,
+      hasMore: rows.length > take.length,
+    );
+  }
+
+  @override
+  Future<ExamsPage> syncExams({required int since, int limit = 100}) async {
+    _maybeFail();
+    if (historyUnsupported) throw ApiException('not found', status: 404);
+    final rows = [for (var i = 0; i < remoteExams.length; i++) (e: remoteExams[i], seq: i + 1)]
+        .where((r) => r.seq > since)
+        .toList();
+    final take = rows.take(limit).toList();
+    return ExamsPage(
+      items: [for (final r in take) r.e],
+      nextSeq: take.isEmpty ? since : take.last.seq,
+      hasMore: rows.length > take.length,
+    );
+  }
+
+  @override
+  Future<void> uploadExams(List<ExamRecord> exams) async {
+    _maybeFail();
+    if (historyUnsupported) throw ApiException('not found', status: 404);
+    uploadedExams.addAll(exams);
   }
 
   @override
