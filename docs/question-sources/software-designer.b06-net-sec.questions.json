@@ -1,0 +1,2222 @@
+{
+ "软件设计师（中级）考点精讲（计算机网络与信息安全） > 6.1 网络体系结构：OSI 与 TCP/IP 各层及设备": [
+  {
+   "type": "single",
+   "stem": "OSI 参考模型共分为多少层？",
+   "options": [
+    "4",
+    "6",
+    "7",
+    "5"
+   ],
+   "answer_index": 2,
+   "explanation": "TCP/IP 参考模型是四层。",
+   "difficulty": 1,
+   "tags": [
+    "网络体系",
+    "OSI层数"
+   ],
+   "source_quote": "OSI 参考模型分为七层，从下到上依次是物理层、数据链路层、网络层、传输层、会话层、表示层和应用层"
+  },
+  {
+   "type": "single",
+   "stem": "OSI 模型中，负责路由选择和分组转发的是哪一层？",
+   "options": [
+    "传输层",
+    "数据链路层",
+    "会话层",
+    "网络层"
+   ],
+   "answer_index": 3,
+   "explanation": "IP 协议工作在网络层。",
+   "difficulty": 2,
+   "tags": [
+    "网络体系",
+    "网络层"
+   ],
+   "source_quote": "网络层负责路由选择和分组转发"
+  },
+  {
+   "type": "single",
+   "stem": "数据链路层传输的数据单元称为什么？",
+   "options": [
+    "帧",
+    "段",
+    "比特",
+    "分组"
+   ],
+   "answer_index": 0,
+   "explanation": "各层数据单元名称不同。",
+   "difficulty": 2,
+   "tags": [
+    "网络体系",
+    "数据单元"
+   ],
+   "source_quote": "物理层是比特，数据链路层是帧，网络层是分组，传输层是段"
+  },
+  {
+   "type": "single",
+   "stem": "传输层的主要功能是什么？",
+   "options": [
+    "路由选择",
+    "数据格式转换和压缩",
+    "差错检测和介质访问控制",
+    "提供端到端的可靠或不可靠传输"
+   ],
+   "answer_index": 3,
+   "explanation": "TCP 提供可靠传输，UDP 提供不可靠传输。",
+   "difficulty": 2,
+   "tags": [
+    "网络体系",
+    "传输层"
+   ],
+   "source_quote": "传输层提供端到端的可靠或不可靠传输"
+  },
+  {
+   "type": "single",
+   "stem": "OSI 模型中，负责数据格式转换、加密和压缩的是哪一层？",
+   "options": [
+    "会话层",
+    "传输层",
+    "应用层",
+    "表示层"
+   ],
+   "answer_index": 3,
+   "explanation": "会话层管理会话。",
+   "difficulty": 2,
+   "tags": [
+    "网络体系",
+    "表示层"
+   ],
+   "source_quote": "表示层负责数据格式转换、加密和压缩"
+  },
+  {
+   "type": "single",
+   "stem": "路由器工作在 OSI 模型的哪一层？",
+   "options": [
+    "传输层",
+    "物理层",
+    "数据链路层",
+    "网络层"
+   ],
+   "answer_index": 3,
+   "explanation": "交换机在数据链路层，集线器在物理层。",
+   "difficulty": 2,
+   "tags": [
+    "网络体系",
+    "设备"
+   ],
+   "source_quote": "路由器工作在网络层"
+  },
+  {
+   "type": "single",
+   "stem": "交换机工作在 OSI 模型的哪一层？",
+   "options": [
+    "网络层",
+    "物理层",
+    "应用层",
+    "数据链路层"
+   ],
+   "answer_index": 3,
+   "explanation": "交换机根据 MAC 地址转发帧。",
+   "difficulty": 2,
+   "tags": [
+    "网络体系",
+    "设备"
+   ],
+   "source_quote": "网桥和交换机工作在数据链路层"
+  },
+  {
+   "type": "single",
+   "stem": "TCP/IP 参考模型的四层是什么？",
+   "options": [
+    "网络接口层、网际层、传输层、应用层",
+    "网络接口层、网际层、表示层、应用层",
+    "链路层、网络层、会话层、应用层",
+    "物理层、网络层、传输层、应用层"
+   ],
+   "answer_index": 0,
+   "explanation": "网际层对应 OSI 的网络层。",
+   "difficulty": 2,
+   "tags": [
+    "网络体系",
+    "TCPIP"
+   ],
+   "source_quote": "TCP/IP 参考模型分为网络接口层、网际层、传输层和应用层四层"
+  },
+  {
+   "type": "single",
+   "stem": "下列关于冲突域和广播域的说法，正确的是哪一个？",
+   "options": [
+    "交换机的所有端口处于同一个冲突域",
+    "交换机每个端口是独立的冲突域，路由器每个接口是独立的广播域",
+    "集线器的每个端口是独立的冲突域",
+    "路由器连接的所有设备处于同一个广播域"
+   ],
+   "answer_index": 1,
+   "explanation": "路由器隔离广播域，交换机隔离冲突域。",
+   "difficulty": 3,
+   "tags": [
+    "网络体系",
+    "冲突域广播域"
+   ],
+   "source_quote": "集线器连接的所有设备处于同一个冲突域，交换机的每个端口是一个独立的冲突域，路由器的每个接口是一个独立的广播域"
+  },
+  {
+   "type": "judge",
+   "stem": "集线器连接的所有设备处于同一个冲突域。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "集线器是物理层设备，对信号只做放大转发。",
+   "difficulty": 2,
+   "tags": [
+    "网络体系",
+    "集线器"
+   ],
+   "source_quote": "集线器连接的所有设备处于同一个冲突域"
+  }
+ ],
+ "软件设计师（中级）考点精讲（计算机网络与信息安全） > 6.2 物理层与数据链路层：以太网、交换机与 VLAN": [
+  {
+   "type": "single",
+   "stem": "CSMA/CD 的工作原则可以概括为什么？",
+   "options": [
+    "先发后听、冲突继续发送",
+    "先听后发、边发边听、冲突停发、随机延迟后重发",
+    "轮流发送令牌",
+    "固定时隙分配"
+   ],
+   "answer_index": 1,
+   "explanation": "CSMA/CD 用于共享介质的以太网。",
+   "difficulty": 2,
+   "tags": [
+    "以太网",
+    "CSMA/CD"
+   ],
+   "source_quote": "以太网采用 CSMA/CD 协议控制介质访问，先听后发、边发边听、冲突停发、随机延迟后重发"
+  },
+  {
+   "type": "single",
+   "stem": "以太网规定的最小帧长是多少字节？",
+   "options": [
+    "1518",
+    "128",
+    "46",
+    "64"
+   ],
+   "answer_index": 3,
+   "explanation": "最小帧长保证发送方能在发送期间检测到冲突。",
+   "difficulty": 2,
+   "tags": [
+    "以太网",
+    "帧长"
+   ],
+   "source_quote": "以太网规定最小帧长为 64 字节，最大帧长为 1518 字节"
+  },
+  {
+   "type": "single",
+   "stem": "以太网 MAC 地址的长度是多少位？",
+   "options": [
+    "32",
+    "128",
+    "64",
+    "48"
+   ],
+   "answer_index": 3,
+   "explanation": "IPv4 地址为 32 位，IPv6 地址为 128 位。",
+   "difficulty": 1,
+   "tags": [
+    "以太网",
+    "MAC地址"
+   ],
+   "source_quote": "以太网 MAC 地址为 48 位，通常用 12 位十六进制数表示"
+  },
+  {
+   "type": "single",
+   "stem": "交换机收到目的地址未知的帧时，通常如何处理？",
+   "options": [
+    "泛洪到除接收端口外的所有端口",
+    "返回错误信息给发送方",
+    "只转发到上联端口",
+    "直接丢弃"
+   ],
+   "answer_index": 0,
+   "explanation": "自学习是通过记录帧的源 MAC 地址建立地址表。",
+   "difficulty": 2,
+   "tags": [
+    "交换机",
+    "自学习"
+   ],
+   "source_quote": "交换机根据 MAC 地址转发帧，通过自学习建立 MAC 地址表，对未知目的地址的帧采用泛洪"
+  },
+  {
+   "type": "single",
+   "stem": "VLAN 的主要作用是什么？",
+   "options": [
+    "实现加密传输",
+    "在逻辑上把一个物理局域网划分为多个广播域",
+    "把多个局域网合并成一个冲突域",
+    "提高单条链路的带宽"
+   ],
+   "answer_index": 1,
+   "explanation": "这样可以隔离广播，提升安全性。",
+   "difficulty": 2,
+   "tags": [
+    "VLAN",
+    "作用"
+   ],
+   "source_quote": "VLAN（虚拟局域网）把一个物理局域网在逻辑上划分为多个广播域"
+  },
+  {
+   "type": "single",
+   "stem": "不同 VLAN 之间要互相通信，需要借助什么设备？",
+   "options": [
+    "三层设备（路由器或三层交换机）",
+    "二层交换机",
+    "集线器",
+    "中继器"
+   ],
+   "answer_index": 0,
+   "explanation": "不同 VLAN 属于不同广播域，必须经过路由。",
+   "difficulty": 2,
+   "tags": [
+    "VLAN",
+    "通信"
+   ],
+   "source_quote": "VLAN 间通信需要三层设备"
+  },
+  {
+   "type": "single",
+   "stem": "生成树协议（STP）的主要作用是什么？",
+   "options": [
+    "自动分配 IP 地址",
+    "提高路由器转发速度",
+    "在有冗余链路的交换网络中避免环路",
+    "加密数据"
+   ],
+   "answer_index": 2,
+   "explanation": "环路会引起广播风暴。",
+   "difficulty": 2,
+   "tags": [
+    "STP",
+    "作用"
+   ],
+   "source_quote": "生成树协议（STP）用于在有冗余链路的交换网络中避免环路"
+  },
+  {
+   "type": "single",
+   "stem": "曼彻斯特编码的特点是什么？",
+   "options": [
+    "没有任何跳变",
+    "每个比特中间都有跳变",
+    "只在比特边界跳变",
+    "只在值为 1 时跳变"
+   ],
+   "answer_index": 1,
+   "explanation": "跳变同时起到时钟同步作用。",
+   "difficulty": 2,
+   "tags": [
+    "编码",
+    "曼彻斯特"
+   ],
+   "source_quote": "曼彻斯特编码每个比特中间都有跳变，用于以太网"
+  },
+  {
+   "type": "judge",
+   "stem": "交换机根据 IP 地址来转发数据帧。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "根据 IP 地址转发的是路由器。",
+   "difficulty": 2,
+   "tags": [
+    "交换机",
+    "地址"
+   ],
+   "source_quote": "交换机根据 MAC 地址转发帧"
+  }
+ ],
+ "软件设计师（中级）考点精讲（计算机网络与信息安全） > 6.3 IP 地址：分类、特殊地址与私有地址": [
+  {
+   "type": "single",
+   "stem": "IP 地址 130.5.1.1 属于哪一类地址？",
+   "options": [
+    "A 类",
+    "B 类",
+    "D 类",
+    "C 类"
+   ],
+   "answer_index": 1,
+   "explanation": "130 在 128 到 191 之间，属于 B 类。",
+   "difficulty": 2,
+   "tags": [
+    "IP地址",
+    "分类"
+   ],
+   "source_quote": "B 类地址第一字节范围为 128 到 191，默认掩码 255.255.0.0"
+  },
+  {
+   "type": "single",
+   "stem": "IP 地址 200.1.1.1 属于哪一类地址？",
+   "options": [
+    "D 类",
+    "B 类",
+    "A 类",
+    "C 类"
+   ],
+   "answer_index": 3,
+   "explanation": "200 在 192 到 223 之间，属于 C 类。",
+   "difficulty": 2,
+   "tags": [
+    "IP地址",
+    "分类"
+   ],
+   "source_quote": "C 类地址第一字节范围为 192 到 223，默认掩码 255.255.255.0"
+  },
+  {
+   "type": "single",
+   "stem": "用于组播的是哪一类 IP 地址？",
+   "options": [
+    "D 类",
+    "E 类",
+    "C 类",
+    "A 类"
+   ],
+   "answer_index": 0,
+   "explanation": "E 类（240 到 255）保留。",
+   "difficulty": 2,
+   "tags": [
+    "IP地址",
+    "分类"
+   ],
+   "source_quote": "D 类地址第一字节范围为 224 到 239，用于组播"
+  },
+  {
+   "type": "single",
+   "stem": "A 类地址的默认子网掩码是什么？",
+   "options": [
+    "255.255.255.255",
+    "255.255.255.0",
+    "255.255.0.0",
+    "255.0.0.0"
+   ],
+   "answer_index": 3,
+   "explanation": "A 类前 8 位为网络号。",
+   "difficulty": 2,
+   "tags": [
+    "IP地址",
+    "A类"
+   ],
+   "source_quote": "A 类地址第一字节范围为 1 到 126，默认掩码 255.0.0.0"
+  },
+  {
+   "type": "single",
+   "stem": "下列地址中，属于私有地址的是哪一个？",
+   "options": [
+    "172.20.1.1",
+    "192.169.1.1",
+    "11.0.0.1",
+    "172.32.1.1"
+   ],
+   "answer_index": 0,
+   "explanation": "私有地址包括 10.0.0.0/8、172.16.0.0/12 和 192.168.0.0/16，172.20.1.1 在 172.16 到 172.31 之间。",
+   "difficulty": 3,
+   "tags": [
+    "IP地址",
+    "私有地址"
+   ],
+   "source_quote": "172.16.0.0 到 172.31.255.255"
+  },
+  {
+   "type": "single",
+   "stem": "IP 地址 127.0.0.1 的用途是什么？",
+   "options": [
+    "默认网关",
+    "本机环回测试",
+    "DHCP 服务器",
+    "局域网广播"
+   ],
+   "answer_index": 1,
+   "explanation": "发往 127.x.x.x 的数据不会离开本机。",
+   "difficulty": 2,
+   "tags": [
+    "IP地址",
+    "环回"
+   ],
+   "source_quote": "127.0.0.0 网段为环回地址，用于本机测试"
+  },
+  {
+   "type": "single",
+   "stem": "主机无法从 DHCP 服务器获取地址时，会自动使用哪个网段的地址？",
+   "options": [
+    "192.168.0.0 到 192.168.255.255",
+    "10.0.0.0 到 10.255.255.255",
+    "169.254.0.0 到 169.254.255.255",
+    "127.0.0.0 到 127.255.255.255"
+   ],
+   "answer_index": 2,
+   "explanation": "这就是自动私有 IP 地址（APIPA）。",
+   "difficulty": 2,
+   "tags": [
+    "IP地址",
+    "APIPA"
+   ],
+   "source_quote": "169.254.0.0 到 169.254.255.255 是自动私有 IP 地址，主机无法从 DHCP 服务器获取地址时会自动使用"
+  },
+  {
+   "type": "judge",
+   "stem": "主机号全 1 的地址表示该网络的直接广播地址。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "主机号全 0 是网络地址，二者都不能分配给主机。",
+   "difficulty": 2,
+   "tags": [
+    "IP地址",
+    "广播"
+   ],
+   "source_quote": "主机号全 0 表示网络地址，主机号全 1 表示该网络的直接广播地址"
+  }
+ ],
+ "软件设计师（中级）考点精讲（计算机网络与信息安全） > 6.4 子网划分、CIDR 与路由聚合": [
+  {
+   "type": "single",
+   "stem": "CIDR 地址 192.168.1.0/24 对应的子网掩码是什么？",
+   "options": [
+    "255.255.255.0",
+    "255.255.255.128",
+    "255.255.0.0",
+    "255.255.255.192"
+   ],
+   "answer_index": 0,
+   "explanation": "/24 即 24 个连续的 1。",
+   "difficulty": 2,
+   "tags": [
+    "子网",
+    "掩码"
+   ],
+   "source_quote": "192.168.1.0/24 表示前 24 位是网络前缀，对应子网掩码 255.255.255.0"
+  },
+  {
+   "type": "single",
+   "stem": "一个 /26 的网络，可分配给主机的地址数是多少？",
+   "options": [
+    "62",
+    "64",
+    "126",
+    "30"
+   ],
+   "answer_index": 0,
+   "explanation": "主机位 6 位，2^6 - 2 = 62。",
+   "difficulty": 3,
+   "tags": [
+    "子网",
+    "主机数"
+   ],
+   "source_quote": "/26 网络可用主机数为 62"
+  },
+  {
+   "type": "single",
+   "stem": "点对点链路常用 /30 网络，其可分配给主机的地址数是多少？",
+   "options": [
+    "4",
+    "6",
+    "8",
+    "2"
+   ],
+   "answer_index": 3,
+   "explanation": "主机位 2 位，2^2 - 2 = 2。",
+   "difficulty": 3,
+   "tags": [
+    "子网",
+    "主机数"
+   ],
+   "source_quote": "/30 网络可用主机数为 2"
+  },
+  {
+   "type": "single",
+   "stem": "主机位数为 h 时，一个网络可分配的主机地址数是多少？",
+   "options": [
+    "2 的 h 次方加 1",
+    "2 的 h 次方减 1",
+    "2 的 h 次方减 2",
+    "2 的 h 次方"
+   ],
+   "answer_index": 2,
+   "explanation": "要去掉全 0 的网络地址和全 1 的广播地址。",
+   "difficulty": 2,
+   "tags": [
+    "子网",
+    "主机数公式"
+   ],
+   "source_quote": "主机位数为 h 时，一个网络可分配的主机地址数是 2 的 h 次方减 2"
+  },
+  {
+   "type": "single",
+   "stem": "IP 地址 192.168.10.77，子网掩码 255.255.255.192，其所在网络的网络地址是什么？",
+   "options": [
+    "192.168.10.77",
+    "192.168.10.64",
+    "192.168.10.128",
+    "192.168.10.0"
+   ],
+   "answer_index": 1,
+   "explanation": "掩码最后一字节 192 即 11000000，77 = 01001101，相与得 01000000 = 64。",
+   "difficulty": 3,
+   "tags": [
+    "子网",
+    "网络地址"
+   ],
+   "source_quote": "IP 地址与子网掩码按位相与得到网络地址"
+  },
+  {
+   "type": "single",
+   "stem": "把一个网络借用 3 位主机位进行子网划分，可得到多少个子网？",
+   "options": [
+    "16",
+    "8",
+    "6",
+    "3"
+   ],
+   "answer_index": 1,
+   "explanation": "2^3 = 8。",
+   "difficulty": 2,
+   "tags": [
+    "子网",
+    "划分"
+   ],
+   "source_quote": "借用 s 位主机位可得到 2 的 s 次方个子网"
+  },
+  {
+   "type": "single",
+   "stem": "路由 192.168.4.0/24、192.168.5.0/24、192.168.6.0/24、192.168.7.0/24 聚合后的网络是什么？",
+   "options": [
+    "192.168.0.0/21",
+    "192.168.4.0/22",
+    "192.168.4.0/23",
+    "192.168.4.0/24"
+   ],
+   "answer_index": 1,
+   "explanation": "第三字节 4 到 7 的二进制前 6 位相同（000001），所以公共前缀为 16 + 6 = 22 位。",
+   "difficulty": 3,
+   "tags": [
+    "子网",
+    "聚合"
+   ],
+   "source_quote": "聚合后的前缀长度等于这些地址的最长公共前缀的位数"
+  },
+  {
+   "type": "judge",
+   "stem": "路由聚合可以减少路由表项的数量。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "多个网络合并成一条路由，路由表因此变小。",
+   "difficulty": 2,
+   "tags": [
+    "子网",
+    "聚合"
+   ],
+   "source_quote": "路由聚合把多个连续的网络合并成一个更大的网络前缀"
+  }
+ ],
+ "软件设计师（中级）考点精讲（计算机网络与信息安全） > 6.5 路由选择：RIP、OSPF 与 BGP": [
+  {
+   "type": "single",
+   "stem": "RIP 协议基于哪种算法，以什么作为度量？",
+   "options": [
+    "距离向量算法，跳数",
+    "链路状态算法，带宽",
+    "路径向量算法，跳数",
+    "距离向量算法，延迟"
+   ],
+   "answer_index": 0,
+   "explanation": "RIP 每 30 秒向邻居广播路由表。",
+   "difficulty": 2,
+   "tags": [
+    "路由",
+    "RIP"
+   ],
+   "source_quote": "RIP 是基于距离向量算法的协议，以跳数作为度量"
+  },
+  {
+   "type": "single",
+   "stem": "RIP 协议中，可达的最大跳数是多少？",
+   "options": [
+    "30",
+    "15",
+    "255",
+    "16"
+   ],
+   "answer_index": 1,
+   "explanation": "因此 RIP 只适用于小型网络。",
+   "difficulty": 2,
+   "tags": [
+    "路由",
+    "RIP"
+   ],
+   "source_quote": "最大跳数为 15，跳数 16 表示不可达"
+  },
+  {
+   "type": "single",
+   "stem": "OSPF 协议基于哪种算法？",
+   "options": [
+    "随机路由算法",
+    "距离向量算法",
+    "路径向量算法",
+    "链路状态算法，使用 Dijkstra 算法计算最短路径"
+   ],
+   "answer_index": 3,
+   "explanation": "OSPF 收敛快，适合大型网络。",
+   "difficulty": 2,
+   "tags": [
+    "路由",
+    "OSPF"
+   ],
+   "source_quote": "OSPF 是基于链路状态算法的协议，使用 Dijkstra 算法计算最短路径"
+  },
+  {
+   "type": "single",
+   "stem": "BGP 协议用于什么场合？",
+   "options": [
+    "同一自治系统内部的路由",
+    "不同自治系统之间交换路由信息",
+    "VLAN 之间的路由",
+    "同一局域网内的路由"
+   ],
+   "answer_index": 1,
+   "explanation": "BGP 是外部网关协议。",
+   "difficulty": 2,
+   "tags": [
+    "路由",
+    "BGP"
+   ],
+   "source_quote": "BGP 是基于路径向量的协议，用于不同自治系统之间交换路由信息"
+  },
+  {
+   "type": "single",
+   "stem": "BGP 协议运行在哪个协议之上，使用什么端口？",
+   "options": [
+    "IP 直接承载，无端口",
+    "UDP，520",
+    "TCP，179",
+    "TCP，80"
+   ],
+   "answer_index": 2,
+   "explanation": "BGP 利用 TCP 保证路由信息可靠传输。",
+   "difficulty": 2,
+   "tags": [
+    "路由",
+    "BGP"
+   ],
+   "source_quote": "运行在 TCP 之上，端口号为 179"
+  },
+  {
+   "type": "single",
+   "stem": "路由器转发分组时，当多条路由都匹配目的地址，采用什么原则选择？",
+   "options": [
+    "最短前缀匹配",
+    "最长前缀匹配",
+    "最先配置优先",
+    "随机选择"
+   ],
+   "answer_index": 1,
+   "explanation": "前缀越长越具体，优先使用。",
+   "difficulty": 2,
+   "tags": [
+    "路由",
+    "转发原则"
+   ],
+   "source_quote": "路由器转发时采用最长前缀匹配原则，选择与目的地址匹配前缀最长的路由"
+  },
+  {
+   "type": "single",
+   "stem": "默认路由用什么表示？",
+   "options": [
+    "255.255.255.255/32",
+    "127.0.0.0/8",
+    "0.0.0.0/0",
+    "10.0.0.0/8"
+   ],
+   "answer_index": 2,
+   "explanation": "它匹配所有地址，前缀最短，优先级最低。",
+   "difficulty": 2,
+   "tags": [
+    "路由",
+    "默认路由"
+   ],
+   "source_quote": "默认路由用 0.0.0.0/0 表示"
+  }
+ ],
+ "软件设计师（中级）考点精讲（计算机网络与信息安全） > 6.6 ARP、ICMP、DHCP 与 NAT": [
+  {
+   "type": "single",
+   "stem": "ARP 协议的功能是什么？",
+   "options": [
+    "把 MAC 地址解析为 IP 地址",
+    "把 IP 地址解析为 MAC 地址",
+    "把域名解析为 IP 地址",
+    "自动分配 IP 地址"
+   ],
+   "answer_index": 1,
+   "explanation": "RARP 才是把 MAC 地址解析为 IP 地址。",
+   "difficulty": 1,
+   "tags": [
+    "ARP",
+    "功能"
+   ],
+   "source_quote": "ARP 把 IP 地址解析为 MAC 地址"
+  },
+  {
+   "type": "single",
+   "stem": "ARP 解析 MAC 地址的过程是怎样的？",
+   "options": [
+    "单播请求，广播应答",
+    "都用单播",
+    "广播 ARP 请求，目标主机单播 ARP 应答",
+    "都用广播"
+   ],
+   "answer_index": 2,
+   "explanation": "请求要找到未知目标，所以广播；应答只发给请求者。",
+   "difficulty": 2,
+   "tags": [
+    "ARP",
+    "过程"
+   ],
+   "source_quote": "主机先广播 ARP 请求，目标主机单播 ARP 应答"
+  },
+  {
+   "type": "single",
+   "stem": "ping 命令基于哪种协议？",
+   "options": [
+    "UDP",
+    "ARP",
+    "ICMP",
+    "TCP"
+   ],
+   "answer_index": 2,
+   "explanation": "ICMP 用于传递差错报告和控制信息。",
+   "difficulty": 2,
+   "tags": [
+    "ICMP",
+    "ping"
+   ],
+   "source_quote": "ping 命令使用 ICMP 回送请求和回送应答"
+  },
+  {
+   "type": "single",
+   "stem": "tracert（traceroute）命令跟踪路由路径时，利用的是什么？",
+   "options": [
+    "逐步增大 TTL",
+    "逐步减小 MTU",
+    "逐步更换端口号",
+    "逐步增大数据包长度"
+   ],
+   "answer_index": 0,
+   "explanation": "TTL 到期的路由器会返回 ICMP 超时报文。",
+   "difficulty": 2,
+   "tags": [
+    "ICMP",
+    "tracert"
+   ],
+   "source_quote": "tracert 通过逐步增大 TTL 来跟踪路径"
+  },
+  {
+   "type": "single",
+   "stem": "DHCP 服务器和客户端分别使用哪个 UDP 端口？",
+   "options": [
+    "服务器 53，客户端 54",
+    "服务器 67，客户端 68",
+    "服务器 68，客户端 67",
+    "服务器 80，客户端 81"
+   ],
+   "answer_index": 1,
+   "explanation": "记忆口诀：服务器 67，客户端 68。",
+   "difficulty": 2,
+   "tags": [
+    "DHCP",
+    "端口"
+   ],
+   "source_quote": "使用 UDP 协议，服务器端口 67，客户端端口 68"
+  },
+  {
+   "type": "single",
+   "stem": "DHCP 获取地址的四个步骤依次是什么？",
+   "options": [
+    "请求、确认、发现、提供",
+    "提供、发现、确认、请求",
+    "发现、请求、提供、确认",
+    "发现、提供、请求、确认"
+   ],
+   "answer_index": 3,
+   "explanation": "客户端先广播发现报文，服务器提供地址，客户端请求，服务器确认。",
+   "difficulty": 2,
+   "tags": [
+    "DHCP",
+    "过程"
+   ],
+   "source_quote": "获取地址的过程为发现、提供、请求和确认"
+  },
+  {
+   "type": "single",
+   "stem": "NAT 的主要作用是什么？",
+   "options": [
+    "使多台内网主机共享一个公网地址访问互联网",
+    "加密内外网通信",
+    "自动分配内网地址",
+    "加快数据转发"
+   ],
+   "answer_index": 0,
+   "explanation": "它缓解了 IPv4 地址不足的问题。",
+   "difficulty": 2,
+   "tags": [
+    "NAT",
+    "作用"
+   ],
+   "source_quote": "NAT 把内网的私有地址转换为公网地址，使多台内网主机共享一个公网地址访问互联网"
+  },
+  {
+   "type": "judge",
+   "stem": "NAPT 在转换地址的同时还转换端口号。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "靠端口号区分不同内网主机的连接。",
+   "difficulty": 2,
+   "tags": [
+    "NAT",
+    "端口"
+   ],
+   "source_quote": "NAPT 同时转换端口号"
+  }
+ ],
+ "软件设计师（中级）考点精讲（计算机网络与信息安全） > 6.7 TCP 与 UDP：连接管理与拥塞控制": [
+  {
+   "type": "single",
+   "stem": "下列哪一项是 TCP 的特点？",
+   "options": [
+    "只支持广播",
+    "无连接、不可靠传输",
+    "首部固定为 8 字节",
+    "面向连接、可靠传输"
+   ],
+   "answer_index": 3,
+   "explanation": "UDP 是无连接、不可靠的。",
+   "difficulty": 1,
+   "tags": [
+    "TCP",
+    "特点"
+   ],
+   "source_quote": "TCP 是面向连接的、可靠的、基于字节流的传输层协议"
+  },
+  {
+   "type": "single",
+   "stem": "TCP 三次握手的报文依次是什么？",
+   "options": [
+    "SYN；SYN 和 ACK；ACK",
+    "FIN；ACK；FIN",
+    "ACK；SYN；ACK",
+    "SYN；ACK；SYN"
+   ],
+   "answer_index": 0,
+   "explanation": "第二次握手服务器同时确认并发起自己方向的连接。",
+   "difficulty": 2,
+   "tags": [
+    "TCP",
+    "三次握手"
+   ],
+   "source_quote": "TCP 建立连接需要三次握手：客户端发送 SYN，服务器回复 SYN 和 ACK，客户端再发送 ACK"
+  },
+  {
+   "type": "single",
+   "stem": "TCP 释放连接通常需要几次报文交互？",
+   "options": [
+    "三次握手",
+    "两次确认",
+    "五次交换",
+    "四次挥手"
+   ],
+   "answer_index": 3,
+   "explanation": "每个方向的连接单独关闭。",
+   "difficulty": 2,
+   "tags": [
+    "TCP",
+    "四次挥手"
+   ],
+   "source_quote": "TCP 释放连接需要四次挥手：双方各自发送 FIN 并得到 ACK"
+  },
+  {
+   "type": "single",
+   "stem": "四次挥手中，主动关闭连接的一方最后会进入哪个状态？",
+   "options": [
+    "CLOSED",
+    "ESTABLISHED",
+    "LISTEN",
+    "TIME_WAIT"
+   ],
+   "answer_index": 3,
+   "explanation": "等待一段时间可确保最后的 ACK 到达对方。",
+   "difficulty": 3,
+   "tags": [
+    "TCP",
+    "TIME_WAIT"
+   ],
+   "source_quote": "主动关闭方最后进入 TIME_WAIT 状态"
+  },
+  {
+   "type": "single",
+   "stem": "TCP 流量控制是通过什么实现的？",
+   "options": [
+    "路由器丢弃多余分组",
+    "使用更大的 MTU",
+    "接收方通过窗口字段告知发送方自己的接收能力",
+    "发送方不断重发"
+   ],
+   "answer_index": 2,
+   "explanation": "流量控制针对接收方，拥塞控制针对整个网络。",
+   "difficulty": 2,
+   "tags": [
+    "TCP",
+    "流量控制"
+   ],
+   "source_quote": "流量控制由接收方通过窗口字段告诉发送方自己的接收能力，控制发送速率，防止接收方缓冲区溢出"
+  },
+  {
+   "type": "single",
+   "stem": "TCP 拥塞控制包括下列哪四种算法？",
+   "options": [
+    "滑动窗口、停止等待、回退 N 帧、选择重传",
+    "三次握手、四次挥手、重传、确认",
+    "慢开始、拥塞避免、快重传、快恢复",
+    "慢开始、快开始、拥塞避免、拥塞恢复"
+   ],
+   "answer_index": 2,
+   "explanation": "这些算法共同调节拥塞窗口。",
+   "difficulty": 2,
+   "tags": [
+    "TCP",
+    "拥塞控制"
+   ],
+   "source_quote": "包括慢开始、拥塞避免、快重传和快恢复四种算法"
+  },
+  {
+   "type": "single",
+   "stem": "TCP 慢开始阶段，拥塞窗口如何增长？",
+   "options": [
+    "按指数增长且没有上限",
+    "始终线性增长",
+    "按指数增长，到达慢开始门限后转为线性增长",
+    "始终保持不变"
+   ],
+   "answer_index": 2,
+   "explanation": "发生超时则门限减半并重新慢开始。",
+   "difficulty": 3,
+   "tags": [
+    "TCP",
+    "慢开始"
+   ],
+   "source_quote": "慢开始阶段拥塞窗口按指数增长，达到慢开始门限后进入拥塞避免阶段，窗口按线性增长"
+  },
+  {
+   "type": "single",
+   "stem": "UDP 首部的长度是多少字节？",
+   "options": [
+    "20",
+    "12",
+    "40",
+    "8"
+   ],
+   "answer_index": 3,
+   "explanation": "TCP 首部最小 20 字节。",
+   "difficulty": 2,
+   "tags": [
+    "UDP",
+    "首部"
+   ],
+   "source_quote": "UDP 是无连接的、不可靠的传输协议，首部只有 8 字节"
+  },
+  {
+   "type": "judge",
+   "stem": "UDP 提供可靠的传输服务。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "UDP 不保证交付，开销小、实时性好。",
+   "difficulty": 1,
+   "tags": [
+    "UDP",
+    "可靠性"
+   ],
+   "source_quote": "UDP 是无连接的、不可靠的传输协议"
+  }
+ ],
+ "软件设计师（中级）考点精讲（计算机网络与信息安全） > 6.8 应用层协议与常用端口": [
+  {
+   "type": "single",
+   "stem": "Web 服务器默认监听的明文 HTTP 端口是多少？",
+   "options": [
+    "110",
+    "53",
+    "25",
+    "80"
+   ],
+   "answer_index": 3,
+   "explanation": "加密的 HTTPS 默认端口是 443。",
+   "difficulty": 1,
+   "tags": [
+    "端口",
+    "HTTP"
+   ],
+   "source_quote": "HTTP 协议默认端口 80，HTTPS 默认端口 443"
+  },
+  {
+   "type": "single",
+   "stem": "FTP 的控制连接和数据连接分别使用哪个端口？",
+   "options": [
+    "控制 21，数据 20",
+    "控制 25，数据 110",
+    "控制 20，数据 21",
+    "控制 22，数据 23"
+   ],
+   "answer_index": 0,
+   "explanation": "传输文件的数据通道使用 20 端口（主动模式）。",
+   "difficulty": 2,
+   "tags": [
+    "端口",
+    "FTP"
+   ],
+   "source_quote": "FTP 使用两个端口，控制连接端口 21，数据连接端口 20"
+  },
+  {
+   "type": "single",
+   "stem": "SSH 协议默认使用的端口号是多少？",
+   "options": [
+    "25",
+    "21",
+    "23",
+    "22"
+   ],
+   "answer_index": 3,
+   "explanation": "Telnet 端口 23，是明文传输。",
+   "difficulty": 2,
+   "tags": [
+    "端口",
+    "SSH"
+   ],
+   "source_quote": "SSH 端口 22，加密远程登录"
+  },
+  {
+   "type": "single",
+   "stem": "Telnet 协议的主要缺点是什么？",
+   "options": [
+    "使用 UDP 导致不可靠",
+    "不能远程登录",
+    "明文传输，不安全",
+    "只支持局域网"
+   ],
+   "answer_index": 2,
+   "explanation": "SSH 是加密的替代方案。",
+   "difficulty": 2,
+   "tags": [
+    "协议",
+    "Telnet"
+   ],
+   "source_quote": "Telnet 端口 23，明文传输"
+  },
+  {
+   "type": "single",
+   "stem": "用于发送电子邮件的协议是哪一个，默认端口是多少？",
+   "options": [
+    "SMTP，110",
+    "SMTP，25",
+    "IMAP，143",
+    "POP3，110"
+   ],
+   "answer_index": 1,
+   "explanation": "POP3 和 IMAP 用于接收邮件。",
+   "difficulty": 2,
+   "tags": [
+    "端口",
+    "邮件协议"
+   ],
+   "source_quote": "SMTP 用于发送邮件，端口 25"
+  },
+  {
+   "type": "single",
+   "stem": "POP3 协议默认使用的端口号是多少？",
+   "options": [
+    "143",
+    "110",
+    "25",
+    "53"
+   ],
+   "answer_index": 1,
+   "explanation": "IMAP 端口为 143。",
+   "difficulty": 2,
+   "tags": [
+    "端口",
+    "POP3"
+   ],
+   "source_quote": "POP3 用于接收邮件，端口 110"
+  },
+  {
+   "type": "single",
+   "stem": "DNS 的主要功能是什么，默认端口是多少？",
+   "options": [
+    "IP 地址与 MAC 地址之间的转换，67",
+    "远程登录，22",
+    "域名与 IP 地址之间的转换，53",
+    "自动分配 IP 地址，68"
+   ],
+   "answer_index": 2,
+   "explanation": "DNS 查询通常使用 UDP。",
+   "difficulty": 2,
+   "tags": [
+    "DNS",
+    "功能"
+   ],
+   "source_quote": "DNS 端口 53，用于域名与 IP 地址之间的转换"
+  },
+  {
+   "type": "single",
+   "stem": "DNS 的 MX 记录用于什么？",
+   "options": [
+    "域名服务器",
+    "邮件交换",
+    "别名",
+    "域名到 IPv4 地址的映射"
+   ],
+   "answer_index": 1,
+   "explanation": "A 记录用于映射到 IPv4 地址，CNAME 为别名，NS 指明域名服务器。",
+   "difficulty": 2,
+   "tags": [
+    "DNS",
+    "记录"
+   ],
+   "source_quote": "MX 记录（邮件交换）"
+  },
+  {
+   "type": "single",
+   "stem": "HTTP 状态码 404 表示什么？",
+   "options": [
+    "重定向",
+    "资源不存在",
+    "服务器内部错误",
+    "请求成功"
+   ],
+   "answer_index": 1,
+   "explanation": "200 表示成功。",
+   "difficulty": 2,
+   "tags": [
+    "HTTP",
+    "状态码"
+   ],
+   "source_quote": "状态码 200 表示成功，404 表示资源不存在，500 表示服务器内部错误"
+  },
+  {
+   "type": "judge",
+   "stem": "HTTP 是无状态协议。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "服务器不保存上一次请求的状态，需要 Cookie、Session 等机制维持会话。",
+   "difficulty": 2,
+   "tags": [
+    "HTTP",
+    "无状态"
+   ],
+   "source_quote": "HTTP 是无状态协议"
+  }
+ ],
+ "软件设计师（中级）考点精讲（计算机网络与信息安全） > 6.9 IPv6、无线网络与网络规划管理": [
+  {
+   "type": "single",
+   "stem": "IPv6 地址的长度是多少位？",
+   "options": [
+    "128",
+    "64",
+    "32",
+    "48"
+   ],
+   "answer_index": 0,
+   "explanation": "IPv4 地址 32 位。",
+   "difficulty": 1,
+   "tags": [
+    "IPv6",
+    "长度"
+   ],
+   "source_quote": "IPv6 地址长 128 位"
+  },
+  {
+   "type": "single",
+   "stem": "IPv6 地址中，双冒号“::”的使用有什么限制？",
+   "options": [
+    "不能表示零",
+    "在一个地址中只能出现一次",
+    "可以出现任意多次",
+    "只能出现在地址开头"
+   ],
+   "answer_index": 1,
+   "explanation": "出现多次会导致无法确定每处压缩了几组零。",
+   "difficulty": 2,
+   "tags": [
+    "IPv6",
+    "压缩"
+   ],
+   "source_quote": "可以用双冒号压缩连续的全零组，但双冒号在一个地址中只能出现一次"
+  },
+  {
+   "type": "single",
+   "stem": "与 IPv4 相比，IPv6 在通信方式上的变化是什么？",
+   "options": [
+    "取消了组播",
+    "取消了单播",
+    "增加了广播",
+    "取消了广播，增加了任播"
+   ],
+   "answer_index": 3,
+   "explanation": "广播功能由组播取代。",
+   "difficulty": 2,
+   "tags": [
+    "IPv6",
+    "特点"
+   ],
+   "source_quote": "取消了广播，增加了任播"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一项是 IPv4 向 IPv6 过渡的技术？",
+   "options": [
+    "双协议栈",
+    "CSMA/CA",
+    "NAT 取消",
+    "VLAN 划分"
+   ],
+   "answer_index": 0,
+   "explanation": "双协议栈使节点同时支持两种协议。",
+   "difficulty": 2,
+   "tags": [
+    "IPv6",
+    "过渡"
+   ],
+   "source_quote": "IPv4 向 IPv6 过渡的技术有双协议栈、隧道和协议转换"
+  },
+  {
+   "type": "single",
+   "stem": "无线局域网（802.11）的介质访问控制采用什么方法？",
+   "options": [
+    "令牌传递",
+    "CSMA/CA",
+    "CSMA/CD",
+    "时分多路复用"
+   ],
+   "answer_index": 1,
+   "explanation": "无线环境难以边发边听检测冲突，所以采用冲突避免。",
+   "difficulty": 2,
+   "tags": [
+    "无线",
+    "CSMA/CA"
+   ],
+   "source_quote": "无线局域网标准是 IEEE 802.11 系列，介质访问控制采用 CSMA/CA"
+  },
+  {
+   "type": "single",
+   "stem": "网络三层结构中，负责高速转发的是哪一层？",
+   "options": [
+    "核心层",
+    "接入层",
+    "汇聚层",
+    "应用层"
+   ],
+   "answer_index": 0,
+   "explanation": "核心层强调高速与可靠。",
+   "difficulty": 2,
+   "tags": [
+    "网络规划",
+    "三层结构"
+   ],
+   "source_quote": "核心层负责高速转发，汇聚层负责策略和路由汇聚，接入层负责终端接入"
+  },
+  {
+   "type": "single",
+   "stem": "SNMP 网络管理系统由哪几部分组成？",
+   "options": [
+    "监控器、日志和告警",
+    "客户端、服务器和数据库",
+    "路由器、交换机和防火墙",
+    "管理站、代理和管理信息库（MIB）"
+   ],
+   "answer_index": 3,
+   "explanation": "代理驻留在被管设备上，MIB 存放被管对象信息。",
+   "difficulty": 2,
+   "tags": [
+    "网络管理",
+    "SNMP"
+   ],
+   "source_quote": "SNMP 协议由管理站、代理和管理信息库（MIB）组成"
+  }
+ ],
+ "软件设计师（中级）考点精讲（计算机网络与信息安全） > 7.1 信息安全的基本概念与攻击类型": [
+  {
+   "type": "single",
+   "stem": "信息安全的三个基本属性是什么？",
+   "options": [
+    "机密性、可靠性、可维护性",
+    "保密性、安全性、稳定性",
+    "完整性、可用性、可扩展性",
+    "机密性、完整性、可用性"
+   ],
+   "answer_index": 3,
+   "explanation": "简称 CIA。",
+   "difficulty": 1,
+   "tags": [
+    "信息安全",
+    "属性"
+   ],
+   "source_quote": "信息安全的基本属性是机密性、完整性和可用性"
+  },
+  {
+   "type": "single",
+   "stem": "“信息不被未授权地篡改”描述的是信息安全的哪个属性？",
+   "options": [
+    "完整性",
+    "不可否认性",
+    "机密性",
+    "可用性"
+   ],
+   "answer_index": 0,
+   "explanation": "机密性是信息不被泄露给未授权者。",
+   "difficulty": 2,
+   "tags": [
+    "信息安全",
+    "完整性"
+   ],
+   "source_quote": "完整性是信息不被未授权地篡改"
+  },
+  {
+   "type": "single",
+   "stem": "下列攻击中，属于被动攻击的是哪一个？",
+   "options": [
+    "拒绝服务",
+    "伪造",
+    "窃听",
+    "篡改"
+   ],
+   "answer_index": 2,
+   "explanation": "篡改、伪造、重放、拒绝服务属于主动攻击。",
+   "difficulty": 2,
+   "tags": [
+    "信息安全",
+    "被动攻击"
+   ],
+   "source_quote": "被动攻击如窃听、流量分析，不改变数据"
+  },
+  {
+   "type": "single",
+   "stem": "下列攻击中，属于主动攻击的是哪一个？",
+   "options": [
+    "窃听",
+    "重放攻击",
+    "监听信道",
+    "流量分析"
+   ],
+   "answer_index": 1,
+   "explanation": "被动攻击难以检测但可预防，主动攻击难以预防但可检测。",
+   "difficulty": 2,
+   "tags": [
+    "信息安全",
+    "主动攻击"
+   ],
+   "source_quote": "主动攻击如篡改、伪造、重放、拒绝服务，会改变数据或数据流"
+  },
+  {
+   "type": "single",
+   "stem": "防御重放攻击常用的手段是什么？",
+   "options": [
+    "使用更快的 CPU",
+    "对数据压缩",
+    "时间戳、序列号或一次性随机数",
+    "增大密钥长度"
+   ],
+   "answer_index": 2,
+   "explanation": "这些手段可以让旧报文失效。",
+   "difficulty": 2,
+   "tags": [
+    "信息安全",
+    "重放攻击"
+   ],
+   "source_quote": "重放攻击是攻击者截获合法数据后重新发送以欺骗接收方，可用时间戳、序列号或一次性随机数防御"
+  },
+  {
+   "type": "single",
+   "stem": "攻击者介于通信双方之间，窃听或篡改通信内容，这种攻击称为什么？",
+   "options": [
+    "字典攻击",
+    "重放攻击",
+    "中间人攻击",
+    "拒绝服务攻击"
+   ],
+   "answer_index": 2,
+   "explanation": "公钥未经认证时容易遭受中间人攻击。",
+   "difficulty": 2,
+   "tags": [
+    "信息安全",
+    "中间人"
+   ],
+   "source_quote": "中间人攻击是攻击者介于通信双方之间，窃听或篡改通信内容"
+  },
+  {
+   "type": "judge",
+   "stem": "被动攻击不改变数据，难以检测但可以预防。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "被动攻击没有留下数据被改变的痕迹，所以难以检测。",
+   "difficulty": 2,
+   "tags": [
+    "信息安全",
+    "被动攻击"
+   ],
+   "source_quote": "被动攻击如窃听、流量分析，不改变数据，难以检测但可以预防"
+  }
+ ],
+ "软件设计师（中级）考点精讲（计算机网络与信息安全） > 7.2 对称加密、非对称加密与哈希算法": [
+  {
+   "type": "single",
+   "stem": "对称加密算法的特点是什么？",
+   "options": [
+    "速度慢，只适合少量数据",
+    "加解密使用不同密钥",
+    "不需要密钥",
+    "加解密使用同一个密钥，速度快"
+   ],
+   "answer_index": 3,
+   "explanation": "缺点是密钥分发和管理困难。",
+   "difficulty": 1,
+   "tags": [
+    "加密",
+    "对称加密"
+   ],
+   "source_quote": "对称加密使用同一个密钥进行加密和解密，速度快，适合加密大量数据"
+  },
+  {
+   "type": "single",
+   "stem": "下列算法中，属于对称加密算法的是哪一个？",
+   "options": [
+    "RSA",
+    "MD5",
+    "ECC",
+    "AES"
+   ],
+   "answer_index": 3,
+   "explanation": "RSA、ECC 属于非对称算法，MD5 属于哈希算法。",
+   "difficulty": 2,
+   "tags": [
+    "加密",
+    "对称算法"
+   ],
+   "source_quote": "典型算法有 DES、3DES、AES 和 RC4"
+  },
+  {
+   "type": "single",
+   "stem": "非对称加密由于速度慢，通常适合用来做什么？",
+   "options": [
+    "压缩数据",
+    "计算消息摘要",
+    "加密大量数据",
+    "加密少量数据和密钥交换"
+   ],
+   "answer_index": 3,
+   "explanation": "因此常用非对称加密传递对称密钥。",
+   "difficulty": 2,
+   "tags": [
+    "加密",
+    "非对称特点"
+   ],
+   "source_quote": "速度慢，适合加密少量数据和密钥交换"
+  },
+  {
+   "type": "single",
+   "stem": "DES 算法的密钥长度是多少位？",
+   "options": [
+    "56",
+    "128",
+    "256",
+    "64"
+   ],
+   "answer_index": 0,
+   "explanation": "AES 的密钥长度为 128、192 或 256 位。",
+   "difficulty": 2,
+   "tags": [
+    "加密",
+    "DES"
+   ],
+   "source_quote": "DES 的密钥长度为 56 位，分组长度为 64 位"
+  },
+  {
+   "type": "single",
+   "stem": "AES 算法的分组长度是多少位？",
+   "options": [
+    "56",
+    "64",
+    "256",
+    "128"
+   ],
+   "answer_index": 3,
+   "explanation": "AES 是目前广泛使用的对称加密标准。",
+   "difficulty": 2,
+   "tags": [
+    "加密",
+    "AES"
+   ],
+   "source_quote": "AES 分组长度为 128 位，密钥长度可为 128、192 或 256 位"
+  },
+  {
+   "type": "single",
+   "stem": "非对称加密中，用公钥加密的数据，应该用什么解密？",
+   "options": [
+    "对应的私钥",
+    "同一个公钥",
+    "对称密钥",
+    "任意私钥"
+   ],
+   "answer_index": 0,
+   "explanation": "公钥公开，私钥保密。",
+   "difficulty": 2,
+   "tags": [
+    "加密",
+    "公私钥"
+   ],
+   "source_quote": "用公钥加密的数据只能用私钥解密"
+  },
+  {
+   "type": "single",
+   "stem": "RSA 算法的安全性基于什么数学难题？",
+   "options": [
+    "离散对数",
+    "最短路径",
+    "背包问题",
+    "大整数分解"
+   ],
+   "answer_index": 3,
+   "explanation": "把两个大素数相乘容易，分解乘积很难。",
+   "difficulty": 3,
+   "tags": [
+    "加密",
+    "RSA"
+   ],
+   "source_quote": "RSA 的安全性基于大整数分解的困难性"
+  },
+  {
+   "type": "single",
+   "stem": "MD5 算法产生的摘要长度是多少位？",
+   "options": [
+    "128",
+    "256",
+    "160",
+    "64"
+   ],
+   "answer_index": 0,
+   "explanation": "SHA-1 为 160 位。",
+   "difficulty": 2,
+   "tags": [
+    "哈希",
+    "摘要长度"
+   ],
+   "source_quote": "MD5 摘要长度为 128 位，SHA-1 摘要长度为 160 位，SHA-256 摘要长度为 256 位"
+  },
+  {
+   "type": "single",
+   "stem": "实际应用中，通常如何结合使用对称加密与非对称加密？",
+   "options": [
+    "用非对称加密传递对称密钥，再用对称加密传输数据",
+    "用对称加密传输公钥",
+    "全部数据都用非对称加密",
+    "两者不能结合使用"
+   ],
+   "answer_index": 0,
+   "explanation": "这样兼顾了对称加密的速度和非对称加密的密钥交换便利。",
+   "difficulty": 2,
+   "tags": [
+    "加密",
+    "混合加密"
+   ],
+   "source_quote": "用非对称加密传递对称密钥，再用对称加密传输数据"
+  },
+  {
+   "type": "judge",
+   "stem": "哈希算法是可逆的，可以由摘要还原出原始消息。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "单向性意味着不能由摘要反推出原文。",
+   "difficulty": 2,
+   "tags": [
+    "哈希",
+    "单向性"
+   ],
+   "source_quote": "哈希算法把任意长度的消息变成固定长度的摘要，具有单向性、抗碰撞性和雪崩效应"
+  }
+ ],
+ "软件设计师（中级）考点精讲（计算机网络与信息安全） > 7.3 数字签名、数字证书与 PKI": [
+  {
+   "type": "single",
+   "stem": "数字签名为什么通常只对消息摘要而不是整条消息签名？",
+   "options": [
+    "摘要长度固定且较短，签名运算更快",
+    "整条消息无法用私钥加密",
+    "摘要比原文更难被篡改",
+    "摘要可以让消息保密"
+   ],
+   "answer_index": 0,
+   "explanation": "非对称运算较慢，对短摘要签名更高效。",
+   "difficulty": 2,
+   "tags": [
+    "数字签名",
+    "摘要"
+   ],
+   "source_quote": "对消息摘要而不是整个消息签名，是因为摘要长度固定且较短，非对称运算速度慢，签名摘要效率更高"
+  },
+  {
+   "type": "single",
+   "stem": "接收方验证数字签名时，使用什么密钥？",
+   "options": [
+    "对称会话密钥",
+    "接收方的私钥",
+    "发送方的私钥",
+    "发送方的公钥"
+   ],
+   "answer_index": 3,
+   "explanation": "公钥公开，任何人都可以验证。",
+   "difficulty": 2,
+   "tags": [
+    "数字签名",
+    "验证"
+   ],
+   "source_quote": "接收方用发送方的公钥解密并与自己计算的摘要比较"
+  },
+  {
+   "type": "single",
+   "stem": "数字签名可以提供下列哪一项安全服务？",
+   "options": [
+    "可用性",
+    "访问控制",
+    "不可否认性",
+    "机密性"
+   ],
+   "answer_index": 2,
+   "explanation": "签名只证明来源和完整性，不加密消息内容。",
+   "difficulty": 3,
+   "tags": [
+    "数字签名",
+    "作用"
+   ],
+   "source_quote": "用于保证消息的完整性、发送方身份认证和不可否认性，但不保证机密性"
+  },
+  {
+   "type": "single",
+   "stem": "数字证书是由谁签发的？",
+   "options": [
+    "证书颁发机构（CA）",
+    "浏览器厂商",
+    "域名服务器",
+    "注册用户本人"
+   ],
+   "answer_index": 0,
+   "explanation": "证书中包含持有者公钥和 CA 的数字签名。",
+   "difficulty": 2,
+   "tags": [
+    "数字证书",
+    "颁发"
+   ],
+   "source_quote": "数字证书由证书颁发机构（CA）签发"
+  },
+  {
+   "type": "single",
+   "stem": "数字证书遵循的标准格式是什么？",
+   "options": [
+    "X.509",
+    "ISO 9000",
+    "IEEE 802.11",
+    "RFC 791"
+   ],
+   "answer_index": 0,
+   "explanation": "X.509 规定了公钥证书的格式。",
+   "difficulty": 2,
+   "tags": [
+    "数字证书",
+    "标准"
+   ],
+   "source_quote": "遵循 X.509 标准，用来证明公钥属于某个实体"
+  },
+  {
+   "type": "single",
+   "stem": "验证数字证书的真实性时，使用什么密钥验证证书上的签名？",
+   "options": [
+    "CA 的公钥",
+    "CA 的私钥",
+    "证书持有者的私钥",
+    "用户的对称密钥"
+   ],
+   "answer_index": 0,
+   "explanation": "CA 用自己的私钥签发证书。",
+   "difficulty": 3,
+   "tags": [
+    "数字证书",
+    "验证"
+   ],
+   "source_quote": "验证证书时用 CA 的公钥验证证书上的签名"
+  },
+  {
+   "type": "single",
+   "stem": "证书过期或私钥泄露后，证书会被放入什么？",
+   "options": [
+    "注册机构",
+    "证书库的备份区",
+    "防火墙规则表",
+    "证书撤销列表（CRL）"
+   ],
+   "answer_index": 3,
+   "explanation": "验证方查询 CRL 可以得知证书是否仍然有效。",
+   "difficulty": 2,
+   "tags": [
+    "PKI",
+    "CRL"
+   ],
+   "source_quote": "证书过期或私钥泄露后，证书会被加入证书撤销列表"
+  },
+  {
+   "type": "judge",
+   "stem": "数字签名本身可以保证消息的机密性。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "要保证机密性需要再用接收方的公钥加密。",
+   "difficulty": 2,
+   "tags": [
+    "数字签名",
+    "机密性"
+   ],
+   "source_quote": "用于保证消息的完整性、发送方身份认证和不可否认性，但不保证机密性"
+  }
+ ],
+ "软件设计师（中级）考点精讲（计算机网络与信息安全） > 7.4 网络安全技术：防火墙、IDS/IPS、VPN 与 SSL": [
+  {
+   "type": "single",
+   "stem": "包过滤防火墙主要根据什么信息进行过滤？",
+   "options": [
+    "应用层的具体内容",
+    "源和目的 IP 地址、端口、协议等",
+    "用户口令",
+    "数据包的加密强度"
+   ],
+   "answer_index": 1,
+   "explanation": "规则简单、速度快，但无法识别应用层内容。",
+   "difficulty": 2,
+   "tags": [
+    "防火墙",
+    "包过滤"
+   ],
+   "source_quote": "包过滤防火墙工作在网络层和传输层，根据源和目的 IP 地址、端口、协议等规则过滤"
+  },
+  {
+   "type": "single",
+   "stem": "应用代理防火墙的特点是什么？",
+   "options": [
+    "工作在应用层，安全性高但性能较低",
+    "工作在物理层，速度最快",
+    "不检查任何内容",
+    "只检查 IP 地址"
+   ],
+   "answer_index": 0,
+   "explanation": "代理需要解析应用层协议，开销大。",
+   "difficulty": 2,
+   "tags": [
+    "防火墙",
+    "应用代理"
+   ],
+   "source_quote": "应用代理防火墙工作在应用层，安全性高但性能较低"
+  },
+  {
+   "type": "single",
+   "stem": "DMZ（非军事区）通常用来放置什么？",
+   "options": [
+    "防火墙管理员的终端",
+    "对外提供服务的服务器",
+    "内网员工的办公电脑",
+    "数据库备份文件"
+   ],
+   "answer_index": 1,
+   "explanation": "这样即使服务器被攻破，也不会直接暴露内网。",
+   "difficulty": 2,
+   "tags": [
+    "防火墙",
+    "DMZ"
+   ],
+   "source_quote": "DMZ 用于放置对外提供服务的服务器，位于内外网之间"
+  },
+  {
+   "type": "single",
+   "stem": "IDS 与 IPS 的主要区别是什么？",
+   "options": [
+    "IDS 部署在数据通路上",
+    "IDS 可以主动阻断，IPS 只告警",
+    "两者功能完全相同",
+    "IDS 发现攻击后告警，IPS 可以主动阻断"
+   ],
+   "answer_index": 3,
+   "explanation": "IPS 部署在数据通路上才能阻断攻击。",
+   "difficulty": 2,
+   "tags": [
+    "IDS",
+    "与IPS"
+   ],
+   "source_quote": "入侵检测系统（IDS）监视网络和系统活动，发现攻击后告警，属于被动检测；入侵防御系统（IPS）可以在发现攻击时主动阻断"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一项不是常用的 VPN 技术或协议？",
+   "options": [
+    "CSMA/CD",
+    "L2TP",
+    "PPTP",
+    "IPSec"
+   ],
+   "answer_index": 0,
+   "explanation": "CSMA/CD 是以太网介质访问控制方法。",
+   "difficulty": 2,
+   "tags": [
+    "VPN",
+    "协议"
+   ],
+   "source_quote": "常用协议有 IPSec、L2TP、PPTP 和 SSL VPN"
+  },
+  {
+   "type": "single",
+   "stem": "IPSec 的 AH 与 ESP 协议相比，下列说法正确的是哪一个？",
+   "options": [
+    "ESP 可同时提供加密和认证，AH 只提供认证",
+    "AH 可同时提供加密和认证，ESP 只提供认证",
+    "两者都只提供加密",
+    "两者都不提供认证"
+   ],
+   "answer_index": 0,
+   "explanation": "AH 不加密数据，只保证完整性和来源认证。",
+   "difficulty": 3,
+   "tags": [
+    "IPSec",
+    "AH与ESP"
+   ],
+   "source_quote": "ESP 可同时提供加密和认证，AH 只提供认证"
+  },
+  {
+   "type": "single",
+   "stem": "HTTPS 是由什么组成的？",
+   "options": [
+    "HTTP 加上 SSL/TLS",
+    "FTP 加上 SSL",
+    "HTTP 加上 IPSec",
+    "TCP 加上 UDP"
+   ],
+   "answer_index": 0,
+   "explanation": "SSL/TLS 为 HTTP 提供加密和身份认证。",
+   "difficulty": 2,
+   "tags": [
+    "SSL",
+    "HTTPS"
+   ],
+   "source_quote": "HTTPS 就是 HTTP 加上 SSL/TLS"
+  },
+  {
+   "type": "judge",
+   "stem": "IPSec 工作在网络层。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "SSL/TLS 则位于传输层与应用层之间。",
+   "difficulty": 2,
+   "tags": [
+    "IPSec",
+    "层次"
+   ],
+   "source_quote": "IPSec 工作在网络层，包含认证头 AH 和封装安全载荷 ESP 两个协议"
+  }
+ ],
+ "软件设计师（中级）考点精讲（计算机网络与信息安全） > 7.5 恶意代码与常见网络攻击": [
+  {
+   "type": "single",
+   "stem": "蠕虫与病毒相比，最主要的区别是什么？",
+   "options": [
+    "蠕虫不需要宿主，通过网络自我传播",
+    "蠕虫只破坏硬件",
+    "蠕虫不能自我复制",
+    "蠕虫需要寄生在宿主文件中"
+   ],
+   "answer_index": 0,
+   "explanation": "病毒需要寄生在宿主文件中。",
+   "difficulty": 2,
+   "tags": [
+    "恶意代码",
+    "蠕虫"
+   ],
+   "source_quote": "蠕虫不需要宿主，通过网络自我传播"
+  },
+  {
+   "type": "single",
+   "stem": "木马程序的特点是什么？",
+   "options": [
+    "能自我复制并通过网络传播",
+    "需要寄生在宿主文件中",
+    "伪装成正常程序，不具备自我复制能力",
+    "只会加密文件"
+   ],
+   "answer_index": 2,
+   "explanation": "这是木马与病毒、蠕虫的重要区别。",
+   "difficulty": 2,
+   "tags": [
+    "恶意代码",
+    "木马"
+   ],
+   "source_quote": "木马伪装成正常程序，用于窃取信息或远程控制，不具备自我复制能力"
+  },
+  {
+   "type": "single",
+   "stem": "SYN 洪泛攻击利用的是 TCP 的哪个环节？",
+   "options": [
+    "四次挥手",
+    "三次握手",
+    "滑动窗口",
+    "拥塞控制"
+   ],
+   "answer_index": 1,
+   "explanation": "服务器为半连接分配资源，最终被耗尽。",
+   "difficulty": 2,
+   "tags": [
+    "攻击",
+    "SYN洪泛"
+   ],
+   "source_quote": "SYN 洪泛攻击利用 TCP 三次握手，发送大量 SYN 请求而不完成握手"
+  },
+  {
+   "type": "single",
+   "stem": "分布式拒绝服务（DDoS）攻击的特点是什么？",
+   "options": [
+    "窃取用户口令",
+    "只用一台主机发起攻击",
+    "利用大量傀儡机同时发起攻击",
+    "篡改网页内容"
+   ],
+   "answer_index": 2,
+   "explanation": "攻击流量来自多个源，难以简单封堵。",
+   "difficulty": 2,
+   "tags": [
+    "攻击",
+    "DDoS"
+   ],
+   "source_quote": "分布式拒绝服务攻击利用大量傀儡机同时发起攻击"
+  },
+  {
+   "type": "single",
+   "stem": "防御 SQL 注入攻击，最有效的方法是什么？",
+   "options": [
+    "使用更长的密码",
+    "增大数据库磁盘",
+    "使用参数化查询并过滤输入",
+    "关闭防火墙"
+   ],
+   "answer_index": 2,
+   "explanation": "参数化查询使用户输入始终作为数据而不是代码。",
+   "difficulty": 2,
+   "tags": [
+    "攻击",
+    "SQL注入"
+   ],
+   "source_quote": "防御方法是使用参数化查询并过滤输入"
+  },
+  {
+   "type": "single",
+   "stem": "跨站脚本攻击（XSS）常用的防御方法是什么？",
+   "options": [
+    "对输出进行转义",
+    "使用对称加密",
+    "增加带宽",
+    "限制登录次数"
+   ],
+   "answer_index": 0,
+   "explanation": "转义后恶意脚本不会被浏览器当作代码执行。",
+   "difficulty": 2,
+   "tags": [
+    "攻击",
+    "XSS"
+   ],
+   "source_quote": "跨站脚本攻击（XSS）把恶意脚本注入网页，在其他用户浏览器中执行，防御方法是对输出进行转义"
+  },
+  {
+   "type": "single",
+   "stem": "跨站请求伪造（CSRF）利用的是什么？",
+   "options": [
+    "用户已登录的身份",
+    "数据库的弱口令",
+    "服务器的缓冲区漏洞",
+    "网络的广播特性"
+   ],
+   "answer_index": 0,
+   "explanation": "CSRF 令牌能让服务器识别请求是否来自合法页面。",
+   "difficulty": 2,
+   "tags": [
+    "攻击",
+    "CSRF"
+   ],
+   "source_quote": "跨站请求伪造（CSRF）利用用户已登录的身份诱使其提交非本意的请求，可用令牌防御"
+  },
+  {
+   "type": "single",
+   "stem": "ARP 欺骗是通过什么手段实现的？",
+   "options": [
+    "注入 SQL 语句",
+    "伪造 ARP 应答篡改他人的 ARP 缓存",
+    "写入超长数据",
+    "发送大量 SYN 报文"
+   ],
+   "answer_index": 1,
+   "explanation": "ARP 协议没有认证机制。",
+   "difficulty": 2,
+   "tags": [
+    "攻击",
+    "ARP欺骗"
+   ],
+   "source_quote": "ARP 欺骗通过伪造 ARP 应答篡改他人 ARP 缓存，实现中间人攻击"
+  },
+  {
+   "type": "judge",
+   "stem": "缓冲区溢出攻击通过向缓冲区写入超长数据来覆盖相邻内存。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "攻击者借此改写返回地址等关键数据。",
+   "difficulty": 2,
+   "tags": [
+    "攻击",
+    "缓冲区溢出"
+   ],
+   "source_quote": "缓冲区溢出攻击通过向缓冲区写入超长数据覆盖相邻内存"
+  }
+ ],
+ "软件设计师（中级）考点精讲（计算机网络与信息安全） > 7.6 访问控制、身份认证、等级保护与容灾备份": [
+  {
+   "type": "single",
+   "stem": "自主访问控制（DAC）的特点是什么？",
+   "options": [
+    "由系统根据安全标签强制实施",
+    "由资源所有者决定谁可以访问，灵活但安全性较低",
+    "不允许用户共享资源",
+    "通过角色分配权限"
+   ],
+   "answer_index": 1,
+   "explanation": "强制访问控制由系统强制，安全性高。",
+   "difficulty": 2,
+   "tags": [
+    "访问控制",
+    "DAC"
+   ],
+   "source_quote": "DAC 由资源所有者决定谁可以访问，灵活但安全性较低"
+  },
+  {
+   "type": "single",
+   "stem": "强制访问控制（MAC）的特点是什么？",
+   "options": [
+    "通过角色管理权限",
+    "由系统根据安全标签强制实施，安全性高",
+    "由资源所有者决定访问权限",
+    "没有安全标签"
+   ],
+   "answer_index": 1,
+   "explanation": "用户不能自行改变访问权限。",
+   "difficulty": 2,
+   "tags": [
+    "访问控制",
+    "MAC"
+   ],
+   "source_quote": "MAC 由系统根据安全标签强制实施，安全性高，常用于军事系统"
+  },
+  {
+   "type": "single",
+   "stem": "基于角色的访问控制（RBAC）是如何分配权限的？",
+   "options": [
+    "根据文件的密级强制分配",
+    "先给角色分配权限，再给用户分配角色",
+    "由资源所有者随意授予",
+    "直接给每个用户分配权限"
+   ],
+   "answer_index": 1,
+   "explanation": "用户通过角色间接获得权限。",
+   "difficulty": 2,
+   "tags": [
+    "访问控制",
+    "RBAC"
+   ],
+   "source_quote": "RBAC 先给角色分配权限，再给用户分配角色，便于大型组织的权限管理"
+  },
+  {
+   "type": "single",
+   "stem": "“口令加指纹”这种认证方式属于什么？",
+   "options": [
+    "单因素认证",
+    "多因素认证",
+    "零知识证明",
+    "匿名认证"
+   ],
+   "answer_index": 1,
+   "explanation": "口令属于所知，指纹属于所是。",
+   "difficulty": 2,
+   "tags": [
+    "身份认证",
+    "多因素"
+   ],
+   "source_quote": "同时使用两种以上称为多因素认证"
+  },
+  {
+   "type": "single",
+   "stem": "Kerberos 认证协议基于什么？",
+   "options": [
+    "一次性口令",
+    "数字证书，使用非对称加密",
+    "生物特征",
+    "票据，使用对称加密"
+   ],
+   "answer_index": 3,
+   "explanation": "由认证服务器和票据授予服务器组成。",
+   "difficulty": 2,
+   "tags": [
+    "身份认证",
+    "Kerberos"
+   ],
+   "source_quote": "Kerberos 是基于票据的网络认证协议，使用对称加密"
+  },
+  {
+   "type": "single",
+   "stem": "我国信息安全等级保护制度把信息系统分为几级？",
+   "options": [
+    "四级",
+    "三级",
+    "五级",
+    "七级"
+   ],
+   "answer_index": 2,
+   "explanation": "级别越高，保护要求越严格。",
+   "difficulty": 2,
+   "tags": [
+    "等级保护",
+    "级别"
+   ],
+   "source_quote": "我国信息安全等级保护制度把信息系统分为五级，第一级为自主保护级，第五级为专控保护级"
+  },
+  {
+   "type": "single",
+   "stem": "容灾备份中，RTO 表示什么？",
+   "options": [
+    "可容忍丢失多少数据",
+    "灾难后多长时间内恢复业务",
+    "备份的频率",
+    "备份的数据量"
+   ],
+   "answer_index": 1,
+   "explanation": "RPO 是恢复点目标，RTO 是恢复时间目标。",
+   "difficulty": 3,
+   "tags": [
+    "容灾",
+    "RPO与RTO"
+   ],
+   "source_quote": "RPO 表示可容忍丢失多少数据，RTO 表示灾难后多长时间内恢复业务"
+  }
+ ]
+}

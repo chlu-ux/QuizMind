@@ -1,0 +1,1753 @@
+{
+ "软件设计师（中级）考点精讲（数据库） > 5.1 数据库系统概述：三级模式与两级映像": [
+  {
+   "type": "single",
+   "stem": "数据库系统的三级模式不包括下列哪一项？",
+   "options": [
+    "外模式",
+    "应用模式",
+    "内模式",
+    "概念模式"
+   ],
+   "answer_index": 1,
+   "explanation": "三级模式是外模式、概念模式和内模式，不存在“应用模式”。",
+   "difficulty": 1,
+   "tags": [
+    "数据库",
+    "三级模式"
+   ],
+   "source_quote": "数据库系统采用三级模式两级映像体系结构"
+  },
+  {
+   "type": "single",
+   "stem": "在数据库三级模式中，外模式对应的是什么？",
+   "options": [
+    "基本表",
+    "索引",
+    "存储文件",
+    "视图"
+   ],
+   "answer_index": 3,
+   "explanation": "概念模式对应基本表，内模式对应存储文件。",
+   "difficulty": 2,
+   "tags": [
+    "数据库",
+    "外模式"
+   ],
+   "source_quote": "外模式（用户模式、子模式）是用户看到的局部数据视图，对应视图"
+  },
+  {
+   "type": "single",
+   "stem": "在数据库三级模式中，概念模式对应的是什么？",
+   "options": [
+    "视图",
+    "用户界面",
+    "基本表",
+    "存储文件"
+   ],
+   "answer_index": 2,
+   "explanation": "概念模式是数据库全局逻辑结构。",
+   "difficulty": 2,
+   "tags": [
+    "数据库",
+    "概念模式"
+   ],
+   "source_quote": "概念模式（模式、逻辑模式）是全体数据的全局逻辑结构，对应基本表"
+  },
+  {
+   "type": "single",
+   "stem": "数据库的内模式描述的是什么？",
+   "options": [
+    "全体数据的全局逻辑结构",
+    "用户看到的局部数据视图",
+    "数据的物理存储结构",
+    "应用程序的界面"
+   ],
+   "answer_index": 2,
+   "explanation": "一个数据库只有一个内模式。",
+   "difficulty": 2,
+   "tags": [
+    "数据库",
+    "内模式"
+   ],
+   "source_quote": "内模式（存储模式）是数据的物理存储结构，对应存储文件"
+  },
+  {
+   "type": "single",
+   "stem": "外模式与概念模式之间的映像保证的是什么？",
+   "options": [
+    "数据完整性",
+    "数据安全性",
+    "逻辑数据独立性",
+    "物理数据独立性"
+   ],
+   "answer_index": 2,
+   "explanation": "概念模式变化时只需修改该映像，应用程序不用改。",
+   "difficulty": 2,
+   "tags": [
+    "数据库",
+    "数据独立性"
+   ],
+   "source_quote": "外模式与概念模式之间的映像保证逻辑数据独立性"
+  },
+  {
+   "type": "single",
+   "stem": "概念模式与内模式之间的映像保证的是什么？",
+   "options": [
+    "物理数据独立性",
+    "事务一致性",
+    "逻辑数据独立性",
+    "数据共享性"
+   ],
+   "answer_index": 0,
+   "explanation": "内模式变化时只需修改该映像，概念模式不变。",
+   "difficulty": 2,
+   "tags": [
+    "数据库",
+    "数据独立性"
+   ],
+   "source_quote": "概念模式与内模式之间的映像保证物理数据独立性"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一项属于数据库管理员（DBA）的职责？",
+   "options": [
+    "设计硬件电路",
+    "编写应用程序界面",
+    "撰写用户手册",
+    "数据库的设计、运行维护、备份恢复和安全控制"
+   ],
+   "answer_index": 3,
+   "explanation": "这些是 DBA 的核心工作。",
+   "difficulty": 2,
+   "tags": [
+    "数据库",
+    "DBA"
+   ],
+   "source_quote": "数据库管理员（DBA）负责数据库的设计、运行维护、备份恢复和安全控制"
+  },
+  {
+   "type": "judge",
+   "stem": "内模式描述的是用户看到的局部数据视图。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "用户看到的局部视图是外模式，内模式是物理存储结构。",
+   "difficulty": 2,
+   "tags": [
+    "数据库",
+    "内模式"
+   ],
+   "source_quote": "外模式（用户模式、子模式）是用户看到的局部数据视图"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据库） > 5.2 E-R 模型与转换为关系模式": [
+  {
+   "type": "single",
+   "stem": "E-R 图中，联系用什么图形表示？",
+   "options": [
+    "矩形",
+    "菱形",
+    "椭圆",
+    "三角形"
+   ],
+   "answer_index": 1,
+   "explanation": "矩形表示实体，椭圆表示属性。",
+   "difficulty": 1,
+   "tags": [
+    "E-R",
+    "图形"
+   ],
+   "source_quote": "实体用矩形表示，属性用椭圆表示，联系用菱形表示"
+  },
+  {
+   "type": "single",
+   "stem": "E-R 图中，实体用什么图形表示？",
+   "options": [
+    "圆角矩形",
+    "矩形",
+    "菱形",
+    "椭圆"
+   ],
+   "answer_index": 1,
+   "explanation": "实体、联系、属性分别对应矩形、菱形、椭圆。",
+   "difficulty": 1,
+   "tags": [
+    "E-R",
+    "图形"
+   ],
+   "source_quote": "实体用矩形表示，属性用椭圆表示，联系用菱形表示"
+  },
+  {
+   "type": "single",
+   "stem": "E-R 模型中，实体间的联系有哪三种类型？",
+   "options": [
+    "强联系、弱联系、无联系",
+    "单向、双向、多向",
+    "一对一、一对多、多对多",
+    "一对一、多对一、一对零"
+   ],
+   "answer_index": 2,
+   "explanation": "多对一可视为一对多的另一方向。",
+   "difficulty": 2,
+   "tags": [
+    "E-R",
+    "联系类型"
+   ],
+   "source_quote": "联系有一对一（1:1）、一对多（1:n）和多对多（m:n）三种类型"
+  },
+  {
+   "type": "single",
+   "stem": "E-R 图中的 m:n 联系转换为关系模式时，应如何处理？",
+   "options": [
+    "单独转换为一个关系模式",
+    "与任意一端实体合并",
+    "只把联系名作为一个属性加入一端",
+    "不需要转换"
+   ],
+   "answer_index": 0,
+   "explanation": "其码为两端实体码的组合。",
+   "difficulty": 2,
+   "tags": [
+    "E-R",
+    "转换规则"
+   ],
+   "source_quote": "m:n 联系必须单独转换为一个关系模式"
+  },
+  {
+   "type": "single",
+   "stem": "1:n 联系转换为关系模式时，通常采用什么方法？",
+   "options": [
+    "单独转换为一个关系模式并去掉两端实体的码",
+    "与 1 端实体合并，把 n 端实体的码加入 1 端关系",
+    "忽略该联系",
+    "与 n 端实体合并，把 1 端实体的码加入 n 端关系作为外码"
+   ],
+   "answer_index": 3,
+   "explanation": "例如员工属于部门，把部门号放入员工表作外码。",
+   "difficulty": 2,
+   "tags": [
+    "E-R",
+    "转换规则"
+   ],
+   "source_quote": "1:n 联系可以与 n 端的实体合并，把 1 端实体的码加入 n 端关系作为外码"
+  },
+  {
+   "type": "single",
+   "stem": "学生（学号）和课程（课程号）之间是 m:n 的选课联系，转换成的选课关系模式，其码是什么？",
+   "options": [
+    "（学号，课程号）",
+    "成绩",
+    "学号",
+    "课程号"
+   ],
+   "answer_index": 0,
+   "explanation": "选课关系的主码由两端实体码组合而成。",
+   "difficulty": 3,
+   "tags": [
+    "E-R",
+    "转换规则"
+   ],
+   "source_quote": "关系的码是两端实体码的组合"
+  },
+  {
+   "type": "single",
+   "stem": "某 E-R 图有 3 个实体、1 个 m:n 联系和 1 个 1:n 联系，将 1:n 联系与 n 端实体合并后，最少转换成多少个关系模式？",
+   "options": [
+    "6",
+    "5",
+    "4",
+    "3"
+   ],
+   "answer_index": 2,
+   "explanation": "3 个实体各 1 个，m:n 联系单独 1 个，1:n 联系合并到实体中不单独成表，共 4 个。",
+   "difficulty": 3,
+   "tags": [
+    "E-R",
+    "转换规则"
+   ],
+   "source_quote": "m:n 联系必须单独转换为一个关系模式"
+  },
+  {
+   "type": "judge",
+   "stem": "1:n 联系必须单独转换成一个关系模式。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "只有 m:n 联系必须单独转换，1:n 联系可与 n 端实体合并。",
+   "difficulty": 2,
+   "tags": [
+    "E-R",
+    "转换规则"
+   ],
+   "source_quote": "1:n 联系可以与 n 端的实体合并"
+  },
+  {
+   "type": "judge",
+   "stem": "E-R 图转换为关系模式时，多值属性要单独建立关系。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "多值属性放入同一个表会违反属性不可再分的要求。",
+   "difficulty": 2,
+   "tags": [
+    "E-R",
+    "多值属性"
+   ],
+   "source_quote": "多值属性要单独建立关系"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据库） > 5.3 关系模型：键与完整性约束": [
+  {
+   "type": "single",
+   "stem": "关系模型中，二维表的一行称为什么？",
+   "options": [
+    "码",
+    "域",
+    "元组",
+    "属性"
+   ],
+   "answer_index": 2,
+   "explanation": "元组也就是记录，属性也就是字段。",
+   "difficulty": 1,
+   "tags": [
+    "关系模型",
+    "术语"
+   ],
+   "source_quote": "表中的一行称为元组，一列称为属性"
+  },
+  {
+   "type": "single",
+   "stem": "关系模型中，属性的取值范围称为什么？",
+   "options": [
+    "域",
+    "元组",
+    "模式",
+    "码"
+   ],
+   "answer_index": 0,
+   "explanation": "例如“性别”属性的域为 {男, 女}。",
+   "difficulty": 1,
+   "tags": [
+    "关系模型",
+    "域"
+   ],
+   "source_quote": "属性的取值范围称为域"
+  },
+  {
+   "type": "single",
+   "stem": "候选码的含义是什么？",
+   "options": [
+    "能唯一标识元组的任意属性组",
+    "另一个关系的主码",
+    "关系中取值最长的属性",
+    "能唯一标识元组且不含多余属性的最小属性组"
+   ],
+   "answer_index": 3,
+   "explanation": "最小性是候选码区别于超码的特点。",
+   "difficulty": 2,
+   "tags": [
+    "关系模型",
+    "候选码"
+   ],
+   "source_quote": "候选码是能唯一标识元组且不含多余属性的最小属性组"
+  },
+  {
+   "type": "single",
+   "stem": "什么是主属性？",
+   "options": [
+    "取值唯一的属性",
+    "包含在任一候选码中的属性",
+    "只包含在主码中的属性",
+    "不包含在任何候选码中的属性"
+   ],
+   "answer_index": 1,
+   "explanation": "不包含在任何候选码中的属性是非主属性。",
+   "difficulty": 2,
+   "tags": [
+    "关系模型",
+    "主属性"
+   ],
+   "source_quote": "包含在任一候选码中的属性称为主属性"
+  },
+  {
+   "type": "single",
+   "stem": "外码是指什么？",
+   "options": [
+    "本关系的属性组，它是另一个关系的主码",
+    "本关系的候选码",
+    "本关系的全部属性",
+    "另一个关系的非主属性"
+   ],
+   "answer_index": 0,
+   "explanation": "外码用来建立两个关系之间的联系。",
+   "difficulty": 2,
+   "tags": [
+    "关系模型",
+    "外码"
+   ],
+   "source_quote": "外码是本关系的某个属性组，它是另一个关系的主码，用于表示两个关系之间的联系"
+  },
+  {
+   "type": "single",
+   "stem": "实体完整性要求的是什么？",
+   "options": [
+    "主码不能取空值",
+    "元组数不能为 0",
+    "外码必须为空",
+    "属性值必须大于 0"
+   ],
+   "answer_index": 0,
+   "explanation": "空值无法唯一标识一个实体。",
+   "difficulty": 2,
+   "tags": [
+    "关系模型",
+    "实体完整性"
+   ],
+   "source_quote": "实体完整性要求主码不能取空值"
+  },
+  {
+   "type": "single",
+   "stem": "参照完整性要求外码的取值满足什么条件？",
+   "options": [
+    "为空，或等于被参照关系中某个元组的主码值",
+    "可以是任意值",
+    "必须大于被参照关系的主码值",
+    "必须为空"
+   ],
+   "answer_index": 0,
+   "explanation": "这样才能保证引用的对象确实存在。",
+   "difficulty": 2,
+   "tags": [
+    "关系模型",
+    "参照完整性"
+   ],
+   "source_quote": "参照完整性要求外码的取值要么为空，要么等于被参照关系中某个元组的主码值"
+  },
+  {
+   "type": "judge",
+   "stem": "关系中元组的先后顺序会影响关系的含义。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "关系是元组的集合，元组之间没有顺序。",
+   "difficulty": 2,
+   "tags": [
+    "关系模型",
+    "性质"
+   ],
+   "source_quote": "元组的顺序和属性的顺序都无关紧要"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据库） > 5.4 关系代数": [
+  {
+   "type": "single",
+   "stem": "下列运算中，不属于关系代数基本运算的是哪一个？",
+   "options": [
+    "自然连接",
+    "笛卡尔积",
+    "选择",
+    "差"
+   ],
+   "answer_index": 0,
+   "explanation": "自然连接由笛卡尔积、选择和投影组合而成。",
+   "difficulty": 2,
+   "tags": [
+    "关系代数",
+    "基本运算"
+   ],
+   "source_quote": "关系代数的基本运算有并、差、笛卡尔积、选择和投影，其他运算如交、连接、除可由基本运算导出"
+  },
+  {
+   "type": "single",
+   "stem": "选择运算是对关系的什么进行操作？",
+   "options": [
+    "整个数据库",
+    "列（属性）",
+    "行（元组）",
+    "索引"
+   ],
+   "answer_index": 2,
+   "explanation": "投影才是对列的操作。",
+   "difficulty": 1,
+   "tags": [
+    "关系代数",
+    "选择"
+   ],
+   "source_quote": "选择运算从关系中选出满足条件的元组，是对行的操作"
+  },
+  {
+   "type": "single",
+   "stem": "投影运算是对关系的什么进行操作？",
+   "options": [
+    "整个表的结构",
+    "列（属性），并去掉重复元组",
+    "外码",
+    "行（元组）"
+   ],
+   "answer_index": 1,
+   "explanation": "投影结果中重复的行只保留一行。",
+   "difficulty": 1,
+   "tags": [
+    "关系代数",
+    "投影"
+   ],
+   "source_quote": "投影运算从关系中选出若干属性列并去掉重复元组，是对列的操作"
+  },
+  {
+   "type": "single",
+   "stem": "关系 R 有 3 个元组、2 个属性，关系 S 有 4 个元组、3 个属性，则 R×S 的结果有多少个元组和多少个属性？",
+   "options": [
+    "12 个元组、5 个属性",
+    "7 个元组、5 个属性",
+    "7 个元组、6 个属性",
+    "12 个元组、6 个属性"
+   ],
+   "answer_index": 0,
+   "explanation": "元组数 3 × 4 = 12，属性数 2 + 3 = 5。",
+   "difficulty": 3,
+   "tags": [
+    "关系代数",
+    "笛卡尔积"
+   ],
+   "source_quote": "笛卡尔积的结果元组数是两个关系元组数之积，属性数是两个关系属性数之和"
+  },
+  {
+   "type": "single",
+   "stem": "自然连接的特点是什么？",
+   "options": [
+    "保留重复的公共属性列",
+    "按公共属性值相等连接，并去掉重复的公共属性列",
+    "连接条件可以是任意比较运算",
+    "不要求两个关系有公共属性"
+   ],
+   "answer_index": 1,
+   "explanation": "自然连接是特殊的等值连接。",
+   "difficulty": 2,
+   "tags": [
+    "关系代数",
+    "自然连接"
+   ],
+   "source_quote": "自然连接要求两个关系有公共属性，按公共属性值相等连接，并在结果中去掉重复的公共属性列"
+  },
+  {
+   "type": "single",
+   "stem": "自然连接与等值连接的关系是什么？",
+   "options": [
+    "两者毫无关系",
+    "等值连接是特殊的自然连接",
+    "两者完全相同",
+    "自然连接是特殊的等值连接"
+   ],
+   "answer_index": 3,
+   "explanation": "自然连接要在等值连接基础上去掉重复属性列。",
+   "difficulty": 2,
+   "tags": [
+    "关系代数",
+    "连接比较"
+   ],
+   "source_quote": "等值连接是连接条件为相等比较的连接，自然连接是特殊的等值连接"
+  },
+  {
+   "type": "single",
+   "stem": "关系代数中，除运算常用于回答哪类查询？",
+   "options": [
+    "含有“不存在”的查询",
+    "含有“全部”的查询",
+    "含有“平均值”的查询",
+    "含有“至少一个”的查询"
+   ],
+   "answer_index": 1,
+   "explanation": "例如查询选修了全部课程的学生。",
+   "difficulty": 2,
+   "tags": [
+    "关系代数",
+    "除运算"
+   ],
+   "source_quote": "除运算常用来回答含有“全部”的查询"
+  },
+  {
+   "type": "single",
+   "stem": "对两个关系做并、交、差运算，要满足什么条件？",
+   "options": [
+    "属性名完全相同即可",
+    "主码相同",
+    "属性个数相同且对应属性的域相同",
+    "元组个数相同"
+   ],
+   "answer_index": 2,
+   "explanation": "这叫并相容。",
+   "difficulty": 2,
+   "tags": [
+    "关系代数",
+    "并相容"
+   ],
+   "source_quote": "并、交、差运算要求两个关系具有相同的属性个数且对应属性的域相同"
+  },
+  {
+   "type": "judge",
+   "stem": "选择运算是对关系中列的操作。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "选择按条件筛选元组（行），投影才是选取列。",
+   "difficulty": 1,
+   "tags": [
+    "关系代数",
+    "选择"
+   ],
+   "source_quote": "选择运算从关系中选出满足条件的元组，是对行的操作"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据库） > 5.5 SQL 的数据定义与数据操纵": [
+  {
+   "type": "single",
+   "stem": "下列 SQL 语句中，属于数据定义语言（DDL）的是哪一个？",
+   "options": [
+    "INSERT",
+    "SELECT",
+    "GRANT",
+    "CREATE"
+   ],
+   "answer_index": 3,
+   "explanation": "INSERT、SELECT 属于 DML，GRANT 属于 DCL。",
+   "difficulty": 1,
+   "tags": [
+    "SQL",
+    "DDL"
+   ],
+   "source_quote": "DDL 包括 CREATE、ALTER 和 DROP，用于创建、修改和删除表、视图、索引"
+  },
+  {
+   "type": "single",
+   "stem": "GRANT 和 REVOKE 属于哪一类 SQL 语言？",
+   "options": [
+    "数据定义语言（DDL）",
+    "数据控制语言（DCL）",
+    "数据操纵语言（DML）",
+    "事务控制语言"
+   ],
+   "answer_index": 1,
+   "explanation": "它们用于授予和收回权限。",
+   "difficulty": 2,
+   "tags": [
+    "SQL",
+    "DCL"
+   ],
+   "source_quote": "DCL 包括 GRANT 和 REVOKE"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一组语句都属于数据操纵语言（DML）？",
+   "options": [
+    "GRANT、REVOKE、INSERT、UPDATE",
+    "SELECT、INSERT、UPDATE、DELETE",
+    "CREATE、ALTER、DROP、SELECT",
+    "COMMIT、ROLLBACK、DELETE、DROP"
+   ],
+   "answer_index": 1,
+   "explanation": "增、删、改、查四种操作。",
+   "difficulty": 2,
+   "tags": [
+    "SQL",
+    "DML"
+   ],
+   "source_quote": "DML 包括 SELECT、INSERT、UPDATE 和 DELETE"
+  },
+  {
+   "type": "single",
+   "stem": "PRIMARY KEY（主键）约束保证什么？",
+   "options": [
+    "唯一但允许空值",
+    "唯一且非空",
+    "允许重复",
+    "取值在指定范围内"
+   ],
+   "answer_index": 1,
+   "explanation": "UNIQUE 约束才允许空值。",
+   "difficulty": 2,
+   "tags": [
+    "SQL",
+    "约束"
+   ],
+   "source_quote": "PRIMARY KEY 主键约束保证唯一且非空"
+  },
+  {
+   "type": "single",
+   "stem": "UNIQUE 约束与 PRIMARY KEY 约束相比，区别是什么？",
+   "options": [
+    "UNIQUE 允许重复值",
+    "UNIQUE 保证取值唯一但允许空值",
+    "UNIQUE 不允许空值",
+    "UNIQUE 只能用于数值列"
+   ],
+   "answer_index": 1,
+   "explanation": "一个表可以有多个 UNIQUE 约束但只有一个主键。",
+   "difficulty": 2,
+   "tags": [
+    "SQL",
+    "约束"
+   ],
+   "source_quote": "UNIQUE 约束保证取值唯一但允许空值"
+  },
+  {
+   "type": "single",
+   "stem": "执行不带 WHERE 子句的 DELETE 语句，会产生什么结果？",
+   "options": [
+    "删除表中全部元组，但保留表结构",
+    "语句报错",
+    "删除表结构和数据",
+    "只删除第一行"
+   ],
+   "answer_index": 0,
+   "explanation": "要删除表本身需使用 DROP TABLE。",
+   "difficulty": 2,
+   "tags": [
+    "SQL",
+    "DELETE"
+   ],
+   "source_quote": "DELETE 语句配合 WHERE 删除满足条件的元组，省略 WHERE 则删除全部元组但保留表结构"
+  },
+  {
+   "type": "single",
+   "stem": "DROP TABLE 语句的作用是什么？",
+   "options": [
+    "修改表名",
+    "只删除表中的数据",
+    "删除表的结构和数据",
+    "只删除表的索引"
+   ],
+   "answer_index": 2,
+   "explanation": "ALTER TABLE 才用来修改表结构。",
+   "difficulty": 2,
+   "tags": [
+    "SQL",
+    "DROP"
+   ],
+   "source_quote": "DROP TABLE 会删除表的结构和数据"
+  },
+  {
+   "type": "judge",
+   "stem": "FOREIGN KEY 外键约束用于维护参照完整性。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "外键取值必须为空或等于被参照表的主码值。",
+   "difficulty": 2,
+   "tags": [
+    "SQL",
+    "外键"
+   ],
+   "source_quote": "FOREIGN KEY 外键约束维护参照完整性"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据库） > 5.6 SQL 查询：分组、连接、子查询与视图": [
+  {
+   "type": "single",
+   "stem": "WHERE 子句与 HAVING 子句的区别是什么？",
+   "options": [
+    "HAVING 中不能使用聚合函数",
+    "WHERE 在分组前过滤行，HAVING 在分组后过滤分组",
+    "两者没有区别",
+    "WHERE 在分组后过滤，HAVING 在分组前过滤"
+   ],
+   "answer_index": 1,
+   "explanation": "聚合函数只能在分组后计算，所以不能出现在 WHERE 中。",
+   "difficulty": 2,
+   "tags": [
+    "SQL查询",
+    "WHERE与HAVING"
+   ],
+   "source_quote": "WHERE 子句在分组之前过滤行，HAVING 子句在分组之后过滤分组，HAVING 中可以使用聚合函数而 WHERE 中不能"
+  },
+  {
+   "type": "single",
+   "stem": "COUNT(*) 与 COUNT(列) 的区别是什么？",
+   "options": [
+    "COUNT(*) 统计行数，COUNT(列) 不统计该列为 NULL 的行",
+    "COUNT(列) 统计所有行",
+    "COUNT(*) 不统计 NULL 行",
+    "两者结果总是相同"
+   ],
+   "answer_index": 0,
+   "explanation": "聚合函数通常忽略 NULL 值。",
+   "difficulty": 2,
+   "tags": [
+    "SQL查询",
+    "聚合函数"
+   ],
+   "source_quote": "COUNT(*) 统计行数，COUNT(列) 不统计该列为 NULL 的行"
+  },
+  {
+   "type": "single",
+   "stem": "判断某列的值是否为空，应使用哪种写法？",
+   "options": [
+    "列 IS NULL",
+    "列 LIKE NULL",
+    "列 = NULL",
+    "列 BETWEEN NULL AND NULL"
+   ],
+   "answer_index": 0,
+   "explanation": "NULL 与任何值（包括 NULL）做等号比较结果都不为真。",
+   "difficulty": 2,
+   "tags": [
+    "SQL查询",
+    "空值"
+   ],
+   "source_quote": "判断空值要用 IS NULL 或 IS NOT NULL，不能用等号"
+  },
+  {
+   "type": "single",
+   "stem": "LIKE 模糊查询中，下划线匹配什么？",
+   "options": [
+    "单个字符",
+    "零个或一个字符",
+    "任意长度的字符串",
+    "任意多个数字"
+   ],
+   "answer_index": 0,
+   "explanation": "例如 LIKE 'a_' 匹配以 a 开头、长度为 2 的字符串。",
+   "difficulty": 2,
+   "tags": [
+    "SQL查询",
+    "LIKE"
+   ],
+   "source_quote": "百分号匹配任意长度的字符，下划线匹配单个字符"
+  },
+  {
+   "type": "single",
+   "stem": "左外连接的结果有什么特点？",
+   "options": [
+    "保留两表的全部行",
+    "只保留两表匹配的行",
+    "保留右表的全部行",
+    "保留左表的全部行，右表无匹配时补 NULL"
+   ],
+   "answer_index": 3,
+   "explanation": "内连接只保留满足连接条件的行。",
+   "difficulty": 2,
+   "tags": [
+    "SQL查询",
+    "外连接"
+   ],
+   "source_quote": "左外连接保留左表的全部行，右表无匹配时补 NULL"
+  },
+  {
+   "type": "single",
+   "stem": "关于视图，下列说法正确的是哪一个？",
+   "options": [
+    "是物理存储的基本表",
+    "必须有主码才能创建",
+    "一定可以随意更新",
+    "是由查询定义的虚表，不存储数据"
+   ],
+   "answer_index": 3,
+   "explanation": "视图中的数据来自基本表，随基本表变化。",
+   "difficulty": 2,
+   "tags": [
+    "SQL查询",
+    "视图"
+   ],
+   "source_quote": "视图是由查询定义的虚表，不存储数据，用 CREATE VIEW 创建"
+  },
+  {
+   "type": "single",
+   "stem": "ORDER BY 子句默认的排序方式是什么？",
+   "options": [
+    "随机",
+    "降序",
+    "升序",
+    "按插入顺序"
+   ],
+   "answer_index": 2,
+   "explanation": "升序可显式写成 ASC。",
+   "difficulty": 1,
+   "tags": [
+    "SQL查询",
+    "排序"
+   ],
+   "source_quote": "ORDER BY 默认升序，降序用 DESC"
+  },
+  {
+   "type": "single",
+   "stem": "在 SQL 中，收回已授予的权限使用哪条语句？",
+   "options": [
+    "DROP",
+    "REVOKE",
+    "GRANT",
+    "DELETE"
+   ],
+   "answer_index": 1,
+   "explanation": "GRANT 授予权限，REVOKE 收回权限。",
+   "difficulty": 2,
+   "tags": [
+    "SQL查询",
+    "授权"
+   ],
+   "source_quote": "授权使用 GRANT 权限 ON 对象 TO 用户，收回权限使用 REVOKE"
+  },
+  {
+   "type": "single",
+   "stem": "在一条带分组的 SELECT 语句中，下列执行顺序合理的是哪一个？",
+   "options": [
+    "先 GROUP BY，再 WHERE，再 HAVING",
+    "先 HAVING，再 WHERE，再 GROUP BY",
+    "先 ORDER BY，再 WHERE，再 GROUP BY",
+    "先 WHERE 过滤行，再 GROUP BY 分组，再 HAVING 过滤分组"
+   ],
+   "answer_index": 3,
+   "explanation": "排序 ORDER BY 在最后执行。",
+   "difficulty": 2,
+   "tags": [
+    "SQL查询",
+    "执行顺序"
+   ],
+   "source_quote": "WHERE 子句在分组之前过滤行，HAVING 子句在分组之后过滤分组"
+  },
+  {
+   "type": "judge",
+   "stem": "聚合函数通常会忽略 NULL 值。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "COUNT(*) 统计行数，不受 NULL 影响。",
+   "difficulty": 2,
+   "tags": [
+    "SQL查询",
+    "聚合函数"
+   ],
+   "source_quote": "聚合函数通常忽略 NULL 值"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据库） > 5.7 函数依赖、Armstrong 公理与候选码": [
+  {
+   "type": "single",
+   "stem": "什么样的函数依赖 X → Y 是平凡函数依赖？",
+   "options": [
+    "Y 不能由 X 推出",
+    "X 是 Y 的子集且不相等",
+    "Y 是 X 的子集",
+    "X 与 Y 没有交集"
+   ],
+   "answer_index": 2,
+   "explanation": "平凡函数依赖由自反律得到。",
+   "difficulty": 2,
+   "tags": [
+    "函数依赖",
+    "平凡依赖"
+   ],
+   "source_quote": "若 Y 是 X 的子集，则 X → Y 是平凡函数依赖"
+  },
+  {
+   "type": "single",
+   "stem": "若 X → Y 成立，且 X 的某个真子集 X' 也能决定 Y，则称 Y 对 X 是什么依赖？",
+   "options": [
+    "部分函数依赖",
+    "传递函数依赖",
+    "完全函数依赖",
+    "平凡函数依赖"
+   ],
+   "answer_index": 0,
+   "explanation": "范式中 2NF 要消除的就是非主属性对候选码的部分函数依赖。",
+   "difficulty": 3,
+   "tags": [
+    "函数依赖",
+    "部分依赖"
+   ],
+   "source_quote": "对 X 的任何真子集 X'，都有 X' 不能决定 Y，则 Y 完全函数依赖于 X，否则称为部分函数依赖"
+  },
+  {
+   "type": "single",
+   "stem": "若 X → Y、Y → Z 且 Y 不能决定 X，则 Z 对 X 是什么依赖？",
+   "options": [
+    "部分函数依赖",
+    "完全函数依赖",
+    "传递函数依赖",
+    "平凡函数依赖"
+   ],
+   "answer_index": 2,
+   "explanation": "3NF 要消除的就是非主属性对候选码的传递函数依赖。",
+   "difficulty": 3,
+   "tags": [
+    "函数依赖",
+    "传递依赖"
+   ],
+   "source_quote": "若 X → Y、Y → Z 且 Y 不能决定 X，则 Z 传递函数依赖于 X"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一项不属于 Armstrong 公理的基本规则？",
+   "options": [
+    "自反律",
+    "传递律",
+    "合并律",
+    "增广律"
+   ],
+   "answer_index": 2,
+   "explanation": "合并律、分解律、伪传递律是由三条公理导出的推论。",
+   "difficulty": 2,
+   "tags": [
+    "Armstrong",
+    "公理"
+   ],
+   "source_quote": "Armstrong 公理包括自反律（若 Y 是 X 的子集则 X → Y）、增广律（若 X → Y 则 XZ → YZ）和传递律（若 X → Y 且 Y → Z 则 X → Z）"
+  },
+  {
+   "type": "single",
+   "stem": "已知 X → Y 且 X → Z，根据合并律可以得到什么？",
+   "options": [
+    "Y → Z",
+    "YZ → X",
+    "Z → X",
+    "X → YZ"
+   ],
+   "answer_index": 3,
+   "explanation": "合并律是由三条基本公理导出的推论。",
+   "difficulty": 2,
+   "tags": [
+    "Armstrong",
+    "合并律"
+   ],
+   "source_quote": "合并律（X → Y 且 X → Z 则 X → YZ）"
+  },
+  {
+   "type": "single",
+   "stem": "关系 R(A, B, C, D) 的函数依赖集 F = {A → B, B → C}，属性集 {A} 的闭包 A+ 是什么？",
+   "options": [
+    "{A, B}",
+    "{A, B, C}",
+    "{A}",
+    "{A, B, C, D}"
+   ],
+   "answer_index": 1,
+   "explanation": "A → B，B → C，所以 A 能推出 B 和 C，A+ = {A, B, C}。",
+   "difficulty": 3,
+   "tags": [
+    "函数依赖",
+    "闭包"
+   ],
+   "source_quote": "属性集 X 的闭包 X+ 是由 X 通过函数依赖集 F 能推出的所有属性的集合"
+  },
+  {
+   "type": "single",
+   "stem": "关系 R(A, B, C, D) 的函数依赖集 F = {A → B, B → C}，R 的候选码是什么？",
+   "options": [
+    "A",
+    "AD",
+    "AB",
+    "BD"
+   ],
+   "answer_index": 1,
+   "explanation": "AD 的闭包包含全部属性，且 A 或 D 单独的闭包都不包含全部属性，所以 AD 是候选码。",
+   "difficulty": 3,
+   "tags": [
+    "函数依赖",
+    "候选码"
+   ],
+   "source_quote": "D 和 A 从不出现在右部，AD 的闭包是 ABCD，所以 AD 是候选码"
+  },
+  {
+   "type": "single",
+   "stem": "关系 R(A, B, C) 的函数依赖集 F = {A → B, B → C, C → A}，R 有几个候选码？",
+   "options": [
+    "2",
+    "0",
+    "1",
+    "3"
+   ],
+   "answer_index": 3,
+   "explanation": "A+ = {A, B, C}，B+ = {A, B, C}，C+ = {A, B, C}，所以 A、B、C 都是候选码，共 3 个。",
+   "difficulty": 4,
+   "tags": [
+    "函数依赖",
+    "候选码个数"
+   ],
+   "source_quote": "如果这些属性的闭包包含了全部属性，它们就是候选码"
+  },
+  {
+   "type": "judge",
+   "stem": "若 Y 是 X 的子集，则 X → Y 是平凡函数依赖。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "例如 {学号, 姓名} → {学号} 是平凡函数依赖。",
+   "difficulty": 2,
+   "tags": [
+    "函数依赖",
+    "平凡依赖"
+   ],
+   "source_quote": "若 Y 是 X 的子集，则 X → Y 是平凡函数依赖"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据库） > 5.8 范式与模式分解": [
+  {
+   "type": "single",
+   "stem": "从 1NF 到 2NF，需要消除什么？",
+   "options": [
+    "主属性对候选码的传递函数依赖",
+    "非主属性对候选码的部分函数依赖",
+    "非主属性对候选码的传递函数依赖",
+    "多值依赖"
+   ],
+   "answer_index": 1,
+   "explanation": "2NF 是在 1NF 基础上消除部分函数依赖。",
+   "difficulty": 2,
+   "tags": [
+    "范式",
+    "2NF"
+   ],
+   "source_quote": "在第一范式（1NF）基础上，消除非主属性对候选码的部分函数依赖得到 2NF"
+  },
+  {
+   "type": "single",
+   "stem": "从 2NF 到 3NF，需要消除什么？",
+   "options": [
+    "候选码之间的依赖",
+    "非主属性对候选码的部分函数依赖",
+    "非主属性对候选码的传递函数依赖",
+    "平凡函数依赖"
+   ],
+   "answer_index": 2,
+   "explanation": "3NF 在 2NF 基础上消除传递依赖。",
+   "difficulty": 2,
+   "tags": [
+    "范式",
+    "3NF"
+   ],
+   "source_quote": "在 2NF 基础上消除非主属性对候选码的传递函数依赖得到 3NF"
+  },
+  {
+   "type": "single",
+   "stem": "BCNF 对函数依赖的要求是什么？",
+   "options": [
+    "每个决定因素都是主属性",
+    "每个决定因素都包含候选码",
+    "不存在部分函数依赖",
+    "不存在平凡函数依赖"
+   ],
+   "answer_index": 1,
+   "explanation": "BCNF 比 3NF 更严格。",
+   "difficulty": 2,
+   "tags": [
+    "范式",
+    "BCNF"
+   ],
+   "source_quote": "在 3NF 基础上，要求每个决定因素都包含候选码则得到 BCNF"
+  },
+  {
+   "type": "single",
+   "stem": "若关系的候选码只由单个属性组成，则该关系至少属于哪个范式？",
+   "options": [
+    "BCNF",
+    "无法判断",
+    "3NF",
+    "2NF"
+   ],
+   "answer_index": 3,
+   "explanation": "部分函数依赖只可能出现在组合候选码上。",
+   "difficulty": 2,
+   "tags": [
+    "范式",
+    "判断"
+   ],
+   "source_quote": "如果候选码只由单个属性组成，则关系一定不存在部分函数依赖，所以属于 2NF"
+  },
+  {
+   "type": "single",
+   "stem": "若关系中所有属性都是主属性，则该关系至少属于哪个范式？",
+   "options": [
+    "BCNF",
+    "1NF",
+    "2NF",
+    "3NF"
+   ],
+   "answer_index": 3,
+   "explanation": "没有非主属性，也就不存在非主属性对候选码的部分或传递依赖。",
+   "difficulty": 2,
+   "tags": [
+    "范式",
+    "判断"
+   ],
+   "source_quote": "如果关系中所有属性都是主属性，则一定属于 3NF"
+  },
+  {
+   "type": "single",
+   "stem": "关系 R(学号, 课程号, 姓名, 成绩)，候选码为（学号，课程号），函数依赖为 学号 → 姓名，（学号，课程号）→ 成绩，则 R 最高属于哪个范式？",
+   "options": [
+    "2NF",
+    "3NF",
+    "1NF",
+    "BCNF"
+   ],
+   "answer_index": 2,
+   "explanation": "姓名只依赖于候选码的一部分学号，存在部分函数依赖，所以不满足 2NF，最高为 1NF。",
+   "difficulty": 3,
+   "tags": [
+    "范式",
+    "综合判断"
+   ],
+   "source_quote": "消除非主属性对候选码的部分函数依赖得到 2NF"
+  },
+  {
+   "type": "single",
+   "stem": "把关系模式分解为 BCNF 时，可以保证什么？",
+   "options": [
+    "无损连接，但不一定保持函数依赖",
+    "保持函数依赖，但不一定无损连接",
+    "既无损连接又保持函数依赖",
+    "两者都不能保证"
+   ],
+   "answer_index": 0,
+   "explanation": "分解成 3NF 才能同时保证无损连接和保持函数依赖。",
+   "difficulty": 3,
+   "tags": [
+    "模式分解",
+    "性质"
+   ],
+   "source_quote": "分解成 BCNF 可以保证无损连接但不一定保持函数依赖"
+  },
+  {
+   "type": "single",
+   "stem": "模式分解的“无损连接”是指什么？",
+   "options": [
+    "分解后每个关系的属性数相同",
+    "分解后函数依赖集变小",
+    "分解后的关系个数不变",
+    "分解后的关系通过自然连接能恢复原关系，不丢失信息也不产生多余元组"
+   ],
+   "answer_index": 3,
+   "explanation": "保持函数依赖是另一个独立的要求。",
+   "difficulty": 2,
+   "tags": [
+    "模式分解",
+    "无损连接"
+   ],
+   "source_quote": "无损连接是指分解后的关系通过自然连接能恢复原关系，不丢失信息，也不产生多余元组"
+  },
+  {
+   "type": "judge",
+   "stem": "属于 BCNF 的关系一定属于 3NF。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "BCNF 是 3NF 的加强，满足 BCNF 必满足 3NF。",
+   "difficulty": 2,
+   "tags": [
+    "范式",
+    "包含关系"
+   ],
+   "source_quote": "范式的级别关系是 1NF 包含 2NF，2NF 包含 3NF，3NF 包含 BCNF"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据库） > 5.9 事务与并发控制": [
+  {
+   "type": "single",
+   "stem": "两个事务读入同一数据并修改，后提交的覆盖了先提交的结果，这种问题称为什么？",
+   "options": [
+    "幻读",
+    "丢失修改",
+    "不可重复读",
+    "读脏数据"
+   ],
+   "answer_index": 1,
+   "explanation": "一级封锁协议可以防止丢失修改。",
+   "difficulty": 2,
+   "tags": [
+    "并发",
+    "丢失修改"
+   ],
+   "source_quote": "丢失修改是两个事务读入同一数据并修改，后提交的覆盖了先提交的结果"
+  },
+  {
+   "type": "single",
+   "stem": "读取了其他事务未提交的修改，而该事务随后回滚，这种问题称为什么？",
+   "options": [
+    "幻读",
+    "丢失修改",
+    "读脏数据",
+    "不可重复读"
+   ],
+   "answer_index": 2,
+   "explanation": "二级封锁协议可以防止读脏数据。",
+   "difficulty": 2,
+   "tags": [
+    "并发",
+    "读脏数据"
+   ],
+   "source_quote": "读脏数据是读取了其他事务未提交的修改，而该事务随后回滚"
+  },
+  {
+   "type": "single",
+   "stem": "同一事务两次读同一数据得到不同结果，是因为中间被其他事务修改，这种问题称为什么？",
+   "options": [
+    "不可重复读",
+    "死锁",
+    "读脏数据",
+    "丢失修改"
+   ],
+   "answer_index": 0,
+   "explanation": "三级封锁协议可以防止不可重复读。",
+   "difficulty": 2,
+   "tags": [
+    "并发",
+    "不可重复读"
+   ],
+   "source_quote": "不可重复读是同一事务两次读同一数据得到不同结果，因为中间被其他事务修改或删除"
+  },
+  {
+   "type": "single",
+   "stem": "同一事务两次按条件查询得到的记录数不同，是因为其他事务插入了新记录，这种问题称为什么？",
+   "options": [
+    "幻读",
+    "丢失修改",
+    "不可重复读",
+    "读脏数据"
+   ],
+   "answer_index": 0,
+   "explanation": "幻读针对记录数变化，不可重复读针对同一数据的值变化。",
+   "difficulty": 2,
+   "tags": [
+    "并发",
+    "幻读"
+   ],
+   "source_quote": "幻读是同一事务两次按条件查询得到的记录数不同，因为其他事务插入了新记录"
+  },
+  {
+   "type": "single",
+   "stem": "关于共享锁和排他锁，下列说法正确的是哪一个？",
+   "options": [
+    "共享锁允许多个事务同时写",
+    "共享锁允许多个事务同时读，排他锁只允许持锁事务读写",
+    "两种锁没有区别",
+    "排他锁允许其他事务加共享锁"
+   ],
+   "answer_index": 1,
+   "explanation": "读读不互斥，读写、写写互斥。",
+   "difficulty": 2,
+   "tags": [
+    "封锁",
+    "锁类型"
+   ],
+   "source_quote": "排他锁只允许持锁事务读写，其他事务不能加任何锁；共享锁允许多个事务同时读，但不能写"
+  },
+  {
+   "type": "single",
+   "stem": "哪一级封锁协议可以防止读脏数据，但不能防止不可重复读？",
+   "options": [
+    "二级封锁协议",
+    "以上都不能",
+    "三级封锁协议",
+    "一级封锁协议"
+   ],
+   "answer_index": 0,
+   "explanation": "读完即释放共享锁，所以同一事务再次读时数据可能已被修改。",
+   "difficulty": 3,
+   "tags": [
+    "封锁",
+    "协议"
+   ],
+   "source_quote": "二级协议在一级基础上读前加共享锁读完即释放，防止读脏数据"
+  },
+  {
+   "type": "single",
+   "stem": "关于两段锁协议，下列说法正确的是哪一个？",
+   "options": [
+    "不能保证可串行化",
+    "能保证并发调度的可串行化，但不能避免死锁",
+    "只能防止丢失修改",
+    "既保证可串行化，又能避免死锁"
+   ],
+   "answer_index": 1,
+   "explanation": "两个事务互相等待对方持有的锁时仍会死锁。",
+   "difficulty": 3,
+   "tags": [
+    "封锁",
+    "两段锁"
+   ],
+   "source_quote": "遵守两段锁协议可以保证并发调度的可串行化，但不能避免死锁"
+  },
+  {
+   "type": "single",
+   "stem": "SQL 标准的四种隔离级别由低到高的顺序是哪一个？",
+   "options": [
+    "可重复读、读未提交、读已提交、串行化",
+    "读未提交、读已提交、可重复读、串行化",
+    "串行化、可重复读、读已提交、读未提交",
+    "读已提交、读未提交、串行化、可重复读"
+   ],
+   "answer_index": 1,
+   "explanation": "隔离级别越高，并发度越低。",
+   "difficulty": 2,
+   "tags": [
+    "隔离级别",
+    "顺序"
+   ],
+   "source_quote": "SQL 标准的四种隔离级别由低到高为读未提交、读已提交、可重复读和串行化"
+  },
+  {
+   "type": "judge",
+   "stem": "遵守两段锁协议的事务调度一定不会发生死锁。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "两段锁只保证可串行化，不保证无死锁。",
+   "difficulty": 3,
+   "tags": [
+    "封锁",
+    "两段锁"
+   ],
+   "source_quote": "遵守两段锁协议可以保证并发调度的可串行化，但不能避免死锁"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据库） > 5.10 数据库恢复与备份": [
+  {
+   "type": "single",
+   "stem": "数据库故障通常分为哪三类？",
+   "options": [
+    "事务故障、系统故障、介质故障",
+    "磁盘故障、内存故障、网络故障",
+    "逻辑故障、物理故障、操作故障",
+    "软件故障、硬件故障、人为故障"
+   ],
+   "answer_index": 0,
+   "explanation": "三类故障的恢复方法各不相同。",
+   "difficulty": 1,
+   "tags": [
+    "恢复",
+    "故障分类"
+   ],
+   "source_quote": "数据库故障分为事务故障、系统故障和介质故障"
+  },
+  {
+   "type": "single",
+   "stem": "系统故障（如掉电）发生后，恢复时应如何处理事务？",
+   "options": [
+    "撤销所有事务",
+    "只重做未提交事务",
+    "重做所有事务",
+    "重做已提交事务，撤销未提交事务"
+   ],
+   "answer_index": 3,
+   "explanation": "已提交事务的结果可能还没写入磁盘，需要重做。",
+   "difficulty": 2,
+   "tags": [
+    "恢复",
+    "系统故障"
+   ],
+   "source_quote": "系统故障如掉电、系统崩溃，内存中的数据丢失，恢复时需要重做已提交事务、撤销未提交事务"
+  },
+  {
+   "type": "single",
+   "stem": "磁盘损坏属于哪类故障，需要用什么恢复？",
+   "options": [
+    "事务故障，用撤销操作恢复",
+    "逻辑故障，修改程序即可",
+    "系统故障，重启即可恢复",
+    "介质故障，用备份和日志文件恢复"
+   ],
+   "answer_index": 3,
+   "explanation": "磁盘上的数据已损坏，必须从备份重建。",
+   "difficulty": 2,
+   "tags": [
+    "恢复",
+    "介质故障"
+   ],
+   "source_quote": "介质故障是磁盘损坏，需要用备份和日志文件恢复"
+  },
+  {
+   "type": "single",
+   "stem": "写日志文件应遵守什么原则？",
+   "options": [
+    "日志和数据库不分先后",
+    "只写数据库即可",
+    "先写数据库后写日志",
+    "先写日志后写数据库"
+   ],
+   "answer_index": 3,
+   "explanation": "这样即使写数据库失败，也能根据日志恢复。",
+   "difficulty": 2,
+   "tags": [
+    "恢复",
+    "日志"
+   ],
+   "source_quote": "写日志文件必须遵守先写日志后写数据库的原则"
+  },
+  {
+   "type": "single",
+   "stem": "数据库恢复中设置检查点的目的是什么？",
+   "options": [
+    "加快事务提交",
+    "增加日志长度",
+    "防止死锁",
+    "缩短恢复时间，只需处理检查点之后的事务"
+   ],
+   "answer_index": 3,
+   "explanation": "检查点之前的修改已确保写入磁盘。",
+   "difficulty": 2,
+   "tags": [
+    "恢复",
+    "检查点"
+   ],
+   "source_quote": "检查点技术在日志中设置检查点，恢复时只需处理检查点之后的事务，缩短恢复时间"
+  },
+  {
+   "type": "single",
+   "stem": "差异备份备份的是哪段时间内变化的数据？",
+   "options": [
+    "上次备份（任何类型）以来",
+    "数据库创建以来",
+    "上次完全备份以来",
+    "昨天以来"
+   ],
+   "answer_index": 2,
+   "explanation": "增量备份才是上次备份以来变化的数据。",
+   "difficulty": 3,
+   "tags": [
+    "备份",
+    "类型"
+   ],
+   "source_quote": "差异备份备份上次完全备份以来变化的数据"
+  },
+  {
+   "type": "single",
+   "stem": "采用完全备份加增量备份的策略，恢复时需要怎样做？",
+   "options": [
+    "先恢复最近一次增量备份，再恢复完全备份",
+    "先恢复完全备份，再依次恢复所有增量备份",
+    "只恢复最近一次增量备份",
+    "只恢复完全备份"
+   ],
+   "answer_index": 1,
+   "explanation": "增量备份之间有依赖链，缺一不可。",
+   "difficulty": 3,
+   "tags": [
+    "备份",
+    "恢复"
+   ],
+   "source_quote": "恢复时增量备份需要依次恢复所有增量备份"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据库） > 5.11 索引、视图、触发器与存储过程": [
+  {
+   "type": "single",
+   "stem": "建立索引的代价主要是什么？",
+   "options": [
+    "降低查询速度",
+    "降低插入、删除和更新的速度并占用存储空间",
+    "使表不能被修改",
+    "破坏数据完整性"
+   ],
+   "answer_index": 1,
+   "explanation": "索引需要随数据变化而维护。",
+   "difficulty": 2,
+   "tags": [
+    "索引",
+    "代价"
+   ],
+   "source_quote": "可以加快查询速度，但会降低插入、删除和更新的速度并占用存储空间"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪种索引更适合范围查询？",
+   "options": [
+    "都不适合",
+    "位图索引之外的哈希索引",
+    "B+ 树索引",
+    "哈希索引"
+   ],
+   "answer_index": 2,
+   "explanation": "B+ 树叶子结点有序且相连。",
+   "difficulty": 2,
+   "tags": [
+    "索引",
+    "适用查询"
+   ],
+   "source_quote": "B+ 树索引适合范围查询，哈希索引只适合等值查询"
+  },
+  {
+   "type": "single",
+   "stem": "关于聚集索引，下列说法正确的是哪一个？",
+   "options": [
+    "决定数据行的物理存储顺序，一个表只能有一个",
+    "不影响数据的物理存储顺序",
+    "只能建立在主键以外的列上",
+    "一个表可以有多个"
+   ],
+   "answer_index": 0,
+   "explanation": "数据行只能按一种顺序物理存放。",
+   "difficulty": 2,
+   "tags": [
+    "索引",
+    "聚集索引"
+   ],
+   "source_quote": "聚集索引决定数据行的物理存储顺序，一个表只能有一个聚集索引，非聚集索引可以有多个"
+  },
+  {
+   "type": "single",
+   "stem": "触发器是在什么时候执行的？",
+   "options": [
+    "只在查询时执行",
+    "数据库启动时执行",
+    "用户手动调用时执行",
+    "对表进行插入、删除或更新操作时自动执行"
+   ],
+   "answer_index": 3,
+   "explanation": "常用于实现复杂的完整性约束和审计。",
+   "difficulty": 2,
+   "tags": [
+    "触发器",
+    "作用"
+   ],
+   "source_quote": "触发器是在对表进行插入、删除或更新操作时自动执行的程序"
+  },
+  {
+   "type": "single",
+   "stem": "存储过程的特点是什么？",
+   "options": [
+    "存放在客户端",
+    "预先编译并存储在服务器中，可以接收参数，减少网络传输",
+    "每次执行都要重新编译",
+    "不能接收参数"
+   ],
+   "answer_index": 1,
+   "explanation": "预编译与服务器端执行是存储过程高效的原因。",
+   "difficulty": 2,
+   "tags": [
+    "存储过程",
+    "特点"
+   ],
+   "source_quote": "存储过程是预先编译并存储在数据库服务器中的一组 SQL 语句，可以接收参数，减少网络传输并提高执行效率"
+  },
+  {
+   "type": "single",
+   "stem": "游标的主要作用是什么？",
+   "options": [
+    "备份数据",
+    "控制事务隔离",
+    "逐行处理查询结果集",
+    "加快索引查找"
+   ],
+   "answer_index": 2,
+   "explanation": "SQL 查询是面向集合的，游标使程序可以逐行处理。",
+   "difficulty": 2,
+   "tags": [
+    "游标",
+    "作用"
+   ],
+   "source_quote": "游标用于逐行处理查询结果集"
+  },
+  {
+   "type": "judge",
+   "stem": "包含聚合函数或分组的视图通常不能更新。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "视图中的行与基本表的行不是一一对应，无法反映到基本表。",
+   "difficulty": 2,
+   "tags": [
+    "视图",
+    "更新"
+   ],
+   "source_quote": "对视图的更新受限，包含聚合函数或分组的视图通常不能更新"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据库） > 5.12 分布式数据库、数据仓库与 NoSQL": [
+  {
+   "type": "single",
+   "stem": "分布式数据库的特点是什么？",
+   "options": [
+    "不具备分布透明性",
+    "数据物理上分散在不同节点，逻辑上是一个整体",
+    "每个节点的数据逻辑上互不相关",
+    "数据只存放在一个节点"
+   ],
+   "answer_index": 1,
+   "explanation": "用户感觉像在使用一个集中式数据库。",
+   "difficulty": 2,
+   "tags": [
+    "分布式数据库",
+    "特点"
+   ],
+   "source_quote": "分布式数据库的数据物理上分散在不同节点、逻辑上是一个整体，具有分布透明性"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一项不是数据仓库的特点？",
+   "options": [
+    "集成",
+    "面向主题",
+    "反映历史变化",
+    "数据频繁地被修改"
+   ],
+   "answer_index": 3,
+   "explanation": "数据仓库的数据相对稳定，主要用于查询分析。",
+   "difficulty": 2,
+   "tags": [
+    "数据仓库",
+    "特点"
+   ],
+   "source_quote": "数据仓库是面向主题的、集成的、相对稳定的、反映历史变化的数据集合"
+  },
+  {
+   "type": "single",
+   "stem": "数据仓库主要用于哪类处理？",
+   "options": [
+    "批处理事务",
+    "联机事务处理（OLTP）",
+    "联机分析处理（OLAP）",
+    "实时控制"
+   ],
+   "answer_index": 2,
+   "explanation": "OLAP 面向分析决策，OLTP 面向日常事务。",
+   "difficulty": 2,
+   "tags": [
+    "数据仓库",
+    "OLAP"
+   ],
+   "source_quote": "数据仓库主要用于联机分析处理，而传统数据库用于联机事务处理"
+  },
+  {
+   "type": "single",
+   "stem": "购物篮分析是数据挖掘中哪种任务的经典例子？",
+   "options": [
+    "关联规则",
+    "分类",
+    "聚类",
+    "预测"
+   ],
+   "answer_index": 0,
+   "explanation": "例如“买面包的顾客也常买牛奶”。",
+   "difficulty": 2,
+   "tags": [
+    "数据挖掘",
+    "关联规则"
+   ],
+   "source_quote": "经典的关联规则例子是购物篮分析"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一项不属于 NoSQL 数据库的常见类型？",
+   "options": [
+    "文档数据库",
+    "关系型数据库",
+    "图数据库",
+    "键值存储"
+   ],
+   "answer_index": 1,
+   "explanation": "关系型数据库是 NoSQL 的对立面，不属于 NoSQL 类型。",
+   "difficulty": 2,
+   "tags": [
+    "NoSQL",
+    "类型"
+   ],
+   "source_quote": "类型包括键值存储、文档数据库、列族数据库和图数据库"
+  },
+  {
+   "type": "single",
+   "stem": "CAP 理论指出的是什么？",
+   "options": [
+    "分布式系统最多只能满足其中一项",
+    "分布式系统可以同时满足三项",
+    "分布式系统最多只能同时满足一致性、可用性、分区容错性中的两项",
+    "分布式系统只需满足一致性"
+   ],
+   "answer_index": 2,
+   "explanation": "网络分区不可避免时，需要在一致性与可用性之间取舍。",
+   "difficulty": 3,
+   "tags": [
+    "CAP",
+    "理论"
+   ],
+   "source_quote": "CAP 理论指出分布式系统不可能同时满足一致性、可用性和分区容错性，最多只能同时满足其中两项"
+  }
+ ]
+}

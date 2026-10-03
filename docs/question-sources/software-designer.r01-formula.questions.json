@@ -1,0 +1,3982 @@
+{
+ "软件设计师（中级）强化训练（公式与速算） > R1.1 数据表示速算：原码、反码、补码、移码": [
+  {
+   "type": "single",
+   "stem": "8 位二进制补码能表示的整数范围是哪一个？",
+   "options": [
+    "-256 ~ +255",
+    "-128 ~ +127",
+    "-127 ~ +127",
+    "-128 ~ +128"
+   ],
+   "answer_index": 1,
+   "explanation": "n 位补码范围 -2^(n-1) ~ 2^(n-1)-1，n=8 时为 -128 ~ 127。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "补码"
+   ],
+   "source_quote": "8 位时原码、反码范围是 -127 ~ +127，补码范围是 -128 ~ +127"
+  },
+  {
+   "type": "single",
+   "stem": "机器字长为 12 位（含符号位），补码能表示的最小整数是多少？",
+   "options": [
+    "-1024",
+    "-2047",
+    "-2048",
+    "-4096"
+   ],
+   "answer_index": 2,
+   "explanation": "最小值为 -2^(n-1) = -2^11 = -2048。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "补码"
+   ],
+   "source_quote": "补码和移码为 -2^(n-1) ~ 2^(n-1) - 1"
+  },
+  {
+   "type": "single",
+   "stem": "用 8 位补码表示 -52，结果是哪一个？",
+   "options": [
+    "10110100",
+    "00110100",
+    "11001011",
+    "11001100"
+   ],
+   "answer_index": 3,
+   "explanation": "52 = 00110100。从右往左第一个 1 在右数第 3 位，该位及右边保持不变，左边数值位取反，得 11001100。",
+   "difficulty": 3,
+   "tags": [
+    "速算技巧",
+    "补码"
+   ],
+   "source_quote": "快速求法是从右往左找到第一个 1，该 1 及其右边的位保持不变，左边的数值位全部取反"
+  },
+  {
+   "type": "single",
+   "stem": "8 位补码 10110100 对应的十进制真值是多少？",
+   "options": [
+    "-76",
+    "-52",
+    "-75",
+    "-180"
+   ],
+   "answer_index": 0,
+   "explanation": "符号位为 1，数值位取反得 01001011，加 1 得 01001100 = 76，真值为 -76。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "补码"
+   ],
+   "source_quote": "符号位为 1 时，把补码按位取反再加 1，得到的数值加负号即为真值"
+  },
+  {
+   "type": "single",
+   "stem": "16 位补码 1111111111110000 的真值是多少？",
+   "options": [
+    "-65520",
+    "-16",
+    "-240",
+    "-15"
+   ],
+   "answer_index": 1,
+   "explanation": "取反加 1：0000000000001111 + 1 = 0000000000010000 = 16，故真值为 -16。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "补码"
+   ],
+   "source_quote": "把补码按位取反再加 1，得到的数值加负号即为真值"
+  },
+  {
+   "type": "single",
+   "stem": "8 位补码 10000000 表示的十进制数是多少？",
+   "options": [
+    "-1",
+    "-127",
+    "0",
+    "-128"
+   ],
+   "answer_index": 3,
+   "explanation": "符号位为 1，取反得 01111111，加 1 得 10000000 = 128，故为 -128。这正是补码比原码多出来的那个最小负数。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "补码"
+   ],
+   "source_quote": "补码比原码、反码多表示一个最小负数"
+  },
+  {
+   "type": "single",
+   "stem": "十进制数 -128 的 8 位移码是哪一个？",
+   "options": [
+    "01111111",
+    "11111111",
+    "00000000",
+    "10000000"
+   ],
+   "answer_index": 2,
+   "explanation": "-128 的补码为 10000000，移码是补码符号位取反，得 00000000，移码全 0 表示最小值。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "移码"
+   ],
+   "source_quote": "移码等于补码的符号位取反，常用于浮点数的阶码，移码全 0 表示最小值"
+  },
+  {
+   "type": "single",
+   "stem": "把 8 位补码 11111110 符号扩展为 16 位补码，结果是哪一个？",
+   "options": [
+    "1111111111111110",
+    "0000000011111110",
+    "1000000011111110",
+    "1111111100000000"
+   ],
+   "answer_index": 0,
+   "explanation": "补码扩展时高位补符号位。符号位为 1，高 8 位补 1。",
+   "difficulty": 2,
+   "tags": [
+    "速算技巧",
+    "补码"
+   ],
+   "source_quote": "把短补码扩展成长补码时高位补符号位"
+  },
+  {
+   "type": "single",
+   "stem": "8 位补码运算 01111111 + 00000001，结果的情况是哪一个？",
+   "options": [
+    "发生负溢出，结果符号位为 0",
+    "发生正溢出，结果符号位为 1",
+    "结果为 0，进位丢弃",
+    "结果为 +128，无溢出"
+   ],
+   "answer_index": 1,
+   "explanation": "127 + 1 = 128 超出 8 位补码上限 127；两个正数相加得到符号位 1，同号相加结果异号即溢出。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "溢出"
+   ],
+   "source_quote": "两个同号数相加，结果符号与加数符号相反则溢出"
+  },
+  {
+   "type": "judge",
+   "stem": "在补码表示中，+0 和 -0 的编码相同，所以补码比原码多表示一个最小负数。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "补码的 0 只有一种表示，因此 n 位补码共 2^n 个编码全部用来表示不同的数，比原码多一个 -2^(n-1)。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "补码"
+   ],
+   "source_quote": "补码比原码、反码多表示一个最小负数，因为原码和反码中 0 有 +0 和 -0 两种表示，补码中 0 只有一种表示"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.2 浮点数与进制转换速算": [
+  {
+   "type": "single",
+   "stem": "浮点数加减运算中“对阶”的规则是哪一个？",
+   "options": [
+    "两个阶码都调整为 0",
+    "大阶向小阶看齐，大阶的尾数左移",
+    "小阶向大阶看齐，小阶的尾数左移",
+    "小阶向大阶看齐，小阶的尾数右移"
+   ],
+   "answer_index": 3,
+   "explanation": "对阶使两数阶码相等；小阶对齐到大阶，尾数右移，只会丢失低位，误差较小。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "浮点数"
+   ],
+   "source_quote": "对阶时小阶向大阶看齐，即阶码小的数的尾数右移"
+  },
+  {
+   "type": "single",
+   "stem": "浮点数 x 的阶码为 3，y 的阶码为 5，对阶时 x 的尾数应怎样处理？",
+   "options": [
+    "左移 2 位，阶码加 2",
+    "右移 2 位，阶码减 2",
+    "右移 2 位，阶码加 2",
+    "左移 2 位，阶码减 2"
+   ],
+   "answer_index": 2,
+   "explanation": "阶差为 2，x 是小阶，需向大阶看齐：阶码加 2，尾数右移 2 位。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "浮点数"
+   ],
+   "source_quote": "阶码每加 1，尾数右移 1 位"
+  },
+  {
+   "type": "judge",
+   "stem": "浮点数的阶码位数越多，表示的数的精度越高。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "精度由尾数的位数决定，阶码位数决定表示范围。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "浮点数"
+   ],
+   "source_quote": "阶码的位数决定数的表示范围，尾数的位数决定数的精度"
+  },
+  {
+   "type": "single",
+   "stem": "二进制数 11010110 转换为十六进制是哪一个？",
+   "options": [
+    "D6",
+    "B6",
+    "6D",
+    "D3"
+   ],
+   "answer_index": 0,
+   "explanation": "按 4 位分组：1101 = D，0110 = 6。",
+   "difficulty": 1,
+   "tags": [
+    "速算技巧",
+    "进制转换"
+   ],
+   "source_quote": "二进制与十六进制互转按每 4 位一组"
+  },
+  {
+   "type": "single",
+   "stem": "二进制数 11010110 转换为八进制是哪一个？",
+   "options": [
+    "D6",
+    "326",
+    "632",
+    "336"
+   ],
+   "answer_index": 1,
+   "explanation": "从右往左每 3 位一组：011 010 110，即 3、2、6，得 326。",
+   "difficulty": 2,
+   "tags": [
+    "速算技巧",
+    "进制转换"
+   ],
+   "source_quote": "二进制与八进制互转按每 3 位一组"
+  },
+  {
+   "type": "single",
+   "stem": "十进制数 173 转换为二进制是哪一个？",
+   "options": [
+    "10101101",
+    "10101011",
+    "10011101",
+    "10110101"
+   ],
+   "answer_index": 0,
+   "explanation": "除 2 取余法：173 = 128 + 32 + 8 + 4 + 1，即 10101101。",
+   "difficulty": 2,
+   "tags": [
+    "速算技巧",
+    "进制转换"
+   ],
+   "source_quote": "十进制整数转二进制用除 2 取余法，余数从下往上读"
+  },
+  {
+   "type": "single",
+   "stem": "十进制小数 0.375 转换为二进制小数是哪一个？",
+   "options": [
+    "0.110",
+    "0.0011",
+    "0.101",
+    "0.011"
+   ],
+   "answer_index": 3,
+   "explanation": "乘 2 取整：0.375×2=0.75 取 0；0.75×2=1.5 取 1；0.5×2=1.0 取 1，结果 0.011。",
+   "difficulty": 2,
+   "tags": [
+    "速算技巧",
+    "进制转换"
+   ],
+   "source_quote": "十进制小数转二进制用乘 2 取整法，整数部分从上往下读"
+  },
+  {
+   "type": "single",
+   "stem": "十六进制数 3A7 对应的十进制数是多少？",
+   "options": [
+    "890",
+    "919",
+    "935",
+    "951"
+   ],
+   "answer_index": 2,
+   "explanation": "3×256 + 10×16 + 7 = 768 + 160 + 7 = 935。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "进制转换"
+   ],
+   "source_quote": "十六进制 FFFF 等于十进制 65535"
+  },
+  {
+   "type": "single",
+   "stem": "4 位十六进制数最多可以表示多少个不同的值？",
+   "options": [
+    "4096",
+    "16384",
+    "65535",
+    "65536"
+   ],
+   "answer_index": 3,
+   "explanation": "16^4 = 65536，最大值 FFFF = 65535，注意“个数”比“最大值”多 1（包含 0）。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "进制转换"
+   ],
+   "source_quote": "K 进制数的 d 位最多表示 K^d 个不同的值，最大值为 K^d - 1"
+  },
+  {
+   "type": "judge",
+   "stem": "规格化的补码浮点尾数，其符号位与最高数值位必须相同。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "规格化要求补码尾数的符号位与最高数值位不同（如 0.1xxx 或 1.0xxx），这样尾数没有冗余的符号位。",
+   "difficulty": 3,
+   "tags": [
+    "高频考点",
+    "浮点数"
+   ],
+   "source_quote": "规格化的补码尾数要求符号位与最高数值位不同"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.3 校验码速算：码距、海明码、CRC": [
+  {
+   "type": "single",
+   "stem": "某编码的码距为 5，它最多可以检测出几位错误？",
+   "options": [
+    "4 位",
+    "5 位",
+    "2 位",
+    "3 位"
+   ],
+   "answer_index": 0,
+   "explanation": "码距 d 可检测 d-1 位错，d=5 时检测 4 位。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "码距"
+   ],
+   "source_quote": "码距为 d 的编码可以检测 d-1 位错，可以纠正 ⌊(d-1)/2⌋ 位错"
+  },
+  {
+   "type": "single",
+   "stem": "某编码的码距为 5，它最多可以纠正几位错误？",
+   "options": [
+    "1 位",
+    "2 位",
+    "4 位",
+    "3 位"
+   ],
+   "answer_index": 1,
+   "explanation": "纠错能力为 ⌊(d-1)/2⌋ = ⌊4/2⌋ = 2 位。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "码距"
+   ],
+   "source_quote": "码距为 d 的编码可以检测 d-1 位错，可以纠正 ⌊(d-1)/2⌋ 位错"
+  },
+  {
+   "type": "single",
+   "stem": "要用海明码纠正 16 位数据中的 1 位错误，至少需要几位校验位？",
+   "options": [
+    "3",
+    "6",
+    "5",
+    "4"
+   ],
+   "answer_index": 2,
+   "explanation": "2^r ≥ 16 + r + 1：r=4 时 16 < 21 不满足，r=5 时 32 ≥ 22 满足。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "海明码"
+   ],
+   "source_quote": "k = 8 时 r = 4，k = 16 时 r = 5，k = 32 时 r = 6"
+  },
+  {
+   "type": "single",
+   "stem": "对 64 位数据采用海明码纠一位错，需要校验位几位？",
+   "options": [
+    "5",
+    "7",
+    "8",
+    "6"
+   ],
+   "answer_index": 1,
+   "explanation": "r=6 时 2^6 = 64 < 64+6+1 = 71；r=7 时 128 ≥ 72，所以 7 位。注意 r 要使 2^r 大于 k+r。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "海明码"
+   ],
+   "source_quote": "k = 32 时 r = 6，k = 64 时 r = 7"
+  },
+  {
+   "type": "single",
+   "stem": "11 位数据位的海明码，最少需要几位校验位？",
+   "options": [
+    "4",
+    "5",
+    "11",
+    "3"
+   ],
+   "answer_index": 0,
+   "explanation": "2^4 = 16 ≥ 11 + 4 + 1 = 16 恰好满足，等号成立也算满足。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "海明码"
+   ],
+   "source_quote": "海明码（纠一位错）的校验位个数 r 满足 2^r ≥ k + r + 1"
+  },
+  {
+   "type": "single",
+   "stem": "海明码中，校验位通常放在哪些位置？",
+   "options": [
+    "所有奇数位",
+    "整个码字的最高几位",
+    "所有偶数位",
+    "位号为 2 的幂次的位置（1、2、4、8……）"
+   ],
+   "answer_index": 3,
+   "explanation": "这样第 i 个校验位恰好覆盖位号二进制第 i 位为 1 的那些位。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "海明码"
+   ],
+   "source_quote": "海明码的校验位放在 2 的幂次位置（第 1、2、4、8 位……）"
+  },
+  {
+   "type": "single",
+   "stem": "CRC 校验中，生成多项式为 x^4 + x + 1，则校验码是几位？",
+   "options": [
+    "5 位",
+    "3 位",
+    "4 位",
+    "2 位"
+   ],
+   "answer_index": 2,
+   "explanation": "最高次幂为 4，校验码 4 位，生成多项式对应 5 位二进制数 10011。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "CRC"
+   ],
+   "source_quote": "生成多项式的最高次幂为 r，则校验码为 r 位，生成多项式共 r+1 位"
+  },
+  {
+   "type": "single",
+   "stem": "数据 1101，生成多项式 G(x) = x^3 + x + 1（二进制 1011），CRC 校验码是哪一个？",
+   "options": [
+    "101",
+    "001",
+    "011",
+    "000"
+   ],
+   "answer_index": 1,
+   "explanation": "在数据后补 3 个 0 得 1101000，对 1011 做模 2 除法：余数为 001。",
+   "difficulty": 4,
+   "tags": [
+    "公式速算",
+    "CRC"
+   ],
+   "source_quote": "在数据后补 r 个 0，用模 2 除法除以生成多项式，所得余数就是校验码"
+  },
+  {
+   "type": "judge",
+   "stem": "奇偶校验码可以发现所有的错误，但不能指出错在哪一位。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "奇偶校验只能发现奇数位错，偶数位同时出错（如 2 位）时奇偶性不变，无法发现。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "奇偶校验"
+   ],
+   "source_quote": "奇偶校验码的码距为 2，只能检错不能纠错，只能发现奇数位错"
+  },
+  {
+   "type": "judge",
+   "stem": "CRC 校验码既能检错又能纠错。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "CRC 只能检错，不能纠错；能纠一位错的是海明码。",
+   "difficulty": 1,
+   "tags": [
+    "高频考点",
+    "CRC"
+   ],
+   "source_quote": "CRC 只能检错，不能纠错"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.4 流水线计算：执行时间、吞吐率、加速比、效率": [
+  {
+   "type": "single",
+   "stem": "一条指令分为取指、分析、执行三段，每段 2 ns，采用流水线连续执行 10 条指令，需要多少时间？",
+   "options": [
+    "60 ns",
+    "18 ns",
+    "26 ns",
+    "24 ns"
+   ],
+   "answer_index": 3,
+   "explanation": "T = (k + n - 1)Δt = (3 + 9) × 2 = 24 ns。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "流水线"
+   ],
+   "source_quote": "流水线执行总时间 T = (k + n - 1) × Δt"
+  },
+  {
+   "type": "single",
+   "stem": "四段流水线（每段 Δt）执行 100 条指令，吞吐率约为多少？",
+   "options": [
+    "4 / (103Δt)",
+    "100 / (400Δt)",
+    "100 / (103Δt)",
+    "1 / (4Δt)"
+   ],
+   "answer_index": 2,
+   "explanation": "T = (4 + 99)Δt = 103Δt，TP = n / T = 100 / (103Δt)。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "流水线"
+   ],
+   "source_quote": "吞吐率 TP = n / T，最大吞吐率为 1 / Δt"
+  },
+  {
+   "type": "single",
+   "stem": "流水线最大吞吐率由什么决定？",
+   "options": [
+    "最长段的时间（流水线周期）",
+    "所有段时间之和",
+    "指令条数",
+    "流水线段数"
+   ],
+   "answer_index": 0,
+   "explanation": "n 很大时 TP 趋近于 1/Δt，Δt 为最长段时间，所以瓶颈段决定最大吞吐率。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "流水线"
+   ],
+   "source_quote": "最大吞吐率为 1 / Δt"
+  },
+  {
+   "type": "single",
+   "stem": "五段流水线（各段 Δt）连续执行 6 条指令，加速比是多少？",
+   "options": [
+    "3",
+    "6",
+    "5",
+    "10/3"
+   ],
+   "answer_index": 0,
+   "explanation": "顺序执行 5×6 = 30Δt，流水线 (5+6-1) = 10Δt，S = 30/10 = 3。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "流水线"
+   ],
+   "source_quote": "加速比 S = n × k × Δt / ((k + n - 1) × Δt) = nk / (k + n - 1)"
+  },
+  {
+   "type": "single",
+   "stem": "某 4 段流水线连续执行 n 条指令，当 n 趋近无穷大时，加速比趋近于多少？",
+   "options": [
+    "1",
+    "n",
+    "4",
+    "n+3"
+   ],
+   "answer_index": 2,
+   "explanation": "S = 4n / (n + 3)，n 很大时趋近于 4，即等于段数 k。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "流水线"
+   ],
+   "source_quote": "n 很大时加速比趋近于 k"
+  },
+  {
+   "type": "single",
+   "stem": "四段流水线连续执行 n 条指令，若 n = 7，效率是多少？",
+   "options": [
+    "1.0",
+    "0.7",
+    "1.75",
+    "0.4"
+   ],
+   "answer_index": 1,
+   "explanation": "E = n / (k + n - 1) = 7 / 10 = 0.7。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "流水线"
+   ],
+   "source_quote": "效率 E = S / k = n / (k + n - 1)"
+  },
+  {
+   "type": "single",
+   "stem": "某 3 段流水线各段时间分别为 1 ns、3 ns、2 ns，周期取最长段时间，连续执行 5 条指令共需多少 ns？",
+   "options": [
+    "30",
+    "24",
+    "18",
+    "21"
+   ],
+   "answer_index": 3,
+   "explanation": "周期 Δt = 3 ns，T = (3 + 5 - 1) × 3 = 21 ns。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "流水线"
+   ],
+   "source_quote": "各段时间不等时，流水线周期取最长段时间"
+  },
+  {
+   "type": "single",
+   "stem": "2 路超标量流水线（每周期发射 2 条），4 段，各段 Δt，执行 100 条指令，需要多少 Δt？",
+   "options": [
+    "52",
+    "53",
+    "103",
+    "54"
+   ],
+   "answer_index": 1,
+   "explanation": "T = (k + (n-m)/m)Δt = (4 + 98/2)Δt = 53Δt。",
+   "difficulty": 4,
+   "tags": [
+    "公式速算",
+    "超标量"
+   ],
+   "source_quote": "超标量流水线每个周期同时发射 m 条指令，执行 n 条指令的时间 T = (k + (n - m) / m) × Δt"
+  },
+  {
+   "type": "single",
+   "stem": "流水线中“后一条指令需要用到前一条指令尚未写回的结果”，属于哪类冒险？",
+   "options": [
+    "存储冒险",
+    "控制冒险",
+    "结构冒险",
+    "数据冒险（RAW）"
+   ],
+   "answer_index": 3,
+   "explanation": "RAW 即写后读，典型的数据相关。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "流水线冒险"
+   ],
+   "source_quote": "数据冒险（RAW 写后读、WAR 读后写、WAW 写后写）"
+  },
+  {
+   "type": "judge",
+   "stem": "流水线的段数越多，一定能线性提高吞吐率，没有任何副作用。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "段数增加会加大冒险处理与寄存器开销，而且最大吞吐率取决于最长段，段划分不均衡时增加段数收益有限。",
+   "difficulty": 3,
+   "tags": [
+    "高频考点",
+    "流水线"
+   ],
+   "source_quote": "增加流水线段数可以缩短周期，但会增加冒险处理的开销"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.5 CPU 性能计算：CPI、MIPS、Amdahl 定律": [
+  {
+   "type": "single",
+   "stem": "某 CPU 主频为 2 GHz，程序共 10^9 条指令，平均 CPI 为 1.5，则执行时间为多少？",
+   "options": [
+    "3 s",
+    "1.5 s",
+    "0.75 s",
+    "0.5 s"
+   ],
+   "answer_index": 2,
+   "explanation": "时间 = 10^9 × 1.5 ÷ (2×10^9) = 0.75 s。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "CPI"
+   ],
+   "source_quote": "程序执行时间 = 指令条数 × CPI ÷ 主频"
+  },
+  {
+   "type": "single",
+   "stem": "某机器指令分两类：A 类占 60%，CPI 为 1；B 类占 40%，CPI 为 4。平均 CPI 是多少？",
+   "options": [
+    "2.2",
+    "5.0",
+    "1.6",
+    "2.5"
+   ],
+   "answer_index": 0,
+   "explanation": "平均 CPI = 0.6×1 + 0.4×4 = 2.2。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "CPI"
+   ],
+   "source_quote": "平均 CPI = Σ（某类指令的比例 × 该类指令的 CPI）"
+  },
+  {
+   "type": "single",
+   "stem": "主频为 500 MHz、平均 CPI 为 2.5 的处理器，其 MIPS 值为多少？",
+   "options": [
+    "2.5",
+    "500",
+    "200",
+    "1250"
+   ],
+   "answer_index": 2,
+   "explanation": "MIPS = 主频(MHz) ÷ CPI = 500 ÷ 2.5 = 200。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "MIPS"
+   ],
+   "source_quote": "MIPS（每秒百万条指令）= 主频（MHz）÷ CPI"
+  },
+  {
+   "type": "single",
+   "stem": "程序中某部分占执行时间的 40%，将其加速 4 倍，整体加速比约为多少？",
+   "options": [
+    "1.43",
+    "2.5",
+    "4",
+    "1.6"
+   ],
+   "answer_index": 0,
+   "explanation": "1 ÷ (0.6 + 0.4/4) = 1 ÷ 0.7 ≈ 1.43。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "Amdahl"
+   ],
+   "source_quote": "总加速比为 1 ÷ (0.6 + 0.1) 约为 1.43"
+  },
+  {
+   "type": "single",
+   "stem": "程序中 50% 的时间可以被并行加速，即使并行部分加速到无穷快，整体加速比上限是多少？",
+   "options": [
+    "50",
+    "2",
+    "1.5",
+    "无穷大"
+   ],
+   "answer_index": 1,
+   "explanation": "上限 = 1 ÷ (1 - f) = 1 ÷ 0.5 = 2。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "Amdahl"
+   ],
+   "source_quote": "总加速比的上限为 1 ÷ (1 - f)"
+  },
+  {
+   "type": "single",
+   "stem": "把占总时间 80% 的部分加速 10 倍，整体加速比约为多少？",
+   "options": [
+    "10",
+    "8",
+    "5",
+    "3.57"
+   ],
+   "answer_index": 3,
+   "explanation": "1 ÷ (0.2 + 0.08) = 1 ÷ 0.28 ≈ 3.57。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "Amdahl"
+   ],
+   "source_quote": "系统加速比 = 1 ÷ ((1 - f) + f ÷ r)"
+  },
+  {
+   "type": "single",
+   "stem": "时钟周期与主频之间的关系是什么？",
+   "options": [
+    "时钟周期是主频的平方",
+    "互为倒数",
+    "相等",
+    "没有关系"
+   ],
+   "answer_index": 1,
+   "explanation": "主频 2 GHz 对应时钟周期 0.5 ns。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "主频"
+   ],
+   "source_quote": "时钟周期是主频的倒数"
+  },
+  {
+   "type": "judge",
+   "stem": "一个指令周期由若干个机器周期组成，一个机器周期包含若干个时钟周期。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "包含关系：指令周期 ⊃ 机器周期（CPU 周期）⊃ 时钟周期。",
+   "difficulty": 1,
+   "tags": [
+    "高频考点",
+    "CPU 周期"
+   ],
+   "source_quote": "指令周期由若干机器周期（CPU 周期）组成，一个机器周期包含若干时钟周期"
+  },
+  {
+   "type": "judge",
+   "stem": "MIPS 值越大的机器，执行同一个程序一定越快。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "不同机器的指令系统不同，完成同一任务所需指令数不同，MIPS 不能直接比较性能。",
+   "difficulty": 3,
+   "tags": [
+    "高频考点",
+    "MIPS"
+   ],
+   "source_quote": "程序执行时间 = 指令条数 × CPI ÷ 主频"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.6 存储容量与编址计算": [
+  {
+   "type": "single",
+   "stem": "内存地址从 4000H 到 5FFFH，共有多少个存储单元？",
+   "options": [
+    "8K（8192）",
+    "8191",
+    "16K",
+    "4K（4096）"
+   ],
+   "answer_index": 0,
+   "explanation": "5FFFH - 4000H + 1 = 2000H = 8192 个单元，即 8K。注意要加 1。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "编址"
+   ],
+   "source_quote": "存储区域容量 = 末地址 - 首地址 + 1"
+  },
+  {
+   "type": "single",
+   "stem": "某内存区域地址范围为 A000H ~ BFFFH，按字节编址，其容量是多少？",
+   "options": [
+    "4 KB",
+    "16 KB",
+    "6 KB",
+    "8 KB"
+   ],
+   "answer_index": 3,
+   "explanation": "BFFFH - A000H + 1 = 2000H = 8192 字节 = 8 KB。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "编址"
+   ],
+   "source_quote": "存储区域容量 = 末地址 - 首地址 + 1"
+  },
+  {
+   "type": "single",
+   "stem": "内存地址从 90000H 到 CFFFFH，按字节编址，容量是多少？",
+   "options": [
+    "128 KB",
+    "512 KB",
+    "256 KB",
+    "320 KB"
+   ],
+   "answer_index": 2,
+   "explanation": "CFFFFH - 90000H + 1 = 40000H = 2^18 字节 = 256 KB。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "编址"
+   ],
+   "source_quote": "存储区域容量 = 末地址 - 首地址 + 1"
+  },
+  {
+   "type": "single",
+   "stem": "若用 16K × 8 位的芯片构成 90000H ~ CFFFFH 的字节编址内存（256 KB），需要多少片？",
+   "options": [
+    "16",
+    "8",
+    "4",
+    "32"
+   ],
+   "answer_index": 0,
+   "explanation": "256 KB ÷ 16 KB = 16 片。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "芯片扩展"
+   ],
+   "source_quote": "所需芯片数 = 总容量 ÷ 单片容量"
+  },
+  {
+   "type": "single",
+   "stem": "32 位地址线最多可以寻址多少字节（按字节编址）？",
+   "options": [
+    "8 GB",
+    "4 GB",
+    "2 GB",
+    "32 MB"
+   ],
+   "answer_index": 1,
+   "explanation": "2^32 = 4G。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "编址"
+   ],
+   "source_quote": "寻址 4G 个单元需要 32 根"
+  },
+  {
+   "type": "single",
+   "stem": "某 CPU 的地址总线为 20 根，按字节编址，直接寻址空间是多少？",
+   "options": [
+    "64 KB",
+    "2 MB",
+    "16 MB",
+    "1 MB"
+   ],
+   "answer_index": 3,
+   "explanation": "2^20 = 1M。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "编址"
+   ],
+   "source_quote": "寻址 1M 个单元需要 20 根"
+  },
+  {
+   "type": "single",
+   "stem": "用 1K × 4 位的芯片构成 4K × 8 位的存储器，共需要多少片？",
+   "options": [
+    "2",
+    "4",
+    "8",
+    "16"
+   ],
+   "answer_index": 2,
+   "explanation": "字扩展 4K/1K = 4 组，位扩展 8/4 = 2 片，共 4 × 2 = 8 片。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "芯片扩展"
+   ],
+   "source_quote": "芯片数 = (总单元数 ÷ 单片单元数) × (总位数 ÷ 单片位数)"
+  },
+  {
+   "type": "single",
+   "stem": "字长 16 位、按字编址的存储器，地址范围为 0000H ~ FFFFH，其容量是多少字节？",
+   "options": [
+    "64 KB",
+    "128 KB",
+    "256 KB",
+    "32 KB"
+   ],
+   "answer_index": 1,
+   "explanation": "共 64K 个字，每字 2 字节，共 128 KB。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "编址"
+   ],
+   "source_quote": "按字编址且字长 16 位时，一个地址对应 2 个字节"
+  },
+  {
+   "type": "judge",
+   "stem": "把两片 8K × 4 位的芯片数据线并联，构成 8K × 8 位的存储器，属于位扩展。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "位扩展增加每单元的位数，单元数不变；各芯片使用相同的地址线与片选。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "芯片扩展"
+   ],
+   "source_quote": "位扩展增加每单元的位数，各芯片的数据线并联后拼成更宽的字"
+  },
+  {
+   "type": "judge",
+   "stem": "字扩展时，高位地址线用来产生各芯片的片选信号。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "字扩展增加存储单元数，低位地址接各片，高位地址经译码选择其中一片。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "芯片扩展"
+   ],
+   "source_quote": "字扩展增加单元数，用高位地址产生片选信号"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.7 Cache 计算：平均访问时间、命中率与地址划分": [
+  {
+   "type": "single",
+   "stem": "Cache 访问时间 10 ns，主存访问时间 100 ns，命中率 90%，平均访问时间是多少？",
+   "options": [
+    "10 ns",
+    "91 ns",
+    "55 ns",
+    "19 ns"
+   ],
+   "answer_index": 3,
+   "explanation": "0.9 × 10 + 0.1 × 100 = 9 + 10 = 19 ns。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "Cache"
+   ],
+   "source_quote": "平均访问时间 = h × tc + (1 - h) × tm"
+  },
+  {
+   "type": "single",
+   "stem": "Cache 访问时间 5 ns，主存 50 ns，命中率 95%，平均访问时间是多少？",
+   "options": [
+    "5.25 ns",
+    "2.75 ns",
+    "7.25 ns",
+    "47.5 ns"
+   ],
+   "answer_index": 2,
+   "explanation": "0.95 × 5 + 0.05 × 50 = 4.75 + 2.5 = 7.25 ns。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "Cache"
+   ],
+   "source_quote": "平均访问时间 = h × tc + (1 - h) × tm"
+  },
+  {
+   "type": "single",
+   "stem": "一次程序运行中 CPU 访问存储器 2000 次，其中访问 Cache 命中 1900 次，命中率是多少？",
+   "options": [
+    "0.95",
+    "0.05",
+    "0.9",
+    "0.98"
+   ],
+   "answer_index": 0,
+   "explanation": "h = 1900 / 2000 = 0.95。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "Cache"
+   ],
+   "source_quote": "命中率 h = Cache 命中次数 ÷ 总访问次数"
+  },
+  {
+   "type": "single",
+   "stem": "Cache 访问时间 2 ns，主存 50 ns，命中率 98%，与只用主存相比，访问速度提高到约多少倍？",
+   "options": [
+    "16.9 倍",
+    "98 倍",
+    "25 倍",
+    "5.0 倍"
+   ],
+   "answer_index": 0,
+   "explanation": "平均时间 = 0.98×2 + 0.02×50 = 2.96 ns，加速比 = 50 ÷ 2.96 ≈ 16.9。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "Cache"
+   ],
+   "source_quote": "Cache 相对于只用主存的加速比 = tm ÷ 平均访问时间"
+  },
+  {
+   "type": "single",
+   "stem": "直接映射，Cache 共 16 块，主存第 205 块应放入 Cache 的第几块？",
+   "options": [
+    "15",
+    "14",
+    "12",
+    "13"
+   ],
+   "answer_index": 3,
+   "explanation": "Cache 块号 = 205 mod 16 = 13（205 = 12×16 + 13）。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "Cache 映射"
+   ],
+   "source_quote": "Cache 块号 = 主存块号 mod Cache 块数"
+  },
+  {
+   "type": "single",
+   "stem": "Cache 容量 16 KB，块大小 64 B，采用直接映射，则主存地址中 Cache 块号字段有几位？",
+   "options": [
+    "14",
+    "10",
+    "8",
+    "6"
+   ],
+   "answer_index": 2,
+   "explanation": "块数 = 16KB ÷ 64B = 256 = 2^8，块号字段 8 位；块内地址 6 位。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "Cache 映射"
+   ],
+   "source_quote": "块数为 2^(a-b)，直接映射的块号字段为 a-b 位"
+  },
+  {
+   "type": "single",
+   "stem": "Cache 共 64 块，采用 4 路组相联映射，则共分成多少组？",
+   "options": [
+    "256",
+    "16",
+    "64",
+    "4"
+   ],
+   "answer_index": 1,
+   "explanation": "组数 = 块数 ÷ 路数 = 64 ÷ 4 = 16，组号字段 4 位。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "Cache 映射"
+   ],
+   "source_quote": "组相联先映射到组，组内任意放"
+  },
+  {
+   "type": "single",
+   "stem": "Cache 块大小为 32 字节，则主存地址中块内地址字段有几位？",
+   "options": [
+    "6",
+    "5",
+    "4",
+    "32"
+   ],
+   "answer_index": 1,
+   "explanation": "32 = 2^5，块内地址 5 位。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "Cache 映射"
+   ],
+   "source_quote": "Cache 容量为 2^a 字节、块大小为 2^b 字节时，块内地址 b 位"
+  },
+  {
+   "type": "single",
+   "stem": "下列映射方式中，硬件最简单但冲突率最高的是哪一个？",
+   "options": [
+    "段页式映射",
+    "组相联映射",
+    "直接映射",
+    "全相联映射"
+   ],
+   "answer_index": 2,
+   "explanation": "直接映射只需比较一个块的标记，但同一 Cache 块对应的主存块冲突多。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "Cache 映射"
+   ],
+   "source_quote": "直接映射每个主存块只能放到唯一的 Cache 块"
+  },
+  {
+   "type": "judge",
+   "stem": "Cache 的内容由硬件自动调度，应用程序员无需知道其存在。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "Cache 对程序员透明。",
+   "difficulty": 1,
+   "tags": [
+    "高频考点",
+    "Cache"
+   ],
+   "source_quote": "Cache 的读写由硬件完成，对程序员透明"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.8 系统可靠性计算：串联、并联、混合与 TMR": [
+  {
+   "type": "single",
+   "stem": "系统由 A、B 两个部件串联而成，可靠度分别为 0.95 和 0.6，系统可靠度是多少？",
+   "options": [
+    "0.98",
+    "0.78",
+    "0.60",
+    "0.57"
+   ],
+   "answer_index": 3,
+   "explanation": "串联相乘：0.95 × 0.6 = 0.57。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "可靠性"
+   ],
+   "source_quote": "串联系统：各部件都正常系统才正常，可靠度 R = R1 × R2 × ... × Rn"
+  },
+  {
+   "type": "single",
+   "stem": "两个部件并联，可靠度分别为 0.9 和 0.8，系统可靠度是多少？",
+   "options": [
+    "0.98",
+    "0.72",
+    "0.90",
+    "0.85"
+   ],
+   "answer_index": 0,
+   "explanation": "1 - (1-0.9)(1-0.8) = 1 - 0.02 = 0.98。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "可靠性"
+   ],
+   "source_quote": "可靠度 R = 1 - (1 - R1)(1 - R2)...(1 - Rn)"
+  },
+  {
+   "type": "single",
+   "stem": "先把两个可靠度均为 0.8 的部件并联，再与可靠度为 0.9 的部件串联，系统可靠度是多少？",
+   "options": [
+    "0.980",
+    "0.972",
+    "0.864",
+    "0.720"
+   ],
+   "answer_index": 2,
+   "explanation": "并联部分 1 - 0.2×0.2 = 0.96，再乘 0.9 得 0.864。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "可靠性"
+   ],
+   "source_quote": "把并联部分当作一个等效部件，再与串联部分相乘"
+  },
+  {
+   "type": "single",
+   "stem": "三模冗余系统中每个模块的可靠度为 0.9，表决器完全可靠，系统可靠度是多少？",
+   "options": [
+    "0.972",
+    "0.900",
+    "0.729",
+    "0.999"
+   ],
+   "answer_index": 0,
+   "explanation": "3R² - 2R³ = 3×0.81 - 2×0.729 = 2.43 - 1.458 = 0.972。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "TMR"
+   ],
+   "source_quote": "系统可靠度为 3R² - 2R³"
+  },
+  {
+   "type": "single",
+   "stem": "3 个可靠度均为 0.9 的部件串联，系统可靠度是多少？",
+   "options": [
+    "0.999",
+    "0.729",
+    "0.810",
+    "0.900"
+   ],
+   "answer_index": 1,
+   "explanation": "R^3 = 0.9^3 = 0.729。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "可靠性"
+   ],
+   "source_quote": "n 个相同部件（可靠度均为 R）串联的可靠度为 R^n"
+  },
+  {
+   "type": "single",
+   "stem": "3 个可靠度均为 0.9 的部件并联，系统可靠度是多少？",
+   "options": [
+    "0.729",
+    "0.970",
+    "0.900",
+    "0.999"
+   ],
+   "answer_index": 3,
+   "explanation": "1 - (1 - 0.9)^3 = 1 - 0.001 = 0.999。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "可靠性"
+   ],
+   "source_quote": "并联的可靠度为 1 - (1 - R)^n"
+  },
+  {
+   "type": "single",
+   "stem": "串联系统由三个部件组成，失效率分别为 0.001、0.002、0.002（次/小时），系统 MTBF 是多少小时？",
+   "options": [
+    "0.005",
+    "500",
+    "1000",
+    "200"
+   ],
+   "answer_index": 3,
+   "explanation": "总失效率 0.005，MTBF = 1 ÷ 0.005 = 200 小时。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "MTBF"
+   ],
+   "source_quote": "失效率 λ = λ1 + λ2 + ... + λn"
+  },
+  {
+   "type": "single",
+   "stem": "某系统 MTBF 为 900 小时，MTTR 为 100 小时，可用性是多少？",
+   "options": [
+    "0.09",
+    "0.9",
+    "0.99",
+    "0.1"
+   ],
+   "answer_index": 1,
+   "explanation": "A = 900 ÷ (900 + 100) = 0.9。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "可用性"
+   ],
+   "source_quote": "可用性 A = MTBF ÷ (MTBF + MTTR)"
+  },
+  {
+   "type": "judge",
+   "stem": "串联系统的部件数量越多，系统可靠度越低。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "各部件可靠度都小于 1，连乘后更小。",
+   "difficulty": 1,
+   "tags": [
+    "高频考点",
+    "可靠性"
+   ],
+   "source_quote": "串联系统部件越多，可靠度越低"
+  },
+  {
+   "type": "judge",
+   "stem": "并联冗余可以提高系统的可靠度。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "并联系统只要有一个部件正常系统就正常，可靠度不低于其中最可靠的部件。",
+   "difficulty": 1,
+   "tags": [
+    "高频考点",
+    "可靠性"
+   ],
+   "source_quote": "并联冗余可以提高系统可靠度"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.9 磁盘存取时间与 RAID 容量": [
+  {
+   "type": "single",
+   "stem": "磁盘转速 7200 转/分钟，平均旋转延迟约为多少？",
+   "options": [
+    "4.17 ms",
+    "2.08 ms",
+    "8.33 ms",
+    "16.67 ms"
+   ],
+   "answer_index": 0,
+   "explanation": "旋转一圈 60/7200 = 8.33 ms，平均旋转延迟为半圈 = 4.17 ms。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "磁盘"
+   ],
+   "source_quote": "平均旋转延迟 = 30 ÷ r 秒"
+  },
+  {
+   "type": "single",
+   "stem": "磁盘转速 6000 转/分钟，每磁道 100 个扇区，读取一个扇区的传输时间是多少？",
+   "options": [
+    "0.05 ms",
+    "1 ms",
+    "0.1 ms",
+    "10 ms"
+   ],
+   "answer_index": 2,
+   "explanation": "旋转一圈 10 ms，一个扇区 = 10 ms ÷ 100 = 0.1 ms。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "磁盘"
+   ],
+   "source_quote": "旋转一圈的时间 × 读写扇区数 ÷ 每磁道扇区数"
+  },
+  {
+   "type": "single",
+   "stem": "某磁盘平均寻道时间 8 ms，转速 7500 转/分钟，传输一个扇区 0.2 ms，平均存取时间约为多少？",
+   "options": [
+    "16.2 ms",
+    "8.2 ms",
+    "20.2 ms",
+    "12.2 ms"
+   ],
+   "answer_index": 3,
+   "explanation": "旋转延迟 = 30/7500 = 4 ms，总计 8 + 4 + 0.2 = 12.2 ms。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "磁盘"
+   ],
+   "source_quote": "磁盘存取时间 = 寻道时间 + 旋转延迟 + 传输时间"
+  },
+  {
+   "type": "single",
+   "stem": "磁盘有 4 个盘面，每面 1000 个磁道，每磁道 200 个扇区，每扇区 512 字节，总容量是多少字节？",
+   "options": [
+    "3276800000",
+    "204800000",
+    "409600000",
+    "819200000"
+   ],
+   "answer_index": 2,
+   "explanation": "4 × 1000 × 200 × 512 = 409600000 字节。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "磁盘"
+   ],
+   "source_quote": "磁盘容量 = 盘面数 × 每面磁道数 × 每磁道扇区数 × 每扇区字节数"
+  },
+  {
+   "type": "single",
+   "stem": "5 块 1 TB 的磁盘组成 RAID5，可用容量是多少？",
+   "options": [
+    "3 TB",
+    "4 TB",
+    "2.5 TB",
+    "5 TB"
+   ],
+   "answer_index": 1,
+   "explanation": "RAID5 可用容量为 N - 1 = 4 块。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "RAID"
+   ],
+   "source_quote": "RAID5 为 N - 1，分布式奇偶校验"
+  },
+  {
+   "type": "single",
+   "stem": "6 块 2 TB 的磁盘组成 RAID10，可用容量是多少？",
+   "options": [
+    "6 TB",
+    "10 TB",
+    "12 TB",
+    "8 TB"
+   ],
+   "answer_index": 0,
+   "explanation": "RAID10 可用容量为 N ÷ 2 = 3 块，即 6 TB。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "RAID"
+   ],
+   "source_quote": "RAID10（1+0）为 N ÷ 2"
+  },
+  {
+   "type": "single",
+   "stem": "8 块磁盘组成 RAID6，可用容量相当于几块盘？",
+   "options": [
+    "6",
+    "8",
+    "7",
+    "4"
+   ],
+   "answer_index": 0,
+   "explanation": "RAID6 可用容量为 N - 2 = 6。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "RAID"
+   ],
+   "source_quote": "RAID6 为 N - 2，允许坏 2 块"
+  },
+  {
+   "type": "single",
+   "stem": "RAID5 最多允许同时损坏几块磁盘而不丢失数据？",
+   "options": [
+    "N-1",
+    "2",
+    "1",
+    "0"
+   ],
+   "answer_index": 2,
+   "explanation": "RAID5 只有一份分布式奇偶校验，允许坏 1 块。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "RAID"
+   ],
+   "source_quote": "RAID5 为 N - 1，分布式奇偶校验，最少 3 块盘，允许坏 1 块"
+  },
+  {
+   "type": "judge",
+   "stem": "RAID0 通过条带化提高读写速度，但没有容错能力。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "RAID0 没有冗余，任一块盘损坏会导致数据全部丢失。",
+   "difficulty": 1,
+   "tags": [
+    "高频考点",
+    "RAID"
+   ],
+   "source_quote": "RAID0 读写速度最快但没有容错能力"
+  },
+  {
+   "type": "judge",
+   "stem": "RAID1 的可用容量等于所有磁盘容量之和。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "RAID1 是镜像，可用容量为 N ÷ 2。",
+   "difficulty": 1,
+   "tags": [
+    "高频考点",
+    "RAID"
+   ],
+   "source_quote": "RAID1 为 N ÷ 2，镜像"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.10 总线带宽与 I/O 控制方式": [
+  {
+   "type": "single",
+   "stem": "32 位总线，工作频率 100 MHz，每个时钟周期传送一次数据，总线带宽是多少？",
+   "options": [
+    "3200 MB/s",
+    "400 MB/s",
+    "100 MB/s",
+    "800 MB/s"
+   ],
+   "answer_index": 1,
+   "explanation": "32 ÷ 8 × 100 = 400 MB/s。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "总线"
+   ],
+   "source_quote": "总线带宽（数据传输速率）= 总线宽度（位）÷ 8 × 总线工作频率 ÷ 每次传输所需的时钟周期数"
+  },
+  {
+   "type": "single",
+   "stem": "64 位总线，频率 66 MHz，每次传输需要 2 个时钟周期，带宽是多少？",
+   "options": [
+    "66 MB/s",
+    "132 MB/s",
+    "528 MB/s",
+    "264 MB/s"
+   ],
+   "answer_index": 3,
+   "explanation": "64 ÷ 8 × 66 ÷ 2 = 264 MB/s。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "总线"
+   ],
+   "source_quote": "总线工作频率 ÷ 每次传输所需的时钟周期数"
+  },
+  {
+   "type": "single",
+   "stem": "下列 I/O 控制方式中，CPU 利用率最低的是哪一个？",
+   "options": [
+    "程序查询方式",
+    "DMA 方式",
+    "通道方式",
+    "中断方式"
+   ],
+   "answer_index": 0,
+   "explanation": "程序查询方式 CPU 要不断轮询设备状态，一直忙等。",
+   "difficulty": 1,
+   "tags": [
+    "高频考点",
+    "I/O 控制"
+   ],
+   "source_quote": "程序查询方式，CPU 要不断轮询设备状态，效率最低"
+  },
+  {
+   "type": "single",
+   "stem": "DMA 方式最适合下列哪种场景？",
+   "options": [
+    "鼠标位置采样",
+    "打印机状态查询",
+    "键盘输入单个字符",
+    "磁盘与内存之间的高速批量数据传输"
+   ],
+   "answer_index": 3,
+   "explanation": "DMA 由控制器直接在内存与外设间传送数据块，CPU 只在开始和结束时参与。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "DMA"
+   ],
+   "source_quote": "适合高速、批量传输"
+  },
+  {
+   "type": "single",
+   "stem": "在 DMA 方式中，CPU 在什么时候参与数据传送过程？",
+   "options": [
+    "全程参与",
+    "仅在传送开始（初始化）和结束（处理结束中断）时",
+    "每传送一个字都要参与",
+    "完全不需要参与"
+   ],
+   "answer_index": 1,
+   "explanation": "DMA 控制器自己控制总线完成传送，CPU 只负责启动和收尾。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "DMA"
+   ],
+   "source_quote": "只在开始和结束时才需要 CPU 参与"
+  },
+  {
+   "type": "single",
+   "stem": "中断响应过程中，在“恢复现场”之后应做的是哪一步？",
+   "options": [
+    "识别中断源",
+    "关中断",
+    "开中断并返回被中断的程序",
+    "保存断点"
+   ],
+   "answer_index": 2,
+   "explanation": "顺序：关中断、保存断点和现场、识别中断源并转服务程序、恢复现场、开中断返回。",
+   "difficulty": 3,
+   "tags": [
+    "高频考点",
+    "中断"
+   ],
+   "source_quote": "关中断、保存断点和现场、识别中断源并转入中断服务程序、恢复现场、开中断并返回"
+  },
+  {
+   "type": "single",
+   "stem": "DMA 控制器利用 CPU 不访问内存的周期来传送数据，这种方式称为什么？",
+   "options": [
+    "中断嵌套",
+    "分页",
+    "数据冒险",
+    "周期窃取"
+   ],
+   "answer_index": 3,
+   "explanation": "周期窃取使 DMA 传送与 CPU 运行基本并行。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "DMA"
+   ],
+   "source_quote": "DMA 传输使用 CPU 不访问内存的周期，称为周期窃取"
+  },
+  {
+   "type": "judge",
+   "stem": "中断方式下，数据传送仍然由 CPU 执行指令完成。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "中断只是免去了轮询，数据传送本身仍通过 CPU；DMA 方式才由控制器直接传送。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "中断"
+   ],
+   "source_quote": "数据仍由 CPU 传送"
+  },
+  {
+   "type": "judge",
+   "stem": "高速设备的中断优先级通常低于低速设备。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "高速设备要求及时响应，否则数据易丢失，优先级通常更高。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "中断"
+   ],
+   "source_quote": "高速设备的中断优先级通常高于低速设备"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.11 死锁资源数与信号量取值": [
+  {
+   "type": "single",
+   "stem": "系统有 3 个进程共享某类资源，每个进程最多需要 4 个，该类资源至少有多少个才能保证不发生死锁？",
+   "options": [
+    "10",
+    "12",
+    "7",
+    "9"
+   ],
+   "answer_index": 0,
+   "explanation": "m ≥ n(w-1)+1 = 3×3+1 = 10。9 个时每个进程各拿 3 个就可能死锁。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "死锁"
+   ],
+   "source_quote": "一定不会发生死锁的条件是 m ≥ n × (w - 1) + 1"
+  },
+  {
+   "type": "single",
+   "stem": "系统有 5 个同类资源，每个进程最多需要 2 个，最多可以有多少个进程而不会发生死锁？",
+   "options": [
+    "3",
+    "5",
+    "4",
+    "2"
+   ],
+   "answer_index": 2,
+   "explanation": "n ≤ (m-1)/(w-1) = 4/1 = 4。验证：4 个进程各拿 1 个，还剩 1 个，总有进程能完成。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "死锁"
+   ],
+   "source_quote": "不会死锁的最大进程数 n 取 (m - 1) ÷ (w - 1) 的整数部分"
+  },
+  {
+   "type": "single",
+   "stem": "系统有 6 个同类资源，每个进程最多需要 3 个，最多可以有几个进程而保证不死锁？",
+   "options": [
+    "3",
+    "2",
+    "1",
+    "6"
+   ],
+   "answer_index": 1,
+   "explanation": "n ≤ (6-1)/(3-1) = 2.5，取整为 2。3 个进程各拿 2 个即死锁。",
+   "difficulty": 4,
+   "tags": [
+    "公式速算",
+    "死锁"
+   ],
+   "source_quote": "不会死锁的最大进程数 n 取 (m - 1) ÷ (w - 1) 的整数部分"
+  },
+  {
+   "type": "single",
+   "stem": "有 3 个进程竞争一个临界资源，互斥信号量 S 初值为 1，S 的取值范围是多少？",
+   "options": [
+    "-1 ~ 2",
+    "-2 ~ 1",
+    "0 ~ 1",
+    "-3 ~ 1"
+   ],
+   "answer_index": 1,
+   "explanation": "最多 1 个进程在临界区，其余 2 个等待，S 最小为 -2。范围 -(n-1) ~ 1。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "信号量"
+   ],
+   "source_quote": "互斥信号量初值为 1，取值范围是 -(n-1) ~ 1"
+  },
+  {
+   "type": "single",
+   "stem": "信号量 S 的当前值为 -2，表示什么意思？",
+   "options": [
+    "有 2 个进程在等待该资源",
+    "有 2 个进程正在使用资源",
+    "有 2 个可用资源",
+    "资源已被释放 2 次"
+   ],
+   "answer_index": 0,
+   "explanation": "S < 0 时其绝对值表示等待该资源的进程数。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "信号量"
+   ],
+   "source_quote": "S < 0 时其绝对值表示等待该资源的进程数"
+  },
+  {
+   "type": "single",
+   "stem": "执行 V(S) 操作后若 S ≤ 0，说明什么？",
+   "options": [
+    "资源已用完，当前进程阻塞",
+    "有空闲资源",
+    "仍有进程在等待，需要唤醒一个等待进程",
+    "信号量出错"
+   ],
+   "answer_index": 2,
+   "explanation": "V 操作使 S 加 1，若 S ≤ 0 说明加之前 S<0，有进程在等待，要唤醒一个。",
+   "difficulty": 3,
+   "tags": [
+    "高频考点",
+    "信号量"
+   ],
+   "source_quote": "V 操作使 S 加 1，若 S ≤ 0 则唤醒一个等待进程"
+  },
+  {
+   "type": "single",
+   "stem": "生产者消费者问题中，缓冲区共 10 个单元，空缓冲区信号量 empty 的初值应为多少？",
+   "options": [
+    "1",
+    "9",
+    "0",
+    "10"
+   ],
+   "answer_index": 3,
+   "explanation": "empty 表示空缓冲区个数，初始全空，所以为缓冲区个数 10；full 初值为 0；mutex 初值 1。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "PV 操作"
+   ],
+   "source_quote": "空缓冲区个数 empty 初值为缓冲区个数"
+  },
+  {
+   "type": "single",
+   "stem": "前驱图中有 P1→P2、P1→P3、P2→P4、P3→P4 四条前驱关系，实现同步需要设置几个同步信号量？",
+   "options": [
+    "4",
+    "1",
+    "3",
+    "2"
+   ],
+   "answer_index": 0,
+   "explanation": "每条边对应一个同步信号量，共 4 条边，初值均为 0。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "前驱图"
+   ],
+   "source_quote": "前驱图中每条边（先后关系）对应一个同步信号量，初值均为 0"
+  },
+  {
+   "type": "judge",
+   "stem": "同步信号量的初值通常为 0，互斥信号量的初值为 1。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "同步表示“事件是否发生”，初始未发生为 0；互斥表示临界资源可用个数 1。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "PV 操作"
+   ],
+   "source_quote": "资源信号量初值为资源个数，同步信号量初值通常为 0"
+  },
+  {
+   "type": "judge",
+   "stem": "某类资源有 m 个，n 个进程各需要 w 个，只要 m ≥ n × w 就一定不会死锁，m 小于 n × w 就一定会死锁。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "m ≥ n(w-1)+1 即可保证不死锁；m 小于 n×w 时只是可能死锁，并非一定死锁。",
+   "difficulty": 4,
+   "tags": [
+    "高频考点",
+    "死锁"
+   ],
+   "source_quote": "一定不会发生死锁的条件是 m ≥ n × (w - 1) + 1"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.12 进程调度计算：周转时间与带权周转时间": [
+  {
+   "type": "single",
+   "stem": "某进程到达时间为 2，完成时间为 10，服务时间为 4，其周转时间是多少？",
+   "options": [
+    "4",
+    "8",
+    "6",
+    "10"
+   ],
+   "answer_index": 1,
+   "explanation": "周转时间 = 完成 - 到达 = 10 - 2 = 8。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "调度"
+   ],
+   "source_quote": "周转时间 = 完成时间 - 到达时间"
+  },
+  {
+   "type": "single",
+   "stem": "上一题的进程，其带权周转时间是多少？",
+   "options": [
+    "4",
+    "2.5",
+    "8",
+    "2"
+   ],
+   "answer_index": 3,
+   "explanation": "带权周转时间 = 周转时间 ÷ 服务时间 = 8 ÷ 4 = 2。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "调度"
+   ],
+   "source_quote": "带权周转时间 = 周转时间 ÷ 服务（运行）时间"
+  },
+  {
+   "type": "single",
+   "stem": "P1、P2、P3 同时到达，运行时间分别为 6、3、1，按先来先服务（P1→P2→P3）调度，平均周转时间约为多少？",
+   "options": [
+    "5.00",
+    "6.67",
+    "8.33",
+    "10.00"
+   ],
+   "answer_index": 2,
+   "explanation": "完成时间 6、9、10，平均周转时间 = 25/3 ≈ 8.33。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "FCFS"
+   ],
+   "source_quote": "先来先服务（FCFS）按到达顺序执行，对短作业不利"
+  },
+  {
+   "type": "single",
+   "stem": "上题三个进程改用短作业优先调度，平均周转时间是多少？",
+   "options": [
+    "6.67",
+    "5.00",
+    "8.33",
+    "3.33"
+   ],
+   "answer_index": 1,
+   "explanation": "执行顺序 P3、P2、P1，完成时间 1、4、10，平均 15/3 = 5。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "SJF"
+   ],
+   "source_quote": "短作业优先（SJF）的平均等待时间最短"
+  },
+  {
+   "type": "single",
+   "stem": "P1、P2、P3 同时到达，运行时间 6、3、1，按 FCFS（P1→P2→P3）调度，P3 的带权周转时间是多少？",
+   "options": [
+    "3",
+    "5",
+    "10",
+    "1"
+   ],
+   "answer_index": 2,
+   "explanation": "P3 完成时间 10，周转时间 10，服务时间 1，带权周转时间 = 10。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "FCFS"
+   ],
+   "source_quote": "带权周转时间 = 周转时间 ÷ 服务（运行）时间"
+  },
+  {
+   "type": "single",
+   "stem": "非抢占式 SJF：P1(到达0, 运行7)、P2(2, 4)、P3(4, 1)、P4(5, 4)，平均周转时间是多少？",
+   "options": [
+    "6",
+    "7",
+    "9",
+    "8"
+   ],
+   "answer_index": 3,
+   "explanation": "P1 0~7；7 时就绪的 P2、P3、P4 中 P3 最短 7~8；然后 P2 8~12，P4 12~16。周转 7、10、4、11，平均 8。",
+   "difficulty": 4,
+   "tags": [
+    "公式速算",
+    "SJF"
+   ],
+   "source_quote": "画甘特图，依次写出每个进程的开始时间和完成时间，再套公式计算周转时间"
+  },
+  {
+   "type": "single",
+   "stem": "时间片为 2 的轮转调度，A、B、C 同时到达，运行时间分别为 5、2、3，进程 A 的完成时间是多少？",
+   "options": [
+    "10",
+    "9",
+    "5",
+    "8"
+   ],
+   "answer_index": 0,
+   "explanation": "顺序：A(0~2) B(2~4) C(4~6) A(6~8) C(8~9) A(9~10)，A 在第 10 时刻完成。",
+   "difficulty": 4,
+   "tags": [
+    "公式速算",
+    "时间片轮转"
+   ],
+   "source_quote": "时间片轮转（RR）适合分时系统，时间片太大时退化为 FCFS"
+  },
+  {
+   "type": "single",
+   "stem": "某作业等待时间 6，要求服务时间 2，其响应比是多少？",
+   "options": [
+    "8",
+    "4",
+    "3",
+    "1.33"
+   ],
+   "answer_index": 1,
+   "explanation": "响应比 = (等待 + 服务) ÷ 服务 = (6+2)/2 = 4。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "HRRN"
+   ],
+   "source_quote": "响应比 = (等待时间 + 服务时间) ÷ 服务时间"
+  },
+  {
+   "type": "judge",
+   "stem": "短作业优先算法的平均等待时间最短，但可能使长作业长时间得不到运行。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "SJF 理论上平均等待时间最短，缺点是长作业“饥饿”。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "SJF"
+   ],
+   "source_quote": "短作业优先（SJF）的平均等待时间最短，但可能使长作业饥饿"
+  },
+  {
+   "type": "judge",
+   "stem": "时间片轮转调度中，时间片越小越好，因为响应越快、系统开销越小。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "时间片过小会使进程切换过于频繁，开销增大。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "时间片轮转"
+   ],
+   "source_quote": "太小则进程切换开销过大"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.13 分页地址变换与页面置换计算": [
+  {
+   "type": "single",
+   "stem": "页大小为 4 KB，逻辑地址 10000（十进制），其页号和页内偏移分别是多少？",
+   "options": [
+    "页号 2，偏移 1800",
+    "页号 1，偏移 5904",
+    "页号 3，偏移 1808",
+    "页号 2，偏移 1808"
+   ],
+   "answer_index": 3,
+   "explanation": "10000 ÷ 4096 = 2 余 1808，页号 2，页内偏移 1808。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "分页"
+   ],
+   "source_quote": "页号 = 逻辑地址 ÷ 页大小（整除），页内偏移 = 逻辑地址 mod 页大小"
+  },
+  {
+   "type": "single",
+   "stem": "页大小 4 KB，逻辑地址 10000 所在页（页号 2）被装入第 7 块，对应的物理地址是多少？",
+   "options": [
+    "30480",
+    "30472",
+    "10000",
+    "28672"
+   ],
+   "answer_index": 0,
+   "explanation": "物理地址 = 7 × 4096 + 1808 = 30480。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "分页"
+   ],
+   "source_quote": "物理地址 = 页框号 × 页大小 + 页内偏移"
+  },
+  {
+   "type": "single",
+   "stem": "32 位逻辑地址空间，页大小为 4 KB，页表最多有多少个页表项？",
+   "options": [
+    "2^10",
+    "2^12",
+    "2^20（约 100 万）",
+    "2^32"
+   ],
+   "answer_index": 2,
+   "explanation": "页大小 4KB = 2^12，页号占 32 - 12 = 20 位，页表项数 2^20。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "分页"
+   ],
+   "source_quote": "页数为 2^(m-k)，页表项数也是 2^(m-k)"
+  },
+  {
+   "type": "single",
+   "stem": "页大小为 1 KB，则逻辑地址中页内偏移占几位？",
+   "options": [
+    "1",
+    "10",
+    "12",
+    "8"
+   ],
+   "answer_index": 1,
+   "explanation": "1 KB = 2^10，偏移 10 位。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "分页"
+   ],
+   "source_quote": "页大小为 2^k 字节时，页内偏移占 k 位"
+  },
+  {
+   "type": "single",
+   "stem": "分配 3 个物理块，访问串 7 0 1 2 0 3 0 4 2 3 0 3 2 1 2 0 1 7 0 1，FIFO 算法的缺页次数是多少？",
+   "options": [
+    "12",
+    "9",
+    "18",
+    "15"
+   ],
+   "answer_index": 3,
+   "explanation": "逐步模拟：FIFO 共缺页 15 次。",
+   "difficulty": 4,
+   "tags": [
+    "公式速算",
+    "页面置换"
+   ],
+   "source_quote": "FIFO 淘汰最先进入的页"
+  },
+  {
+   "type": "single",
+   "stem": "同样的访问串（3 个物理块），LRU 算法的缺页次数是多少？",
+   "options": [
+    "12",
+    "10",
+    "9",
+    "15"
+   ],
+   "answer_index": 0,
+   "explanation": "LRU 共缺页 12 次（OPT 为 9 次，FIFO 为 15 次）。",
+   "difficulty": 4,
+   "tags": [
+    "公式速算",
+    "页面置换"
+   ],
+   "source_quote": "LRU 淘汰最近最久未使用的页"
+  },
+  {
+   "type": "single",
+   "stem": "同样的访问串（3 个物理块），OPT（最佳）算法的缺页次数是多少？",
+   "options": [
+    "7",
+    "15",
+    "9",
+    "12"
+   ],
+   "answer_index": 2,
+   "explanation": "OPT 共缺页 9 次，是所有算法中最少的。",
+   "difficulty": 4,
+   "tags": [
+    "公式速算",
+    "页面置换"
+   ],
+   "source_quote": "OPT 淘汰以后最长时间不会被访问的页，缺页最少但无法实现"
+  },
+  {
+   "type": "single",
+   "stem": "访问串 1 2 3 4 1 2 5 1 2 3 4 5 用 FIFO 置换，物理块数从 3 增加到 4，缺页次数怎样变化？",
+   "options": [
+    "从 10 次减少到 9 次",
+    "都是 9 次",
+    "从 9 次增加到 10 次，出现 Belady 异常",
+    "从 9 次减少到 6 次"
+   ],
+   "answer_index": 2,
+   "explanation": "这是 Belady 异常的经典例子：块数增多缺页反而增多。",
+   "difficulty": 4,
+   "tags": [
+    "高频考点",
+    "Belady 异常"
+   ],
+   "source_quote": "FIFO 淘汰最先进入的页，可能出现 Belady 异常，即增加物理块数缺页反而增多"
+  },
+  {
+   "type": "single",
+   "stem": "内存访问时间 100 ns，缺页率 0.001，缺页处理时间 8 ms，有效访问时间约为多少 ns？",
+   "options": [
+    "100.0",
+    "8099.9",
+    "8100.0",
+    "7999.9"
+   ],
+   "answer_index": 1,
+   "explanation": "EAT = 0.999×100 + 0.001×8000000 = 99.9 + 8000 = 8099.9 ns。注意 8 ms = 8×10^6 ns。",
+   "difficulty": 4,
+   "tags": [
+    "公式速算",
+    "有效访问时间"
+   ],
+   "source_quote": "有效访问时间 EAT = (1 - p) × 内存访问时间 + p × 缺页处理时间"
+  },
+  {
+   "type": "single",
+   "stem": "快表时间 10 ns，内存访问 100 ns，快表命中率 90%，一次访存的平均时间是多少？",
+   "options": [
+    "100 ns",
+    "130 ns",
+    "110 ns",
+    "120 ns"
+   ],
+   "answer_index": 3,
+   "explanation": "0.9 × (10+100) + 0.1 × (10+200) = 99 + 21 = 120 ns。",
+   "difficulty": 4,
+   "tags": [
+    "公式速算",
+    "快表"
+   ],
+   "source_quote": "未命中时需要先访问页表再访问数据，所以多一次内存访问"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.14 文件索引与位示图计算": [
+  {
+   "type": "single",
+   "stem": "物理块大小 1 KB，地址项占 4 字节，一个一级间接块可存放多少个块地址？",
+   "options": [
+    "256",
+    "128",
+    "1024",
+    "512"
+   ],
+   "answer_index": 0,
+   "explanation": "n = B ÷ A = 1024 ÷ 4 = 256。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "索引节点"
+   ],
+   "source_quote": "一个间接块可存放 n = B ÷ A 个地址"
+  },
+  {
+   "type": "single",
+   "stem": "i 节点有 10 个直接地址项和 1 个一级间接地址项，块大小 4 KB，地址项 4 字节，文件最大多少块？",
+   "options": [
+    "4096",
+    "1024",
+    "1034",
+    "1033"
+   ],
+   "answer_index": 2,
+   "explanation": "10 + 1024 = 1034 块。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "索引节点"
+   ],
+   "source_quote": "文件最大块数等于直接块数加上各级间接块数之和"
+  },
+  {
+   "type": "single",
+   "stem": "i 节点有 10 个直接项、1 个一级间接项、1 个二级间接项，块大小 1 KB，地址项 4 字节，最大文件是多少 KB？",
+   "options": [
+    "522",
+    "65802",
+    "266",
+    "65536"
+   ],
+   "answer_index": 1,
+   "explanation": "n = 256；块数 = 10 + 256 + 256² = 65802，每块 1 KB，共 65802 KB。",
+   "difficulty": 4,
+   "tags": [
+    "公式速算",
+    "索引节点"
+   ],
+   "source_quote": "二级间接可寻址 n^2 个块"
+  },
+  {
+   "type": "single",
+   "stem": "块大小 2 KB、地址项 4 字节，一个间接块最多存放多少个地址？",
+   "options": [
+    "512",
+    "1024",
+    "2048",
+    "256"
+   ],
+   "answer_index": 0,
+   "explanation": "2048 ÷ 4 = 512。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "索引节点"
+   ],
+   "source_quote": "一个间接块可存放 n = B ÷ A 个地址"
+  },
+  {
+   "type": "single",
+   "stem": "位示图字长 32 位，块号、字号、位号均从 0 开始，第 100 块对应的字号和位号分别是多少？",
+   "options": [
+    "字号 2，位号 36",
+    "字号 3，位号 3",
+    "字号 4，位号 4",
+    "字号 3，位号 4"
+   ],
+   "answer_index": 3,
+   "explanation": "100 ÷ 32 = 3 余 4。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "位示图"
+   ],
+   "source_quote": "第 k 块对应的字号为 k ÷ w 取整，位号为 k mod w"
+  },
+  {
+   "type": "single",
+   "stem": "位示图字长 32 位，字号 5、位号 7（均从 0 开始），对应的块号是多少？",
+   "options": [
+    "168",
+    "135",
+    "229",
+    "167"
+   ],
+   "answer_index": 3,
+   "explanation": "块号 = i × w + j = 5×32 + 7 = 167。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "位示图"
+   ],
+   "source_quote": "已知字号 i、位号 j 时，块号 = i × w + j"
+  },
+  {
+   "type": "single",
+   "stem": "字号、位号、块号均从 1 开始，字长 32，字号 3、位号 5 对应的块号是多少？",
+   "options": [
+    "101",
+    "69",
+    "68",
+    "100"
+   ],
+   "answer_index": 1,
+   "explanation": "块号 = (i-1) × w + j = 2×32 + 5 = 69。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "位示图"
+   ],
+   "source_quote": "若字号、位号、块号均从 1 开始，则块号 = (i - 1) × w + j"
+  },
+  {
+   "type": "single",
+   "stem": "某磁盘有 1024 个块，位示图字长 32 位，位示图共需要多少个字？",
+   "options": [
+    "32",
+    "1024",
+    "16",
+    "64"
+   ],
+   "answer_index": 0,
+   "explanation": "1024 ÷ 32 = 32 个字。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "位示图"
+   ],
+   "source_quote": "位示图的字数 = 磁盘块数 ÷ 字长"
+  },
+  {
+   "type": "judge",
+   "stem": "位示图中，通常用 1 表示该磁盘块已分配，0 表示空闲。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "位示图每一位对应一个磁盘块。",
+   "difficulty": 1,
+   "tags": [
+    "高频考点",
+    "位示图"
+   ],
+   "source_quote": "1 表示已分配，0 表示空闲"
+  },
+  {
+   "type": "judge",
+   "stem": "在混合索引结构中，增加一个间接级别可以使最大文件大小成数量级地增加。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "一级间接增加 n 块，二级间接增加 n^2 块，三级间接增加 n^3 块。",
+   "difficulty": 3,
+   "tags": [
+    "高频考点",
+    "索引节点"
+   ],
+   "source_quote": "二级间接可寻址 n^2 个块，三级间接可寻址 n^3 个块"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.15 树与二叉树结点数公式": [
+  {
+   "type": "single",
+   "stem": "一棵度为 3 的树中，度为 3 的结点 2 个，度为 2 的结点 1 个，度为 1 的结点 4 个，则叶子结点有几个？",
+   "options": [
+    "7",
+    "5",
+    "6",
+    "8"
+   ],
+   "answer_index": 2,
+   "explanation": "总结点数 n = 1 + 3×2 + 2×1 + 1×4 = 13，叶子 = 13 - 2 - 1 - 4 = 6。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "树"
+   ],
+   "source_quote": "树的结点总数 = 所有结点的度数之和 + 1"
+  },
+  {
+   "type": "single",
+   "stem": "一棵二叉树有 7 个度为 2 的结点，则它有几个叶子结点？",
+   "options": [
+    "14",
+    "6",
+    "8",
+    "7"
+   ],
+   "answer_index": 2,
+   "explanation": "n0 = n2 + 1 = 8。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "二叉树"
+   ],
+   "source_quote": "二叉树中叶子结点数 n0 = n2 + 1"
+  },
+  {
+   "type": "single",
+   "stem": "一棵完全二叉树有 1001 个结点，叶子结点有多少个？",
+   "options": [
+    "502",
+    "501",
+    "500",
+    "1000"
+   ],
+   "answer_index": 1,
+   "explanation": "n 为奇数，n1 = 0，n0 = (n + 1) / 2 = 501。",
+   "difficulty": 3,
+   "tags": [
+    "速算技巧",
+    "完全二叉树"
+   ],
+   "source_quote": "n 为偶数取 n / 2，n 为奇数取 (n + 1) / 2"
+  },
+  {
+   "type": "single",
+   "stem": "一棵完全二叉树有 800 个结点，叶子结点有多少个？",
+   "options": [
+    "400",
+    "800",
+    "399",
+    "401"
+   ],
+   "answer_index": 0,
+   "explanation": "n 为偶数，n1 = 1，n0 = n / 2 = 400。",
+   "difficulty": 3,
+   "tags": [
+    "速算技巧",
+    "完全二叉树"
+   ],
+   "source_quote": "n 为偶数时 n1 = 1，n 为奇数时 n1 = 0"
+  },
+  {
+   "type": "single",
+   "stem": "一棵有 1000 个结点的完全二叉树，高度（根为第 1 层）是多少？",
+   "options": [
+    "11",
+    "100",
+    "9",
+    "10"
+   ],
+   "answer_index": 3,
+   "explanation": "⌊log2 1000⌋ + 1 = 9 + 1 = 10（2^9 = 512，2^10 = 1024）。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "完全二叉树"
+   ],
+   "source_quote": "完全二叉树有 n 个结点时，高度为 ⌊log2 n⌋ + 1"
+  },
+  {
+   "type": "single",
+   "stem": "高度为 5 的二叉树最多有多少个结点？",
+   "options": [
+    "31",
+    "32",
+    "63",
+    "16"
+   ],
+   "answer_index": 0,
+   "explanation": "2^5 - 1 = 31。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "二叉树"
+   ],
+   "source_quote": "高度为 h 的二叉树最多有 2^h - 1 个结点"
+  },
+  {
+   "type": "single",
+   "stem": "二叉树第 6 层最多有多少个结点？",
+   "options": [
+    "64",
+    "31",
+    "32",
+    "16"
+   ],
+   "answer_index": 2,
+   "explanation": "2^(6-1) = 32。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "二叉树"
+   ],
+   "source_quote": "第 i 层最多有 2^(i-1) 个结点"
+  },
+  {
+   "type": "single",
+   "stem": "用 8 个带权叶子结点构造哈夫曼树，该树的结点总数是多少？",
+   "options": [
+    "16",
+    "15",
+    "14",
+    "8"
+   ],
+   "answer_index": 1,
+   "explanation": "2n - 1 = 15，其中 8 个叶子，7 个内部结点。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "哈夫曼树"
+   ],
+   "source_quote": "n 个叶子的哈夫曼树结点总数为 2n - 1"
+  },
+  {
+   "type": "single",
+   "stem": "具有 20 个结点的二叉树采用二叉链表存储，共有多少个空指针域？",
+   "options": [
+    "40",
+    "19",
+    "20",
+    "21"
+   ],
+   "answer_index": 3,
+   "explanation": "共 2n = 40 个指针域，n - 1 = 19 个被用于指向孩子，空指针 = 40 - 19 = 21 = n + 1。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "二叉链表"
+   ],
+   "source_quote": "n 个结点的二叉链表共有 n + 1 个空指针域"
+  },
+  {
+   "type": "single",
+   "stem": "高度为 4 的平衡二叉树（AVL）最少有多少个结点？",
+   "options": [
+    "15",
+    "8",
+    "6",
+    "7"
+   ],
+   "answer_index": 3,
+   "explanation": "N(3) = N(2)+N(1)+1 = 4，N(4) = N(3)+N(2)+1 = 4+2+1 = 7。",
+   "difficulty": 4,
+   "tags": [
+    "公式速算",
+    "AVL"
+   ],
+   "source_quote": "N(h) = N(h-1) + N(h-2) + 1，N(1) = 1，N(2) = 2"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.16 栈、队列、数组与矩阵公式": [
+  {
+   "type": "single",
+   "stem": "循环队列数组长度为 10，front = 7，rear = 2，队列中有多少个元素？",
+   "options": [
+    "5",
+    "15",
+    "4",
+    "6"
+   ],
+   "answer_index": 0,
+   "explanation": "(2 - 7 + 10) mod 10 = 5。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "循环队列"
+   ],
+   "source_quote": "队列长度 = (rear - front + m) mod m"
+  },
+  {
+   "type": "single",
+   "stem": "循环队列数组长度为 8，front = 3，队满时 rear 的值是多少（牺牲一个单元区分队空与队满）？",
+   "options": [
+    "3",
+    "1",
+    "2",
+    "7"
+   ],
+   "answer_index": 2,
+   "explanation": "(rear + 1) mod 8 = 3，rear = 2。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "循环队列"
+   ],
+   "source_quote": "队满条件是 (rear + 1) mod m = front"
+  },
+  {
+   "type": "single",
+   "stem": "采用牺牲一个单元区分队空队满的循环队列，数组长度为 100，最多可存放多少个元素？",
+   "options": [
+    "98",
+    "99",
+    "101",
+    "100"
+   ],
+   "answer_index": 1,
+   "explanation": "最多 m - 1 = 99 个元素。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "循环队列"
+   ],
+   "source_quote": "最多存放 m - 1 个元素"
+  },
+  {
+   "type": "single",
+   "stem": "入栈顺序固定为 1、2、3、4，合法的出栈序列共有多少种？",
+   "options": [
+    "16",
+    "24",
+    "5",
+    "14"
+   ],
+   "answer_index": 3,
+   "explanation": "卡特兰数 C(8,4)/5 = 14。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "栈"
+   ],
+   "source_quote": "n = 3 时为 5，n = 4 时为 14"
+  },
+  {
+   "type": "single",
+   "stem": "元素 1、2、3、4、5 依次入栈，下列哪个不可能是出栈序列？",
+   "options": [
+    "3 5 4 2 1",
+    "4 3 5 1 2",
+    "2 3 1 5 4",
+    "3 4 2 1 5"
+   ],
+   "answer_index": 1,
+   "explanation": "4 出栈后，比 4 小且尚未出栈的 3、2、1 必须按 3、2、1 的递减顺序出栈，而 4 3 5 1 2 中 1 先于 2 出栈，不合法。",
+   "difficulty": 4,
+   "tags": [
+    "速算技巧",
+    "栈"
+   ],
+   "source_quote": "在它之后出栈的、比它小的元素必须按递减顺序排列"
+  },
+  {
+   "type": "single",
+   "stem": "二维数组 a[10][20] 按行优先存储，首地址 1000，每个元素 4 字节，a[3][5] 的地址是多少？",
+   "options": [
+    "1212",
+    "1065",
+    "1260",
+    "1140"
+   ],
+   "answer_index": 2,
+   "explanation": "1000 + (3×20 + 5)×4 = 1260。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "数组"
+   ],
+   "source_quote": "a[i][j] 的地址 = 首地址 + (i × n + j) × 元素长度"
+  },
+  {
+   "type": "single",
+   "stem": "二维数组 a[8][12] 按列优先存储，首地址 2000，每个元素 2 字节，a[5][3] 的地址是多少？",
+   "options": [
+    "2058",
+    "2126",
+    "2086",
+    "2082"
+   ],
+   "answer_index": 0,
+   "explanation": "按列优先：2000 + (j×m + i)×2 = 2000 + (3×8 + 5)×2 = 2058。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "数组"
+   ],
+   "source_quote": "按列优先存储时，地址 = 首地址 + (j × m + i) × 元素长度"
+  },
+  {
+   "type": "single",
+   "stem": "100 阶对称矩阵只存储下三角（含对角线），需要存储多少个元素？",
+   "options": [
+    "5000",
+    "5050",
+    "10000",
+    "4950"
+   ],
+   "answer_index": 1,
+   "explanation": "n(n+1)/2 = 100 × 101 / 2 = 5050。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "矩阵压缩"
+   ],
+   "source_quote": "需要存储 n(n+1)/2 个元素"
+  },
+  {
+   "type": "single",
+   "stem": "对称矩阵下三角按行优先压缩存储（下标从 1 开始），a[5][3] 对应的一维下标是多少？",
+   "options": [
+    "8",
+    "17",
+    "13",
+    "12"
+   ],
+   "answer_index": 2,
+   "explanation": "i(i-1)/2 + j = 5×4/2 + 3 = 13。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "矩阵压缩"
+   ],
+   "source_quote": "a[i][j] 的一维下标为 i(i-1)/2 + j"
+  },
+  {
+   "type": "single",
+   "stem": "三对角矩阵按行优先压缩存储，下标从 1 开始，a[4][5] 对应的一维下标是多少？",
+   "options": [
+    "11",
+    "14",
+    "9",
+    "13"
+   ],
+   "answer_index": 0,
+   "explanation": "2i + j - 2 = 8 + 5 - 2 = 11。",
+   "difficulty": 4,
+   "tags": [
+    "公式速算",
+    "矩阵压缩"
+   ],
+   "source_quote": "a[i][j] 的一维下标为 2i + j - 2"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.17 查找、排序与图的计数公式": [
+  {
+   "type": "single",
+   "stem": "在 1000 个元素的有序顺序表上做折半查找，查找成功时最多比较几次？",
+   "options": [
+    "11",
+    "9",
+    "500",
+    "10"
+   ],
+   "answer_index": 3,
+   "explanation": "⌊log2 1000⌋ + 1 = 9 + 1 = 10。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "折半查找"
+   ],
+   "source_quote": "查找成功的最大比较次数为 ⌊log2 n⌋ + 1"
+  },
+  {
+   "type": "single",
+   "stem": "在 63 个元素的有序表上做折半查找，最多比较几次？",
+   "options": [
+    "7",
+    "5",
+    "6",
+    "63"
+   ],
+   "answer_index": 2,
+   "explanation": "⌊log2 63⌋ + 1 = 5 + 1 = 6。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "折半查找"
+   ],
+   "source_quote": "n = 63 时最多 6 次"
+  },
+  {
+   "type": "single",
+   "stem": "对长度为 99 的线性表做顺序查找，查找成功且各元素概率相等时，平均查找长度是多少？",
+   "options": [
+    "49",
+    "100",
+    "99",
+    "50"
+   ],
+   "answer_index": 3,
+   "explanation": "(n + 1) / 2 = 50。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "顺序查找"
+   ],
+   "source_quote": "顺序查找成功时的平均查找长度 ASL = (n + 1) / 2"
+  },
+  {
+   "type": "single",
+   "stem": "表长为 10 的散列表中已存放 7 条记录，装填因子是多少？",
+   "options": [
+    "0.7",
+    "1.43",
+    "7",
+    "0.3"
+   ],
+   "answer_index": 0,
+   "explanation": "α = 7 ÷ 10 = 0.7。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "散列"
+   ],
+   "source_quote": "散列表的装填因子 α = 记录数 ÷ 表长"
+  },
+  {
+   "type": "single",
+   "stem": "无向图所有顶点的度数之和为 24，该图有多少条边？",
+   "options": [
+    "6",
+    "12",
+    "24",
+    "48"
+   ],
+   "answer_index": 1,
+   "explanation": "边数 = 度数之和 ÷ 2 = 12。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "图"
+   ],
+   "source_quote": "无向图所有顶点度数之和等于边数的 2 倍"
+  },
+  {
+   "type": "single",
+   "stem": "8 个顶点的无向完全图有多少条边？",
+   "options": [
+    "36",
+    "28",
+    "56",
+    "64"
+   ],
+   "answer_index": 1,
+   "explanation": "n(n-1)/2 = 8×7/2 = 28。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "图"
+   ],
+   "source_quote": "n 个顶点的无向完全图有 n(n-1)/2 条边"
+  },
+  {
+   "type": "single",
+   "stem": "10 个顶点的有向完全图有多少条边？",
+   "options": [
+    "100",
+    "55",
+    "45",
+    "90"
+   ],
+   "answer_index": 3,
+   "explanation": "n(n-1) = 10×9 = 90。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "图"
+   ],
+   "source_quote": "有向完全图有 n(n-1) 条边"
+  },
+  {
+   "type": "single",
+   "stem": "要使 9 个顶点的无向图一定连通，边数至少要有多少条？",
+   "options": [
+    "28",
+    "36",
+    "29",
+    "8"
+   ],
+   "answer_index": 2,
+   "explanation": "(n-1)(n-2)/2 + 1 = 8×7/2 + 1 = 29：8 个顶点的完全图有 28 条边，再加一个孤立点仍不连通，所以 28 条边不能保证连通，29 条才行。注意区分“连通所需最少边数 n-1”与“保证连通所需边数”。",
+   "difficulty": 5,
+   "tags": [
+    "高频考点",
+    "图"
+   ],
+   "source_quote": "要保证 n 个顶点的无向图一定连通，边数至少为 (n-1)(n-2)/2 + 1"
+  },
+  {
+   "type": "single",
+   "stem": "最坏时间复杂度为 O(n log n) 且不稳定的排序算法是哪一个？",
+   "options": [
+    "堆排序",
+    "归并排序",
+    "冒泡排序",
+    "快速排序"
+   ],
+   "answer_index": 0,
+   "explanation": "归并排序最坏 O(n log n) 但稳定；快速排序最坏 O(n²)；冒泡排序最坏 O(n²)。",
+   "difficulty": 3,
+   "tags": [
+    "高频考点",
+    "排序"
+   ],
+   "source_quote": "稳定的排序有冒泡、直接插入、归并和基数排序，不稳定的有简单选择、快速、堆排序和希尔排序"
+  },
+  {
+   "type": "judge",
+   "stem": "快速排序的最坏时间复杂度为 O(n²)，而堆排序的最坏时间复杂度为 O(n log n)。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "快排在已有序等情况下划分极不均衡，退化为 O(n²)；堆排序与归并排序最坏均为 O(n log n)。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "排序"
+   ],
+   "source_quote": "快速排序最坏为 O(n²)，堆排序和归并排序最坏仍为 O(n log n)"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.18 子网划分、可用主机数与路由聚合速算": [
+  {
+   "type": "single",
+   "stem": "子网掩码为 255.255.255.192（/26），每个子网最多可分配给主机的地址有多少个？",
+   "options": [
+    "62",
+    "30",
+    "63",
+    "64"
+   ],
+   "answer_index": 0,
+   "explanation": "主机位 6 位，2^6 - 2 = 62。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "子网划分"
+   ],
+   "source_quote": "每个网络（或子网）的可用主机数 = 2^h - 2"
+  },
+  {
+   "type": "single",
+   "stem": "把 192.168.1.0/24 划分成 8 个等大的子网，每个子网最多可用主机数是多少？",
+   "options": [
+    "31",
+    "62",
+    "32",
+    "30"
+   ],
+   "answer_index": 3,
+   "explanation": "借 3 位得 8 个子网，掩码 /27，主机位 5 位，2^5 - 2 = 30。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "子网划分"
+   ],
+   "source_quote": "每个子网可用主机数为 2^(h-s) - 2"
+  },
+  {
+   "type": "single",
+   "stem": "子网掩码 255.255.255.224 对应的前缀长度是多少？",
+   "options": [
+    "/25",
+    "/27",
+    "/28",
+    "/26"
+   ],
+   "answer_index": 1,
+   "explanation": "224 = 11100000，3 个 1，24 + 3 = 27。",
+   "difficulty": 1,
+   "tags": [
+    "速算技巧",
+    "子网划分"
+   ],
+   "source_quote": "/27 = 255.255.255.224"
+  },
+  {
+   "type": "single",
+   "stem": "主机 172.16.35.77，子网掩码 255.255.255.192，它所在子网的网络地址是什么？",
+   "options": [
+    "172.16.35.128",
+    "172.16.35.76",
+    "172.16.35.64",
+    "172.16.35.0"
+   ],
+   "answer_index": 2,
+   "explanation": "块大小 256 - 192 = 64，77 落在 64 ~ 127 之间，网络地址 172.16.35.64。",
+   "difficulty": 3,
+   "tags": [
+    "速算技巧",
+    "子网划分"
+   ],
+   "source_quote": "块大小 = 256 - m，各子网的网络地址是块大小的整数倍"
+  },
+  {
+   "type": "single",
+   "stem": "主机 192.168.10.130/25 所在子网的广播地址是什么？",
+   "options": [
+    "192.168.10.128",
+    "192.168.10.129",
+    "192.168.10.255",
+    "192.168.10.254"
+   ],
+   "answer_index": 2,
+   "explanation": "块大小 128，子网为 .128 ~ .255，广播地址是主机位全 1，即 .255。",
+   "difficulty": 3,
+   "tags": [
+    "速算技巧",
+    "子网划分"
+   ],
+   "source_quote": "广播地址是把主机位全部置 1"
+  },
+  {
+   "type": "single",
+   "stem": "某部门需要 100 台主机的 IP 地址，应选择的最小子网掩码是哪一个？",
+   "options": [
+    "255.255.255.128",
+    "255.255.255.0",
+    "255.255.255.224",
+    "255.255.255.192"
+   ],
+   "answer_index": 0,
+   "explanation": "2^7 - 2 = 126 ≥ 100，主机位 7 位，掩码 /25 = 255.255.255.128；2^6 - 2 = 62 不够。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "子网划分"
+   ],
+   "source_quote": "主机位 h 要满足 2^h - 2 ≥ N"
+  },
+  {
+   "type": "single",
+   "stem": "把 192.168.0.0/24、192.168.1.0/24、192.168.2.0/24、192.168.3.0/24 聚合成一条路由，结果是什么？",
+   "options": [
+    "192.168.0.0/24",
+    "192.168.0.0/23",
+    "192.168.0.0/21",
+    "192.168.0.0/22"
+   ],
+   "answer_index": 3,
+   "explanation": "第三字节 0 ~ 3 的公共前缀为高 6 位，整体前缀 16 + 6 = 22 位。",
+   "difficulty": 3,
+   "tags": [
+    "速算技巧",
+    "路由聚合"
+   ],
+   "source_quote": "取最长公共前缀，公共前缀的位数就是聚合后的掩码位数"
+  },
+  {
+   "type": "single",
+   "stem": "把 202.115.8.0/24 ~ 202.115.11.0/24 四个网络聚合，结果是什么？",
+   "options": [
+    "202.115.8.0/23",
+    "202.115.8.0/22",
+    "202.115.0.0/22",
+    "202.115.8.0/21"
+   ],
+   "answer_index": 1,
+   "explanation": "第三字节 8 ~ 11（00001000 ~ 00001011），公共前缀 6 位，掩码 /22，网络地址 202.115.8.0。",
+   "difficulty": 4,
+   "tags": [
+    "速算技巧",
+    "路由聚合"
+   ],
+   "source_quote": "取最长公共前缀，公共前缀的位数就是聚合后的掩码位数"
+  },
+  {
+   "type": "single",
+   "stem": "点对点链路常使用 /30 子网，其可用主机地址数是多少？",
+   "options": [
+    "6",
+    "4",
+    "2",
+    "1"
+   ],
+   "answer_index": 2,
+   "explanation": "主机位 2 位，2^2 - 2 = 2。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "子网划分"
+   ],
+   "source_quote": "/30 = 255.255.255.252"
+  },
+  {
+   "type": "judge",
+   "stem": "主机号全为 1 的地址是该网络的广播地址，不能分配给主机。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "全 0 是网络地址，全 1 是广播地址，都不能分配给具体主机，所以可用数要减 2。",
+   "difficulty": 1,
+   "tags": [
+    "高频考点",
+    "IP 地址"
+   ],
+   "source_quote": "扣除全 0 的网络地址和全 1 的广播地址"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.19 网络性能计算：传输时间、信道容量与最小帧长": [
+  {
+   "type": "single",
+   "stem": "一个 10 MB 的文件（1 MB = 10^6 字节）通过 100 Mb/s 的链路传输，发送时间是多少？",
+   "options": [
+    "0.1 s",
+    "8 s",
+    "1.25 s",
+    "0.8 s"
+   ],
+   "answer_index": 3,
+   "explanation": "10×10^6×8 = 8×10^7 比特，÷ 10^8 b/s = 0.8 s。别忘了字节要换成比特。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "传输时间"
+   ],
+   "source_quote": "要注意 1 字节 = 8 比特，1 Mb/s = 10^6 b/s"
+  },
+  {
+   "type": "single",
+   "stem": "无噪声信道带宽为 3 kHz，传送二进制信号，根据奈奎斯特定理最大数据速率是多少？",
+   "options": [
+    "3 kb/s",
+    "6 kb/s",
+    "12 kb/s",
+    "9 kb/s"
+   ],
+   "answer_index": 1,
+   "explanation": "2 × 3000 × log2 2 = 6000 b/s。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "奈奎斯特"
+   ],
+   "source_quote": "二进制信号 N = 2 时速率 = 2W"
+  },
+  {
+   "type": "single",
+   "stem": "无噪声信道带宽为 3 kHz，信号有 16 个状态，最大数据速率是多少？",
+   "options": [
+    "24 kb/s",
+    "12 kb/s",
+    "48 kb/s",
+    "6 kb/s"
+   ],
+   "answer_index": 0,
+   "explanation": "2 × 3000 × log2 16 = 2 × 3000 × 4 = 24000 b/s。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "奈奎斯特"
+   ],
+   "source_quote": "最大数据速率 = 2 × W × log2 N"
+  },
+  {
+   "type": "single",
+   "stem": "带宽 3 kHz、信噪比 30 dB 的信道，由香农定理得到的最大数据速率约为多少？",
+   "options": [
+    "90 kb/s",
+    "30 kb/s",
+    "9 kb/s",
+    "3 kb/s"
+   ],
+   "answer_index": 1,
+   "explanation": "30 dB 即 S/N = 1000，3000 × log2(1001) ≈ 3000 × 10 = 30 kb/s。",
+   "difficulty": 4,
+   "tags": [
+    "公式速算",
+    "香农"
+   ],
+   "source_quote": "30 dB 对应 S/N = 1000"
+  },
+  {
+   "type": "single",
+   "stem": "信噪比 S/N = 100，用分贝表示是多少？",
+   "options": [
+    "40 dB",
+    "10 dB",
+    "20 dB",
+    "100 dB"
+   ],
+   "answer_index": 2,
+   "explanation": "10 × log10(100) = 20 dB。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "香农"
+   ],
+   "source_quote": "信噪比 dB = 10 × log10(S/N)"
+  },
+  {
+   "type": "single",
+   "stem": "长 2000 km 的光纤链路（传播速度 2×10^8 m/s），传播时延是多少？",
+   "options": [
+    "10 ms",
+    "1 ms",
+    "100 ms",
+    "0.1 ms"
+   ],
+   "answer_index": 0,
+   "explanation": "2×10^6 m ÷ 2×10^8 m/s = 0.01 s = 10 ms。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "时延"
+   ],
+   "source_quote": "传播时延 = 距离 ÷ 传播速度"
+  },
+  {
+   "type": "single",
+   "stem": "发送时延 1 ms，单向传播时延 4 ms，停等协议的信道利用率约为多少？",
+   "options": [
+    "50%",
+    "25%",
+    "20%",
+    "11.1%"
+   ],
+   "answer_index": 3,
+   "explanation": "1 ÷ (1 + 2×4) = 1/9 ≈ 11.1%。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "停等协议"
+   ],
+   "source_quote": "停等协议的信道利用率 = 发送时延 ÷ (发送时延 + 2 × 传播时延)"
+  },
+  {
+   "type": "single",
+   "stem": "使用 3 位序号，后退 N 帧（GBN）协议的最大发送窗口是多少？",
+   "options": [
+    "4",
+    "7",
+    "8",
+    "3"
+   ],
+   "answer_index": 1,
+   "explanation": "2^3 - 1 = 7；选择重传为 2^(3-1) = 4。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "滑动窗口"
+   ],
+   "source_quote": "后退 N 帧协议的发送窗口最大为 2^n - 1"
+  },
+  {
+   "type": "single",
+   "stem": "使用 3 位序号，选择重传协议的最大发送窗口是多少？",
+   "options": [
+    "8",
+    "3",
+    "7",
+    "4"
+   ],
+   "answer_index": 3,
+   "explanation": "2^(n-1) = 2^2 = 4。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "滑动窗口"
+   ],
+   "source_quote": "选择重传协议的发送窗口最大为 2^(n-1)"
+  },
+  {
+   "type": "judge",
+   "stem": "奈奎斯特定理适用于无噪声信道，香农定理适用于有噪声信道。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "二者适用条件不同：奈奎斯特给出理想低通信道的上限，香农给出有噪声时的极限容量。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "信道容量"
+   ],
+   "source_quote": "奈奎斯特定理（无噪声信道）"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.20 多媒体数据量计算": [
+  {
+   "type": "single",
+   "stem": "一幅 1024 × 768 的 24 位真彩色图像（未压缩），数据量是多少？",
+   "options": [
+    "18 MB",
+    "6 MB",
+    "2.25 MB",
+    "0.75 MB"
+   ],
+   "answer_index": 2,
+   "explanation": "1024×768×24÷8 = 2359296 字节 = 2.25 MB。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "图像"
+   ],
+   "source_quote": "例如 1024 × 768 的 24 位真彩色图像约为 2.25 MB"
+  },
+  {
+   "type": "single",
+   "stem": "一幅 640 × 480 的 256 色图像（未压缩），数据量是多少字节？",
+   "options": [
+    "307200",
+    "2457600",
+    "38400",
+    "921600"
+   ],
+   "answer_index": 0,
+   "explanation": "256 色即 8 位，640×480×8÷8 = 307200 字节。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "图像"
+   ],
+   "source_quote": "未压缩位图图像的数据量 = 宽 × 高 × 每像素位数 ÷ 8（字节）"
+  },
+  {
+   "type": "single",
+   "stem": "采样频率 44.1 kHz、16 位量化、双声道，录制 1 分钟的未压缩音频，数据量约为多少字节？",
+   "options": [
+    "10584000",
+    "21168000",
+    "5292000",
+    "1323000"
+   ],
+   "answer_index": 0,
+   "explanation": "44100×16×2×60÷8 = 10584000 字节。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "音频"
+   ],
+   "source_quote": "数据量 = 采样频率 × 量化位数 × 声道数 × 时间 ÷ 8（字节）"
+  },
+  {
+   "type": "single",
+   "stem": "采样频率 8 kHz、8 位量化、单声道，录音 10 秒，数据量是多少字节？",
+   "options": [
+    "640000",
+    "80000",
+    "10000",
+    "8000"
+   ],
+   "answer_index": 1,
+   "explanation": "8000×8×1×10÷8 = 80000 字节。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "音频"
+   ],
+   "source_quote": "数据量 = 采样频率 × 量化位数 × 声道数 × 时间 ÷ 8（字节）"
+  },
+  {
+   "type": "single",
+   "stem": "要无失真地采样最高频率为 4 kHz 的信号，采样频率至少应为多少？",
+   "options": [
+    "16 kHz",
+    "2 kHz",
+    "4 kHz",
+    "8 kHz"
+   ],
+   "answer_index": 3,
+   "explanation": "采样频率不低于最高频率的 2 倍。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "采样定理"
+   ],
+   "source_quote": "采样频率应不低于信号最高频率的 2 倍"
+  },
+  {
+   "type": "single",
+   "stem": "分辨率 352 × 288、24 位真彩色、25 帧/秒的未压缩视频，1 秒的数据量是多少字节？",
+   "options": [
+    "1900800",
+    "304128",
+    "7603200",
+    "30412800"
+   ],
+   "answer_index": 2,
+   "explanation": "352×288×3×25 = 7603200 字节。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "视频"
+   ],
+   "source_quote": "未压缩数据量 = 每帧图像数据量 × 帧率 × 时间"
+  },
+  {
+   "type": "single",
+   "stem": "某视频压缩前 30 MB，压缩后 2 MB，压缩比是多少？",
+   "options": [
+    "28 : 1",
+    "15 : 1",
+    "60 : 1",
+    "1 : 15"
+   ],
+   "answer_index": 1,
+   "explanation": "压缩比 = 压缩前 ÷ 压缩后 = 15。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "压缩比"
+   ],
+   "source_quote": "压缩比 = 压缩前数据量 ÷ 压缩后数据量"
+  },
+  {
+   "type": "single",
+   "stem": "24 位真彩色图像最多可以表示多少种颜色？",
+   "options": [
+    "16777216",
+    "1677",
+    "256",
+    "65536"
+   ],
+   "answer_index": 0,
+   "explanation": "2^24 = 16777216，约 1677 万种。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "图像"
+   ],
+   "source_quote": "k 位颜色深度可表示 2^k 种颜色"
+  },
+  {
+   "type": "judge",
+   "stem": "JPEG 是静态图像压缩标准，MPEG 是运动图像压缩标准。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "JPEG 处理单幅图像，MPEG 利用帧间相关性处理运动图像及伴音。",
+   "difficulty": 1,
+   "tags": [
+    "高频考点",
+    "压缩标准"
+   ],
+   "source_quote": "JPEG 用于静止图像压缩，MPEG 用于运动图像与伴音压缩"
+  },
+  {
+   "type": "judge",
+   "stem": "PAL 制视频的帧率是 30 帧/秒，NTSC 制是 25 帧/秒。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "PAL 制为 25 帧/秒，NTSC 制为 30 帧/秒，说反了。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "视频"
+   ],
+   "source_quote": "PAL 制 25 帧/秒，NTSC 制 30 帧/秒"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.21 项目进度计算：关键路径、时差与三点估算": [
+  {
+   "type": "single",
+   "stem": "某活动乐观时间 6 天、最可能时间 9 天、悲观时间 18 天，三点估算的期望时间是多少天？",
+   "options": [
+    "12",
+    "11",
+    "9",
+    "10"
+   ],
+   "answer_index": 3,
+   "explanation": "(6 + 4×9 + 18) ÷ 6 = 60 ÷ 6 = 10。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "三点估算"
+   ],
+   "source_quote": "期望时间 = (乐观时间 a + 4 × 最可能时间 m + 悲观时间 b) ÷ 6"
+  },
+  {
+   "type": "single",
+   "stem": "某活动乐观时间 6 天、悲观时间 18 天，标准差是多少天？",
+   "options": [
+    "12",
+    "4",
+    "2",
+    "3"
+   ],
+   "answer_index": 2,
+   "explanation": "(b - a) ÷ 6 = 12 ÷ 6 = 2。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "三点估算"
+   ],
+   "source_quote": "标准差 = (b - a) ÷ 6，方差为标准差的平方"
+  },
+  {
+   "type": "single",
+   "stem": "项目组有 8 名成员，彼此之间的沟通路径共有多少条？",
+   "options": [
+    "64",
+    "28",
+    "8",
+    "56"
+   ],
+   "answer_index": 1,
+   "explanation": "n(n-1)/2 = 8×7/2 = 28。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "沟通路径"
+   ],
+   "source_quote": "沟通路径数 = n(n - 1) ÷ 2"
+  },
+  {
+   "type": "single",
+   "stem": "活动 A(3天)后接 B(4天)和 C(2天)，B、C 都完成后做 D(5天)，D 完成后做 E(2天)。项目最短工期是多少天？",
+   "options": [
+    "14",
+    "12",
+    "11",
+    "16"
+   ],
+   "answer_index": 0,
+   "explanation": "关键路径 A→B→D→E = 3+4+5+2 = 14；另一条路径 A→C→D→E = 3+2+5+2 = 12，较短。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "关键路径"
+   ],
+   "source_quote": "其长度就是项目的最短工期"
+  },
+  {
+   "type": "single",
+   "stem": "沿用上题的网络（A3、B4、C2、D5、E2），活动 C 的总时差是多少天？",
+   "options": [
+    "4",
+    "0",
+    "5",
+    "2"
+   ],
+   "answer_index": 3,
+   "explanation": "C 的 EF = 3+2 = 5，LF = D 的 LS = 7，总时差 = LF - EF = 2。",
+   "difficulty": 4,
+   "tags": [
+    "公式速算",
+    "总时差"
+   ],
+   "source_quote": "总时差（松弛时间）= LS - ES = LF - EF"
+  },
+  {
+   "type": "single",
+   "stem": "某活动最早开始时间为 5，持续 7 天，最迟完成时间为 15，其总时差是多少天？",
+   "options": [
+    "0",
+    "10",
+    "3",
+    "2"
+   ],
+   "answer_index": 2,
+   "explanation": "EF = 12，总时差 = LF - EF = 15 - 12 = 3。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "总时差"
+   ],
+   "source_quote": "总时差（松弛时间）= LS - ES = LF - EF"
+  },
+  {
+   "type": "single",
+   "stem": "某活动有两个前驱活动，其最早完成时间分别为 8 和 11，该活动的最早开始时间是多少？",
+   "options": [
+    "8",
+    "19",
+    "11",
+    "9.5"
+   ],
+   "answer_index": 2,
+   "explanation": "最早开始时间取各前驱最早完成时间的最大值。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "最早开始"
+   ],
+   "source_quote": "最早开始时间 ES 等于各前驱活动最早完成时间的最大值"
+  },
+  {
+   "type": "single",
+   "stem": "下列图形中，能清楚表示活动之间的依赖关系并能确定关键路径的是哪一个？",
+   "options": [
+    "PERT 图",
+    "饼图",
+    "甘特图",
+    "柱状图"
+   ],
+   "answer_index": 0,
+   "explanation": "甘特图直观表示起止时间和并行，PERT 图表示依赖关系和关键路径。",
+   "difficulty": 1,
+   "tags": [
+    "高频考点",
+    "进度工具"
+   ],
+   "source_quote": "PERT 图能表示依赖关系和关键路径"
+  },
+  {
+   "type": "judge",
+   "stem": "总时差为 0 的活动是关键活动，关键路径可能不止一条。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "关键路径是最长路径，长度相同的多条路径都是关键路径。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "关键路径"
+   ],
+   "source_quote": "关键路径可能有多条"
+  },
+  {
+   "type": "judge",
+   "stem": "甘特图能清晰地表示各活动之间的依赖关系。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "甘特图的弱点正是难以表示活动间的依赖关系，PERT 图才擅长。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "进度工具"
+   ],
+   "source_quote": "甘特图能清楚表达活动的起止时间和并行，但不能清楚表示活动之间的依赖关系"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.22 测试与度量计算：环路复杂度、边界值、功能点": [
+  {
+   "type": "single",
+   "stem": "某程序流程图有 11 条边、9 个结点，环路复杂度 V(G) 是多少？",
+   "options": [
+    "2",
+    "4",
+    "3",
+    "6"
+   ],
+   "answer_index": 1,
+   "explanation": "V(G) = E - N + 2 = 11 - 9 + 2 = 4。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "环路复杂度"
+   ],
+   "source_quote": "McCabe 环路复杂度 V(G) = E - N + 2"
+  },
+  {
+   "type": "single",
+   "stem": "某程序有 5 个判定结点，环路复杂度是多少？",
+   "options": [
+    "10",
+    "5",
+    "4",
+    "6"
+   ],
+   "answer_index": 3,
+   "explanation": "V(G) = 判定结点数 + 1 = 6。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "环路复杂度"
+   ],
+   "source_quote": "也等于判定结点数加 1"
+  },
+  {
+   "type": "single",
+   "stem": "某程序包含 3 个 if 语句和 1 个 while 循环（均为简单条件），环路复杂度是多少？",
+   "options": [
+    "5",
+    "4",
+    "3",
+    "7"
+   ],
+   "answer_index": 0,
+   "explanation": "判定结点 = 3 + 1 = 4，V(G) = 4 + 1 = 5。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "环路复杂度"
+   ],
+   "source_quote": "每个 if、while、for 增加 1 个判定结点"
+  },
+  {
+   "type": "single",
+   "stem": "某判定由 3 个简单条件组成，条件组合覆盖需要覆盖多少种组合？",
+   "options": [
+    "6",
+    "8",
+    "2",
+    "3"
+   ],
+   "answer_index": 1,
+   "explanation": "2^3 = 8。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "逻辑覆盖"
+   ],
+   "source_quote": "条件组合覆盖对 k 个简单条件的判定需要 2^k 种组合"
+  },
+  {
+   "type": "single",
+   "stem": "输入年龄的有效范围为 18 ~ 60，采用边界值分析（每个区间取 6 个点），应选取的测试值是哪一组？",
+   "options": [
+    "17、18、60、61",
+    "0、18、60、100",
+    "17、18、19、59、60、61",
+    "18、60"
+   ],
+   "answer_index": 2,
+   "explanation": "区间 [a, b] 取 a-1、a、a+1、b-1、b、b+1。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "边界值"
+   ],
+   "source_quote": "通常取 a-1、a、a+1、b-1、b、b+1 共 6 个值"
+  },
+  {
+   "type": "single",
+   "stem": "某系统未调整功能点为 200，技术复杂度调整因子 VAF 为 1.05，调整后功能点是多少？",
+   "options": [
+    "190",
+    "200",
+    "205",
+    "210"
+   ],
+   "answer_index": 3,
+   "explanation": "FP = UFP × VAF = 200 × 1.05 = 210。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "功能点"
+   ],
+   "source_quote": "调整后功能点 FP = UFP × 技术复杂度调整因子 VAF"
+  },
+  {
+   "type": "single",
+   "stem": "14 个技术复杂度因子 Fi 的总和为 35，VAF 是多少？",
+   "options": [
+    "1.35",
+    "1",
+    "0.35",
+    "0.65"
+   ],
+   "answer_index": 1,
+   "explanation": "VAF = 0.65 + 0.01 × 35 = 1.0。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "功能点"
+   ],
+   "source_quote": "VAF = 0.65 + 0.01 × ΣFi"
+  },
+  {
+   "type": "single",
+   "stem": "基本路径测试中，至少需要设计的测试用例数等于什么？",
+   "options": [
+    "输入变量个数",
+    "语句总数",
+    "判定结点数的平方",
+    "程序的环路复杂度 V(G)"
+   ],
+   "answer_index": 3,
+   "explanation": "V(G) 等于线性独立路径数。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "基本路径测试"
+   ],
+   "source_quote": "V(G) 等于独立路径数，也是基本路径测试至少需要的测试用例数"
+  },
+  {
+   "type": "judge",
+   "stem": "判定覆盖只需要 2 个测试用例，使每个判定的真假分支各执行一次。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "对只有一个判定的程序，判定覆盖需要真、假各 1 个用例，共 2 个。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "逻辑覆盖"
+   ],
+   "source_quote": "判定覆盖至少需要 2 个测试用例"
+  },
+  {
+   "type": "judge",
+   "stem": "设计测试用例时，多个无效等价类可以合并在同一个用例中，以减少用例数。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "无效等价类要单独设计用例，否则一个错误可能掩盖另一个错误。",
+   "difficulty": 3,
+   "tags": [
+    "高频考点",
+    "等价类"
+   ],
+   "source_quote": "每个无效等价类单独设计用例"
+  }
+ ],
+ "软件设计师（中级）强化训练（公式与速算） > R1.23 数据库计算：关系运算规模、候选键速求、E-R 转换": [
+  {
+   "type": "single",
+   "stem": "关系 R 有 4 个元组、3 个属性，关系 S 有 5 个元组、2 个属性，R × S 的元组数和属性数分别是多少？",
+   "options": [
+    "20 个元组、5 个属性",
+    "9 个元组、6 个属性",
+    "9 个元组、5 个属性",
+    "20 个元组、6 个属性"
+   ],
+   "answer_index": 0,
+   "explanation": "笛卡尔积元组数相乘 4×5 = 20，属性数相加 3+2 = 5。",
+   "difficulty": 1,
+   "tags": [
+    "公式速算",
+    "关系代数"
+   ],
+   "source_quote": "笛卡尔积 R × S 的元组数为 r × s，属性数为 a + b"
+  },
+  {
+   "type": "single",
+   "stem": "R(A,B,C) 与 S(C,D) 做自然连接，结果的属性个数是多少？",
+   "options": [
+    "3",
+    "5",
+    "4",
+    "2"
+   ],
+   "answer_index": 2,
+   "explanation": "3 + 2 - 1（公共属性 C）= 4。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "关系代数"
+   ],
+   "source_quote": "自然连接结果的属性数 = a + b - 公共属性数"
+  },
+  {
+   "type": "single",
+   "stem": "关系模式 R(A,B,C,D)，函数依赖集 F = {A→B, B→C, A→D}，R 的候选键是哪一个？",
+   "options": [
+    "AC",
+    "AB",
+    "A",
+    "B"
+   ],
+   "answer_index": 2,
+   "explanation": "A 不出现在任何依赖右边，A+ = {A,B,C,D} 覆盖全部属性，所以 A 是候选键。",
+   "difficulty": 3,
+   "tags": [
+    "速算技巧",
+    "候选键"
+   ],
+   "source_quote": "凡是从不出现在任何依赖右边的属性（入度为 0）必定属于每个候选键"
+  },
+  {
+   "type": "single",
+   "stem": "关系模式 R(A,B,C,D)，F = {AB→C, C→D}，R 的候选键是哪一个？",
+   "options": [
+    "A",
+    "C",
+    "ABC",
+    "AB"
+   ],
+   "answer_index": 3,
+   "explanation": "A、B 入度为 0，必在键中；(AB)+ = {A,B,C,D}，AB 即候选键。",
+   "difficulty": 3,
+   "tags": [
+    "速算技巧",
+    "候选键"
+   ],
+   "source_quote": "先看这些属性的闭包能否覆盖全部属性"
+  },
+  {
+   "type": "single",
+   "stem": "关系模式 R(A,B,C,D,E)，F = {A→B, C→D, E→A}，R 的候选键是哪一个？",
+   "options": [
+    "CE",
+    "AC",
+    "E",
+    "CD"
+   ],
+   "answer_index": 0,
+   "explanation": "C、E 入度为 0，必在键中；(CE)+：E→A→B，C→D，得 {A,B,C,D,E}，候选键为 CE。",
+   "difficulty": 4,
+   "tags": [
+    "速算技巧",
+    "候选键"
+   ],
+   "source_quote": "凡是从不出现在任何依赖右边的属性（入度为 0）必定属于每个候选键"
+  },
+  {
+   "type": "single",
+   "stem": "某 E-R 图有 3 个实体，实体间有 2 个 m:n 联系和 1 个 1:n 联系，按“1:n 联系合并”转换，应得到几个关系模式？",
+   "options": [
+    "3",
+    "5",
+    "6",
+    "4"
+   ],
+   "answer_index": 1,
+   "explanation": "3 个实体 + 2 个 m:n 联系 = 5 个关系模式，1:n 联系并入 n 端实体。",
+   "difficulty": 3,
+   "tags": [
+    "公式速算",
+    "E-R 转换"
+   ],
+   "source_quote": "关系模式的个数 = 实体数 + m:n 联系数"
+  },
+  {
+   "type": "single",
+   "stem": "E-R 图转换为关系模式时，1:n 联系应怎样处理？",
+   "options": [
+    "删除该联系",
+    "把 1 端实体的主键作为外键加入 n 端的关系",
+    "把 n 端的主键加入 1 端的关系",
+    "必须单独转成一个关系"
+   ],
+   "answer_index": 1,
+   "explanation": "n 端每个元组只对应 1 端一个元组，所以在 n 端存放外键即可。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "E-R 转换"
+   ],
+   "source_quote": "1:n 联系把 1 端的主键加到 n 端"
+  },
+  {
+   "type": "single",
+   "stem": "函数依赖集 F = {A→B, B→C}，属性 A 的闭包 A+ 是什么？",
+   "options": [
+    "{B, C}",
+    "{A}",
+    "{A, B}",
+    "{A, B, C}"
+   ],
+   "answer_index": 3,
+   "explanation": "A→B，再由 B→C 传递得 C，A+ = {A,B,C}。",
+   "difficulty": 2,
+   "tags": [
+    "公式速算",
+    "闭包"
+   ],
+   "source_quote": "X 的闭包 X+ 是由 X 函数决定的所有属性"
+  },
+  {
+   "type": "judge",
+   "stem": "对关系做选择运算后，结果关系的属性个数不变，元组个数可能减少。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "选择是按行筛选，投影才是按列筛选。",
+   "difficulty": 1,
+   "tags": [
+    "高频考点",
+    "关系代数"
+   ],
+   "source_quote": "选择后属性数不变"
+  },
+  {
+   "type": "judge",
+   "stem": "两个关系做并运算时，只要元组个数相同即可。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "并运算要求属性个数相同且对应属性的域相同（并相容），与元组个数无关。",
+   "difficulty": 2,
+   "tags": [
+    "高频考点",
+    "关系代数"
+   ],
+   "source_quote": "并、交、差要求两个关系属性个数相同且对应属性的域相同"
+  }
+ ]
+}

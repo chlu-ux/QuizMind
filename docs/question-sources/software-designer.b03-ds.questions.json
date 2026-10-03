@@ -1,0 +1,2235 @@
+{
+ "软件设计师（中级）考点精讲（数据结构） > 3.1 数据结构基本概念与算法复杂度": [
+  {
+   "type": "single",
+   "stem": "下列数据结构中，属于非线性结构的是哪一个？",
+   "options": [
+    "串",
+    "树",
+    "栈",
+    "队列"
+   ],
+   "answer_index": 1,
+   "explanation": "树和图中元素之间是一对多或多对多关系，属于非线性结构。",
+   "difficulty": 1,
+   "tags": [
+    "数据结构",
+    "逻辑结构"
+   ],
+   "source_quote": "逻辑结构分为线性结构（线性表、栈、队列、串）和非线性结构（树、图、集合）"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一项不属于数据的基本存储结构？",
+   "options": [
+    "链式存储",
+    "散列存储",
+    "树形存储",
+    "顺序存储"
+   ],
+   "answer_index": 2,
+   "explanation": "树是逻辑结构，用上述四种存储方式之一实现。",
+   "difficulty": 2,
+   "tags": [
+    "数据结构",
+    "存储结构"
+   ],
+   "source_quote": "存储结构有顺序存储、链式存储、索引存储和散列存储四种"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一项不是算法的基本特性？",
+   "options": [
+    "可行性",
+    "高效性",
+    "确定性",
+    "有穷性"
+   ],
+   "answer_index": 1,
+   "explanation": "高效性是评价算法优劣的标准，不属于算法的五个特性。",
+   "difficulty": 2,
+   "tags": [
+    "算法",
+    "特性"
+   ],
+   "source_quote": "算法是解决问题的有限步骤，具有有穷性、确定性、可行性、输入和输出五个特性"
+  },
+  {
+   "type": "single",
+   "stem": "下列时间复杂度中，随 n 增长最慢的是哪一个？",
+   "options": [
+    "O(log n)",
+    "O(n)",
+    "O(n log n)",
+    "O(n²)"
+   ],
+   "answer_index": 0,
+   "explanation": "对数阶增长最慢。",
+   "difficulty": 2,
+   "tags": [
+    "复杂度",
+    "量级比较"
+   ],
+   "source_quote": "常见量级按增长从慢到快为 O(1)、O(log n)、O(n)、O(n log n)、O(n²)、O(2^n)、O(n!)"
+  },
+  {
+   "type": "single",
+   "stem": "两层嵌套循环，外层和内层都执行 n 次，其时间复杂度是多少？",
+   "options": [
+    "O(n)",
+    "O(n²)",
+    "O(2^n)",
+    "O(n log n)"
+   ],
+   "answer_index": 1,
+   "explanation": "执行次数为 n × n。",
+   "difficulty": 2,
+   "tags": [
+    "复杂度",
+    "循环"
+   ],
+   "source_quote": "双重循环各执行 n 次的时间复杂度是 O(n²)"
+  },
+  {
+   "type": "single",
+   "stem": "循环 i = 1; while (i < n) { i = i * 2; } 的时间复杂度是多少？",
+   "options": [
+    "O(log n)",
+    "O(1)",
+    "O(n)",
+    "O(n²)"
+   ],
+   "answer_index": 0,
+   "explanation": "i 每次翻倍，约 log2(n) 次后超过 n。",
+   "difficulty": 3,
+   "tags": [
+    "复杂度",
+    "对数阶"
+   ],
+   "source_quote": "循环变量每次翻倍或减半的循环时间复杂度是 O(log n)"
+  },
+  {
+   "type": "judge",
+   "stem": "空间复杂度度量的是算法执行所需的额外存储空间。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "与时间复杂度相对应，关注的是存储开销。",
+   "difficulty": 1,
+   "tags": [
+    "复杂度",
+    "空间"
+   ],
+   "source_quote": "空间复杂度度量算法执行所需的额外存储空间"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据结构） > 3.2 线性表：顺序表与链表": [
+  {
+   "type": "single",
+   "stem": "顺序表的突出优点是什么？",
+   "options": [
+    "便于动态增长",
+    "不需要连续存储空间",
+    "支持随机访问，按下标访问为 O(1)",
+    "插入删除不需要移动元素"
+   ],
+   "answer_index": 2,
+   "explanation": "地址连续，可由首地址和下标直接算出元素地址。",
+   "difficulty": 2,
+   "tags": [
+    "线性表",
+    "顺序表"
+   ],
+   "source_quote": "支持随机访问，按下标访问的时间复杂度为 O(1)"
+  },
+  {
+   "type": "single",
+   "stem": "在顺序表中插入一个元素，平均需要移动约多少个元素？",
+   "options": [
+    "1",
+    "n",
+    "n/2",
+    "log n"
+   ],
+   "answer_index": 2,
+   "explanation": "在各位置插入的概率相等时，平均移动 n/2 个元素。",
+   "difficulty": 2,
+   "tags": [
+    "线性表",
+    "插入"
+   ],
+   "source_quote": "插入和删除需要移动大量元素，平均移动次数约为 n/2"
+  },
+  {
+   "type": "single",
+   "stem": "链表按位置查找第 i 个元素的时间复杂度是多少？",
+   "options": [
+    "O(log n)",
+    "O(n²)",
+    "O(n)",
+    "O(1)"
+   ],
+   "answer_index": 2,
+   "explanation": "只能从头结点开始沿指针逐个查找。",
+   "difficulty": 2,
+   "tags": [
+    "线性表",
+    "链表"
+   ],
+   "source_quote": "不支持随机访问，按位查找需要 O(n)"
+  },
+  {
+   "type": "single",
+   "stem": "已知插入位置时，在链表中插入一个结点的时间复杂度是多少？",
+   "options": [
+    "O(1)",
+    "O(n²)",
+    "O(n)",
+    "O(log n)"
+   ],
+   "answer_index": 0,
+   "explanation": "链表插入不需要移动其他结点。",
+   "difficulty": 2,
+   "tags": [
+    "线性表",
+    "链表"
+   ],
+   "source_quote": "已知位置时插入和删除只需修改指针，时间复杂度为 O(1)"
+  },
+  {
+   "type": "single",
+   "stem": "单链表的主要局限是什么？",
+   "options": [
+    "只能向后遍历",
+    "不能删除结点",
+    "不能插入结点",
+    "必须连续存储"
+   ],
+   "answer_index": 0,
+   "explanation": "找前驱结点需要从头重新遍历。",
+   "difficulty": 2,
+   "tags": [
+    "线性表",
+    "单链表"
+   ],
+   "source_quote": "单链表每个结点只有一个后继指针，只能向后遍历"
+  },
+  {
+   "type": "single",
+   "stem": "双向链表相比单链表的优势是什么？",
+   "options": [
+    "占用空间更少",
+    "可以双向遍历，删除结点时不需要查找前驱",
+    "插入时不需要修改指针",
+    "支持随机访问"
+   ],
+   "answer_index": 1,
+   "explanation": "代价是每个结点多一个指针域。",
+   "difficulty": 2,
+   "tags": [
+    "线性表",
+    "双向链表"
+   ],
+   "source_quote": "双向链表每个结点有前驱和后继两个指针，可以双向遍历，删除结点时不需要查找前驱"
+  },
+  {
+   "type": "single",
+   "stem": "循环链表中，尾结点的指针指向哪里？",
+   "options": [
+    "头结点",
+    "自己的前驱",
+    "空",
+    "任意中间结点"
+   ],
+   "answer_index": 0,
+   "explanation": "这样可以从任意结点出发遍历整个链表。",
+   "difficulty": 2,
+   "tags": [
+    "线性表",
+    "循环链表"
+   ],
+   "source_quote": "循环链表的尾结点指针指向头结点"
+  },
+  {
+   "type": "judge",
+   "stem": "顺序表需要一组地址连续的存储单元。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "链表则不要求连续。",
+   "difficulty": 1,
+   "tags": [
+    "线性表",
+    "顺序表"
+   ],
+   "source_quote": "顺序表用一组地址连续的存储单元存放元素"
+  },
+  {
+   "type": "judge",
+   "stem": "带头结点的链表可以使首位置的插入删除与其他位置的操作保持一致。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "头结点作为首元素的前驱，不必对首位置做特殊处理。",
+   "difficulty": 2,
+   "tags": [
+    "线性表",
+    "头结点"
+   ],
+   "source_quote": "带头结点的链表使插入和删除的操作在首位置与其他位置保持一致"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据结构） > 3.3 栈与队列的应用": [
+  {
+   "type": "single",
+   "stem": "入栈顺序为 1、2、3，则可能的出栈序列共有多少种？",
+   "options": [
+    "3",
+    "4",
+    "5",
+    "6"
+   ],
+   "answer_index": 2,
+   "explanation": "n 个元素的合法出栈序列数为卡特兰数，n=3 时为 5。",
+   "difficulty": 2,
+   "tags": [
+    "栈",
+    "出栈序列"
+   ],
+   "source_quote": "3 个元素有 5 种合法出栈序列"
+  },
+  {
+   "type": "single",
+   "stem": "入栈顺序为 1、2、3、4，下列哪个出栈序列是不可能出现的？",
+   "options": [
+    "1、4、3、2",
+    "3、2、1、4",
+    "4、3、1、2",
+    "2、1、4、3"
+   ],
+   "answer_index": 2,
+   "explanation": "4、3 出栈后栈内为 1、2，栈顶是 2，要先出 2 才能出 1，所以 4、3、1、2 不可能。",
+   "difficulty": 3,
+   "tags": [
+    "栈",
+    "出栈序列"
+   ],
+   "source_quote": "某元素出栈时，比它先入栈且尚未出栈的元素必须按入栈的逆序出栈"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一项不是栈的典型应用？",
+   "options": [
+    "括号匹配",
+    "表达式求值",
+    "操作系统的进程轮转调度",
+    "函数调用与递归"
+   ],
+   "answer_index": 2,
+   "explanation": "表达式求值也使用栈；轮转调度使用队列。",
+   "difficulty": 2,
+   "tags": [
+    "栈",
+    "应用"
+   ],
+   "source_quote": "栈还用于函数调用、递归和括号匹配"
+  },
+  {
+   "type": "single",
+   "stem": "后缀表达式 3 4 + 5 * 的值是多少？",
+   "options": [
+    "23",
+    "60",
+    "17",
+    "35"
+   ],
+   "answer_index": 3,
+   "explanation": "3 4 + 得 7，再 7 5 * 得 35。",
+   "difficulty": 3,
+   "tags": [
+    "栈",
+    "后缀表达式"
+   ],
+   "source_quote": "遇到运算数入栈，遇到运算符弹出两个运算数计算后将结果入栈"
+  },
+  {
+   "type": "single",
+   "stem": "中缀表达式 a+b*c 转换成后缀表达式后，两个运算符的先后顺序是什么？",
+   "options": [
+    "两个运算符都出现在 a 之前",
+    "乘号出现在 a 之前",
+    "先出现乘号，再出现加号",
+    "先出现加号，再出现乘号"
+   ],
+   "answer_index": 2,
+   "explanation": "* 的优先级高于 +，先算 b*c，再与 a 相加，所以是 abc*+。",
+   "difficulty": 3,
+   "tags": [
+    "栈",
+    "表达式转换"
+   ],
+   "source_quote": "运算符与栈顶比较优先级，栈顶优先级高于或等于当前运算符就弹出输出"
+  },
+  {
+   "type": "single",
+   "stem": "中缀表达式 (a+b)*c 转换成后缀表达式后，最后一个运算符是什么？",
+   "options": [
+    "左括号",
+    "加号",
+    "乘号",
+    "右括号"
+   ],
+   "answer_index": 2,
+   "explanation": "括号内的 + 先计算，得 ab+，再乘 c。",
+   "difficulty": 3,
+   "tags": [
+    "栈",
+    "表达式转换"
+   ],
+   "source_quote": "左括号入栈，遇到右括号弹栈至左括号"
+  },
+  {
+   "type": "single",
+   "stem": "循环队列（牺牲一个存储单元）的队空条件是什么？",
+   "options": [
+    "rear == front",
+    "front == 0",
+    "(rear + 1) % m == front",
+    "rear == m"
+   ],
+   "answer_index": 0,
+   "explanation": "牺牲一个单元是为了区分队满与队空。",
+   "difficulty": 2,
+   "tags": [
+    "队列",
+    "循环队列"
+   ],
+   "source_quote": "队空的条件是 rear == front"
+  },
+  {
+   "type": "single",
+   "stem": "循环队列（牺牲一个存储单元）数组长度为 m，队满的条件是什么？",
+   "options": [
+    "front == 0",
+    "(rear + 1) % m == front",
+    "rear == front",
+    "rear == m - 1"
+   ],
+   "answer_index": 1,
+   "explanation": "队尾再前进一格就追上队头，说明已满。",
+   "difficulty": 3,
+   "tags": [
+    "队列",
+    "循环队列"
+   ],
+   "source_quote": "若牺牲一个存储单元，则队满的条件是 (rear + 1) % m == front"
+  },
+  {
+   "type": "single",
+   "stem": "循环队列数组长度 m = 10，队头指针 front = 7，队尾指针 rear = 2，队列中有多少个元素？",
+   "options": [
+    "6",
+    "5",
+    "9",
+    "4"
+   ],
+   "answer_index": 1,
+   "explanation": "(2 - 7 + 10) % 10 = 5。",
+   "difficulty": 3,
+   "tags": [
+    "队列",
+    "循环队列长度"
+   ],
+   "source_quote": "队列长度为 (rear - front + m) % m"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据结构） > 3.4 串与模式匹配（KMP）": [
+  {
+   "type": "single",
+   "stem": "朴素模式匹配算法（BF 算法）的最坏时间复杂度是多少？",
+   "options": [
+    "O(log n)",
+    "O(n)",
+    "O(n²)",
+    "O(n × m)"
+   ],
+   "answer_index": 3,
+   "explanation": "n、m 分别为主串和模式串的长度。",
+   "difficulty": 2,
+   "tags": [
+    "串",
+    "BF算法"
+   ],
+   "source_quote": "朴素的模式匹配算法（BF 算法）在失配时主串指针回溯，最坏时间复杂度为 O(n × m)"
+  },
+  {
+   "type": "single",
+   "stem": "KMP 算法的时间复杂度是多少？",
+   "options": [
+    "O(n + m)",
+    "O(log n)",
+    "O(m²)",
+    "O(n²)"
+   ],
+   "answer_index": 0,
+   "explanation": "主串指针不回溯是 KMP 优于 BF 的关键。",
+   "difficulty": 2,
+   "tags": [
+    "串",
+    "KMP"
+   ],
+   "source_quote": "KMP 算法利用已经匹配的信息，主串指针不回溯，只移动模式串，时间复杂度为 O(n + m)"
+  },
+  {
+   "type": "single",
+   "stem": "KMP 算法相对朴素匹配算法的改进是什么？",
+   "options": [
+    "先对主串排序",
+    "失配时主串指针不回溯",
+    "只比较前缀字符",
+    "失配时模式串指针总回到开头"
+   ],
+   "answer_index": 1,
+   "explanation": "利用 next 数组决定模式串的滑动位置。",
+   "difficulty": 2,
+   "tags": [
+    "串",
+    "KMP"
+   ],
+   "source_quote": "KMP 算法利用已经匹配的信息，主串指针不回溯，只移动模式串"
+  },
+  {
+   "type": "single",
+   "stem": "模式串 abaab（下标从 1 开始）的 next 数组是哪一个？",
+   "options": [
+    "1、1、2、2、3",
+    "0、0、1、1、2",
+    "0、1、1、2、2",
+    "0、1、2、3、4"
+   ],
+   "answer_index": 2,
+   "explanation": "next[j] 为第 j 个字符前子串的最长相等前后缀长度加 1。",
+   "difficulty": 3,
+   "tags": [
+    "串",
+    "next数组"
+   ],
+   "source_quote": "例如模式串 abaab（下标从 1 开始）的 next 数组为 0、1、1、2、2"
+  },
+  {
+   "type": "single",
+   "stem": "模式串 aaab（下标从 1 开始）的 next 数组是哪一个？",
+   "options": [
+    "0、1、2、3",
+    "0、1、2、2",
+    "0、0、0、0",
+    "0、1、1、1"
+   ],
+   "answer_index": 0,
+   "explanation": "aaab 前缀 a、aa、aaa 的最长相等前后缀长度分别为 0、1、2，加 1 得 1、2、3，next[1] 固定为 0。",
+   "difficulty": 3,
+   "tags": [
+    "串",
+    "next数组"
+   ],
+   "source_quote": "next[j] 表示模式串第 j 个字符之前的子串中，最长相等前后缀的长度加 1"
+  },
+  {
+   "type": "judge",
+   "stem": "串的子串是由主串中任意连续的字符组成的子序列。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "子串必须连续，这是它与子序列的区别。",
+   "difficulty": 1,
+   "tags": [
+    "串",
+    "子串"
+   ],
+   "source_quote": "串中任意连续字符组成的子序列称为子串"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据结构） > 3.5 数组与矩阵的压缩存储": [
+  {
+   "type": "single",
+   "stem": "n 阶对称矩阵采用压缩存储，只需存放多少个元素？",
+   "options": [
+    "n(n+1)/2",
+    "n²",
+    "n²/2",
+    "2n"
+   ],
+   "answer_index": 0,
+   "explanation": "包含对角线的下三角共 1+2+…+n = n(n+1)/2 个。",
+   "difficulty": 2,
+   "tags": [
+    "矩阵",
+    "对称矩阵"
+   ],
+   "source_quote": "n 阶对称矩阵只需存放下三角（或上三角）元素，共 n(n+1)/2 个元素"
+  },
+  {
+   "type": "single",
+   "stem": "10 阶对称矩阵压缩存储时，需要存放多少个元素？",
+   "options": [
+    "45",
+    "100",
+    "55",
+    "50"
+   ],
+   "answer_index": 2,
+   "explanation": "10 × 11 / 2 = 55。",
+   "difficulty": 2,
+   "tags": [
+    "矩阵",
+    "对称矩阵"
+   ],
+   "source_quote": "n 阶对称矩阵只需存放下三角（或上三角）元素，共 n(n+1)/2 个元素"
+  },
+  {
+   "type": "single",
+   "stem": "二维数组 a[0..4][0..4] 按行优先存放，首地址 1000，每个元素占 4 字节，a[2][3] 的地址是多少？",
+   "options": [
+    "1052",
+    "1044",
+    "1056",
+    "1048"
+   ],
+   "answer_index": 0,
+   "explanation": "(2 × 5 + 3) × 4 = 52，1000 + 52 = 1052。",
+   "difficulty": 3,
+   "tags": [
+    "数组",
+    "地址计算"
+   ],
+   "source_quote": "的地址为首地址加 (i × n + j) × 每个元素所占字节数"
+  },
+  {
+   "type": "single",
+   "stem": "按行优先把下三角矩阵压缩存放（下标从 1 开始），元素 a[4][2] 对应一维数组的下标是多少？",
+   "options": [
+    "6",
+    "8",
+    "12",
+    "10"
+   ],
+   "answer_index": 1,
+   "explanation": "4 × 3 / 2 + 2 = 8。",
+   "difficulty": 3,
+   "tags": [
+    "矩阵",
+    "下标计算"
+   ],
+   "source_quote": "元素 a[i][j]（i 大于等于 j，下标从 1 开始）对应的一维数组下标为 i(i-1)/2 + j"
+  },
+  {
+   "type": "single",
+   "stem": "稀疏矩阵常用的压缩存储方式是哪一种？",
+   "options": [
+    "循环队列",
+    "散列表",
+    "三元组表",
+    "顺序栈"
+   ],
+   "answer_index": 2,
+   "explanation": "只存非零元素的行号、列号和值。",
+   "difficulty": 2,
+   "tags": [
+    "矩阵",
+    "稀疏矩阵"
+   ],
+   "source_quote": "稀疏矩阵的非零元素很少，常用三元组表（行号、列号、值）或十字链表存储，节省空间"
+  },
+  {
+   "type": "judge",
+   "stem": "三元组表记录的是非零元素的行号、列号和值。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "三元组表只记录非零元素，所以节省空间。",
+   "difficulty": 1,
+   "tags": [
+    "矩阵",
+    "稀疏矩阵"
+   ],
+   "source_quote": "常用三元组表（行号、列号、值）或十字链表存储，节省空间"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据结构） > 3.6 树与二叉树的性质": [
+  {
+   "type": "single",
+   "stem": "二叉树中，叶子结点数 n0 与度为 2 的结点数 n2 之间的关系是什么？",
+   "options": [
+    "叶子结点数比度为 2 的结点数少 1",
+    "叶子结点数是度为 2 的结点数的 2 倍",
+    "叶子结点数等于度为 2 的结点数",
+    "叶子结点数比度为 2 的结点数多 1"
+   ],
+   "answer_index": 3,
+   "explanation": "这是二叉树的基本性质，可由结点数与分支数的关系推出。",
+   "difficulty": 2,
+   "tags": [
+    "二叉树",
+    "性质"
+   ],
+   "source_quote": "对任何二叉树，叶子结点数 n0 等于度为 2 的结点数 n2 加 1"
+  },
+  {
+   "type": "single",
+   "stem": "一棵二叉树中度为 2 的结点有 5 个，则叶子结点有多少个？",
+   "options": [
+    "4",
+    "10",
+    "6",
+    "5"
+   ],
+   "answer_index": 2,
+   "explanation": "n0 = 5 + 1 = 6。",
+   "difficulty": 3,
+   "tags": [
+    "二叉树",
+    "计算"
+   ],
+   "source_quote": "叶子结点数 n0 等于度为 2 的结点数 n2 加 1"
+  },
+  {
+   "type": "single",
+   "stem": "一棵二叉树有 8 个叶子结点、3 个度为 1 的结点，则该二叉树共有多少个结点？",
+   "options": [
+    "15",
+    "18",
+    "11",
+    "19"
+   ],
+   "answer_index": 1,
+   "explanation": "n2 = 8 - 1 = 7，总数 = 8 + 3 + 7 = 18。",
+   "difficulty": 3,
+   "tags": [
+    "二叉树",
+    "计算"
+   ],
+   "source_quote": "叶子结点数 n0 等于度为 2 的结点数 n2 加 1"
+  },
+  {
+   "type": "single",
+   "stem": "二叉树的第 5 层最多有多少个结点？",
+   "options": [
+    "16",
+    "25",
+    "10",
+    "32"
+   ],
+   "answer_index": 0,
+   "explanation": "2^(5-1) = 16。",
+   "difficulty": 2,
+   "tags": [
+    "二叉树",
+    "层数"
+   ],
+   "source_quote": "第 i 层最多有 2 的 i-1 次方个结点"
+  },
+  {
+   "type": "single",
+   "stem": "高度为 4 的二叉树最多有多少个结点？",
+   "options": [
+    "8",
+    "16",
+    "31",
+    "15"
+   ],
+   "answer_index": 3,
+   "explanation": "2^4 - 1 = 15。",
+   "difficulty": 2,
+   "tags": [
+    "二叉树",
+    "高度"
+   ],
+   "source_quote": "高度为 h 的二叉树最多有 2 的 h 次方减 1 个结点"
+  },
+  {
+   "type": "single",
+   "stem": "完全二叉树按层编号（从 1 开始），结点 i 的左孩子编号是多少？",
+   "options": [
+    "2i+1",
+    "i/2",
+    "i+1",
+    "2i"
+   ],
+   "answer_index": 3,
+   "explanation": "双亲编号为 i 除以 2 取整。",
+   "difficulty": 2,
+   "tags": [
+    "完全二叉树",
+    "编号"
+   ],
+   "source_quote": "结点 i 的左孩子编号为 2i，右孩子编号为 2i+1"
+  },
+  {
+   "type": "single",
+   "stem": "具有 12 个结点的完全二叉树，高度是多少？",
+   "options": [
+    "3",
+    "4",
+    "5",
+    "6"
+   ],
+   "answer_index": 1,
+   "explanation": "floor(log2 12) + 1 = 3 + 1 = 4。",
+   "difficulty": 3,
+   "tags": [
+    "完全二叉树",
+    "高度"
+   ],
+   "source_quote": "具有 n 个结点的完全二叉树的高度为 log2(n) 向下取整加 1"
+  },
+  {
+   "type": "single",
+   "stem": "一棵树中所有结点的度之和为 20，则这棵树共有多少个结点？",
+   "options": [
+    "22",
+    "20",
+    "19",
+    "21"
+   ],
+   "answer_index": 3,
+   "explanation": "除根以外每个结点恰有一个双亲，度之和等于分支数，结点数 = 分支数 + 1。",
+   "difficulty": 3,
+   "tags": [
+    "树",
+    "结点数"
+   ],
+   "source_quote": "树中结点数等于所有结点的度之和加 1"
+  },
+  {
+   "type": "judge",
+   "stem": "完全二叉树的最后一层结点必须集中在左边。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "这是完全二叉树与普通二叉树的区别。",
+   "difficulty": 2,
+   "tags": [
+    "完全二叉树",
+    "定义"
+   ],
+   "source_quote": "完全二叉树是除最后一层外每层都满，且最后一层的结点都集中在左边"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据结构） > 3.7 二叉树遍历的应用与线索二叉树": [
+  {
+   "type": "single",
+   "stem": "下列哪组遍历序列不能唯一确定一棵二叉树？",
+   "options": [
+    "层序序列和中序序列",
+    "中序序列和后序序列",
+    "前序序列和中序序列",
+    "前序序列和后序序列"
+   ],
+   "answer_index": 3,
+   "explanation": "没有中序序列就无法区分左右子树。",
+   "difficulty": 2,
+   "tags": [
+    "遍历",
+    "还原二叉树"
+   ],
+   "source_quote": "已知二叉树的前序序列和中序序列，或者中序序列和后序序列，可以唯一确定一棵二叉树；仅知道前序和后序序列则不能唯一确定"
+  },
+  {
+   "type": "single",
+   "stem": "二叉树的前序序列为 A B D E C F，中序序列为 D B E A C F，则它的后序序列是什么？",
+   "options": [
+    "D E B F C A",
+    "D B E F C A",
+    "D E B C F A",
+    "E D B F C A"
+   ],
+   "answer_index": 0,
+   "explanation": "根 A 的左子树为 B（左孩子 D、右孩子 E），右子树为 C（右孩子 F）。",
+   "difficulty": 3,
+   "tags": [
+    "遍历",
+    "还原二叉树"
+   ],
+   "source_quote": "该二叉树的后序序列为 D E B F C A"
+  },
+  {
+   "type": "single",
+   "stem": "二叉树的前序序列为 A B C，中序序列为 B A C，则它的后序序列是什么？",
+   "options": [
+    "A B C",
+    "B C A",
+    "B A C",
+    "C B A"
+   ],
+   "answer_index": 1,
+   "explanation": "根为 A，左子树只有 B，右子树只有 C，后序为 B C A。",
+   "difficulty": 3,
+   "tags": [
+    "遍历",
+    "还原二叉树"
+   ],
+   "source_quote": "前序序列的第一个结点（或后序序列的最后一个结点）是根，在中序序列中找到根的位置，其左边是左子树的结点、右边是右子树的结点"
+  },
+  {
+   "type": "single",
+   "stem": "根据前序序列和中序序列还原二叉树时，根结点由哪个序列确定？",
+   "options": [
+    "中序序列的最后一个结点",
+    "前序序列的第一个结点",
+    "中序序列的第一个结点",
+    "前序序列的最后一个结点"
+   ],
+   "answer_index": 1,
+   "explanation": "再用根在中序序列中的位置划分左右子树。",
+   "difficulty": 2,
+   "tags": [
+    "遍历",
+    "确定根"
+   ],
+   "source_quote": "前序序列的第一个结点（或后序序列的最后一个结点）是根"
+  },
+  {
+   "type": "single",
+   "stem": "线索二叉树利用二叉链表中的空指针域指向什么？",
+   "options": [
+    "该结点的兄弟",
+    "树的根结点",
+    "结点在某种遍历序列中的前驱和后继",
+    "该结点的双亲"
+   ],
+   "answer_index": 2,
+   "explanation": "这样无需遍历整棵树就能方便地找到前驱和后继。",
+   "difficulty": 2,
+   "tags": [
+    "线索二叉树",
+    "作用"
+   ],
+   "source_quote": "使空的左指针指向该结点在某种遍历序列中的前驱，空的右指针指向后继"
+  },
+  {
+   "type": "single",
+   "stem": "一棵有 10 个结点的二叉树采用二叉链表存储，共有多少个空指针域？",
+   "options": [
+    "10",
+    "9",
+    "11",
+    "20"
+   ],
+   "answer_index": 2,
+   "explanation": "20 个指针域中有 9 个指向孩子，空指针域 20 - 9 = 11。",
+   "difficulty": 3,
+   "tags": [
+    "二叉链表",
+    "空指针"
+   ],
+   "source_quote": "n 个结点的二叉链表共有 2n 个指针域，其中有 n-1 个指向孩子，空指针域有 n+1 个"
+  },
+  {
+   "type": "judge",
+   "stem": "仅依据前序序列和后序序列就可以唯一确定一棵二叉树。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "例如只有一个孩子时，无法判断它是左孩子还是右孩子。",
+   "difficulty": 2,
+   "tags": [
+    "遍历",
+    "还原二叉树"
+   ],
+   "source_quote": "仅知道前序和后序序列则不能唯一确定"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据结构） > 3.8 二叉排序树、平衡二叉树与 B 树": [
+  {
+   "type": "single",
+   "stem": "对二叉排序树做中序遍历，得到的序列有什么特点？",
+   "options": [
+    "关键字无序",
+    "与插入顺序相同",
+    "关键字递增有序",
+    "关键字递减有序"
+   ],
+   "answer_index": 2,
+   "explanation": "左子树小于根、右子树大于根，所以中序为递增。",
+   "difficulty": 1,
+   "tags": [
+    "二叉排序树",
+    "中序"
+   ],
+   "source_quote": "中序遍历得到递增序列"
+  },
+  {
+   "type": "single",
+   "stem": "按关键字递增顺序依次插入构造二叉排序树，查找时间复杂度会退化为多少？",
+   "options": [
+    "O(n log n)",
+    "O(1)",
+    "O(log n)",
+    "O(n)"
+   ],
+   "answer_index": 3,
+   "explanation": "有序插入使树退化为单链。",
+   "difficulty": 2,
+   "tags": [
+    "二叉排序树",
+    "退化"
+   ],
+   "source_quote": "二叉排序树的查找效率与树形有关，平均查找长度为 O(log n)，最坏（退化成单链）为 O(n)"
+  },
+  {
+   "type": "single",
+   "stem": "平衡二叉树（AVL 树）要求任一结点的平衡因子绝对值不超过多少？",
+   "options": [
+    "3",
+    "0",
+    "1",
+    "2"
+   ],
+   "answer_index": 2,
+   "explanation": "平衡因子等于左子树高度减右子树高度。",
+   "difficulty": 2,
+   "tags": [
+    "AVL",
+    "平衡因子"
+   ],
+   "source_quote": "任一结点的左右子树高度差（平衡因子）绝对值不超过 1"
+  },
+  {
+   "type": "single",
+   "stem": "AVL 树中 LL 型失衡应采用哪种调整？",
+   "options": [
+    "先右旋再左旋",
+    "先左旋再右旋",
+    "右旋",
+    "左旋"
+   ],
+   "answer_index": 2,
+   "explanation": "LL 型是在左孩子的左子树插入导致，需要右旋。",
+   "difficulty": 2,
+   "tags": [
+    "AVL",
+    "旋转"
+   ],
+   "source_quote": "LL 型失衡右旋，RR 型失衡左旋，LR 型先左旋再右旋，RL 型先右旋再左旋"
+  },
+  {
+   "type": "single",
+   "stem": "向空 AVL 树依次插入关键字 10、20、30，插入 30 后失衡，属于哪种类型、应如何调整？",
+   "options": [
+    "LR 型，先左旋再右旋",
+    "RL 型，先右旋再左旋",
+    "RR 型，左旋",
+    "LL 型，右旋"
+   ],
+   "answer_index": 2,
+   "explanation": "10、20、30 依次插入使树向右倾斜，根结点 10 失衡，属于 RR 型，左旋后 20 为根。",
+   "difficulty": 3,
+   "tags": [
+    "AVL",
+    "旋转"
+   ],
+   "source_quote": "LL 型失衡右旋，RR 型失衡左旋，LR 型先左旋再右旋，RL 型先右旋再左旋"
+  },
+  {
+   "type": "single",
+   "stem": "AVL 树中 LR 型失衡应如何调整？",
+   "options": [
+    "只做右旋",
+    "先左旋再右旋",
+    "先右旋再左旋",
+    "只做左旋"
+   ],
+   "answer_index": 1,
+   "explanation": "LR 是在左孩子的右子树插入导致，需要双旋转。",
+   "difficulty": 3,
+   "tags": [
+    "AVL",
+    "旋转"
+   ],
+   "source_quote": "LR 型先左旋再右旋，RL 型先右旋再左旋"
+  },
+  {
+   "type": "single",
+   "stem": "B 树和 B+ 树常用于什么场合？",
+   "options": [
+    "数据库和文件系统的索引",
+    "表达式求值",
+    "括号匹配",
+    "进程调度"
+   ],
+   "answer_index": 0,
+   "explanation": "多路结构降低树高，减少磁盘访问次数。",
+   "difficulty": 2,
+   "tags": [
+    "B树",
+    "应用"
+   ],
+   "source_quote": "m 阶 B 树每个结点最多有 m 棵子树，常用于数据库和文件系统的索引"
+  },
+  {
+   "type": "single",
+   "stem": "B+ 树相比 B 树的特点是什么？",
+   "options": [
+    "叶子结点不在同一层",
+    "叶子结点之间没有链接",
+    "关键字都在叶子结点，叶子结点之间有指针链接，便于范围查询",
+    "所有结点都存放数据"
+   ],
+   "answer_index": 2,
+   "explanation": "非叶结点只起索引作用。",
+   "difficulty": 2,
+   "tags": [
+    "B+树",
+    "特点"
+   ],
+   "source_quote": "B+ 树的所有关键字都出现在叶子结点，叶子结点之间用指针链接，便于范围查询"
+  },
+  {
+   "type": "judge",
+   "stem": "AVL 树的查找、插入和删除的时间复杂度都是 O(log n)。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "平衡保证树高为 O(log n)。",
+   "difficulty": 2,
+   "tags": [
+    "AVL",
+    "复杂度"
+   ],
+   "source_quote": "查找、插入和删除的时间复杂度都是 O(log n)"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据结构） > 3.9 哈夫曼树与堆": [
+  {
+   "type": "single",
+   "stem": "哈夫曼树是指什么？",
+   "options": [
+    "结点数最少的二叉树",
+    "高度最小的二叉树",
+    "带权路径长度（WPL）最小的二叉树",
+    "每层都满的二叉树"
+   ],
+   "answer_index": 2,
+   "explanation": "权值大的叶子离根近，WPL 最小。",
+   "difficulty": 2,
+   "tags": [
+    "哈夫曼树",
+    "定义"
+   ],
+   "source_quote": "哈夫曼树是带权路径长度（WPL）最小的二叉树"
+  },
+  {
+   "type": "single",
+   "stem": "构造哈夫曼树时，每次应选取哪两棵树合并？",
+   "options": [
+    "结点最少的两棵树",
+    "权值最小的两棵树",
+    "权值最大的两棵树",
+    "高度最低的两棵树"
+   ],
+   "answer_index": 1,
+   "explanation": "新树根的权为两棵树权值之和。",
+   "difficulty": 2,
+   "tags": [
+    "哈夫曼树",
+    "构造"
+   ],
+   "source_quote": "每次从森林中选出权值最小的两棵树合并成新树"
+  },
+  {
+   "type": "single",
+   "stem": "以权值 1、2、3、4 的四个叶子构造哈夫曼树，其带权路径长度 WPL 是多少？",
+   "options": [
+    "19",
+    "21",
+    "18",
+    "20"
+   ],
+   "answer_index": 0,
+   "explanation": "合并 1+2=3，3+3=6，4+6=10；WPL 等于各合并结点权值之和 3+6+10 = 19。",
+   "difficulty": 3,
+   "tags": [
+    "哈夫曼树",
+    "WPL"
+   ],
+   "source_quote": "树的 WPL 是所有叶子结点带权路径长度之和"
+  },
+  {
+   "type": "single",
+   "stem": "具有 8 个叶子结点的哈夫曼树共有多少个结点？",
+   "options": [
+    "8",
+    "16",
+    "15",
+    "14"
+   ],
+   "answer_index": 2,
+   "explanation": "哈夫曼树没有度为 1 的结点，2 × 8 - 1 = 15。",
+   "difficulty": 2,
+   "tags": [
+    "哈夫曼树",
+    "结点数"
+   ],
+   "source_quote": "n 个叶子结点的哈夫曼树共有 2n-1 个结点"
+  },
+  {
+   "type": "single",
+   "stem": "哈夫曼编码中，出现频率高的字符的编码有什么特点？",
+   "options": [
+    "编码较短",
+    "编码长度相同",
+    "编码较长",
+    "编码以 1 开头"
+   ],
+   "answer_index": 0,
+   "explanation": "频率高的字符权值大，在哈夫曼树中离根近。",
+   "difficulty": 2,
+   "tags": [
+    "哈夫曼编码",
+    "特点"
+   ],
+   "source_quote": "出现频率高的字符编码短，可以使总编码长度最短"
+  },
+  {
+   "type": "single",
+   "stem": "前缀编码的含义是什么？",
+   "options": [
+    "编码以相同前缀开头",
+    "所有编码长度相同",
+    "任何一个字符的编码都不是另一个字符编码的前缀",
+    "编码按字典序排列"
+   ],
+   "answer_index": 2,
+   "explanation": "这样译码时不会产生歧义。",
+   "difficulty": 2,
+   "tags": [
+    "哈夫曼编码",
+    "前缀码"
+   ],
+   "source_quote": "前缀编码是指任何一个字符的编码都不是另一个字符编码的前缀"
+  },
+  {
+   "type": "single",
+   "stem": "大顶堆的堆顶元素是什么？",
+   "options": [
+    "整个堆中的最小值",
+    "整个堆中的最大值",
+    "最后插入的元素",
+    "中位数"
+   ],
+   "answer_index": 1,
+   "explanation": "大顶堆每个结点的值都不小于其左右孩子。",
+   "difficulty": 2,
+   "tags": [
+    "堆",
+    "定义"
+   ],
+   "source_quote": "堆顶元素是最大值（大顶堆）或最小值（小顶堆）"
+  },
+  {
+   "type": "judge",
+   "stem": "哈夫曼树中不存在度为 1 的结点。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "每次合并两棵树，生成的新结点必有两个孩子。",
+   "difficulty": 2,
+   "tags": [
+    "哈夫曼树",
+    "结构"
+   ],
+   "source_quote": "哈夫曼树中只有度为 0 和度为 2 的结点"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据结构） > 3.10 图的基本概念与存储结构": [
+  {
+   "type": "single",
+   "stem": "无向图中所有顶点的度数之和为 14，则该图有多少条边？",
+   "options": [
+    "28",
+    "5",
+    "7",
+    "14"
+   ],
+   "answer_index": 2,
+   "explanation": "每条边为两个顶点各贡献 1 度，所以边数 = 14 / 2 = 7。",
+   "difficulty": 2,
+   "tags": [
+    "图",
+    "度与边"
+   ],
+   "source_quote": "边数等于所有顶点度数之和的一半"
+  },
+  {
+   "type": "single",
+   "stem": "6 个顶点的无向完全图有多少条边？",
+   "options": [
+    "15",
+    "36",
+    "12",
+    "30"
+   ],
+   "answer_index": 0,
+   "explanation": "6 × 5 / 2 = 15。",
+   "difficulty": 2,
+   "tags": [
+    "图",
+    "完全图"
+   ],
+   "source_quote": "n 个顶点的无向完全图有 n(n-1)/2 条边"
+  },
+  {
+   "type": "single",
+   "stem": "5 个顶点的有向完全图有多少条弧（边）？",
+   "options": [
+    "20",
+    "10",
+    "25",
+    "15"
+   ],
+   "answer_index": 0,
+   "explanation": "5 × 4 = 20。",
+   "difficulty": 2,
+   "tags": [
+    "图",
+    "完全图"
+   ],
+   "source_quote": "n 个顶点的有向完全图有 n(n-1) 条边"
+  },
+  {
+   "type": "single",
+   "stem": "n 个顶点的连通无向图至少有多少条边？",
+   "options": [
+    "2n",
+    "n-1",
+    "n",
+    "n(n-1)/2"
+   ],
+   "answer_index": 1,
+   "explanation": "恰为 n-1 条边时是一棵树。",
+   "difficulty": 2,
+   "tags": [
+    "图",
+    "连通图"
+   ],
+   "source_quote": "n 个顶点的连通图至少有 n-1 条边"
+  },
+  {
+   "type": "single",
+   "stem": "邻接矩阵存储图的空间复杂度是多少，适合什么类型的图？",
+   "options": [
+    "O(n)，适合稠密图",
+    "O(n²)，适合稠密图",
+    "O(n + e)，适合稀疏图",
+    "O(e)，适合稀疏图"
+   ],
+   "answer_index": 1,
+   "explanation": "n 为顶点数，矩阵大小为 n × n。",
+   "difficulty": 2,
+   "tags": [
+    "图",
+    "邻接矩阵"
+   ],
+   "source_quote": "邻接矩阵用二维数组表示顶点之间的关系，空间复杂度为 O(n²)，适合稠密图"
+  },
+  {
+   "type": "single",
+   "stem": "邻接表存储图的空间复杂度是多少，适合什么类型的图？",
+   "options": [
+    "O(e²)，适合稠密图",
+    "O(n + e)，适合稀疏图",
+    "O(n²)，适合稠密图",
+    "O(n²)，适合稀疏图"
+   ],
+   "answer_index": 1,
+   "explanation": "只存储实际存在的边。",
+   "difficulty": 2,
+   "tags": [
+    "图",
+    "邻接表"
+   ],
+   "source_quote": "邻接表为每个顶点建立一个边链表，空间复杂度为 O(n + e)，适合稀疏图"
+  },
+  {
+   "type": "single",
+   "stem": "在有向图中，所有顶点的入度之和与出度之和的关系是什么？",
+   "options": [
+    "相等，都等于边数",
+    "入度之和是出度之和的两倍",
+    "没有固定关系",
+    "出度之和是入度之和的两倍"
+   ],
+   "answer_index": 0,
+   "explanation": "每条有向边恰为一个顶点贡献出度、另一个顶点贡献入度。",
+   "difficulty": 2,
+   "tags": [
+    "图",
+    "有向图"
+   ],
+   "source_quote": "所有顶点入度之和等于出度之和，等于边数"
+  },
+  {
+   "type": "judge",
+   "stem": "无向图的邻接矩阵是对称矩阵。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "边 (i,j) 与 (j,i) 是同一条边。",
+   "difficulty": 2,
+   "tags": [
+    "图",
+    "邻接矩阵"
+   ],
+   "source_quote": "无向图的邻接矩阵是对称矩阵"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据结构） > 3.11 图的遍历与拓扑排序": [
+  {
+   "type": "single",
+   "stem": "广度优先搜索（BFS）需要借助哪种数据结构？",
+   "options": [
+    "散列表",
+    "队列",
+    "优先队列",
+    "栈"
+   ],
+   "answer_index": 1,
+   "explanation": "先进先出保证按层次访问。",
+   "difficulty": 1,
+   "tags": [
+    "图遍历",
+    "BFS"
+   ],
+   "source_quote": "广度优先搜索类似树的层次遍历，先访问起点的所有邻接点再访问下一层，用队列实现"
+  },
+  {
+   "type": "single",
+   "stem": "深度优先搜索（DFS）通常借助哪种数据结构（或递归）实现？",
+   "options": [
+    "队列",
+    "栈",
+    "堆",
+    "哈希表"
+   ],
+   "answer_index": 1,
+   "explanation": "后进先出便于回退。",
+   "difficulty": 1,
+   "tags": [
+    "图遍历",
+    "DFS"
+   ],
+   "source_quote": "深度优先搜索类似树的先序遍历，沿一条路径尽量深入，不能前进时回退，用栈（或递归）实现"
+  },
+  {
+   "type": "single",
+   "stem": "使用邻接表存储图时，DFS 或 BFS 遍历的时间复杂度是多少？",
+   "options": [
+    "O(n²)",
+    "O(e²)",
+    "O(n + e)",
+    "O(n log n)"
+   ],
+   "answer_index": 2,
+   "explanation": "使用邻接矩阵时是 O(n²)。",
+   "difficulty": 2,
+   "tags": [
+    "图遍历",
+    "复杂度"
+   ],
+   "source_quote": "使用邻接表存储时，两种遍历的时间复杂度都是 O(n + e)"
+  },
+  {
+   "type": "single",
+   "stem": "拓扑排序适用于哪一类图？",
+   "options": [
+    "带负权的图",
+    "有向无环图",
+    "完全图",
+    "无向连通图"
+   ],
+   "answer_index": 1,
+   "explanation": "有环的图不存在拓扑序列。",
+   "difficulty": 2,
+   "tags": [
+    "拓扑排序",
+    "对象"
+   ],
+   "source_quote": "拓扑排序针对有向无环图（DAG）"
+  },
+  {
+   "type": "single",
+   "stem": "拓扑排序每一步应选择什么样的顶点输出？",
+   "options": [
+    "出度为 0 的顶点",
+    "度最大的顶点",
+    "编号最小的顶点",
+    "入度为 0 的顶点"
+   ],
+   "answer_index": 3,
+   "explanation": "入度为 0 说明没有未输出的前驱。",
+   "difficulty": 2,
+   "tags": [
+    "拓扑排序",
+    "步骤"
+   ],
+   "source_quote": "反复选择入度为 0 的顶点输出，并删除它及其出边"
+  },
+  {
+   "type": "single",
+   "stem": "有向图的边为 a→b、a→c、b→d、c→d，下列哪个是合法的拓扑序列？",
+   "options": [
+    "d→a→b→c",
+    "a→c→b→d",
+    "a→b→d→c",
+    "b→a→c→d"
+   ],
+   "answer_index": 1,
+   "explanation": "a 必须在 b、c 之前，b、c 必须在 d 之前。",
+   "difficulty": 3,
+   "tags": [
+    "拓扑排序",
+    "序列"
+   ],
+   "source_quote": "若存在从 u 到 v 的边，则 u 在 v 之前"
+  },
+  {
+   "type": "single",
+   "stem": "拓扑排序结束时，如果还有顶点未被输出，说明什么？",
+   "options": [
+    "图是连通的",
+    "图中有孤立点",
+    "图是树",
+    "图中存在环"
+   ],
+   "answer_index": 3,
+   "explanation": "环上的顶点互为前驱，入度永远不会降为 0。",
+   "difficulty": 2,
+   "tags": [
+    "拓扑排序",
+    "环"
+   ],
+   "source_quote": "剩下的顶点入度都不为 0，说明图中存在环"
+  },
+  {
+   "type": "judge",
+   "stem": "一个有向无环图的拓扑序列一定是唯一的。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "例如 a→b、a→c 时，b、c 的先后顺序不受限制。",
+   "difficulty": 2,
+   "tags": [
+    "拓扑排序",
+    "唯一性"
+   ],
+   "source_quote": "拓扑序列可能不唯一"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据结构） > 3.12 最小生成树与最短路径": [
+  {
+   "type": "single",
+   "stem": "具有 6 个顶点的连通无向图，其生成树有多少条边？",
+   "options": [
+    "7",
+    "6",
+    "4",
+    "5"
+   ],
+   "answer_index": 3,
+   "explanation": "生成树是包含全部顶点的无环连通子图。",
+   "difficulty": 2,
+   "tags": [
+    "最小生成树",
+    "边数"
+   ],
+   "source_quote": "n 个顶点的生成树有 n-1 条边"
+  },
+  {
+   "type": "single",
+   "stem": "Prim 算法每一步选择的是什么样的边？",
+   "options": [
+    "与起点相连的任意边",
+    "连接已选顶点集与未选顶点集且权值最小的边",
+    "权值最大的边",
+    "全图中权值最小的边"
+   ],
+   "answer_index": 1,
+   "explanation": "Prim 以顶点为中心，适合稠密图。",
+   "difficulty": 2,
+   "tags": [
+    "最小生成树",
+    "Prim"
+   ],
+   "source_quote": "Prim 算法从某一顶点出发，每次选取连接已选顶点集合与未选顶点集合的权值最小的边加入"
+  },
+  {
+   "type": "single",
+   "stem": "Kruskal 算法的核心做法是什么？",
+   "options": [
+    "从某个顶点出发逐步扩展",
+    "先求出最短路径再合并",
+    "按权值从小到大选边，不形成回路就保留",
+    "每次选择权值最大的边"
+   ],
+   "answer_index": 2,
+   "explanation": "Kruskal 以边为中心，适合稀疏图。",
+   "difficulty": 2,
+   "tags": [
+    "最小生成树",
+    "Kruskal"
+   ],
+   "source_quote": "Kruskal 算法按权值从小到大依次选择边，若加入后不形成回路就保留"
+  },
+  {
+   "type": "single",
+   "stem": "无向带权图的边为：A-B 权 2，A-C 权 3，B-C 权 1，B-D 权 4，C-D 权 5。最小生成树的权值之和是多少？",
+   "options": [
+    "6",
+    "8",
+    "7",
+    "10"
+   ],
+   "answer_index": 2,
+   "explanation": "依次选 B-C(1)、A-B(2)，A-C(3) 会成环舍去，再选 B-D(4)，总和 1+2+4 = 7。",
+   "difficulty": 3,
+   "tags": [
+    "最小生成树",
+    "计算"
+   ],
+   "source_quote": "Kruskal 算法按权值从小到大依次选择边，若加入后不形成回路就保留"
+  },
+  {
+   "type": "single",
+   "stem": "Dijkstra 算法解决的是哪类问题？",
+   "options": [
+    "单源最短路径（边权非负）",
+    "每对顶点间的最短路径",
+    "拓扑排序",
+    "最小生成树"
+   ],
+   "answer_index": 0,
+   "explanation": "时间复杂度为 O(n²)。",
+   "difficulty": 2,
+   "tags": [
+    "最短路径",
+    "Dijkstra"
+   ],
+   "source_quote": "要求边的权值非负，时间复杂度为 O(n²)"
+  },
+  {
+   "type": "single",
+   "stem": "Floyd 算法求解的是什么，时间复杂度是多少？",
+   "options": [
+    "每对顶点之间的最短路径，O(n³)",
+    "单源最短路径，O(n²)",
+    "关键路径，O(n²)",
+    "最小生成树，O(n³)"
+   ],
+   "answer_index": 0,
+   "explanation": "Floyd 为三重循环。",
+   "difficulty": 2,
+   "tags": [
+    "最短路径",
+    "Floyd"
+   ],
+   "source_quote": "Floyd 算法求每对顶点之间的最短路径，时间复杂度为 O(n³)"
+  },
+  {
+   "type": "single",
+   "stem": "无向带权图的边为：A-B 权 2，A-C 权 3，B-C 权 1，B-D 权 4，C-D 权 5。从 A 到 D 的最短路径长度是多少？",
+   "options": [
+    "7",
+    "9",
+    "6",
+    "8"
+   ],
+   "answer_index": 2,
+   "explanation": "A→B→D 为 2+4 = 6，A→C→D 为 8，A→B→C→D 为 8，最短为 6。",
+   "difficulty": 3,
+   "tags": [
+    "最短路径",
+    "计算"
+   ],
+   "source_quote": "Dijkstra 算法求单源最短路径，每次选取当前距离源点最近的未确定顶点并更新其邻接点的距离"
+  },
+  {
+   "type": "judge",
+   "stem": "Dijkstra 算法允许图中存在负权边。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "存在负权边时，已确定的最短距离可能被后来的路径改进。",
+   "difficulty": 2,
+   "tags": [
+    "最短路径",
+    "负权"
+   ],
+   "source_quote": "Dijkstra 算法求单源最短路径，每次选取当前距离源点最近的未确定顶点并更新其邻接点的距离，要求边的权值非负"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据结构） > 3.13 AOE 网与关键路径": [
+  {
+   "type": "single",
+   "stem": "AOE 网中的关键路径是指什么？",
+   "options": [
+    "边数最多的路径",
+    "顶点数最少的路径",
+    "从源点到汇点路径长度最短的路径",
+    "从源点到汇点路径长度最长的路径"
+   ],
+   "answer_index": 3,
+   "explanation": "关键路径决定整个工程的最短工期。",
+   "difficulty": 2,
+   "tags": [
+    "关键路径",
+    "定义"
+   ],
+   "source_quote": "AOE 网中从源点到汇点的路径长度最长的路径称为关键路径"
+  },
+  {
+   "type": "single",
+   "stem": "关键路径的长度表示什么？",
+   "options": [
+    "工程的最长允许时间",
+    "事件的总数",
+    "活动的总数",
+    "完成整个工程所需的最短时间"
+   ],
+   "answer_index": 3,
+   "explanation": "缩短非关键活动并不能缩短工期。",
+   "difficulty": 2,
+   "tags": [
+    "关键路径",
+    "工期"
+   ],
+   "source_quote": "关键路径的长度就是完成整个工程所需的最短时间"
+  },
+  {
+   "type": "single",
+   "stem": "在 AOE 网中，关键活动的松弛时间是多少？",
+   "options": [
+    "0",
+    "等于工期",
+    "1",
+    "大于 0"
+   ],
+   "answer_index": 0,
+   "explanation": "松弛时间 = 最迟开始时间 - 最早开始时间。",
+   "difficulty": 2,
+   "tags": [
+    "关键路径",
+    "关键活动"
+   ],
+   "source_quote": "松弛时间为 0 的活动是关键活动"
+  },
+  {
+   "type": "single",
+   "stem": "AOE 网：A→B 权 3，A→C 权 2，B→D 权 4，C→D 权 6。完成整个工程的最短时间是多少？",
+   "options": [
+    "12",
+    "8",
+    "9",
+    "7"
+   ],
+   "answer_index": 1,
+   "explanation": "路径 A-B-D 长 7，A-C-D 长 8，关键路径长度 8。",
+   "difficulty": 3,
+   "tags": [
+    "关键路径",
+    "计算"
+   ],
+   "source_quote": "AOE 网中从源点到汇点的路径长度最长的路径称为关键路径，关键路径的长度就是完成整个工程所需的最短时间"
+  },
+  {
+   "type": "single",
+   "stem": "AOE 网中，活动的最早开始时间等于什么？",
+   "options": [
+    "其持续时间",
+    "其终点事件的最早发生时间",
+    "其起点事件的最迟发生时间",
+    "其起点事件的最早发生时间"
+   ],
+   "answer_index": 3,
+   "explanation": "活动只有在它的起点事件发生之后才能开始。",
+   "difficulty": 2,
+   "tags": [
+    "关键路径",
+    "最早开始时间"
+   ],
+   "source_quote": "活动的最早开始时间等于其起点事件的最早发生时间"
+  },
+  {
+   "type": "judge",
+   "stem": "AOE 网中的关键路径可能不止一条。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "几条路径长度相同且都最长时，它们都是关键路径。",
+   "difficulty": 2,
+   "tags": [
+    "关键路径",
+    "数量"
+   ],
+   "source_quote": "关键活动延期会使整个工程延期，缩短关键活动的时间可以缩短工期，但关键路径可能不止一条"
+  },
+  {
+   "type": "judge",
+   "stem": "非关键活动稍有延期就一定会使整个工程延期。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "非关键活动有松弛时间，在松弛时间内延期不影响工期。",
+   "difficulty": 2,
+   "tags": [
+    "关键路径",
+    "延期"
+   ],
+   "source_quote": "活动的松弛时间等于最迟开始时间减最早开始时间，松弛时间为 0 的活动是关键活动"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据结构） > 3.14 查找：顺序、折半、分块与散列": [
+  {
+   "type": "single",
+   "stem": "折半查找对线性表有什么要求？",
+   "options": [
+    "无序即可",
+    "有序且采用链式存储",
+    "必须是循环链表",
+    "有序且采用顺序存储"
+   ],
+   "answer_index": 3,
+   "explanation": "需要随机访问中间元素，所以不能用链式存储。",
+   "difficulty": 2,
+   "tags": [
+    "查找",
+    "折半查找"
+   ],
+   "source_quote": "折半查找要求线性表有序且采用顺序存储"
+  },
+  {
+   "type": "single",
+   "stem": "折半查找的时间复杂度是多少？",
+   "options": [
+    "O(1)",
+    "O(n)",
+    "O(log n)",
+    "O(n²)"
+   ],
+   "answer_index": 2,
+   "explanation": "每次比较使查找范围减半。",
+   "difficulty": 2,
+   "tags": [
+    "查找",
+    "折半查找"
+   ],
+   "source_quote": "每次与中间元素比较并将范围缩小一半，时间复杂度为 O(log n)"
+  },
+  {
+   "type": "single",
+   "stem": "表长为 99，顺序查找成功时的平均查找长度（等概率）是多少？",
+   "options": [
+    "99",
+    "49",
+    "100",
+    "50"
+   ],
+   "answer_index": 3,
+   "explanation": "(99 + 1) / 2 = 50。",
+   "difficulty": 2,
+   "tags": [
+    "查找",
+    "顺序查找"
+   ],
+   "source_quote": "平均查找长度为 (n+1)/2"
+  },
+  {
+   "type": "single",
+   "stem": "分块查找要求表满足什么条件？",
+   "options": [
+    "块内无序、块间有序",
+    "块内有序、块间无序",
+    "块内块间都必须有序",
+    "块内块间都无序"
+   ],
+   "answer_index": 0,
+   "explanation": "索引表按块的最大关键字有序，可对索引表折半查找。",
+   "difficulty": 2,
+   "tags": [
+    "查找",
+    "分块查找"
+   ],
+   "source_quote": "分块查找把表分成若干块，块内无序、块间有序，先查索引表再查块内"
+  },
+  {
+   "type": "single",
+   "stem": "除留余数法的散列函数是什么形式？",
+   "options": [
+    "取 key 各位数字之和",
+    "取 key 除以 p 所得的商",
+    "H(key) = key mod p",
+    "取 key 平方的中间几位数"
+   ],
+   "answer_index": 2,
+   "explanation": "p 一般取不大于表长的最大质数。",
+   "difficulty": 2,
+   "tags": [
+    "查找",
+    "散列函数"
+   ],
+   "source_quote": "常用散列函数有除留余数法 H(key) = key mod p"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一项属于处理散列冲突的方法？",
+   "options": [
+    "分块法",
+    "链地址法",
+    "折半法",
+    "拓扑法"
+   ],
+   "answer_index": 1,
+   "explanation": "链地址法把同义词链成一个单链表。",
+   "difficulty": 2,
+   "tags": [
+    "查找",
+    "冲突处理"
+   ],
+   "source_quote": "处理冲突的方法有开放定址法（线性探测、二次探测）和链地址法"
+  },
+  {
+   "type": "single",
+   "stem": "散列表的装填因子是如何定义的？",
+   "options": [
+    "表长除以记录数",
+    "冲突次数除以表长",
+    "空闲单元数除以记录数",
+    "表中记录数除以表长"
+   ],
+   "answer_index": 3,
+   "explanation": "装填因子反映散列表的满载程度。",
+   "difficulty": 2,
+   "tags": [
+    "查找",
+    "装填因子"
+   ],
+   "source_quote": "装填因子等于表中记录数除以表长，装填因子越大，冲突越多"
+  },
+  {
+   "type": "single",
+   "stem": "散列表长为 7，H(key) = key mod 7，用线性探测处理冲突，依次插入 15、22、8，关键字 8 存放在哪个下标？",
+   "options": [
+    "4",
+    "3",
+    "1",
+    "2"
+   ],
+   "answer_index": 1,
+   "explanation": "15 mod 7 = 1，放 1；22 mod 7 = 1，冲突放 2；8 mod 7 = 1，冲突，1、2 都被占，放 3。",
+   "difficulty": 3,
+   "tags": [
+    "查找",
+    "线性探测"
+   ],
+   "source_quote": "处理冲突的方法有开放定址法（线性探测、二次探测）和链地址法"
+  },
+  {
+   "type": "judge",
+   "stem": "折半查找也适用于链式存储的有序线性表。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "链表不能随机访问中间元素，折半查找失去意义。",
+   "difficulty": 2,
+   "tags": [
+    "查找",
+    "折半查找"
+   ],
+   "source_quote": "折半查找要求线性表有序且采用顺序存储"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据结构） > 3.15 排序（一）：插入、冒泡与选择排序": [
+  {
+   "type": "single",
+   "stem": "待排序列已经有序时，直接插入排序的时间复杂度是多少？",
+   "options": [
+    "O(n²)",
+    "O(log n)",
+    "O(n)",
+    "O(n log n)"
+   ],
+   "answer_index": 2,
+   "explanation": "已有序时每个元素只需比较一次，不需要移动。",
+   "difficulty": 2,
+   "tags": [
+    "排序",
+    "直接插入"
+   ],
+   "source_quote": "最好情况（已有序）时间复杂度为 O(n)"
+  },
+  {
+   "type": "single",
+   "stem": "对于值相同的元素，下列哪一种排序方法能保证它们的相对次序不变？",
+   "options": [
+    "希尔排序",
+    "堆排序",
+    "直接插入排序",
+    "简单选择排序"
+   ],
+   "answer_index": 2,
+   "explanation": "直接插入排序和冒泡排序是稳定的，希尔、选择、快速、堆排序不稳定。",
+   "difficulty": 2,
+   "tags": [
+    "排序",
+    "稳定性"
+   ],
+   "source_quote": "最坏和平均为 O(n²)，是稳定排序"
+  },
+  {
+   "type": "single",
+   "stem": "排序稳定性是指什么？",
+   "options": [
+    "排序时间不随输入变化",
+    "值相同的元素在排序前后相对次序保持不变",
+    "排序结果唯一",
+    "排序不占用额外空间"
+   ],
+   "answer_index": 1,
+   "explanation": "稳定性只关系值相同元素的相对位置。",
+   "difficulty": 2,
+   "tags": [
+    "排序",
+    "稳定性"
+   ],
+   "source_quote": "排序的稳定性是指值相同的元素在排序前后相对次序保持不变"
+  },
+  {
+   "type": "single",
+   "stem": "简单选择排序的比较次数与初始序列有什么关系？",
+   "options": [
+    "已有序时为 n-1",
+    "无关，固定为 n(n-1)/2",
+    "已有序时为 0",
+    "与逆序对数相同"
+   ],
+   "answer_index": 1,
+   "explanation": "每趟都要扫描剩余全部元素找最小值。",
+   "difficulty": 3,
+   "tags": [
+    "排序",
+    "选择排序"
+   ],
+   "source_quote": "比较次数固定为 n(n-1)/2，与初始序列无关"
+  },
+  {
+   "type": "single",
+   "stem": "对 n 个元素的序列做冒泡排序，最多需要进行多少趟？",
+   "options": [
+    "n-1",
+    "n/2",
+    "n",
+    "2n"
+   ],
+   "answer_index": 0,
+   "explanation": "每趟至少确定一个元素的最终位置。",
+   "difficulty": 2,
+   "tags": [
+    "排序",
+    "冒泡排序"
+   ],
+   "source_quote": "n 个元素最多进行 n-1 趟"
+  },
+  {
+   "type": "single",
+   "stem": "对序列 5、3、8、1 进行一趟冒泡排序（从左到右相邻比较，大者后移），结果是什么？",
+   "options": [
+    "3、5、1、8",
+    "5、3、1、8",
+    "3、5、8、1",
+    "1、3、5、8"
+   ],
+   "answer_index": 0,
+   "explanation": "5>3 交换得 3、5；5<8 不换；8>1 交换得 3、5、1、8。",
+   "difficulty": 3,
+   "tags": [
+    "排序",
+    "冒泡排序"
+   ],
+   "source_quote": "冒泡排序每趟把相邻逆序元素交换"
+  },
+  {
+   "type": "single",
+   "stem": "对序列 5、3、8、1 进行一趟简单选择排序，结果是什么？",
+   "options": [
+    "1、5、3、8",
+    "3、5、8、1",
+    "1、3、5、8",
+    "1、3、8、5"
+   ],
+   "answer_index": 3,
+   "explanation": "最小元素 1 与第一个位置的 5 交换，得 1、3、8、5，这也说明简单选择排序是不稳定的。",
+   "difficulty": 3,
+   "tags": [
+    "排序",
+    "选择排序"
+   ],
+   "source_quote": "简单选择排序每趟选出最小元素放到已排序序列末尾"
+  },
+  {
+   "type": "single",
+   "stem": "希尔排序属于哪一类排序方法？",
+   "options": [
+    "选择排序",
+    "缩小增量的分组插入排序",
+    "交换排序",
+    "归并排序"
+   ],
+   "answer_index": 1,
+   "explanation": "按增量分组做插入排序，增量逐渐缩小到 1。",
+   "difficulty": 2,
+   "tags": [
+    "排序",
+    "希尔排序"
+   ],
+   "source_quote": "希尔排序是缩小增量的分组插入排序，时间复杂度与增量序列有关，是不稳定排序"
+  },
+  {
+   "type": "judge",
+   "stem": "内部排序是指在内存中进行的排序。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "数据量太大无法一次装入内存时需要外部排序。",
+   "difficulty": 2,
+   "tags": [
+    "排序",
+    "外部排序"
+   ],
+   "source_quote": "内部排序是在内存中进行的排序，外部排序需要在内外存之间交换数据"
+  }
+ ],
+ "软件设计师（中级）考点精讲（数据结构） > 3.16 排序（二）：快速、堆、归并与基数排序": [
+  {
+   "type": "single",
+   "stem": "当序列基本有序且枢轴取端点元素时，快速排序的性能会如何？",
+   "options": [
+    "保持 O(n log n)",
+    "提升为 O(log n)",
+    "提升为 O(n)",
+    "退化为 O(n²)"
+   ],
+   "answer_index": 3,
+   "explanation": "每次划分都极不均衡，递归深度达到 n。",
+   "difficulty": 2,
+   "tags": [
+    "排序",
+    "快速排序"
+   ],
+   "source_quote": "最坏情况（序列已有序且枢轴取端点）为 O(n²)"
+  },
+  {
+   "type": "single",
+   "stem": "在内部排序中，平均性能最好的是哪一种？",
+   "options": [
+    "冒泡排序",
+    "快速排序",
+    "直接插入排序",
+    "简单选择排序"
+   ],
+   "answer_index": 1,
+   "explanation": "平均 O(n log n)，且常数因子小。",
+   "difficulty": 2,
+   "tags": [
+    "排序",
+    "快速排序"
+   ],
+   "source_quote": "在内部排序中平均性能最好"
+  },
+  {
+   "type": "single",
+   "stem": "堆排序的时间复杂度和空间复杂度分别是多少？",
+   "options": [
+    "O(n log n)，O(1)",
+    "O(n)，O(log n)",
+    "O(n log n)，O(n)",
+    "O(n²)，O(1)"
+   ],
+   "answer_index": 0,
+   "explanation": "堆排序在原数组上建堆，不需要额外辅助数组。",
+   "difficulty": 2,
+   "tags": [
+    "排序",
+    "堆排序"
+   ],
+   "source_quote": "时间复杂度始终为 O(n log n)，空间复杂度为 O(1)"
+  },
+  {
+   "type": "single",
+   "stem": "归并排序的辅助空间复杂度是多少？",
+   "options": [
+    "O(log n)",
+    "O(n)",
+    "O(1)",
+    "O(n²)"
+   ],
+   "answer_index": 1,
+   "explanation": "合并两个有序段需要与待合并元素同样大小的辅助数组。",
+   "difficulty": 2,
+   "tags": [
+    "排序",
+    "归并排序"
+   ],
+   "source_quote": "需要 O(n) 的辅助空间，是稳定排序"
+  },
+  {
+   "type": "single",
+   "stem": "关于基数排序，下列说法正确的是哪一个？",
+   "options": [
+    "时间复杂度一定是 O(n²)",
+    "是稳定排序，不基于比较",
+    "是不稳定排序",
+    "基于关键字两两比较"
+   ],
+   "answer_index": 1,
+   "explanation": "基数排序通过分配和收集排序，不比较关键字大小。",
+   "difficulty": 3,
+   "tags": [
+    "排序",
+    "基数排序"
+   ],
+   "source_quote": "基数排序按关键字的各位依次分配和收集，时间复杂度为 O(d(n + r))，是稳定排序，不基于比较"
+  },
+  {
+   "type": "single",
+   "stem": "基于比较的排序算法，时间复杂度的下界是多少？",
+   "options": [
+    "O(n²)",
+    "O(log n)",
+    "O(n)",
+    "O(n log n)"
+   ],
+   "answer_index": 3,
+   "explanation": "这是由决策树模型得到的结论。",
+   "difficulty": 3,
+   "tags": [
+    "排序",
+    "下界"
+   ],
+   "source_quote": "基于比较的排序算法，时间复杂度下界为 O(n log n)"
+  },
+  {
+   "type": "single",
+   "stem": "下列排序算法中，最坏情况下时间复杂度仍为 O(n log n) 且是原地排序的是哪一个？",
+   "options": [
+    "快速排序",
+    "直接插入排序",
+    "归并排序",
+    "堆排序"
+   ],
+   "answer_index": 3,
+   "explanation": "归并排序虽最坏也是 O(n log n)，但需要 O(n) 辅助空间，不是原地的。",
+   "difficulty": 2,
+   "tags": [
+    "排序",
+    "最坏时间"
+   ],
+   "source_quote": "堆排序先建立大顶堆，再反复把堆顶与末尾元素交换并调整堆，时间复杂度始终为 O(n log n)，空间复杂度为 O(1)"
+  },
+  {
+   "type": "judge",
+   "stem": "堆排序是稳定的排序方法。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "堆顶与末尾元素交换可能打乱相同值元素的相对次序。",
+   "difficulty": 2,
+   "tags": [
+    "排序",
+    "稳定性"
+   ],
+   "source_quote": "堆排序先建立大顶堆，再反复把堆顶与末尾元素交换并调整堆，时间复杂度始终为 O(n log n)，空间复杂度为 O(1)，是不稳定排序"
+  }
+ ]
+}
