@@ -2,7 +2,7 @@ import { newUlid } from '@/core/ulid'
 import type { Db } from './db'
 import { afterAnswer, CLEAR_STREAK, inWrongBook, isCorrect, readProgress } from './progress'
 import { buildReport, type BankReport } from './stats'
-import type { Bank, ExamRecord, LocalAttempt, LocalQuestion, LocalState, SessionData } from './types'
+import type { Bank, ExamDraft, ExamRecord, LocalAttempt, LocalExam, LocalQuestion, LocalState, SessionData } from './types'
 
 export interface AnswerOutcome {
   correct: boolean
@@ -10,11 +10,35 @@ export interface AnswerOutcome {
   state: LocalState
 }
 
+/** What one device knows about how a question went; used to pick exam questions. */
+export interface QuestionHistory {
+  attempts: number
+  lastCorrect: boolean
+}
+
+/** One answered question of an exam paper, to be written to the attempt log. */
+export interface ExamAnswer {
+  question: LocalQuestion
+  selected: number[]
+  durationMs: number
+}
+
 export interface BankStats {
   total: number
   answered: number
   /** Questions whose most recent attempt was correct. */
   correct: number
+}
+
+/** The two object stores an answer touches, from whichever transaction is open. */
+interface AnswerStores {
+  attempts: { add(v: LocalAttempt): Promise<unknown> }
+  states: { get(k: string): Promise<LocalState | undefined>; put(v: LocalState): Promise<unknown> }
+}
+
+/** An exam row as stored: plain data only (reactive proxies cannot be cloned). */
+function plainExam(e: LocalExam): LocalExam {
+  return JSON.parse(JSON.stringify(e)) as LocalExam
 }
 
 /** Local data access. Reads exclude questions the server withdrew. */
@@ -79,17 +103,81 @@ export class Repo {
     const ids = new Set(qs.map((q) => q.id))
     const attempts = (await this.db.getAll('attempts')).filter((a: LocalAttempt) => ids.has(a.question_id))
     const wrongIds = new Set((await this.wrongBook()).map((q) => q.id))
-    return buildReport(qs, attempts, wrongIds, this.now())
+    return buildReport(qs, attempts, wrongIds, this.now(), await this.exams(bankId))
   }
 
-  async saveExam(record: ExamRecord) {
-    await this.db.put('exams', record)
+  /**
+   * Hands in an exam: every answered question goes into the attempt log and the learning
+   * state, the result is stored and the unfinished-exam draft is dropped, all in one
+   * transaction. It either all happens or none of it does, so a retry never double-counts.
+   */
+  async submitExam(record: ExamRecord, answers: ExamAnswer[]) {
+    const tx = this.db.transaction(['attempts', 'states', 'exams', 'examDrafts'], 'readwrite')
+    try {
+      const at = this.now()
+      const stores = { attempts: tx.objectStore('attempts'), states: tx.objectStore('states') }
+      for (const a of answers) await this.applyAnswer(stores, a.question, a.selected, a.durationMs, at)
+      await tx.objectStore('exams').put(plainExam({ ...record, synced: 0 }))
+      await tx.objectStore('examDrafts').delete(record.bank_id)
+      await tx.done
+    } catch (e) {
+      // A failed request aborts the transaction by itself; a plain exception in between would not.
+      tx.done.catch(() => {})
+      try {
+        tx.abort()
+      } catch {
+        /* already finished or aborted */
+      }
+      throw e
+    }
   }
 
   /** Finished exams of a bank, newest first. */
   async exams(bankId: string): Promise<ExamRecord[]> {
     const all = await this.db.getAllFromIndex('exams', 'bank', bankId)
-    return all.sort((a, b) => b.finished_at - a.finished_at)
+    return all.sort((a, b) => b.finished_at - a.finished_at).map(({ synced: _s, ...rec }) => rec)
+  }
+
+  async exam(id: string): Promise<ExamRecord | null> {
+    const row = await this.db.get('exams', id)
+    if (!row) return null
+    const { synced: _s, ...rec } = row
+    return rec
+  }
+
+  // ---- exam in progress (this device only) ----
+
+  async saveExamDraft(draft: ExamDraft) {
+    // Callers may hold Vue reactive proxies, which IndexedDB cannot structured-clone.
+    await this.db.put('examDrafts', JSON.parse(JSON.stringify(draft)) as ExamDraft)
+  }
+
+  examDraft(bankId: string) {
+    return this.db.get('examDrafts', bankId)
+  }
+
+  /** The most recently touched unfinished exam of any bank. */
+  async latestExamDraft(): Promise<ExamDraft | null> {
+    const all = await this.db.getAll('examDrafts')
+    return all.sort((a, b) => b.saved_at - a.saved_at)[0] ?? null
+  }
+
+  clearExamDraft(bankId: string) {
+    return this.db.delete('examDrafts', bankId)
+  }
+
+  /** How each of [ids] has gone so far, for those answered at least once. */
+  async practiceHistory(ids: Set<string>): Promise<Map<string, QuestionHistory>> {
+    const attempts = (await this.db.getAll('attempts')).filter((a) => ids.has(a.question_id))
+    attempts.sort((a, b) => a.answered_at - b.answered_at)
+    const out = new Map<string, QuestionHistory>()
+    for (const a of attempts) {
+      const h = out.get(a.question_id) ?? { attempts: 0, lastCorrect: false }
+      h.attempts++
+      h.lastCorrect = a.is_correct
+      out.set(a.question_id, h)
+    }
+    return out
   }
 
   async answeredIds(ids: string[]): Promise<Set<string>> {
@@ -103,12 +191,24 @@ export class Repo {
 
   /** Appends to the attempt log (outbox) and updates the learning state in one transaction. */
   async recordAnswer(question: LocalQuestion, selected: number[], durationMs: number): Promise<AnswerOutcome> {
+    const tx = this.db.transaction(['attempts', 'states'], 'readwrite')
+    const stores = { attempts: tx.objectStore('attempts'), states: tx.objectStore('states') }
+    const outcome = await this.applyAnswer(stores, question, selected, durationMs, this.now())
+    await tx.done
+    return outcome
+  }
+
+  private async applyAnswer(
+    tx: AnswerStores,
+    question: LocalQuestion,
+    selected: number[],
+    durationMs: number,
+    now: number,
+  ): Promise<AnswerOutcome> {
     // Views hand us Vue reactive proxies, which IndexedDB cannot structured-clone; store plain copies.
     selected = [...selected]
     const correct = isCorrect(selected, question.answer)
-    const now = this.now()
-    const tx = this.db.transaction(['attempts', 'states'], 'readwrite')
-    await tx.objectStore('attempts').add({
+    await tx.attempts.add({
       id: newUlid(now),
       question_id: question.id,
       device_id: this.deviceId,
@@ -118,7 +218,7 @@ export class Repo {
       answered_at: now,
       synced: 0,
     })
-    const before = await tx.objectStore('states').get(question.id)
+    const before = await tx.states.get(question.id)
     const wasIn = inWrongBook(before)
     const state: LocalState = {
       question_id: question.id,
@@ -129,8 +229,7 @@ export class Repo {
       updated_at: now,
       dirty: 1,
     }
-    await tx.objectStore('states').put(state)
-    await tx.done
+    await tx.states.put(state)
     return { correct, enteredWrongBook: !wasIn && inWrongBook(state), state }
   }
 

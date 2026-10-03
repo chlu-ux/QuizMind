@@ -1,6 +1,6 @@
 import { ApiError, type QuizApi } from './api'
 import type { Db } from './db'
-import type { AttemptDto, LocalQuestion, SessionData, SessionDto, StateDto } from './types'
+import type { AttemptDto, ExamRecord, LocalQuestion, SessionData, SessionDto, StateDto } from './types'
 
 export interface SyncReport {
   questionsUpdated: number
@@ -8,6 +8,10 @@ export interface SyncReport {
   attemptsUploaded: number
   statesUploaded: number
   statesPulled: number
+  /** Answers other devices gave (they count towards statistics here). */
+  attemptsPulled: number
+  examsUploaded: number
+  examsPulled: number
   /** Saved quizzes taken from another device. */
   sessionsPulled: number
 }
@@ -17,6 +21,8 @@ export function summarize(r: SyncReport): string {
     r.questionsUpdated > 0 && `新增/更新 ${r.questionsUpdated} 题`,
     r.questionsRemoved > 0 && `下线 ${r.questionsRemoved} 题`,
     r.attemptsUploaded > 0 && `上传 ${r.attemptsUploaded} 条作答`,
+    r.attemptsPulled > 0 && `同步了其他设备的 ${r.attemptsPulled} 条作答`,
+    r.examsPulled > 0 && `同步了 ${r.examsPulled} 场考试`,
     r.sessionsPulled > 0 && `同步了 ${r.sessionsPulled} 个题库的刷题进度`,
   ].filter(Boolean)
   return parts.length ? parts.join('，') : '已是最新'
@@ -25,9 +31,12 @@ export function summarize(r: SyncReport): string {
 const QUESTION_CURSOR = 'question_seq'
 const STATE_CURSOR = 'state_seq'
 const SESSION_CURSOR = 'session_seq'
+const ATTEMPT_CURSOR = 'attempt_seq'
+const EXAM_CURSOR = 'exam_seq'
 const LAST_SYNC = 'last_sync_at'
 const BATCH = 500
 const SESSION_BATCH = 50 // the server's per-request limit
+const EXAM_BATCH = 10 // ditto
 
 /**
  * Uploads the outbox, then pulls server changes. Uploading first means a device
@@ -50,18 +59,31 @@ export class SyncService {
     await this.pushFlags()
     const statesUploaded = await this.pushStates()
     await this.pushSessions()
+    const examsUploaded = await this.pushExams()
     const banks = await this.api.banks()
     const [questionsUpdated, questionsRemoved] = await this.pullQuestions()
     const statesPulled = await this.pullStates()
     // After the states: a restored quiz shows its answers from the local state rows.
     const sessionsPulled = await this.pullSessions()
+    const attemptsPulled = await this.pullAttempts()
+    const examsPulled = await this.pullExams()
 
     const tx = this.db.transaction(['banks', 'meta'], 'readwrite')
     await tx.objectStore('banks').clear()
     for (const b of banks) await tx.objectStore('banks').put(b)
     await tx.objectStore('meta').put(this.now(), LAST_SYNC)
     await tx.done
-    return { questionsUpdated, questionsRemoved, attemptsUploaded, statesUploaded, statesPulled, sessionsPulled }
+    return {
+      questionsUpdated,
+      questionsRemoved,
+      attemptsUploaded,
+      statesUploaded,
+      statesPulled,
+      attemptsPulled,
+      examsUploaded,
+      examsPulled,
+      sessionsPulled,
+    }
   }
 
   private async pushAttempts(): Promise<number> {
@@ -141,6 +163,73 @@ export class SyncService {
       }
     } catch (e) {
       if (!SyncService.unsupported(e)) throw e
+    }
+  }
+
+  private async pushExams(): Promise<number> {
+    let total = 0
+    try {
+      for (;;) {
+        const batch = (await this.db.getAllFromIndex('exams', 'synced', 0)).sort((a, b) => a.finished_at - b.finished_at).slice(0, EXAM_BATCH)
+        if (batch.length === 0) return total
+        const dtos: ExamRecord[] = batch.map(({ synced: _s, ...dto }) => ({ ...dto, device_id: dto.device_id || this.deviceId }))
+        await this.api.uploadExams(dtos)
+        const tx = this.db.transaction('exams', 'readwrite')
+        for (const r of batch) await tx.store.put({ ...r, synced: 1 })
+        await tx.done
+        total += batch.length
+      }
+    } catch (e) {
+      if (!SyncService.unsupported(e)) throw e
+      return total
+    }
+  }
+
+  /** Answers of every device, so statistics cover everything. Attempts are an append-only log: only unknown ids are added. */
+  private async pullAttempts(): Promise<number> {
+    let pulled = 0
+    let cursor = (await this.db.get('meta', ATTEMPT_CURSOR)) ?? 0
+    try {
+      for (;;) {
+        const page = await this.api.syncAttempts(cursor, BATCH)
+        const tx = this.db.transaction(['attempts', 'meta'], 'readwrite')
+        for (const a of page.items) {
+          if (await tx.objectStore('attempts').get(a.id)) continue
+          await tx.objectStore('attempts').put({ ...a, synced: 1 })
+          pulled++
+        }
+        await tx.objectStore('meta').put(page.next_seq, ATTEMPT_CURSOR)
+        await tx.done
+        cursor = page.next_seq
+        if (!page.has_more) return pulled
+      }
+    } catch (e) {
+      if (!SyncService.unsupported(e)) throw e
+      return pulled
+    }
+  }
+
+  /** Exams are immutable, so a known id is skipped. */
+  private async pullExams(): Promise<number> {
+    let pulled = 0
+    let cursor = (await this.db.get('meta', EXAM_CURSOR)) ?? 0
+    try {
+      for (;;) {
+        const page = await this.api.syncExams(cursor, EXAM_BATCH)
+        const tx = this.db.transaction(['exams', 'meta'], 'readwrite')
+        for (const e of page.items) {
+          if (await tx.objectStore('exams').get(e.id)) continue
+          await tx.objectStore('exams').put({ ...e, synced: 1 })
+          pulled++
+        }
+        await tx.objectStore('meta').put(page.next_seq, EXAM_CURSOR)
+        await tx.done
+        cursor = page.next_seq
+        if (!page.has_more) return pulled
+      }
+    } catch (e) {
+      if (!SyncService.unsupported(e)) throw e
+      return pulled
     }
   }
 

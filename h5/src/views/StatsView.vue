@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { dataVersion, getRepo, showToast } from '@/core/app'
 import { formatDuration, percent, type BankReport, type Tally } from '@/data/stats'
 import type { Bank } from '@/data/types'
+import { PASS_PERCENT } from '@/quiz/exam'
 import { startQuiz } from '@/quiz/launch'
 
 const props = defineProps<{ id: string }>()
@@ -22,9 +23,26 @@ watch([dataVersion, () => props.id], load)
 const coverage = computed(() =>
   report.value && report.value.totalQuestions ? Math.round((report.value.answeredQuestions * 100) / report.value.totalQuestions) : 0,
 )
-const maxDaily = computed(() => Math.max(1, ...(report.value?.daily.map((d) => d.attempts) ?? [])))
-const weekTotal = computed(() => report.value?.daily.reduce((n, d) => n + d.attempts, 0) ?? 0)
-const tags = computed(() => report.value?.byTag.slice(0, 8) ?? [])
+const range = ref<7 | 30>(7)
+const days = computed(() => (range.value === 7 ? report.value?.daily : report.value?.daily30) ?? [])
+const maxDaily = computed(() => Math.max(1, ...days.value.map((d) => d.attempts)))
+const rangeTotal = computed(() => days.value.reduce((n, d) => n + d.attempts, 0))
+// Related tags are merged by default ("UML 辨析" into "UML"); the detailed view lists them as tagged.
+const merged = ref(true)
+const tags = computed(() => (merged.value ? report.value?.byTagMerged : report.value?.byTag)?.slice(0, 8) ?? [])
+const tagCount = computed(() => (merged.value ? report.value?.byTagMerged : report.value?.byTag)?.length ?? 0)
+
+// Exam scores as a line, oldest to newest, with the pass line dashed.
+const W = 300
+const H = 130
+const trend = computed(() => {
+  const pts = report.value?.examTrend ?? []
+  const x = (i: number) => (pts.length === 1 ? W / 2 : 24 + (i * (W - 40)) / (pts.length - 1))
+  const y = (p: number) => 10 + ((100 - p) * (H - 24)) / 100
+  return pts.map((p, i) => ({ ...p, x: x(i), y: y(p.percent) }))
+})
+const trendLine = computed(() => trend.value.map((p) => `${p.x},${p.y}`).join(' '))
+const passY = 10 + ((100 - PASS_PERCENT) * (H - 24)) / 100
 const weakest = computed(() => report.value?.weakest.slice(0, 5) ?? [])
 
 const pct = (t: Tally) => percent(t)
@@ -80,17 +98,21 @@ function practiseWeak() {
 
       <section class="card col">
         <div class="row between">
-          <h2>最近 7 天</h2>
-          <span class="muted small">共 {{ weekTotal }} 次</span>
+          <h2>最近 {{ range }} 天</h2>
+          <div class="seg-toggle" role="group" aria-label="时间范围">
+            <button :class="{ on: range === 7 }" @click="range = 7">7 天</button>
+            <button :class="{ on: range === 30 }" @click="range = 30">30 天</button>
+          </div>
         </div>
-        <div class="days">
-          <div v-for="d in report.daily" :key="d.label" class="day">
-            <span class="small muted">{{ d.attempts ? pct(d) + '%' : '' }}</span>
+        <span class="muted small">共 {{ rangeTotal }} 次作答</span>
+        <div class="days" :class="{ dense: range === 30 }">
+          <div v-for="(d, i) in days" :key="i" class="day">
+            <span class="small muted">{{ range === 7 && d.attempts ? pct(d) + '%' : '' }}</span>
             <div class="col-bar">
               <div class="seg wrong" :style="{ height: ((d.attempts - d.correct) / maxDaily) * 100 + '%' }" />
               <div class="seg right" :style="{ height: (d.correct / maxDaily) * 100 + '%' }" />
             </div>
-            <span class="small muted">{{ d.label }}</span>
+            <span class="small muted">{{ range === 7 || i % 5 === 4 ? d.label : '' }}</span>
           </div>
         </div>
         <div class="legend small muted"><i class="dot right" />答对 <i class="dot wrong" />答错</div>
@@ -106,11 +128,35 @@ function practiseWeak() {
         </div>
       </section>
 
+      <section v-if="report.examTrend.length" class="card col">
+        <div class="row between">
+          <h2>考试成绩</h2>
+          <span class="muted small">最近 {{ report.examTrend.length }} 场 · 虚线是 {{ PASS_PERCENT }} 分及格线</span>
+        </div>
+        <svg class="trend" :viewBox="`0 0 ${W} ${H}`" role="img" :aria-label="`最近 ${report.examTrend.length} 场考试成绩`">
+          <line class="grid" x1="24" :x2="W" y1="10" y2="10" />
+          <line class="grid" x1="24" :x2="W" :y1="H - 14" :y2="H - 14" />
+          <line class="pass" x1="24" :x2="W" :y1="passY" :y2="passY" />
+          <text x="0" y="14">100</text>
+          <text x="0" :y="passY + 4">{{ PASS_PERCENT }}</text>
+          <text x="6" :y="H - 10">0</text>
+          <polyline v-if="trend.length > 1" class="line" :points="trendLine" />
+          <g v-for="p in trend" :key="p.finishedAt">
+            <circle class="pt" :class="{ fail: !p.passed }" :cx="p.x" :cy="p.y" r="4" />
+            <text :x="p.x" :y="p.y - 8" text-anchor="middle">{{ p.percent }}</text>
+          </g>
+        </svg>
+      </section>
+
       <section v-if="tags.length" class="card col">
         <div class="row between">
           <h2>知识点（薄弱的在前）</h2>
-          <span class="muted small">前 {{ tags.length }} 项</span>
+          <div class="seg-toggle" role="group" aria-label="知识点归类">
+            <button :class="{ on: merged }" @click="merged = true">归类</button>
+            <button :class="{ on: !merged }" @click="merged = false">细分</button>
+          </div>
         </div>
+        <span class="muted small">共 {{ tagCount }} 个，显示前 {{ tags.length }} 个<template v-if="merged">；相近的标签已合并（如「UML 辨析」归入「UML」）</template></span>
         <div v-for="g in tags" :key="g.key" class="meter">
           <span class="name clamp">{{ g.label }}</span>
           <div class="bar"><div class="fill" :class="tone(pct(g))" :style="{ width: pct(g) + '%' }" /></div>

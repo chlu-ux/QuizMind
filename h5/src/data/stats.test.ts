@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { buildReport, formatDuration, percent } from './stats'
-import type { LocalAttempt, LocalQuestion } from './types'
+import type { ExamRecord, LocalAttempt, LocalQuestion } from './types'
 
 const q = (id: string, o: Partial<LocalQuestion> = {}): LocalQuestion => ({
   id,
@@ -128,6 +128,74 @@ describe('buildReport', () => {
       ['a', 1, 2],
     ])
     expect(r.studyMs).toBe(1000 + 1000 + 60_000 + 120_000)
+  })
+})
+
+describe('buildReport: longer views and ranking', () => {
+  const day = (back: number) => noon(2026, 10, 3 - back)
+
+  it('has a 30-day series whose last 7 entries are the weekly one', () => {
+    const r = buildReport([q('a')], [at('a', true, day(0)), at('a', false, day(12)), at('a', true, day(29)), at('a', true, day(30))], new Set(), NOW)
+    expect(r.daily30).toHaveLength(30)
+    expect(r.daily30.at(-1)).toMatchObject({ label: '10/3', attempts: 1 })
+    expect(r.daily30[0]).toMatchObject({ label: '9/4', attempts: 1, correct: 1 })
+    expect(r.daily30[17]).toMatchObject({ label: '9/21', attempts: 1, correct: 0 })
+    expect(r.daily30.reduce((n, d) => n + d.attempts, 0)).toBe(3) // day 30 is outside the window
+    expect(r.daily).toEqual(r.daily30.slice(-7))
+  })
+
+  it('turns exam records into a trend, oldest first, latest 20', () => {
+    const exam = (i: number, percent: number): ExamRecord => ({
+      id: `e${i}`, bank_id: 'b1', title: 't', finished_at: 1000 + i, total: 10, correct: percent / 10, answered: 10,
+      percent, passed: percent >= 60, limit_sec: null, used_ms: 1, device_id: 'd', items: [],
+    })
+    const exams = Array.from({ length: 25 }, (_, i) => exam(i, (i % 10) * 10 + 5)).reverse() // newest first, as Repo returns them
+    const r = buildReport([q('a')], [], new Set(), NOW, exams)
+    expect(r.examTrend).toHaveLength(20)
+    expect(r.examTrend[0].finishedAt).toBe(1005)
+    expect(r.examTrend.at(-1)).toMatchObject({ finishedAt: 1024, percent: 45, passed: false })
+    expect(buildReport([q('a')], [], new Set(), NOW).examTrend).toEqual([])
+  })
+
+  it('does not rank a single miss above a question missed 3 times in 5', () => {
+    const qs = [q('once'), q('often'), q('twice')]
+    const attempts = [
+      at('once', false, NOW - 100),
+      ...[false, true, false, true, false].map((ok, i) => at('often', ok, NOW - 90 + i)),
+      at('twice', false, NOW - 50),
+      at('twice', false, NOW - 49),
+    ]
+    const r = buildReport(qs, attempts, new Set(), NOW)
+    expect(r.weakest.map((w) => [w.question.id, w.wrong, w.attempts])).toEqual([
+      ['twice', 2, 2],
+      ['often', 3, 5],
+      ['once', 1, 1],
+    ])
+  })
+
+  it('judges weakness by the latest answers only: an old miss that has been fixed drops out', () => {
+    const history = [false, false, false, true, true, true, true, true].map((ok, i) => at('a', ok, NOW - 1000 + i))
+    expect(buildReport([q('a')], history, new Set(), NOW).weakest).toEqual([])
+    const mixed = [true, true, true, true, true, false].map((ok, i) => at('a', ok, NOW - 1000 + i))
+    expect(buildReport([q('a')], mixed, new Set(), NOW).weakest.map((w) => [w.wrong, w.attempts])).toEqual([[1, 5]])
+  })
+
+  it('folds tag spellings, and in merged view joins related tags', () => {
+    const qs = [
+      q('a', { tags: ['UML'] }),
+      q('b', { tags: ['UML 辨析', 'uml'] }),
+      q('c', { tags: ['Cache'] }),
+      q('d', { tags: ['cache '] }),
+      q('e', { tags: ['OSI'] }),
+      q('f', { tags: ['OS'] }),
+    ]
+    const attempts = qs.map((x, i) => at(x.id, i % 2 === 0, NOW - i))
+    const r = buildReport(qs, attempts, new Set(), NOW)
+    const names = (g: { label: string }[]) => g.map((x) => x.label.toLowerCase()).sort()
+    expect(names(r.byTag)).toEqual(['cache', 'os', 'osi', 'uml', 'uml 辨析'])
+    expect(names(r.byTagMerged)).toEqual(['cache', 'os', 'osi', 'uml'])
+    // Question b carries two tags that fall in the UML group; it still counts once.
+    expect(r.byTagMerged.find((g) => g.label.toLowerCase() === 'uml')!.attempts).toBe(2)
   })
 })
 

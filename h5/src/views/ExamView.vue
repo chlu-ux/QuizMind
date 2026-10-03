@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
+import ExamResultPanel from '@/components/ExamResultPanel.vue'
 import Md from '@/components/Md.vue'
 import { bump, getRepo, runSync, showToast } from '@/core/app'
-import { ExamSession, PASS_PERCENT, type ExamItem } from '@/quiz/exam'
+import { ExamSession } from '@/quiz/exam'
 import { pendingExam } from '@/quiz/examLaunch'
-import { startQuiz } from '@/quiz/launch'
 
 const router = useRouter()
 const exam = ref<ExamSession | null>(null)
@@ -16,12 +16,31 @@ let ticker: ReturnType<typeof setInterval> | undefined
 let leaveOk = false
 
 onMounted(async () => {
-  const launch = pendingExam.value
-  if (!launch) return router.replace('/')
   const repo = await getRepo()
-  exam.value = reactive(new ExamSession(launch.bankId, launch.title, launch.questions, repo, launch.limitSec)) as ExamSession
+  const launch = pendingExam.value
+  pendingExam.value = null
+  let session: ExamSession | null = null
+  if (launch?.draft) {
+    session = ExamSession.restore(launch.draft, launch.questions, repo)
+  } else if (launch) {
+    session = new ExamSession(launch.bankId, launch.title, launch.questions, repo, launch.limitSec)
+  } else {
+    // A reload, or the app was killed: pick up the exam that was in progress.
+    const draft = await repo.latestExamDraft()
+    if (draft) {
+      session = ExamSession.restore(draft, await repo.questionsByIds(draft.ids), repo)
+      if (!session) await repo.clearExamDraft(draft.bank_id)
+    }
+  }
+  if (!session) return router.replace('/')
+  exam.value = reactive(session) as ExamSession
+  exam.value.save() // so a reload before the first answer still finds it
   ticker = setInterval(() => (now.value = Date.now()), 500)
   window.addEventListener('keydown', onKey)
+  if (exam.value.remainingSec() === 0) {
+    showToast('考试时间已到，已按现有答案交卷')
+    await finish()
+  }
 })
 
 onBeforeUnmount(() => {
@@ -32,8 +51,8 @@ onBeforeUnmount(() => {
 
 onBeforeRouteLeave(() => {
   const e = exam.value
-  if (leaveOk || !e || e.submitted) return true
-  return confirm('退出后本次考试不会保存，确定退出吗？')
+  if (leaveOk || !e || e.submitted || e.limitSec === null) return true
+  return confirm('退出后进度会保留，可以回到「模拟考试」继续，但限时考试的计时不会暂停。确定退出吗？')
 })
 
 const s = computed(() => exam.value)
@@ -55,7 +74,12 @@ watch(remaining, (r) => {
 async function finish() {
   const e = s.value
   if (!e) return
-  await e.submit()
+  try {
+    await e.submit()
+  } catch (err) {
+    showToast(`交卷失败：${(err as Error).message}，请再试一次`, true)
+    return
+  }
   sheet.value = false
   leaveOk = true
   bump()
@@ -65,9 +89,20 @@ async function finish() {
 async function handIn() {
   const e = s.value
   if (!e) return
-  const blank = e.length - e.answeredCount
-  const ask = blank > 0 ? `还有 ${blank} 题没有作答，确定交卷吗？` : '确定交卷吗？'
+  const notes = []
+  if (e.length - e.answeredCount > 0) notes.push(`还有 ${e.length - e.answeredCount} 题没有作答`)
+  if (e.markedCount > 0) notes.push(`有 ${e.markedCount} 题标记了待检查`)
+  const ask = notes.length ? `${notes.join('，')}，确定交卷吗？` : '确定交卷吗？'
   if (confirm(ask)) await finish()
+}
+
+async function abandon() {
+  const e = s.value
+  if (!e || !confirm('放弃这次考试？已作的答案不会保存，也不计入统计。')) return
+  exam.value = null // nothing can change (or re-save) the exam from here on
+  await (await getRepo()).clearExamDraft(e.bankId)
+  leaveOk = true
+  router.back()
 }
 
 function quit() {
@@ -80,6 +115,7 @@ function onKey(ev: KeyboardEvent) {
   if (ev.key >= '1' && ev.key <= '4') e.selectAt(Number(ev.key) - 1)
   else if (ev.key === 'ArrowRight' || ev.key === 'j') e.next()
   else if (ev.key === 'ArrowLeft' || ev.key === 'k') e.previous()
+  else if (ev.key === 'm') e.toggleMark()
   else return
   ev.preventDefault()
 }
@@ -92,28 +128,6 @@ function jump(i: number) {
 function optionClass(i: number) {
   return s.value!.selected.includes(i) ? 'picked' : ''
 }
-
-// ---- result ----
-const result = computed(() => s.value?.result ?? null)
-const missed = computed(() => result.value?.items.filter((it) => !it.correct) ?? [])
-const usedText = computed(() => {
-  const sec = Math.round((result.value?.used_ms ?? 0) / 1000)
-  return `${Math.floor(sec / 60)} 分 ${String(sec % 60).padStart(2, '0')} 秒`
-})
-
-function answerText(it: ExamItem) {
-  const q = it.question
-  return q.answer.map((i) => `${q.type === 'judge' ? '' : String.fromCharCode(65 + i) + '. '}${q.options[i]}`).join('、')
-}
-function pickedText(it: ExamItem) {
-  const q = it.question
-  if (it.selected.length === 0) return '未作答'
-  return it.selected.map((i) => `${q.type === 'judge' ? '' : String.fromCharCode(65 + i) + '. '}${q.options[i]}`).join('、')
-}
-
-function retryMissed() {
-  void startQuiz('重做错题', missed.value.map((it) => it.question), 0, true)
-}
 </script>
 
 <template>
@@ -122,33 +136,41 @@ function retryMissed() {
       <button class="icon-btn" aria-label="退出考试" @click="quit">×</button>
       <h1 class="clamp">模拟考试 · {{ s.index + 1 }}/{{ s.length }}</h1>
       <span v-if="clock" class="timer" :class="{ low: (remaining ?? 99) <= 60 }">⏱ {{ clock }}</span>
-      <button class="btn" @click="handIn">交卷</button>
+      <button class="btn" :disabled="s.busy" @click="handIn">交卷</button>
     </header>
     <div class="bar thin"><div class="fill" :style="{ width: (s.answeredCount / s.length) * 100 + '%' }" /></div>
 
     <main v-if="sheet" class="page">
       <div class="row between">
         <h2>答题卡</h2>
-        <span class="muted small">已答 {{ s.answeredCount }} / {{ s.length }}</span>
+        <span class="muted small">已答 {{ s.answeredCount }} / {{ s.length }}<template v-if="s.markedCount"> · 待检查 {{ s.markedCount }}</template></span>
       </div>
       <div class="sheet">
         <button
           v-for="(_, i) in s.questions"
           :key="i"
-          :class="{ done: s.isAnswered(i), here: i === s.index }"
+          :class="{ done: s.isAnswered(i), here: i === s.index, marked: s.isMarked(i) }"
+          :aria-label="`第 ${i + 1} 题${s.isMarked(i) ? '，待检查' : ''}${s.isAnswered(i) ? '，已答' : '，未答'}`"
           @click="jump(i)"
         >
           {{ i + 1 }}
         </button>
       </div>
-      <button class="btn primary block" @click="handIn">交卷</button>
+      <div class="legend small muted">
+        <i class="dot done" />已答 <i class="dot blank" />未答 <i class="dot flag" />待检查
+      </div>
+      <button class="btn primary block" :disabled="s.busy" @click="handIn">交卷</button>
       <button class="btn block" @click="sheet = false">继续答题</button>
+      <button class="btn block danger" @click="abandon">放弃本次考试</button>
     </main>
 
     <template v-else>
       <main class="page quiz">
-        <div class="row gap">
+        <div class="row between">
           <span class="chip">{{ s.current.type === 'judge' ? '判断题' : '单选题' }}</span>
+          <button class="flag-btn" :class="{ on: s.isMarked(s.index) }" :aria-pressed="s.isMarked(s.index)" @click="s.toggleMark()">
+            🚩 {{ s.isMarked(s.index) ? '已标记待检查' : '标记待检查' }}
+          </button>
         </div>
         <Md class="stem" :source="s.current.stem" />
         <button
@@ -166,50 +188,22 @@ function retryMissed() {
         <button class="btn" :disabled="s.index === 0" @click="s.previous()">上一题</button>
         <button class="btn" @click="sheet = true">答题卡</button>
         <button v-if="s.index < s.length - 1" class="btn primary grow" @click="s.next()">下一题</button>
-        <button v-else class="btn primary grow" @click="handIn">交卷</button>
+        <button v-else class="btn primary grow" :disabled="s.busy" @click="handIn">交卷</button>
       </footer>
     </template>
   </template>
 
-  <template v-else-if="s && result">
+  <template v-else-if="s && s.result">
     <header class="topbar">
       <button class="icon-btn" aria-label="返回" @click="router.back()">‹</button>
       <h1>考试结果</h1>
     </header>
     <main class="page center">
-      <div class="score" :class="result.passed ? 'ok' : 'err'">{{ result.percent }}</div>
-      <p>
-        <strong :class="result.passed ? 'ok' : 'err'">{{ result.passed ? '及格' : '未及格' }}</strong>
-        <span class="muted">（{{ PASS_PERCENT }} 分及格）</span>
-      </p>
-      <div class="card col">
-        <div class="row between"><span class="muted">答对</span><span>{{ result.correct }} / {{ result.total }} 题</span></div>
-        <div class="row between"><span class="muted">未作答</span><span>{{ result.total - result.answered }} 题</span></div>
-        <div class="row between">
-          <span class="muted">用时</span>
-          <span>{{ usedText }}<template v-if="result.limit_sec"> / {{ Math.round(result.limit_sec / 60) || 1 }} 分钟</template></span>
-        </div>
-      </div>
-
-      <div class="sheet">
-        <button v-for="(it, i) in result.items" :key="it.question.id" :class="it.correct ? 'ok' : 'no'" disabled>{{ i + 1 }}</button>
-      </div>
-
-      <button v-if="missed.length" class="btn primary block" @click="retryMissed">重做错题（{{ missed.length }}）</button>
-      <button class="btn block" @click="router.back()">返回</button>
-
-      <h2 class="left">逐题解析</h2>
-      <details v-for="(it, i) in result.items" :key="it.question.id" class="card col review left">
-        <summary>
-          <span :class="it.correct ? 'ok' : 'err'">{{ it.correct ? '✔' : '✘' }}</span>
-          {{ i + 1 }}. <span class="clamp2 inline">{{ it.question.stem }}</span>
-        </summary>
-        <Md :source="it.question.stem" />
-        <div class="small">你的答案：<span :class="it.correct ? 'ok' : 'err'">{{ pickedText(it) }}</span></div>
-        <div v-if="!it.correct" class="small">正确答案：<span class="ok">{{ answerText(it) }}</span></div>
-        <Md v-if="it.question.explanation" :source="it.question.explanation" />
-        <blockquote v-if="it.question.source_quote" class="muted small">原文：{{ it.question.source_quote }}</blockquote>
-      </details>
+      <ExamResultPanel :record="s.result" :entries="s.result.entries">
+        <template #actions>
+          <button class="btn block" @click="router.back()">返回</button>
+        </template>
+      </ExamResultPanel>
     </main>
   </template>
 </template>

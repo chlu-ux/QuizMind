@@ -103,7 +103,24 @@ export interface SessionsPage {
   has_more: boolean
 }
 
-/** A finished mock exam. Kept on this device only; the answers themselves sync as ordinary attempts. */
+export interface AttemptsPage {
+  items: AttemptDto[]
+  next_seq: number
+  has_more: boolean
+}
+
+/** One question of a handed-in paper: question id, option indexes picked (empty = left blank), right or not. */
+export interface ExamItemDto {
+  q: string
+  s: number[]
+  c: boolean
+}
+
+/**
+ * A finished mock exam, synced between devices. It never changes once handed in.
+ * `items` lists the paper in order so any device can review it; records saved
+ * before per-question detail existed have it empty.
+ */
 export interface ExamRecord {
   id: string
   bank_id: string
@@ -119,4 +136,42 @@ export interface ExamRecord {
   /** Time limit in seconds, null when the exam was untimed. */
   limit_sec: number | null
   used_ms: number
+  device_id: string
+  items: ExamItemDto[]
+}
+
+/** synced: 0 = still in the outbox, 1 = uploaded or downloaded. */
+export interface LocalExam extends ExamRecord {
+  synced: 0 | 1
+}
+
+export interface ExamsPage {
+  items: ExamRecord[]
+  next_seq: number
+  has_more: boolean
+}
+
+/**
+ * An exam in progress, kept on this device only so a reload or a killed app can
+ * pick it up again. The clock keeps running from started_at, so a timed exam's
+ * remaining time stays honest. There is at most one per bank.
+ */
+export interface ExamDraft {
+  bank_id: string
+  title: string
+  /** The paper, in order. */
+  ids: string[]
+  /** Position of each question in the paper as first drawn; keeps its option shuffle stable if some are withdrawn. */
+  slots: number[]
+  seed: number
+  started_at: number
+  limit_sec: number | null
+  index: number
+  /** Option indexes picked, by question id; absent = blank. */
+  answers: Record<string, number[]>
+  /** Milliseconds spent on each question, by id. */
+  spent: Record<string, number>
+  /** Question ids flagged "check again". */
+  marked: string[]
+  saved_at: number
 }

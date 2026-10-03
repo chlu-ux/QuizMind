@@ -13,6 +13,7 @@ const router = useRouter()
 const bank = ref<Bank | null>(null)
 const stats = ref<BankStats | null>(null)
 const saved = ref<SessionData | null>(null)
+const examInProgress = ref(false)
 const loaded = ref(false)
 
 async function load() {
@@ -20,6 +21,7 @@ async function load() {
   bank.value = (await repo.banks()).find((b) => b.id === props.id) ?? null
   stats.value = await repo.bankStats(props.id)
   saved.value = await repo.savedSession(props.id)
+  examInProgress.value = !!(await repo.examDraft(props.id))
   loaded.value = true
 }
 onMounted(load)
@@ -76,7 +78,7 @@ async function resume() {
         <button v-else class="btn primary block" @click="start('random', false)">🔀 随机刷题</button>
         <button class="btn block" @click="start('random', true)">🆕 只做没做过的</button>
         <button class="btn block" @click="start('sequential', false)">🔢 按顺序刷题</button>
-        <button class="btn block" @click="router.push(`/bank/${props.id}/exam`)">📝 模拟考试</button>
+        <button class="btn block" @click="router.push(`/bank/${props.id}/exam`)">📝 模拟考试<template v-if="examInProgress"> · 有未完成的考试</template></button>
         <button class="btn block" @click="router.push(`/bank/${props.id}/stats`)">📊 统计分析</button>
       </div>
     </template>

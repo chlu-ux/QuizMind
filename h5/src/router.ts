@@ -9,6 +9,7 @@ const router = createRouter({
     { path: '/bank/:id/stats', component: () => import('./views/StatsView.vue'), props: true },
     { path: '/bank/:id/exam', component: () => import('./views/ExamSetupView.vue'), props: true },
     { path: '/exam', component: () => import('./views/ExamView.vue') },
+    { path: '/exam/review/:id', component: () => import('./views/ExamReviewView.vue'), props: true },
     { path: '/wrong', component: () => import('./views/ListView.vue'), props: { kind: 'wrong' }, meta: { tabs: true } },
     { path: '/fav', component: () => import('./views/ListView.vue'), props: { kind: 'fav' }, meta: { tabs: true } },
     { path: '/settings', component: () => import('./views/SettingsView.vue'), meta: { tabs: true } },

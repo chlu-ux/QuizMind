@@ -1,4 +1,15 @@
-import type { AttemptDto, Bank, QuestionsPage, SessionDto, SessionsPage, StateDto, StatesPage } from './types'
+import type {
+  AttemptDto,
+  AttemptsPage,
+  Bank,
+  ExamRecord,
+  ExamsPage,
+  QuestionsPage,
+  SessionDto,
+  SessionsPage,
+  StateDto,
+  StatesPage,
+} from './types'
 
 /** Thrown for any failed call; message is safe to show to the user. */
 export class ApiError extends Error {
@@ -16,6 +27,11 @@ export interface QuizApi {
   syncQuestions(since: number, limit?: number): Promise<QuestionsPage>
   syncStates(since: number, limit?: number): Promise<StatesPage>
   uploadAttempts(attempts: AttemptDto[]): Promise<void>
+  /** The whole answer log, from every device. A server from before this existed answers 404. */
+  syncAttempts(since: number, limit?: number): Promise<AttemptsPage>
+  /** Finished mock exams. A server from before this existed answers 404. */
+  syncExams(since: number, limit?: number): Promise<ExamsPage>
+  uploadExams(exams: ExamRecord[]): Promise<void>
   uploadStates(states: StateDto[]): Promise<void>
   /** Saved quizzes. A server from before the feature answers 404, which callers treat as "not supported". */
   syncSessions(since: number, limit?: number): Promise<SessionsPage>
@@ -70,6 +86,15 @@ export class HttpApi implements QuizApi {
   }
   async uploadAttempts(attempts: AttemptDto[]) {
     await this.req('POST', '/api/v1/sync/attempts', attempts)
+  }
+  syncAttempts(since: number, limit = 500) {
+    return this.req<AttemptsPage>('GET', `/api/v1/sync/attempts?since=${since}&limit=${limit}`)
+  }
+  syncExams(since: number, limit = 100) {
+    return this.req<ExamsPage>('GET', `/api/v1/sync/exams?since=${since}&limit=${limit}`)
+  }
+  async uploadExams(exams: ExamRecord[]) {
+    await this.req('POST', '/api/v1/sync/exams', exams)
   }
   async uploadStates(states: StateDto[]) {
     await this.req('POST', '/api/v1/sync/states', states)

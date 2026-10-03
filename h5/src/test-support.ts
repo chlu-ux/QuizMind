@@ -1,6 +1,16 @@
 import { openDb, type Db } from '@/data/db'
 import { ApiError, type QuizApi } from '@/data/api'
-import type { AttemptDto, Bank, Question, SessionDto, SessionsPage, StateDto } from '@/data/types'
+import type {
+  AttemptDto,
+  AttemptsPage,
+  Bank,
+  ExamRecord,
+  ExamsPage,
+  Question,
+  SessionDto,
+  SessionsPage,
+  StateDto,
+} from '@/data/types'
 
 export function question(id: string, o: Partial<Question> = {}): Question {
   return {
@@ -27,6 +37,12 @@ export class FakeApi implements QuizApi {
   remoteStates: StateDto[] = []
   uploadedAttempts: AttemptDto[] = []
   uploadedStates: StateDto[] = []
+  /** What other devices uploaded; the pull side of attempt and exam sync. */
+  remoteAttempts: AttemptDto[] = []
+  remoteExams: ExamRecord[] = []
+  uploadedExams: ExamRecord[] = []
+  /** Behave like a server from before attempt/exam download existed (404). */
+  historyUnsupported = false
   flagged: string[] = []
   pageSize = 1000
   failWith: Error | null = null
@@ -63,6 +79,34 @@ export class FakeApi implements QuizApi {
   async uploadAttempts(a: AttemptDto[]) {
     this.check()
     this.uploadedAttempts.push(...a)
+  }
+  async syncAttempts(since: number, limit = 500): Promise<AttemptsPage> {
+    this.check()
+    if (this.historyUnsupported) throw new ApiError('not found', 404)
+    // The fake's sequence number is the 1-based position in the list.
+    const rows = this.remoteAttempts.map((a, i) => ({ a, seq: i + 1 })).filter((r) => r.seq > since)
+    const take = rows.slice(0, limit)
+    return {
+      items: take.map((r) => r.a),
+      next_seq: take.length ? take[take.length - 1].seq : since,
+      has_more: rows.length > take.length,
+    }
+  }
+  async syncExams(since: number, limit = 100): Promise<ExamsPage> {
+    this.check()
+    if (this.historyUnsupported) throw new ApiError('not found', 404)
+    const rows = this.remoteExams.map((e, i) => ({ e, seq: i + 1 })).filter((r) => r.seq > since)
+    const take = rows.slice(0, limit)
+    return {
+      items: take.map((r) => r.e),
+      next_seq: take.length ? take[take.length - 1].seq : since,
+      has_more: rows.length > take.length,
+    }
+  }
+  async uploadExams(e: ExamRecord[]) {
+    this.check()
+    if (this.historyUnsupported) throw new ApiError('not found', 404)
+    this.uploadedExams.push(...e)
   }
   async uploadStates(s: StateDto[]) {
     this.check()

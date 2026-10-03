@@ -213,4 +213,78 @@ describe('repo + sync', () => {
       expect(await repo.getState('other')).toBeDefined()
     })
   })
+
+  describe('answer history and exams from other devices', () => {
+    const remote = (id: string, correct: boolean, at: number) => ({
+      id, question_id: 'q1', device_id: 'phone', answer: [correct ? 1 : 0], is_correct: correct, duration_ms: 900, answered_at: at,
+    })
+    const exam = (id: string, finished: number) => ({
+      id, bank_id: 'b1', title: '题库', finished_at: finished, total: 2, correct: 1, answered: 2, percent: 50, passed: false,
+      limit_sec: null, used_ms: 5000, device_id: 'phone', items: [{ q: 'q1', s: [1], c: true }, { q: 'q2', s: [0], c: false }],
+    })
+
+    beforeEach(async () => {
+      api.published = [question('q1', { answer: [1] })]
+      await sync.run()
+    })
+
+    it('downloads other devices\' answers once, as already uploaded, so statistics cover both', async () => {
+      const [q] = await repo.bankQuestions('b1')
+      await repo.recordAnswer(q, [1], 500) // this device
+      api.remoteAttempts = [remote('R1', false, 1000), remote('R2', true, 2000)]
+      const r = await sync.run()
+      expect(r.attemptsPulled).toBe(2)
+      expect((await db.get('attempts', 'R1'))!.synced).toBe(1)
+      expect(await db.count('attempts')).toBe(3)
+      expect((await repo.bankReport('b1')).attempts).toBe(3)
+      expect(await repo.pendingUploads()).toBe(0)
+
+      expect((await sync.run()).attemptsPulled).toBe(0) // cursor moved on
+      expect(api.uploadedAttempts.map((a) => a.id)).not.toContain('R1') // never echoed back
+    })
+
+    it('an attempt this device uploaded and then receives back is not duplicated', async () => {
+      const [q] = await repo.bankQuestions('b1')
+      await repo.recordAnswer(q, [0], 500)
+      await sync.run()
+      api.remoteAttempts = api.uploadedAttempts.map((a) => ({ ...a })) // the server echoes it
+      const r = await sync.run()
+      expect(r.attemptsPulled).toBe(0)
+      expect(await db.count('attempts')).toBe(1)
+    })
+
+    it('pages through a long history', async () => {
+      api.remoteAttempts = Array.from({ length: 1200 }, (_, i) => remote(`R${i}`, true, i + 1))
+      const r = await sync.run()
+      expect(r.attemptsPulled).toBe(1200)
+    })
+
+    it('uploads finished exams once and downloads the other devices\'', async () => {
+      const [q] = await repo.bankQuestions('b1')
+      await repo.submitExam({ ...exam('MINE', 3000), device_id: '' }, [{ question: q, selected: [1], durationMs: 10 }])
+      expect((await db.get('exams', 'MINE'))!.synced).toBe(0)
+      api.remoteExams = [exam('THEIRS', 4000)]
+      sync = new SyncService(db, api, clock, 'dev1')
+      const r = await sync.run()
+      expect([r.examsUploaded, r.examsPulled]).toEqual([1, 1])
+      expect(api.uploadedExams.map((e) => e.id)).toEqual(['MINE'])
+      expect(api.uploadedExams[0].device_id).toBe('dev1') // filled in for exams saved before it was recorded
+      expect('synced' in api.uploadedExams[0]).toBe(false)
+      expect((await db.get('exams', 'MINE'))!.synced).toBe(1)
+      expect((await repo.exams('b1')).map((e) => e.id)).toEqual(['THEIRS', 'MINE'])
+      expect((await repo.exam('THEIRS'))!.items).toHaveLength(2)
+
+      const again = await sync.run()
+      expect([again.examsUploaded, again.examsPulled]).toEqual([0, 0])
+    })
+
+    it('a server without these endpoints (404) does not fail the sync', async () => {
+      api.historyUnsupported = true
+      const [q] = await repo.bankQuestions('b1')
+      await repo.submitExam(exam('E', 1000), [{ question: q, selected: [1], durationMs: 1 }])
+      const r = await sync.run()
+      expect([r.attemptsPulled, r.examsPulled, r.examsUploaded]).toEqual([0, 0, 0])
+      expect((await db.get('exams', 'E'))!.synced).toBe(0) // still queued for when the server can take it
+    })
+  })
 })
