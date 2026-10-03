@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/api.dart';
 import '../data/database.dart';
+import '../data/exam_store.dart';
 import '../data/repository.dart';
 import '../data/session_store.dart';
 import '../data/sync_service.dart';
@@ -17,6 +18,8 @@ final repositoryProvider = Provider<Repository>((ref) {
   final deviceId = ref.watch(settingsProvider.select((s) => s.deviceId));
   return Repository(ref.watch(databaseProvider), deviceId: deviceId);
 });
+
+final examStoreProvider = Provider<ExamStore>((ref) => ExamStore(ref.watch(sharedPrefsProvider)));
 
 final sessionStoreProvider = Provider<SessionStore>((ref) => SessionStore(ref.watch(sharedPrefsProvider)));
 

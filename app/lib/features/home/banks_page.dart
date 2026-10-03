@@ -6,9 +6,11 @@ import '../../core/settings.dart';
 import '../../data/database.dart';
 import '../../data/repository.dart';
 import '../../data/session_store.dart';
+import '../exam/exam_setup_page.dart';
 import '../quiz/quiz_page.dart';
 import '../quiz/quiz_session.dart';
 import '../quiz/resume.dart';
+import '../stats/stats_page.dart';
 import 'sync_widgets.dart';
 
 /// Bank list. On wide screens the bank detail sits to the right of the list;
@@ -148,7 +150,7 @@ class _BankDetailState extends ConsumerState<BankDetail> {
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text('已做 ${s.answered} / ${s.total} 题 · 最近一次答对 ${s.correct} 题'),
+                      Text('累计做过 ${s.answered} / ${s.total} 题（不重复）· 最近一次答对 ${s.correct} 题'),
                       const SizedBox(height: 10),
                       LinearProgressIndicator(value: progress, minHeight: 8, borderRadius: BorderRadius.circular(4)),
                     ]),
@@ -161,7 +163,7 @@ class _BankDetailState extends ConsumerState<BankDetail> {
               FilledButton.icon(
                 onPressed: _resume,
                 icon: const Icon(Icons.play_arrow),
-                label: Text('继续刷题 · 第 ${saved.index + 1} / ${saved.total} 题'),
+                label: Text('继续上一轮 · 第 ${saved.index + 1} / ${saved.total} 题（本轮已答 ${saved.answered}）'),
               ),
               const SizedBox(height: 8),
               OutlinedButton.icon(
@@ -187,10 +189,27 @@ class _BankDetailState extends ConsumerState<BankDetail> {
               icon: const Icon(Icons.format_list_numbered),
               label: const Text('按顺序刷题'),
             ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => _open(ExamSetupPage(bank: bank)),
+              icon: const Icon(Icons.assignment_outlined),
+              label: const Text('模拟考试'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => _open(StatsPage(bank: bank)),
+              icon: const Icon(Icons.bar_chart),
+              label: const Text('统计分析'),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _open(Widget page) async {
+    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => page));
+    if (mounted) _refresh();
   }
 
   Future<void> _start(QuizOrder order, {required bool onlyNew}) async {

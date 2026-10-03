@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import '../core/ulid.dart';
 import 'database.dart';
 import 'progress.dart';
+import 'stats.dart';
 
 /// What the quiz screen shows about the question just answered.
 class AnswerOutcome {
@@ -95,6 +96,19 @@ class Repository {
       last[a.questionId] = a.isCorrect;
     }
     return BankStats(total: qs.length, answered: last.length, correct: last.values.where((v) => v).length);
+  }
+
+  /// Practice statistics for a bank, from the attempt log.
+  Future<BankReport> bankReport(String bankId) async {
+    final qs = await bankQuestions(bankId);
+    final ids = qs.map((q) => q.id).toList();
+    final attempts = <Attempt>[];
+    for (var i = 0; i < ids.length; i += 500) {
+      final chunk = ids.sublist(i, i + 500 > ids.length ? ids.length : i + 500);
+      attempts.addAll(await (db.select(db.attempts)..where((a) => a.questionId.isIn(chunk))).get());
+    }
+    final wrong = await watchWrongBook().first;
+    return buildReport(qs, attempts, {for (final q in wrong) q.id}, _clock());
   }
 
   /// Which of [ids] have been answered at least once.
