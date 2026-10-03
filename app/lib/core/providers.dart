@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/api.dart';
 import '../data/database.dart';
 import '../data/repository.dart';
+import '../data/session_store.dart';
 import '../data/sync_service.dart';
 import 'settings.dart';
 
@@ -16,6 +17,8 @@ final repositoryProvider = Provider<Repository>((ref) {
   final deviceId = ref.watch(settingsProvider.select((s) => s.deviceId));
   return Repository(ref.watch(databaseProvider), deviceId: deviceId);
 });
+
+final sessionStoreProvider = Provider<SessionStore>((ref) => SessionStore(ref.watch(sharedPrefsProvider)));
 
 /// Rebuilt whenever the server address changes.
 final apiProvider = Provider<QuizApi>((ref) {
@@ -54,7 +57,12 @@ class SyncController extends Notifier<SyncStatus> {
     return const SyncStatus();
   }
 
-  SyncService get _service => SyncService(ref.read(databaseProvider), ref.read(apiProvider));
+  SyncService get _service => SyncService(
+        ref.read(databaseProvider),
+        ref.read(apiProvider),
+        sessions: ref.read(sessionStoreProvider),
+        deviceId: ref.read(settingsProvider).deviceId,
+      );
 
   Future<void> _loadLast() async {
     final last = await _service.lastSync();

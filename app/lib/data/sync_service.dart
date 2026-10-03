@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'api.dart';
 import 'database.dart';
 import 'models.dart';
+import 'session_store.dart';
 
 class SyncReport {
   const SyncReport({
@@ -13,6 +14,7 @@ class SyncReport {
     this.attemptsUploaded = 0,
     this.statesUploaded = 0,
     this.statesPulled = 0,
+    this.sessionsPulled = 0,
   });
 
   final int questionsUpdated;
@@ -21,11 +23,15 @@ class SyncReport {
   final int statesUploaded;
   final int statesPulled;
 
+  /// Saved quizzes taken from another device.
+  final int sessionsPulled;
+
   String get summary {
     final parts = <String>[
       if (questionsUpdated > 0) '新增/更新 $questionsUpdated 题',
       if (questionsRemoved > 0) '下线 $questionsRemoved 题',
       if (attemptsUploaded > 0) '上传 $attemptsUploaded 条作答',
+      if (sessionsPulled > 0) '同步了 $sessionsPulled 个题库的刷题进度',
     ];
     return parts.isEmpty ? '已是最新' : parts.join('，');
   }
@@ -34,10 +40,15 @@ class SyncReport {
 /// Uploads the outbox, then pulls server changes. Uploading first means a
 /// device never loses local progress to a stale pull.
 class SyncService {
-  SyncService(this.db, this.api, {DateTime Function()? clock}) : _clock = clock ?? DateTime.now;
+  SyncService(this.db, this.api, {this.sessions, this.deviceId = '', DateTime Function()? clock})
+      : _clock = clock ?? DateTime.now;
 
   final AppDatabase db;
   final QuizApi api;
+
+  /// Where saved quizzes live; null skips progress sync.
+  final SessionStore? sessions;
+  final String deviceId;
   final DateTime Function() _clock;
 
   static const questionCursor = 'question_seq';
@@ -60,9 +71,12 @@ class SyncService {
     final attempts = await _pushAttempts();
     await _pushFlags();
     final statesUp = await _pushStates();
+    await _pushSessions();
     final banks = await api.banks();
     final q = await _pullQuestions();
     final statesDown = await _pullStates();
+    // After the states: a restored quiz shows its answers from the local state rows.
+    final sessionsDown = await _pullSessions();
     await _replaceBanks(banks);
     await _setMeta(lastSyncAt, _clock().millisecondsSinceEpoch);
     return SyncReport(
@@ -71,6 +85,7 @@ class SyncService {
       attemptsUploaded: attempts,
       statesUploaded: statesUp,
       statesPulled: statesDown,
+      sessionsPulled: sessionsDown,
     );
   }
 
@@ -141,6 +156,54 @@ class SyncService {
       }
       total += rows.length;
       if (rows.length < _batch) return total;
+    }
+  }
+
+  /// A server without the sessions endpoint answers 404. Progress sync is a
+  /// convenience, so that must not fail the rest of the sync.
+  static bool _unsupported(ApiException e) => e.status == 404;
+
+  static const _sessionBatch = 50; // the server's per-request limit
+
+  Future<void> _pushSessions() async {
+    final store = sessions;
+    if (store == null) return;
+    final pending = store.pending();
+    try {
+      for (var i = 0; i < pending.length; i += _sessionBatch) {
+        final batch = pending.skip(i).take(_sessionBatch).toList();
+        await api.uploadSessions([
+          for (final p in batch) SessionDto(scope: p.scope, data: p.data, updatedAt: p.updatedAt, deviceId: deviceId),
+        ]);
+        for (final p in batch) {
+          await store.markUploaded(p.scope, p.updatedAt);
+        }
+      }
+    } on ApiException catch (e) {
+      if (!_unsupported(e)) rethrow;
+    }
+  }
+
+  /// Last-writer-wins on updated_at, so a newer local quiz survives the pull.
+  /// Returns how many saved quizzes were taken from the server.
+  Future<int> _pullSessions() async {
+    final store = sessions;
+    if (store == null) return 0;
+    var pulled = 0;
+    var cursor = store.cursor;
+    try {
+      while (true) {
+        final page = await api.syncSessions(since: cursor, limit: _sessionBatch);
+        for (final s in page.items) {
+          if (await store.applyRemote(s.scope, s.data, s.updatedAt)) pulled++;
+        }
+        await store.setCursor(page.nextSeq);
+        cursor = page.nextSeq;
+        if (!page.hasMore) return pulled;
+      }
+    } on ApiException catch (e) {
+      if (!_unsupported(e)) rethrow;
+      return pulled;
     }
   }
 

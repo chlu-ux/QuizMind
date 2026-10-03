@@ -154,3 +154,38 @@ class AttemptDto {
         'answered_at': answeredAt,
       };
 }
+
+/// A saved quiz as it travels to and from the server. [data] is the progress
+/// document (see SessionData in api/openapi.yaml); null means the quiz was
+/// finished and the saved copy should disappear everywhere.
+class SessionDto {
+  SessionDto({required this.scope, required this.data, required this.updatedAt, this.deviceId = ''});
+
+  final String scope;
+  final Map<String, dynamic>? data;
+  final int updatedAt;
+  final String deviceId;
+
+  factory SessionDto.fromJson(Map<String, dynamic> j) => SessionDto(
+        scope: j['scope'] as String,
+        data: j['data'] as Map<String, dynamic>?,
+        updatedAt: (j['updated_at'] as num).toInt(),
+        deviceId: (j['device_id'] as String?) ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {'scope': scope, 'data': data, 'updated_at': updatedAt, 'device_id': deviceId};
+}
+
+class SessionsPage {
+  SessionsPage({required this.items, required this.nextSeq, required this.hasMore});
+
+  final List<SessionDto> items;
+  final int nextSeq;
+  final bool hasMore;
+
+  factory SessionsPage.fromJson(Map<String, dynamic> j) => SessionsPage(
+        items: (j['items'] as List).map((e) => SessionDto.fromJson(e as Map<String, dynamic>)).toList(),
+        nextSeq: (j['next_seq'] as num).toInt(),
+        hasMore: j['has_more'] as bool,
+      );
+}

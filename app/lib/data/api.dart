@@ -23,6 +23,11 @@ abstract class QuizApi {
   Future<StatesPage> syncStates({required int since, int limit = 500});
   Future<void> uploadAttempts(List<AttemptDto> attempts);
   Future<void> uploadStates(List<StateDto> states);
+
+  /// Saved quizzes. Servers older than the feature answer 404; callers treat that
+  /// as "not supported" and carry on without progress sync.
+  Future<SessionsPage> syncSessions({required int since, int limit = 100});
+  Future<void> uploadSessions(List<SessionDto> sessions);
   Future<void> flagQuestion(String id);
 }
 
@@ -90,6 +95,16 @@ class HttpQuizApi implements QuizApi {
   @override
   Future<void> uploadStates(List<StateDto> states) =>
       _call(() => _dio.post('/api/v1/sync/states', data: states.map((s) => s.toJson()).toList()), (_) {});
+
+  @override
+  Future<SessionsPage> syncSessions({required int since, int limit = 100}) => _call(
+        () => _dio.get('/api/v1/sync/sessions', queryParameters: {'since': since, 'limit': limit}),
+        (d) => SessionsPage.fromJson(d as Map<String, dynamic>),
+      );
+
+  @override
+  Future<void> uploadSessions(List<SessionDto> sessions) =>
+      _call(() => _dio.post('/api/v1/sync/sessions', data: sessions.map((s) => s.toJson()).toList()), (_) {});
 
   @override
   Future<void> flagQuestion(String id) =>

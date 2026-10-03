@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quizmind_app/core/providers.dart';
 import 'package:quizmind_app/core/settings.dart';
-import 'package:quizmind_app/data/api.dart';
 import 'package:quizmind_app/data/database.dart';
 import 'package:quizmind_app/data/repository.dart';
 import 'package:quizmind_app/features/quiz/quiz_page.dart';

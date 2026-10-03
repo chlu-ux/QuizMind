@@ -9,8 +9,9 @@ import '../../core/providers.dart';
 import '../../data/database.dart';
 import '../../data/progress.dart';
 import '../../data/repository.dart';
+import '../../data/session_store.dart';
 import 'quiz_session.dart';
-import 'session_store.dart';
+import 'resume.dart';
 
 /// Opens a quiz over [questions]. Returns when the learner leaves.
 ///

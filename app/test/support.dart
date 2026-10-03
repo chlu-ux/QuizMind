@@ -31,6 +31,13 @@ class FakeApi implements QuizApi {
   int pageSize = 1000;
   Object? failWith;
 
+  /// Saved quizzes by scope, with the server sequence of their last change.
+  final Map<String, ({SessionDto session, int seq})> sessions = {};
+  int _sessionSeq = 0;
+
+  /// Behave like a server from before progress sync existed (404).
+  bool sessionsUnsupported = false;
+
   @override
   Future<void> health() async {}
 
@@ -69,6 +76,30 @@ class FakeApi implements QuizApi {
   Future<void> uploadStates(List<StateDto> states) async {
     _maybeFail();
     uploadedStates.addAll(states);
+  }
+
+  @override
+  Future<SessionsPage> syncSessions({required int since, int limit = 100}) async {
+    _maybeFail();
+    if (sessionsUnsupported) throw ApiException('not found', status: 404);
+    final rows = sessions.values.where((r) => r.seq > since).toList()..sort((a, b) => a.seq.compareTo(b.seq));
+    final take = rows.take(limit).toList();
+    return SessionsPage(
+      items: [for (final r in take) r.session],
+      nextSeq: take.isEmpty ? since : take.last.seq,
+      hasMore: rows.length > take.length,
+    );
+  }
+
+  @override
+  Future<void> uploadSessions(List<SessionDto> list) async {
+    _maybeFail();
+    if (sessionsUnsupported) throw ApiException('not found', status: 404);
+    for (final s in list) {
+      final have = sessions[s.scope];
+      if (have != null && have.session.updatedAt >= s.updatedAt) continue; // last writer wins
+      sessions[s.scope] = (session: s, seq: ++_sessionSeq);
+    }
   }
 
   @override

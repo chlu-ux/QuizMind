@@ -5,9 +5,10 @@ import '../../core/providers.dart';
 import '../../core/settings.dart';
 import '../../data/database.dart';
 import '../../data/repository.dart';
+import '../../data/session_store.dart';
 import '../quiz/quiz_page.dart';
 import '../quiz/quiz_session.dart';
-import '../quiz/session_store.dart';
+import '../quiz/resume.dart';
 import 'sync_widgets.dart';
 
 /// Bank list. On wide screens the bank detail sits to the right of the list;
