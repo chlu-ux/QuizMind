@@ -1,0 +1,33 @@
+{
+  "Go 并发编程笔记 > goroutine": [
+    {"type":"single","stem":"在 Go 中，goroutine 的初始栈大小大约是多少？","options":["几 KB","几 MB","固定 1 MB","与操作系统线程相同"],"answer_index":0,"explanation":"goroutine 初始栈只有几 KB，并且可以按需增长，所以可以创建大量 goroutine。","difficulty":1,"tags":["goroutine","调度"],"source_quote":"初始栈大小只有几 KB，可以按需增长"},
+    {"type":"judge","stem":"主函数返回时，所有尚未结束的 goroutine 会被直接终止。","options":[],"answer_index":0,"explanation":"程序随主函数返回而退出，不会等待其他 goroutine。","difficulty":2,"tags":["goroutine"],"source_quote":"主函数返回时所有未结束的 goroutine 会被直接终止"},
+    {"type":"single","stem":"为什么在 Go 中创建成千上万个 goroutine 是常见做法？","options":["它们的调度开销远小于操作系统线程","每个 goroutine 独占一个 CPU 核心","goroutine 不占用任何内存","编译器会自动合并它们"],"answer_index":0,"explanation":"goroutine 由 Go 运行时调度，开销远小于操作系统线程。","difficulty":2,"tags":["goroutine","性能"],"source_quote":"它们的调度开销远小于操作系统线程"},
+    {"type":"single","stem":"goroutine 的初始栈大小大约是多少？","options":["几 KB","几 MB","固定 1 MB","与操作系统线程相同"],"answer_index":0,"explanation":"与第一题重复，用来演示重复检测。","difficulty":1,"tags":["goroutine"],"source_quote":"初始栈大小只有几 KB，可以按需增长"}
+  ],
+  "Go 并发编程笔记 > channel": [
+    {"type":"single","stem":"无缓冲 channel 的发送操作在什么情况下会阻塞？","options":["直到有接收者准备好接收数据","直到缓冲区被填满","直到 channel 被关闭","永远不会阻塞"],"answer_index":0,"explanation":"无缓冲 channel 要求发送和接收同时就绪。","difficulty":2,"tags":["channel"],"source_quote":"无缓冲 channel 的发送操作会阻塞，直到有接收者准备好接收数据"},
+    {"type":"judge","stem":"向已经关闭的 channel 发送数据会引发 panic。","options":[],"answer_index":0,"explanation":"关闭后仍可读取剩余数据，但再发送会 panic。","difficulty":2,"tags":["channel"],"source_quote":"向已关闭的 channel 发送数据会引发 panic"},
+    {"type":"judge","stem":"关闭 channel 之后，其中剩余的数据就无法再被读取。","options":[],"answer_index":1,"explanation":"错误。关闭 channel 后仍然可以读取其中剩余的数据。","difficulty":3,"tags":["channel"],"source_quote":"关闭 channel 后仍然可以从中读取剩余的数据"},
+    {"type":"single","stem":"channel 体现的是 Go 的哪一条并发理念？","options":["通过通信来共享内存","通过共享内存来通信","通过加锁来保证顺序","通过全局变量传递数据"],"answer_index":0,"explanation":"这是 Go 并发编程的核心理念。","difficulty":1,"tags":["channel","理念"],"source_quote":"channel 是 goroutine 之间通信的管道，遵循「通过通信来共享内存」的理念"}
+  ],
+  "Go 并发编程笔记 > sync.Mutex": [
+    {"type":"single","stem":"使用 sync.Mutex 时，通常配合什么关键字确保锁一定会被释放？","options":["defer","go","select","range"],"answer_index":0,"explanation":"defer Unlock() 能保证函数返回前解锁，即使发生 panic。","difficulty":1,"tags":["sync","锁"],"source_quote":"通常配合 defer 确保锁一定会被释放"},
+    {"type":"judge","stem":"sync.Mutex 在第一次使用之后可以被安全地复制。","options":[],"answer_index":1,"explanation":"错误。第一次使用后复制 Mutex 会破坏锁的状态。","difficulty":3,"tags":["sync","锁"],"source_quote":"Mutex 在第一次使用后不能被复制，否则会破坏锁的状态"},
+    {"type":"single","stem":"关于 sync.RWMutex，下列说法正确的是？","options":["允许多个读者同时持有读锁，写锁是独占的","读锁和写锁都是独占的","只允许一个读者和多个写者","读锁会阻塞所有其他读者"],"answer_index":0,"explanation":"RWMutex 适合读多写少的场景。","difficulty":2,"tags":["sync","锁"],"source_quote":"sync.RWMutex 允许多个读者同时持有读锁，但写锁是独占的"}
+  ],
+  "Go 并发编程笔记 > context": [
+    {"type":"single","stem":"context.WithTimeout 返回的上下文会在什么时候被取消？","options":["超时后自动取消","只能手动取消","永远不会被取消","第一个 goroutine 结束时"],"answer_index":0,"explanation":"WithTimeout 到期自动取消；WithCancel 才需要手动取消。","difficulty":1,"tags":["context"],"source_quote":"context.WithTimeout 则会在超时后自动取消"},
+    {"type":"judge","stem":"按照惯例，context 应该存放在结构体中以便复用。","options":[],"answer_index":1,"explanation":"错误。惯例是作为函数的第一个参数传入，不要存放在结构体里。","difficulty":2,"tags":["context"],"source_quote":"context 应该作为函数的第一个参数传入，并且不要把它存放在结构体中"},
+    {"type":"single","stem":"context 包主要用来在 goroutine 之间传递什么？","options":["取消信号、截止时间和请求范围的值","数据库连接池","goroutine 的栈大小","编译参数"],"answer_index":0,"explanation":"这是 context 包的核心用途。","difficulty":1,"tags":["context"],"source_quote":"用于在 goroutine 之间传递取消信号、截止时间和请求范围的值"}
+  ],
+  "Go 并发编程笔记 > sync.WaitGroup": [
+    {"type":"single","stem":"sync.WaitGroup 的 Add 方法应该在什么时候调用？","options":["在启动 goroutine 之前","在 goroutine 结束之后","在 Wait 返回之后","任意时刻都可以"],"answer_index":0,"explanation":"否则可能出现 Wait 提前返回的竞态。","difficulty":2,"tags":["sync","WaitGroup"],"source_quote":"Add 必须在启动 goroutine 之前调用"},
+    {"type":"judge","stem":"WaitGroup 的 Wait 方法会阻塞，直到计数归零。","options":[],"answer_index":0,"explanation":"每个 goroutine 结束时调用 Done 减少计数。","difficulty":1,"tags":["sync","WaitGroup"],"source_quote":"Wait 会阻塞直到计数归零"}
+  ],
+  "Go 并发编程笔记 > 竞态检测": [
+    {"type":"single","stem":"在 Go 中启用内置竞态检测器应该使用哪个参数？","options":["-race","-trace","-vet","-cover"],"answer_index":0,"explanation":"运行测试或构建时加上 -race 即可。","difficulty":1,"tags":["竞态检测","工具"],"source_quote":"在运行测试或构建时加上 -race 参数即可启用"},
+    {"type":"judge","stem":"官方建议在生产环境中长期开启竞态检测器。","options":[],"answer_index":1,"explanation":"错误。它会让程序变慢并占用更多内存，通常只在测试和调试阶段使用。","difficulty":2,"tags":["竞态检测"],"source_quote":"所以通常只在测试和调试阶段使用，不建议在生产环境长期开启"},
+    {"type":"single","stem":"竞态检测器会让程序的运行时间大约变为原来的多少倍？","options":["约 2 倍","约 5 到 10 倍","约 100 倍","几乎没有影响"],"answer_index":1,"explanation":"这条故意引用了原文没有的数字，用来演示「引文不在原文中」会被自动驳回。","difficulty":3,"tags":["竞态检测"],"source_quote":"运行时开销一般是五到十倍"}
+  ]
+}

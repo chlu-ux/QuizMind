@@ -1,0 +1,58 @@
+// Package llm defines a provider-neutral client interface for structured
+// generation, plus a Guard that adds concurrency/rate/budget control and call
+// logging on top of any provider.
+package llm
+
+import (
+	"context"
+	"errors"
+)
+
+// Role names a task the pipeline needs a model for. Each role is bound to a
+// provider and model in configuration.
+type Role string
+
+const (
+	RoleGenerator Role = "generator"
+	RoleValidator Role = "validator"
+	RoleEmbedding Role = "embedding"
+)
+
+// Client is implemented once per provider protocol.
+type Client interface {
+	// GenerateJSON asks the model for output matching req.Schema and
+	// unmarshals it into out. Implementations must not return partial output
+	// as success: a truncated or unparsable response is an error.
+	GenerateJSON(ctx context.Context, req JSONRequest, out any) (Usage, error)
+	// Name identifies the provider type for logging, e.g. "anthropic".
+	Name() string
+	// Model is the model id this client calls.
+	Model() string
+}
+
+type JSONRequest struct {
+	// System is the stable instruction prefix. Keep it byte-identical across
+	// calls so provider-side prompt caching can hit.
+	System string
+	// User carries the per-call variable content.
+	User       string
+	SchemaName string
+	Schema     map[string]any
+	MaxTokens  int
+}
+
+type Usage struct {
+	InputTokens  int64
+	OutputTokens int64
+	CachedTokens int64
+}
+
+// ErrBudgetExceeded is returned by Guard when the daily token budget is spent.
+// It is not retryable within the same day.
+var ErrBudgetExceeded = errors.New("llm: daily token budget exceeded")
+
+// ErrTruncated signals the model stopped because of the output token cap.
+var ErrTruncated = errors.New("llm: response truncated (max_tokens reached)")
+
+// ErrRefused signals the model declined the request.
+var ErrRefused = errors.New("llm: model refused the request")

@@ -1,0 +1,243 @@
+openapi: 3.0.3
+info:
+  title: QuizMind app API
+  version: 0.1.0
+  description: |
+    Endpoints used by the Flutter app. The admin API (/admin/*) is consumed only by the
+    bundled Vue UI and is not part of this contract.
+    These endpoints need no authentication; only the admin API (/admin/*) is guarded by the server token.
+    Timestamps are Unix milliseconds. Errors are `{"error": "message"}`.
+servers:
+  - url: http://127.0.0.1:8080
+paths:
+  /healthz:
+    get:
+      summary: Liveness probe
+      responses:
+        "200": { description: ok }
+  /api/v1/banks:
+    get:
+      summary: Banks with their published question count
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Bank" }
+  /api/v1/sync/questions:
+    get:
+      summary: Incremental question download
+      description: |
+        Returns changes with sync_seq > since in sync_seq order. Published questions come back in
+        `items`; questions that are no longer published come back in `deleted`. Repeat with
+        `since = next_seq` while `has_more` is true.
+      parameters:
+        - { name: since, in: query, schema: { type: integer, default: 0 } }
+        - { name: limit, in: query, schema: { type: integer, default: 500, maximum: 1000 } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/QuestionsPage" }
+  /api/v1/sync/states:
+    get:
+      summary: Incremental download of per-question learning state
+      parameters:
+        - { name: since, in: query, schema: { type: integer, default: 0 }, description: "server sync_seq cursor" }
+        - { name: limit, in: query, schema: { type: integer, default: 500, maximum: 1000 } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StatesPage" }
+    post:
+      summary: Upload states (last writer wins on updated_at)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              maxItems: 500
+              items: { $ref: "#/components/schemas/State" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadResult" }
+  /api/v1/sync/sessions:
+    get:
+      summary: Incremental download of saved quizzes ("continue where you left off")
+      parameters:
+        - { name: since, in: query, schema: { type: integer, default: 0 }, description: "server sync_seq cursor" }
+        - { name: limit, in: query, schema: { type: integer, default: 100, maximum: 100 } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SessionsPage" }
+    post:
+      summary: Upload saved quizzes (last writer wins on updated_at)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              maxItems: 50
+              items: { $ref: "#/components/schemas/SessionProgress" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadResult" }
+        "400": { description: invalid session }
+  /api/v1/sync/attempts:
+    post:
+      summary: Append answer records (idempotent on id)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              maxItems: 500
+              items: { $ref: "#/components/schemas/Attempt" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadResult" }
+        "400": { description: invalid attempt }
+  /api/v1/questions/{id}/flag:
+    post:
+      summary: Report that a question looks wrong; two reports take it offline
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  flag_count: { type: integer }
+                  status: { type: string }
+        "404": { description: unknown question }
+components:
+  schemas:
+    Bank:
+      type: object
+      required: [id, title, description, question_count]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        question_count: { type: integer }
+    Question:
+      type: object
+      required: [id, bank_id, type, stem, options, answer, explanation, difficulty, tags, source_quote, sync_seq, updated_at]
+      properties:
+        id: { type: string }
+        bank_id: { type: string }
+        type: { type: string, enum: [single, judge] }
+        stem: { type: string }
+        options: { type: array, items: { type: string } }
+        answer: { type: array, items: { type: integer }, description: "option indexes; one entry for single and judge" }
+        explanation: { type: string }
+        difficulty: { type: integer, minimum: 1, maximum: 5 }
+        tags: { type: array, items: { type: string } }
+        source_quote: { type: string }
+        sync_seq: { type: integer }
+        updated_at: { type: integer }
+    QuestionsPage:
+      type: object
+      required: [items, deleted, next_seq, has_more]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/Question" } }
+        deleted: { type: array, items: { type: string } }
+        next_seq: { type: integer }
+        has_more: { type: boolean }
+    State:
+      type: object
+      required: [question_id, favorite, wrong_count, updated_at]
+      properties:
+        question_id: { type: string }
+        fsrs: { type: object, nullable: true, description: "opaque to the server" }
+        due_at: { type: integer, nullable: true }
+        favorite: { type: boolean }
+        wrong_count: { type: integer }
+        updated_at: { type: integer }
+        sync_seq: { type: integer, readOnly: true }
+    StatesPage:
+      type: object
+      required: [items, next_seq, has_more]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/State" } }
+        next_seq: { type: integer }
+        has_more: { type: boolean }
+    Attempt:
+      type: object
+      required: [id, question_id, device_id, answer, is_correct, answered_at]
+      properties:
+        id: { type: string, description: "client-generated ULID" }
+        question_id: { type: string }
+        device_id: { type: string }
+        answer: { type: array, items: { type: integer } }
+        is_correct: { type: boolean }
+        duration_ms: { type: integer, nullable: true }
+        answered_at: { type: integer }
+    SessionProgress:
+      type: object
+      required: [scope, updated_at]
+      description: |
+        The quiz one device left part-way in one scope (a bank id), so another device can
+        continue it. There is at most one per scope. A finished quiz is uploaded with
+        `data: null`; that tombstone clears the saved quiz on every device.
+      properties:
+        scope: { type: string, maxLength: 64, description: "bank id" }
+        data: { allOf: [{ $ref: "#/components/schemas/SessionData" }], nullable: true }
+        updated_at: { type: integer, description: "client clock, ms; the newer one wins" }
+        device_id: { type: string, maxLength: 64 }
+        sync_seq: { type: integer, readOnly: true }
+    SessionData:
+      type: object
+      description: |
+        Opaque to the server (at most 512 KiB); every client reads and writes this shape.
+        Questions and answers are kept by id, so questions withdrawn since are simply skipped.
+      required: [title, ids, seed, index, answers]
+      properties:
+        title: { type: string }
+        ids: { type: array, items: { type: string }, description: "question ids in the order they are practised" }
+        seed: { type: integer, description: "seeds the option shuffle so a resumed quiz shows the same layout" }
+        index: { type: integer, description: "position in ids of the current question" }
+        answers:
+          type: object
+          description: "by question id: s = chosen option indexes (original order), c = whether it was right"
+          additionalProperties:
+            type: object
+            required: [s, c]
+            properties:
+              s: { type: array, items: { type: integer } }
+              c: { type: boolean }
+    SessionsPage:
+      type: object
+      required: [items, next_seq, has_more]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/SessionProgress" } }
+        next_seq: { type: integer }
+        has_more: { type: boolean }
+    UploadResult:
+      type: object
+      properties:
+        accepted: { type: integer }
+        ignored: { type: integer }
