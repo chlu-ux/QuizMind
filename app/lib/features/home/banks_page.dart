@@ -7,6 +7,7 @@ import '../../data/database.dart';
 import '../../data/repository.dart';
 import '../quiz/quiz_page.dart';
 import '../quiz/quiz_session.dart';
+import '../quiz/session_store.dart';
 import 'sync_widgets.dart';
 
 /// Bank list. On wide screens the bank detail sits to the right of the list;
@@ -106,6 +107,7 @@ class BankDetail extends ConsumerStatefulWidget {
 
 class _BankDetailState extends ConsumerState<BankDetail> {
   late Future<BankStats> _stats;
+  SavedSession? _saved;
 
   Bank get bank => widget.bank;
 
@@ -113,9 +115,13 @@ class _BankDetailState extends ConsumerState<BankDetail> {
   void initState() {
     super.initState();
     _stats = ref.read(repositoryProvider).bankStats(bank.id);
+    _saved = ref.read(sessionStoreProvider).load(bank.id);
   }
 
-  void _refresh() => setState(() => _stats = ref.read(repositoryProvider).bankStats(bank.id));
+  void _refresh() => setState(() {
+        _stats = ref.read(repositoryProvider).bankStats(bank.id);
+        _saved = ref.read(sessionStoreProvider).load(bank.id);
+      });
 
   @override
   Widget build(BuildContext context) {
@@ -150,11 +156,24 @@ class _BankDetailState extends ConsumerState<BankDetail> {
               },
             ),
             const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: () => _start(QuizOrder.random, onlyNew: false),
-              icon: const Icon(Icons.shuffle),
-              label: const Text('随机刷题'),
-            ),
+            if (_saved case final saved?) ...[
+              FilledButton.icon(
+                onPressed: _resume,
+                icon: const Icon(Icons.play_arrow),
+                label: Text('继续刷题 · 第 ${saved.index + 1} / ${saved.total} 题'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () => _start(QuizOrder.random, onlyNew: false),
+                icon: const Icon(Icons.shuffle),
+                label: const Text('重新随机刷题'),
+              ),
+            ] else
+              FilledButton.icon(
+                onPressed: () => _start(QuizOrder.random, onlyNew: false),
+                icon: const Icon(Icons.shuffle),
+                label: const Text('随机刷题'),
+              ),
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: () => _start(QuizOrder.random, onlyNew: true),
@@ -185,7 +204,24 @@ class _BankDetailState extends ConsumerState<BankDetail> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(onlyNew ? '这个题库的题都做过了' : '这个题库还没有题目')));
       return;
     }
-    await startQuiz(context, title: bank.title, questions: orderQuestions(qs, order));
+    await startQuiz(context, title: bank.title, questions: orderQuestions(qs, order), scope: bank.id);
+    if (mounted) _refresh();
+  }
+
+  Future<void> _resume() async {
+    final saved = _saved;
+    if (saved == null) return;
+    final plan = await planResume(saved, ref.read(repositoryProvider));
+    if (!mounted) return;
+    if (plan == null) {
+      // Every question in it has since been withdrawn.
+      await ref.read(sessionStoreProvider).clear(bank.id);
+      if (!mounted) return;
+      _refresh();
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('上次的题目已不存在，请重新开始')));
+      return;
+    }
+    await startQuiz(context, title: plan.title, questions: plan.questions, startAt: plan.index, scope: bank.id, resume: plan);
     if (mounted) _refresh();
   }
 }

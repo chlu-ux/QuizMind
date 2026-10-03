@@ -46,6 +46,20 @@ class Repository {
             ..orderBy([(q) => OrderingTerm.asc(q.syncSeq), (q) => OrderingTerm.asc(q.id)]))
           .get();
 
+  /// The visible questions among [ids], in the order of [ids]. Ids the server
+  /// withdrew or the learner reported are left out.
+  Future<List<Question>> questionsByIds(List<String> ids) async {
+    final found = <String, Question>{};
+    for (var i = 0; i < ids.length; i += 500) {
+      final chunk = ids.sublist(i, i + 500 > ids.length ? ids.length : i + 500);
+      final rows = await (db.select(db.questions)..where((q) => q.id.isIn(chunk) & q.hidden.equals(false))).get();
+      for (final q in rows) {
+        found[q.id] = q;
+      }
+    }
+    return [for (final id in ids) if (found[id] != null) found[id]!];
+  }
+
   Stream<List<Question>> watchWrongBook() => _watchByState((s) => s.inWrongBook);
 
   Stream<List<Question>> watchFavorites() => _watchByState((s) => s.favorite);

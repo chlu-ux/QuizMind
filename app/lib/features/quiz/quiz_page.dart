@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -8,29 +10,48 @@ import '../../data/database.dart';
 import '../../data/progress.dart';
 import '../../data/repository.dart';
 import 'quiz_session.dart';
+import 'session_store.dart';
 
 /// Opens a quiz over [questions]. Returns when the learner leaves.
+///
+/// With a [scope] (a bank id) the quiz is saved as the learner goes, so it can be
+/// picked up again; pass [resume] to continue a saved one instead of starting over.
 Future<void> startQuiz(
   BuildContext context, {
   required String title,
   required List<Question> questions,
   int startAt = 0,
+  String? scope,
+  ResumePlan? resume,
 }) {
   if (questions.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('没有可练习的题目')));
     return Future.value();
   }
   return Navigator.of(context).push(MaterialPageRoute<void>(
-    builder: (_) => QuizPage(title: title, questions: questions, startAt: startAt),
+    builder: (_) => QuizPage(title: title, questions: questions, startAt: startAt, scope: scope, resume: resume),
   ));
 }
 
 class QuizPage extends ConsumerStatefulWidget {
-  const QuizPage({super.key, required this.title, required this.questions, this.startAt = 0});
+  const QuizPage({
+    super.key,
+    required this.title,
+    required this.questions,
+    this.startAt = 0,
+    this.scope,
+    this.resume,
+    this.shuffleOptions = true,
+  });
 
   final String title;
   final List<Question> questions;
   final int startAt;
+
+  /// Where progress is saved; null for quizzes that are not worth resuming.
+  final String? scope;
+  final ResumePlan? resume;
+  final bool shuffleOptions;
 
   @override
   ConsumerState<QuizPage> createState() => _QuizPageState();
@@ -39,17 +60,48 @@ class QuizPage extends ConsumerStatefulWidget {
 class _QuizPageState extends ConsumerState<QuizPage> {
   late final QuizSession session;
   late final SyncController _sync;
+  late final SessionStore _store;
+  (int, int)? _saved; // (index, answered) last written
 
   @override
   void initState() {
     super.initState();
     _sync = ref.read(syncProvider.notifier);
+    _store = ref.read(sessionStoreProvider);
+    final resume = widget.resume;
     session = QuizSession(
       title: widget.title,
       questions: widget.questions,
       repo: ref.read(repositoryProvider),
       startAt: widget.startAt,
+      seed: resume?.seed,
+      shuffleOptions: widget.shuffleOptions,
+      restored: resume?.restored ?? const {},
     );
+    final scope = widget.scope;
+    if (scope != null) {
+      if (resume == null) {
+        unawaited(_store.start(scope,
+            title: widget.title, ids: [for (final q in widget.questions) q.id], seed: session.seed, index: session.index));
+      }
+      _saved = (session.index, session.answeredCount);
+      session.addListener(_persist);
+    }
+  }
+
+  /// Keeps the saved progress in step with the quiz. Finishing clears it: there
+  /// is nothing left to continue.
+  void _persist() {
+    final scope = widget.scope;
+    if (scope == null) return;
+    if (session.finished) {
+      unawaited(_store.clear(scope));
+      return;
+    }
+    final now = (session.index, session.answeredCount);
+    if (now == _saved) return;
+    _saved = now;
+    unawaited(_store.saveProgress(scope, index: session.index, answers: session.answerSnapshot));
   }
 
   @override
@@ -77,7 +129,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
         return CallbackShortcuts(
           bindings: {
             for (var i = 0; i < 4; i++)
-              SingleActivator(LogicalKeyboardKey(LogicalKeyboardKey.digit1.keyId + i)): () => session.select(i),
+              SingleActivator(LogicalKeyboardKey(LogicalKeyboardKey.digit1.keyId + i)): () => session.selectAt(i),
             const SingleActivator(LogicalKeyboardKey.enter): _primary,
             const SingleActivator(LogicalKeyboardKey.keyJ): session.next,
             const SingleActivator(LogicalKeyboardKey.arrowRight): session.next,
@@ -120,7 +172,10 @@ class _QuizScaffold extends ConsumerWidget {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text('${session.title}  ${session.index + 1}/${session.length}'),
+        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(session.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text('${session.index + 1}/${session.length}', style: theme.textTheme.labelMedium),
+        ]),
         actions: [
           StreamBuilder<QuestionState?>(
             stream: repo.watchState(q.id),
@@ -165,19 +220,18 @@ class _QuizScaffold extends ConsumerWidget {
                   p: theme.textTheme.titleMedium?.copyWith(height: 1.5),
                 )),
                 const SizedBox(height: 16),
-                for (var i = 0; i < q.options.length; i++)
+                for (final opt in session.displayOptions)
                   _OptionTile(
-                    index: i,
-                    text: q.options[i],
-                    judge: q.type == 'judge',
-                    selected: session.selected.contains(i),
+                    label: session.labelOf(opt.original),
+                    text: opt.text,
+                    selected: session.selected.contains(opt.original),
                     revealed: session.submitted,
-                    isAnswer: q.answer.contains(i),
-                    onTap: () => session.select(i),
+                    isAnswer: q.answer.contains(opt.original),
+                    onTap: () => session.select(opt.original),
                   ),
                 if (session.outcome case final o?) ...[
                   const SizedBox(height: 8),
-                  _ResultCard(outcome: o, question: q),
+                  _ResultCard(outcome: o, question: q, answerLabel: q.answer.map((i) => q.type == 'judge' ? q.options[i] : session.labelOf(i)).join('、')),
                 ],
               ],
             ),
@@ -213,18 +267,16 @@ class _QuizScaffold extends ConsumerWidget {
 
 class _OptionTile extends StatelessWidget {
   const _OptionTile({
-    required this.index,
+    required this.label,
     required this.text,
-    required this.judge,
     required this.selected,
     required this.revealed,
     required this.isAnswer,
     required this.onTap,
   });
 
-  final int index;
+  final String label;
   final String text;
-  final bool judge;
   final bool selected;
   final bool revealed;
   final bool isAnswer;
@@ -265,8 +317,7 @@ class _OptionTile extends StatelessWidget {
                 radius: 14,
                 backgroundColor: selected || (revealed && isAnswer) ? border : scheme.surfaceContainerHighest,
                 foregroundColor: selected || (revealed && isAnswer) ? scheme.surface : scheme.onSurfaceVariant,
-                child: Text(judge ? '${index + 1}' : String.fromCharCode(65 + index),
-                    style: const TextStyle(fontWeight: FontWeight.w600)),
+                child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
               ),
               const SizedBox(width: 12),
               Expanded(child: Text(text, style: Theme.of(context).textTheme.bodyLarge)),
@@ -280,18 +331,19 @@ class _OptionTile extends StatelessWidget {
 }
 
 class _ResultCard extends StatelessWidget {
-  const _ResultCard({required this.outcome, required this.question});
+  const _ResultCard({required this.outcome, required this.question, required this.answerLabel});
 
   final AnswerOutcome outcome;
   final Question question;
+
+  /// The right answer as the learner sees it: a letter for single choice (it follows
+  /// the shuffled layout), the option text for judge questions.
+  final String answerLabel;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final ok = outcome.correct;
-    final answerLabel = question.answer
-        .map((i) => question.type == 'judge' ? question.options[i] : String.fromCharCode(65 + i))
-        .join('、');
     return Card(
       color: ok ? Colors.green.withValues(alpha: 0.12) : theme.colorScheme.errorContainer.withValues(alpha: 0.5),
       child: Padding(

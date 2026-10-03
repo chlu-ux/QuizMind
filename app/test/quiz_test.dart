@@ -99,12 +99,13 @@ void main() {
         databaseProvider.overrideWithValue(db),
         apiProvider.overrideWithValue(FakeApi()),
       ],
-      child: MaterialApp(home: QuizPage(title: '测试', questions: qs)),
+      child: MaterialApp(home: QuizPage(title: '测试', questions: qs, shuffleOptions: false)),
     ));
     await tester.pump();
 
     expect(find.text('题干 q1'), findsOneWidget);
-    expect(find.text('测试  1/2'), findsOneWidget);
+    expect(find.text('测试'), findsOneWidget);
+    expect(find.text('1/2'), findsOneWidget);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.digit1); // wrong: picks 甲
     await tester.pump();
