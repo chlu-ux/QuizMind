@@ -428,6 +428,44 @@ func TestAppSync(t *testing.T) {
 	assert.Equal(t, 0, up.Accepted, "re-upload is a no-op")
 	s.do(t, "POST", "/api/v1/sync/attempts", `[{"id":"","question_id":"x","device_id":"d","answered_at":1}]`, 400, nil)
 
+	// A second device downloads the answer history by server sequence.
+	type attemptsPage struct {
+		Items []struct {
+			ID         string
+			QuestionID string `json:"question_id"`
+			DeviceID   string `json:"device_id"`
+			Answer     []int
+			IsCorrect  bool   `json:"is_correct"`
+			DurationMs *int64 `json:"duration_ms"`
+			AnsweredAt int64  `json:"answered_at"`
+		}
+		NextSeq int64 `json:"next_seq"`
+		HasMore bool  `json:"has_more"`
+	}
+	var at1 attemptsPage
+	s.do(t, "GET", "/api/v1/sync/attempts?since=0", "", 200, &at1)
+	require.Len(t, at1.Items, 1, "the attempt for an unknown question was never stored")
+	assert.Equal(t, "A1", at1.Items[0].ID)
+	assert.Equal(t, "d1", at1.Items[0].DeviceID)
+	assert.Equal(t, []int{0}, at1.Items[0].Answer)
+	assert.True(t, at1.Items[0].IsCorrect)
+	assert.EqualValues(t, 1500, *at1.Items[0].DurationMs)
+	assert.EqualValues(t, 1000, at1.Items[0].AnsweredAt)
+	s.do(t, "POST", "/api/v1/sync/attempts", `[{"id":"A3","question_id":"`+qid+`","device_id":"d2","answer":[2],"is_correct":false,"answered_at":2000}]`, 200, &up)
+	var at2 attemptsPage
+	s.do(t, "GET", "/api/v1/sync/attempts?since="+itoa(at1.NextSeq), "", 200, &at2)
+	require.Len(t, at2.Items, 1, "only what is new after the cursor")
+	assert.Equal(t, "A3", at2.Items[0].ID)
+	assert.Nil(t, at2.Items[0].DurationMs)
+	var at3 attemptsPage
+	s.do(t, "GET", "/api/v1/sync/attempts?since="+itoa(at2.NextSeq), "", 200, &at3)
+	assert.Empty(t, at3.Items)
+	assert.Equal(t, at2.NextSeq, at3.NextSeq, "an empty page keeps the cursor")
+	var paged attemptsPage
+	s.do(t, "GET", "/api/v1/sync/attempts?since=0&limit=1", "", 200, &paged)
+	assert.Len(t, paged.Items, 1)
+	assert.True(t, paged.HasMore)
+
 	// States: last writer wins on updated_at; the other device pulls by server seq.
 	st := func(updated int, fav bool, wrong int) string {
 		f := "false"
@@ -556,6 +594,87 @@ func TestSyncSessions(t *testing.T) {
 		"not a json array": `{"scope":"b"}`,
 	} {
 		t.Run(name, func(t *testing.T) { s.do(t, "POST", "/api/v1/sync/sessions", body, 400, nil) })
+	}
+}
+
+// A finished exam travels with the answer given to every question, so any device
+// can review the paper. Uploads are idempotent on id.
+func TestSyncExams(t *testing.T) {
+	s := newServer(t)
+
+	type exam struct {
+		ID         string `json:"id"`
+		BankID     string `json:"bank_id"`
+		Title      string `json:"title"`
+		FinishedAt int64  `json:"finished_at"`
+		Total      int64  `json:"total"`
+		Correct    int64  `json:"correct"`
+		Answered   int64  `json:"answered"`
+		Percent    int64  `json:"percent"`
+		Passed     bool   `json:"passed"`
+		LimitSec   *int64 `json:"limit_sec"`
+		UsedMs     int64  `json:"used_ms"`
+		DeviceID   string `json:"device_id"`
+		Items      []struct {
+			Q string `json:"q"`
+			S []int  `json:"s"`
+			C bool   `json:"c"`
+		} `json:"items"`
+		SyncSeq int64 `json:"sync_seq"`
+	}
+	type page struct {
+		Items   []exam
+		NextSeq int64 `json:"next_seq"`
+		HasMore bool  `json:"has_more"`
+	}
+	body := func(id string, finished int, limit string) string {
+		return `[{"id":"` + id + `","bank_id":"b1","title":"Go","finished_at":` + itoa(int64(finished)) +
+			`,"total":2,"correct":1,"answered":1,"percent":50,"passed":false,"limit_sec":` + limit +
+			`,"used_ms":61000,"device_id":"A","items":[{"q":"q1","s":[2],"c":true},{"q":"q2","s":[],"c":false}]}]`
+	}
+	var res struct{ Accepted, Ignored int }
+	s.do(t, "POST", "/api/v1/sync/exams", body("E1", 100, "600"), 200, &res)
+	assert.Equal(t, 1, res.Accepted)
+	s.do(t, "POST", "/api/v1/sync/exams", body("E1", 100, "600"), 200, &res)
+	assert.Equal(t, 1, res.Ignored, "re-upload is a no-op")
+
+	var p1 page
+	s.do(t, "GET", "/api/v1/sync/exams?since=0", "", 200, &p1)
+	require.Len(t, p1.Items, 1)
+	e := p1.Items[0]
+	assert.Equal(t, "E1", e.ID)
+	assert.Equal(t, "b1", e.BankID)
+	assert.EqualValues(t, 50, e.Percent)
+	assert.EqualValues(t, 600, *e.LimitSec)
+	assert.EqualValues(t, 61000, e.UsedMs)
+	require.Len(t, e.Items, 2)
+	assert.Equal(t, []int{2}, e.Items[0].S)
+	assert.True(t, e.Items[0].C)
+	assert.NotNil(t, e.Items[1].S, "a blank answer is an empty list, not null")
+	assert.Empty(t, e.Items[1].S)
+	assert.Equal(t, e.SyncSeq, p1.NextSeq)
+
+	// An untimed exam has a null limit; the next device only gets what is new.
+	s.do(t, "POST", "/api/v1/sync/exams", body("E2", 200, "null"), 200, &res)
+	var p2 page
+	s.do(t, "GET", "/api/v1/sync/exams?since="+itoa(p1.NextSeq), "", 200, &p2)
+	require.Len(t, p2.Items, 1)
+	assert.Equal(t, "E2", p2.Items[0].ID)
+	assert.Nil(t, p2.Items[0].LimitSec)
+	var p3 page
+	s.do(t, "GET", "/api/v1/sync/exams?since="+itoa(p2.NextSeq), "", 200, &p3)
+	assert.Empty(t, p3.Items)
+	assert.Equal(t, p2.NextSeq, p3.NextSeq)
+
+	for name, b := range map[string]string{
+		"no id":         `[{"id":"","bank_id":"b","title":"t","finished_at":1,"total":1,"items":[]}]`,
+		"no total":      `[{"id":"x","bank_id":"b","title":"t","finished_at":1,"total":0,"items":[]}]`,
+		"correct>total": `[{"id":"x","bank_id":"b","title":"t","finished_at":1,"total":1,"correct":2,"items":[]}]`,
+		"bad percent":   `[{"id":"x","bank_id":"b","title":"t","finished_at":1,"total":1,"percent":101,"items":[]}]`,
+		"item no q":     `[{"id":"x","bank_id":"b","title":"t","finished_at":1,"total":1,"items":[{"q":"","s":[]}]}]`,
+		"too many":      "[" + strings.TrimSuffix(strings.Repeat(`{"id":"x"},`, 11), ",") + "]",
+	} {
+		t.Run(name, func(t *testing.T) { s.do(t, "POST", "/api/v1/sync/exams", b, 400, nil) })
 	}
 }
 

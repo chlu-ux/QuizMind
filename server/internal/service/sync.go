@@ -143,9 +143,13 @@ func (s *Service) UploadAttempts(ctx context.Context, in []AttemptIn) (UploadRes
 			if a.IsCorrect {
 				correct = 1
 			}
+			seq, err := qs.NextSyncSeq(ctx)
+			if err != nil {
+				return err
+			}
 			n, err := qs.InsertAttempt(ctx, store.InsertAttemptParams{
 				ID: a.ID, QuestionID: a.QuestionID, DeviceID: a.DeviceID, Answer: jsonArray(a.Answer),
-				IsCorrect: correct, DurationMs: dur, AnsweredAt: a.AnsweredAt, ReceivedAt: now,
+				IsCorrect: correct, DurationMs: dur, AnsweredAt: a.AnsweredAt, ReceivedAt: now, SyncSeq: seq,
 			})
 			if err != nil {
 				return err
@@ -159,6 +163,53 @@ func (s *Service) UploadAttempts(ctx context.Context, in []AttemptIn) (UploadRes
 		return nil
 	})
 	return res, err
+}
+
+// AttemptOut is an attempt as downloaded by another device: AttemptIn plus the
+// server cursor.
+type AttemptOut struct {
+	AttemptIn
+	SyncSeq int64 `json:"sync_seq"`
+}
+
+type SyncAttemptsPage struct {
+	Items   []AttemptOut `json:"items"`
+	NextSeq int64        `json:"next_seq"`
+	HasMore bool         `json:"has_more"`
+}
+
+// SyncAttempts returns attempts uploaded after the given server sync_seq, so
+// every device can compute statistics over the whole answer history. Attempts
+// are an append-only log, so the client only has to skip ids it already has.
+func (s *Service) SyncAttempts(ctx context.Context, since int64, limit int) (SyncAttemptsPage, error) {
+	if limit <= 0 || limit > 1000 {
+		limit = 500
+	}
+	rows, err := s.reader().ListAttemptsSince(ctx, store.ListAttemptsSinceParams{Since: since, PageLimit: int64(limit) + 1})
+	if err != nil {
+		return SyncAttemptsPage{}, err
+	}
+	page := SyncAttemptsPage{Items: []AttemptOut{}, NextSeq: since}
+	if len(rows) > limit {
+		rows, page.HasMore = rows[:limit], true
+	}
+	for _, r := range rows {
+		var answer []int
+		if err := json.Unmarshal([]byte(r.Answer), &answer); err != nil || answer == nil {
+			answer = []int{}
+		}
+		out := AttemptOut{SyncSeq: r.SyncSeq, AttemptIn: AttemptIn{
+			ID: r.ID, QuestionID: r.QuestionID, DeviceID: r.DeviceID, Answer: answer,
+			IsCorrect: r.IsCorrect != 0, AnsweredAt: r.AnsweredAt,
+		}}
+		if r.DurationMs.Valid {
+			v := r.DurationMs.Int64
+			out.DurationMs = &v
+		}
+		page.NextSeq = r.SyncSeq
+		page.Items = append(page.Items, out)
+	}
+	return page, nil
 }
 
 // StateIn / StateOut carry the per-question learning state. FSRS is opaque to

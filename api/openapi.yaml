@@ -100,6 +100,17 @@ paths:
               schema: { $ref: "#/components/schemas/UploadResult" }
         "400": { description: invalid session }
   /api/v1/sync/attempts:
+    get:
+      summary: Incremental download of the answer log (so every device sees the whole history)
+      parameters:
+        - { name: since, in: query, schema: { type: integer, default: 0 }, description: "server sync_seq cursor" }
+        - { name: limit, in: query, schema: { type: integer, default: 500, maximum: 1000 } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AttemptsPage" }
     post:
       summary: Append answer records (idempotent on id)
       requestBody:
@@ -117,6 +128,35 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/UploadResult" }
         "400": { description: invalid attempt }
+  /api/v1/sync/exams:
+    get:
+      summary: Incremental download of finished mock exams
+      parameters:
+        - { name: since, in: query, schema: { type: integer, default: 0 }, description: "server sync_seq cursor" }
+        - { name: limit, in: query, schema: { type: integer, default: 100, maximum: 100 } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ExamsPage" }
+    post:
+      summary: Upload finished exams (append-only, idempotent on id)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              maxItems: 10
+              items: { $ref: "#/components/schemas/Exam" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadResult" }
+        "400": { description: invalid exam }
   /api/v1/questions/{id}/flag:
     post:
       summary: Report that a question looks wrong; two reports take it offline
@@ -196,6 +236,57 @@ components:
         is_correct: { type: boolean }
         duration_ms: { type: integer, nullable: true }
         answered_at: { type: integer }
+    AttemptsPage:
+      type: object
+      required: [items, next_seq, has_more]
+      properties:
+        items:
+          type: array
+          items:
+            allOf:
+              - { $ref: "#/components/schemas/Attempt" }
+              - type: object
+                properties:
+                  sync_seq: { type: integer, readOnly: true }
+        next_seq: { type: integer }
+        has_more: { type: boolean }
+    Exam:
+      type: object
+      required: [id, bank_id, finished_at, total, correct, answered, percent, passed, used_ms, items]
+      description: |
+        A finished mock exam. It never changes after it is handed in. `items` lists the
+        paper in order so any device can review it.
+      properties:
+        id: { type: string, description: "client-generated ULID" }
+        bank_id: { type: string }
+        title: { type: string, maxLength: 200 }
+        finished_at: { type: integer }
+        total: { type: integer }
+        correct: { type: integer }
+        answered: { type: integer, description: "questions that got an answer; the rest were left blank" }
+        percent: { type: integer, minimum: 0, maximum: 100 }
+        passed: { type: boolean }
+        limit_sec: { type: integer, nullable: true, description: "time allowed; null when untimed" }
+        used_ms: { type: integer }
+        device_id: { type: string, maxLength: 64 }
+        sync_seq: { type: integer, readOnly: true }
+        items:
+          type: array
+          maxItems: 1000
+          items:
+            type: object
+            required: [q, s, c]
+            properties:
+              q: { type: string, description: "question id" }
+              s: { type: array, items: { type: integer }, description: "option indexes picked; empty = left blank" }
+              c: { type: boolean, description: "answered correctly" }
+    ExamsPage:
+      type: object
+      required: [items, next_seq, has_more]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/Exam" } }
+        next_seq: { type: integer }
+        has_more: { type: boolean }
     SessionProgress:
       type: object
       required: [scope, updated_at]

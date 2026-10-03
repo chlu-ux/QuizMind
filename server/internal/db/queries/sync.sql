@@ -11,11 +11,17 @@ SELECT bank_id, COUNT(*) AS n FROM question WHERE status = 'published' GROUP BY 
 SELECT value FROM sync_counter WHERE id = 1;
 
 -- name: InsertAttempt :execrows
-INSERT INTO attempt (id, question_id, device_id, answer, is_correct, duration_ms, answered_at, received_at)
+INSERT INTO attempt (id, question_id, device_id, answer, is_correct, duration_ms, answered_at, received_at, sync_seq)
 SELECT sqlc.arg(id), q.id, sqlc.arg(device_id), sqlc.arg(answer), sqlc.arg(is_correct),
-       sqlc.arg(duration_ms), sqlc.arg(answered_at), sqlc.arg(received_at)
+       sqlc.arg(duration_ms), sqlc.arg(answered_at), sqlc.arg(received_at), sqlc.arg(sync_seq)
 FROM question q WHERE q.id = sqlc.arg(question_id)
 ON CONFLICT(id) DO NOTHING;
+
+-- name: ListAttemptsSince :many
+SELECT * FROM attempt
+WHERE sync_seq > sqlc.arg(since)
+ORDER BY sync_seq ASC
+LIMIT sqlc.arg(page_limit);
 
 -- name: UpsertQuestionState :execrows
 INSERT INTO question_state (question_id, fsrs, due_at, favorite, wrong_count, updated_at, sync_seq)
@@ -48,6 +54,20 @@ WHERE excluded.updated_at > quiz_session.updated_at;
 
 -- name: ListQuizSessionsSince :many
 SELECT * FROM quiz_session
+WHERE sync_seq > sqlc.arg(since)
+ORDER BY sync_seq ASC
+LIMIT sqlc.arg(page_limit);
+
+-- name: InsertExam :execrows
+INSERT INTO exam (id, bank_id, title, finished_at, total, correct, answered, percent, passed,
+                  limit_sec, used_ms, device_id, items, sync_seq)
+VALUES (sqlc.arg(id), sqlc.arg(bank_id), sqlc.arg(title), sqlc.arg(finished_at), sqlc.arg(total),
+        sqlc.arg(correct), sqlc.arg(answered), sqlc.arg(percent), sqlc.arg(passed),
+        sqlc.narg(limit_sec), sqlc.arg(used_ms), sqlc.arg(device_id), sqlc.arg(items), sqlc.arg(sync_seq))
+ON CONFLICT(id) DO NOTHING;
+
+-- name: ListExamsSince :many
+SELECT * FROM exam
 WHERE sync_seq > sqlc.arg(since)
 ORDER BY sync_seq ASC
 LIMIT sqlc.arg(page_limit);

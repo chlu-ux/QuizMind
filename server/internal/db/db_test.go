@@ -122,3 +122,44 @@ func TestSchemaConstraints(t *testing.T) {
 		VALUES ('d','b','t','a.md','c','h','bogus',1,1)`)
 	assert.Error(t, err, "status CHECK enforced")
 }
+
+// Attempts that predate the sync_seq column are numbered in arrival order after
+// the counter, so a second device can download them.
+func TestMigration_BackfillsAttemptSyncSeq(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "app.db")
+	d, err := db.Open(path)
+	require.NoError(t, err)
+	// Roll the schema back to what 00003 left, then add attempts the old way.
+	for _, stmt := range []string{
+		`PRAGMA foreign_keys = OFF`,
+		`DROP TABLE exam`,
+		`DROP INDEX idx_attempt_sync`,
+		`ALTER TABLE attempt DROP COLUMN sync_seq`,
+		`DELETE FROM goose_db_version WHERE version_id IN (4, 5)`,
+		`UPDATE sync_counter SET value = 10 WHERE id = 1`,
+		`INSERT INTO attempt (id, question_id, device_id, answer, is_correct, answered_at, received_at) VALUES
+		   ('B', 'q', 'd', '[0]', 1, 1, 200), ('A', 'q', 'd', '[0]', 1, 1, 100), ('C', 'q', 'd', '[0]', 0, 1, 200)`,
+	} {
+		_, err := d.Write.Exec(stmt)
+		require.NoError(t, err, stmt)
+	}
+	require.NoError(t, d.Close())
+
+	d, err = db.Open(path)
+	require.NoError(t, err)
+	defer d.Close()
+	got := map[string]int{}
+	rows, err := d.Read.Query(`SELECT id, sync_seq FROM attempt`)
+	require.NoError(t, err)
+	for rows.Next() {
+		var id string
+		var seq int
+		require.NoError(t, rows.Scan(&id, &seq))
+		got[id] = seq
+	}
+	require.NoError(t, rows.Err())
+	assert.Equal(t, map[string]int{"A": 11, "B": 12, "C": 13}, got, "ordered by received_at, then id")
+	var counter int
+	require.NoError(t, d.Read.QueryRow(`SELECT value FROM sync_counter WHERE id = 1`).Scan(&counter))
+	assert.Equal(t, 13, counter, "new rows continue after the backfill")
+}

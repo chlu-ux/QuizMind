@@ -17,6 +17,7 @@ type Attempt struct {
 	DurationMs sql.NullInt64 `json:"duration_ms"`
 	AnsweredAt int64         `json:"answered_at"`
 	ReceivedAt int64         `json:"received_at"`
+	SyncSeq    int64         `json:"sync_seq"`
 }
 
 type Bank struct {
@@ -47,6 +48,23 @@ type Document struct {
 	Status      string `json:"status"`
 	CreatedAt   int64  `json:"created_at"`
 	UpdatedAt   int64  `json:"updated_at"`
+}
+
+type Exam struct {
+	ID         string        `json:"id"`
+	BankID     string        `json:"bank_id"`
+	Title      string        `json:"title"`
+	FinishedAt int64         `json:"finished_at"`
+	Total      int64         `json:"total"`
+	Correct    int64         `json:"correct"`
+	Answered   int64         `json:"answered"`
+	Percent    int64         `json:"percent"`
+	Passed     int64         `json:"passed"`
+	LimitSec   sql.NullInt64 `json:"limit_sec"`
+	UsedMs     int64         `json:"used_ms"`
+	DeviceID   string        `json:"device_id"`
+	Items      string        `json:"items"`
+	SyncSeq    int64         `json:"sync_seq"`
 }
 
 type Job struct {

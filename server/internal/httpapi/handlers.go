@@ -275,6 +275,37 @@ func (a *API) syncAttemptsUp(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, res)
 }
 
+func (a *API) syncAttemptsDown(w http.ResponseWriter, r *http.Request) {
+	page, err := a.svc.SyncAttempts(r.Context(), int64(intParam(r, "since", 0)), intParam(r, "limit", 500))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, page)
+}
+
+func (a *API) syncExamsDown(w http.ResponseWriter, r *http.Request) {
+	page, err := a.svc.SyncExams(r.Context(), int64(intParam(r, "since", 0)), intParam(r, "limit", 100))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, page)
+}
+
+func (a *API) syncExamsUp(w http.ResponseWriter, r *http.Request) {
+	var in []service.ExamIn
+	if !decode(w, r, &in) {
+		return
+	}
+	res, err := a.svc.UploadExams(r.Context(), in)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, res)
+}
+
 func (a *API) syncStatesUp(w http.ResponseWriter, r *http.Request) {
 	var in []service.StateIn
 	if !decode(w, r, &in) {

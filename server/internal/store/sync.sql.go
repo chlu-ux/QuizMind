@@ -40,10 +40,10 @@ func (q *Queries) CurrentSyncSeq(ctx context.Context) (int64, error) {
 }
 
 const insertAttempt = `-- name: InsertAttempt :execrows
-INSERT INTO attempt (id, question_id, device_id, answer, is_correct, duration_ms, answered_at, received_at)
+INSERT INTO attempt (id, question_id, device_id, answer, is_correct, duration_ms, answered_at, received_at, sync_seq)
 SELECT ?1, q.id, ?2, ?3, ?4,
-       ?5, ?6, ?7
-FROM question q WHERE q.id = ?8
+       ?5, ?6, ?7, ?8
+FROM question q WHERE q.id = ?9
 ON CONFLICT(id) DO NOTHING
 `
 
@@ -55,6 +55,7 @@ type InsertAttemptParams struct {
 	DurationMs sql.NullInt64 `json:"duration_ms"`
 	AnsweredAt int64         `json:"answered_at"`
 	ReceivedAt int64         `json:"received_at"`
+	SyncSeq    int64         `json:"sync_seq"`
 	QuestionID string        `json:"question_id"`
 }
 
@@ -67,12 +68,157 @@ func (q *Queries) InsertAttempt(ctx context.Context, arg InsertAttemptParams) (i
 		arg.DurationMs,
 		arg.AnsweredAt,
 		arg.ReceivedAt,
+		arg.SyncSeq,
 		arg.QuestionID,
 	)
 	if err != nil {
 		return 0, err
 	}
 	return result.RowsAffected()
+}
+
+const insertExam = `-- name: InsertExam :execrows
+INSERT INTO exam (id, bank_id, title, finished_at, total, correct, answered, percent, passed,
+                  limit_sec, used_ms, device_id, items, sync_seq)
+VALUES (?1, ?2, ?3, ?4, ?5,
+        ?6, ?7, ?8, ?9,
+        ?10, ?11, ?12, ?13, ?14)
+ON CONFLICT(id) DO NOTHING
+`
+
+type InsertExamParams struct {
+	ID         string        `json:"id"`
+	BankID     string        `json:"bank_id"`
+	Title      string        `json:"title"`
+	FinishedAt int64         `json:"finished_at"`
+	Total      int64         `json:"total"`
+	Correct    int64         `json:"correct"`
+	Answered   int64         `json:"answered"`
+	Percent    int64         `json:"percent"`
+	Passed     int64         `json:"passed"`
+	LimitSec   sql.NullInt64 `json:"limit_sec"`
+	UsedMs     int64         `json:"used_ms"`
+	DeviceID   string        `json:"device_id"`
+	Items      string        `json:"items"`
+	SyncSeq    int64         `json:"sync_seq"`
+}
+
+func (q *Queries) InsertExam(ctx context.Context, arg InsertExamParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, insertExam,
+		arg.ID,
+		arg.BankID,
+		arg.Title,
+		arg.FinishedAt,
+		arg.Total,
+		arg.Correct,
+		arg.Answered,
+		arg.Percent,
+		arg.Passed,
+		arg.LimitSec,
+		arg.UsedMs,
+		arg.DeviceID,
+		arg.Items,
+		arg.SyncSeq,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
+const listAttemptsSince = `-- name: ListAttemptsSince :many
+SELECT id, question_id, device_id, answer, is_correct, duration_ms, answered_at, received_at, sync_seq FROM attempt
+WHERE sync_seq > ?1
+ORDER BY sync_seq ASC
+LIMIT ?2
+`
+
+type ListAttemptsSinceParams struct {
+	Since     int64 `json:"since"`
+	PageLimit int64 `json:"page_limit"`
+}
+
+func (q *Queries) ListAttemptsSince(ctx context.Context, arg ListAttemptsSinceParams) ([]Attempt, error) {
+	rows, err := q.db.QueryContext(ctx, listAttemptsSince, arg.Since, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Attempt{}
+	for rows.Next() {
+		var i Attempt
+		if err := rows.Scan(
+			&i.ID,
+			&i.QuestionID,
+			&i.DeviceID,
+			&i.Answer,
+			&i.IsCorrect,
+			&i.DurationMs,
+			&i.AnsweredAt,
+			&i.ReceivedAt,
+			&i.SyncSeq,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listExamsSince = `-- name: ListExamsSince :many
+SELECT id, bank_id, title, finished_at, total, correct, answered, percent, passed, limit_sec, used_ms, device_id, items, sync_seq FROM exam
+WHERE sync_seq > ?1
+ORDER BY sync_seq ASC
+LIMIT ?2
+`
+
+type ListExamsSinceParams struct {
+	Since     int64 `json:"since"`
+	PageLimit int64 `json:"page_limit"`
+}
+
+func (q *Queries) ListExamsSince(ctx context.Context, arg ListExamsSinceParams) ([]Exam, error) {
+	rows, err := q.db.QueryContext(ctx, listExamsSince, arg.Since, arg.PageLimit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Exam{}
+	for rows.Next() {
+		var i Exam
+		if err := rows.Scan(
+			&i.ID,
+			&i.BankID,
+			&i.Title,
+			&i.FinishedAt,
+			&i.Total,
+			&i.Correct,
+			&i.Answered,
+			&i.Percent,
+			&i.Passed,
+			&i.LimitSec,
+			&i.UsedMs,
+			&i.DeviceID,
+			&i.Items,
+			&i.SyncSeq,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listPublishedQuestionCountsByBank = `-- name: ListPublishedQuestionCountsByBank :many
