@@ -228,6 +228,22 @@ func (s *Service) GetDocument(ctx context.Context, id string) (DocumentDetail, e
 	return det, nil
 }
 
+// DocumentContent is a document with its full Markdown source, for viewing online.
+type DocumentContent struct {
+	DocumentView
+	Content string `json:"content"`
+}
+
+// GetDocumentContent returns the stored source text of a document. Kept apart from
+// GetDocument so the detail drawer, which reloads often, does not carry the whole file.
+func (s *Service) GetDocumentContent(ctx context.Context, id string) (DocumentContent, error) {
+	d, err := s.reader().GetDocument(ctx, id)
+	if err != nil {
+		return DocumentContent{}, notFound(err, "document")
+	}
+	return DocumentContent{DocumentView: docView(d, nil), Content: d.Content}, nil
+}
+
 // RetryDocument requeues every failed job of a document.
 func (s *Service) RetryDocument(ctx context.Context, id string) (int64, error) {
 	if _, err := s.reader().GetDocument(ctx, id); err != nil {

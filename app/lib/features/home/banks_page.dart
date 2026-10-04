@@ -112,6 +112,7 @@ class _BankDetailState extends ConsumerState<BankDetail> {
   late Future<BankStats> _stats;
   SavedSession? _saved;
   bool _examInProgress = false;
+  int? _seqIndex; // where "按顺序刷题" left off, if anywhere
 
   Bank get bank => widget.bank;
 
@@ -121,6 +122,19 @@ class _BankDetailState extends ConsumerState<BankDetail> {
     _stats = ref.read(repositoryProvider).bankStats(bank.id);
     _saved = ref.read(sessionStoreProvider).load(bank.id);
     _loadExamDraft();
+    _loadSequential();
+  }
+
+  /// The 1-based place in the bank's fixed order that sequential practice continues from.
+  Future<void> _loadSequential() async {
+    final id = ref.read(sessionStoreProvider).sequentialPosition(bank.id);
+    int? index;
+    if (id != null) {
+      final qs = await ref.read(repositoryProvider).bankQuestions(bank.id);
+      final i = qs.indexWhere((q) => q.id == id);
+      if (i > 0) index = i;
+    }
+    if (mounted && index != _seqIndex) setState(() => _seqIndex = index);
   }
 
   Future<void> _loadExamDraft() async {
@@ -134,6 +148,7 @@ class _BankDetailState extends ConsumerState<BankDetail> {
       _saved = ref.read(sessionStoreProvider).load(bank.id);
     });
     _loadExamDraft();
+    _loadSequential();
   }
 
   @override
@@ -197,8 +212,16 @@ class _BankDetailState extends ConsumerState<BankDetail> {
             OutlinedButton.icon(
               onPressed: () => _start(QuizOrder.sequential, onlyNew: false),
               icon: const Icon(Icons.format_list_numbered),
-              label: const Text('按顺序刷题'),
+              label: Text(_seqIndex == null ? '按顺序刷题' : '按顺序刷题 · 从第 ${_seqIndex! + 1} 题继续'),
             ),
+            if (_seqIndex != null) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: () => _start(QuizOrder.sequential, onlyNew: false, fromStart: true),
+                icon: const Icon(Icons.restart_alt),
+                label: const Text('按顺序重做（从第 1 题）'),
+              ),
+            ],
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: () => _open(ExamSetupPage(bank: bank)),
@@ -222,7 +245,7 @@ class _BankDetailState extends ConsumerState<BankDetail> {
     if (mounted) _refresh();
   }
 
-  Future<void> _start(QuizOrder order, {required bool onlyNew}) async {
+  Future<void> _start(QuizOrder order, {required bool onlyNew, bool fromStart = false}) async {
     final repo = ref.read(repositoryProvider);
     var qs = await repo.bankQuestions(bank.id);
     if (onlyNew) {
@@ -234,7 +257,21 @@ class _BankDetailState extends ConsumerState<BankDetail> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(onlyNew ? '这个题库的题都做过了' : '这个题库还没有题目')));
       return;
     }
-    await startQuiz(context, title: bank.title, questions: orderQuestions(qs, order), scope: bank.id);
+    final ordered = orderQuestions(qs, order);
+    final store = ref.read(sessionStoreProvider);
+    var startAt = 0;
+    ValueChanged<Question?>? onPosition;
+    if (order == QuizOrder.sequential) {
+      // Picks up at the question the learner was last on, wherever the bank has grown since.
+      if (fromStart) {
+        await store.setSequentialPosition(bank.id, null);
+      } else if (store.sequentialPosition(bank.id) case final id?) {
+        startAt = ordered.indexWhere((q) => q.id == id).clamp(0, ordered.length - 1);
+      }
+      onPosition = (q) => store.setSequentialPosition(bank.id, q?.id);
+    }
+    if (!mounted) return;
+    await startQuiz(context, title: bank.title, questions: ordered, startAt: startAt, scope: bank.id, onPosition: onPosition);
     if (mounted) _refresh();
   }
 

@@ -8,6 +8,22 @@ import (
 	"database/sql"
 )
 
+type AiNote struct {
+	QuestionID    string `json:"question_id"`
+	Content       string `json:"content"`
+	Model         string `json:"model"`
+	PromptVersion string `json:"prompt_version"`
+	Selected      string `json:"selected"`
+	UpdatedAt     int64  `json:"updated_at"`
+	DeviceID      string `json:"device_id"`
+	SyncSeq       int64  `json:"sync_seq"`
+}
+
+type AppSetting struct {
+	Key   string `json:"key"`
+	Value string `json:"value"`
+}
+
 type Attempt struct {
 	ID         string        `json:"id"`
 	QuestionID string        `json:"question_id"`

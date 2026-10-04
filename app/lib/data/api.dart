@@ -35,6 +35,15 @@ abstract class QuizApi {
   Future<SessionsPage> syncSessions({required int since, int limit = 100});
   Future<void> uploadSessions(List<SessionDto> sessions);
   Future<void> flagQuestion(String id);
+
+  /// AI explanations. Servers older than the feature answer 404.
+  Future<NotesPage> syncNotes({required int since, int limit = 100});
+  Future<void> uploadNotes(List<NoteDto> notes);
+
+  /// The LLM endpoint for AI explanations, fetched with the access token set in the
+  /// admin UI. 401 = wrong token; 404 = the server has the feature switched off (or
+  /// predates it).
+  Future<AiConfig> aiConfig({required String token});
 }
 
 class HttpQuizApi implements QuizApi {
@@ -131,4 +140,20 @@ class HttpQuizApi implements QuizApi {
   @override
   Future<void> flagQuestion(String id) =>
       _call(() => _dio.post('/api/v1/questions/${Uri.encodeComponent(id)}/flag'), (_) {});
+
+  @override
+  Future<NotesPage> syncNotes({required int since, int limit = 100}) => _call(
+        () => _dio.get('/api/v1/sync/notes', queryParameters: {'since': since, 'limit': limit}),
+        (d) => NotesPage.fromJson(d as Map<String, dynamic>),
+      );
+
+  @override
+  Future<void> uploadNotes(List<NoteDto> notes) =>
+      _call(() => _dio.post('/api/v1/sync/notes', data: notes.map((n) => n.toJson()).toList()), (_) {});
+
+  @override
+  Future<AiConfig> aiConfig({required String token}) => _call(
+        () => _dio.get('/api/v1/ai/config', options: Options(headers: {'Authorization': 'Bearer $token'})),
+        (d) => AiConfig.fromJson(d as Map<String, dynamic>),
+      );
 }

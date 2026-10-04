@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
+import 'ai_config_store.dart';
 import 'api.dart';
 import 'database.dart';
 import 'models.dart';
@@ -18,6 +19,10 @@ class SyncReport {
     this.examsUploaded = 0,
     this.examsPulled = 0,
     this.sessionsPulled = 0,
+    this.notesUploaded = 0,
+    this.notesPulled = 0,
+    this.aiConfigUpdated = false,
+    this.aiWarning,
   });
 
   final int questionsUpdated;
@@ -34,6 +39,16 @@ class SyncReport {
   /// Saved quizzes taken from another device.
   final int sessionsPulled;
 
+  /// AI explanations sent to / taken from the server.
+  final int notesUploaded;
+  final int notesPulled;
+
+  /// The LLM configuration was fetched from the server (a new or changed one).
+  final bool aiConfigUpdated;
+
+  /// Why the AI configuration could not be fetched (wrong token), if that was tried.
+  final String? aiWarning;
+
   String get summary {
     final parts = <String>[
       if (questionsUpdated > 0) '新增/更新 $questionsUpdated 题',
@@ -42,6 +57,10 @@ class SyncReport {
       if (attemptsPulled > 0) '同步了其他设备的 $attemptsPulled 条作答',
       if (examsPulled > 0) '同步了 $examsPulled 场考试',
       if (sessionsPulled > 0) '同步了 $sessionsPulled 个题库的刷题进度',
+      if (notesUploaded > 0) '上传 $notesUploaded 条 AI 解读',
+      if (notesPulled > 0) '同步了 $notesPulled 条 AI 解读',
+      if (aiConfigUpdated) '已更新 AI 配置',
+      ?aiWarning,
     ];
     return parts.isEmpty ? '已是最新' : parts.join('，');
   }
@@ -50,7 +69,7 @@ class SyncReport {
 /// Uploads the outbox, then pulls server changes. Uploading first means a
 /// device never loses local progress to a stale pull.
 class SyncService {
-  SyncService(this.db, this.api, {this.sessions, this.deviceId = '', DateTime Function()? clock})
+  SyncService(this.db, this.api, {this.sessions, this.aiConfig, this.deviceId = '', DateTime Function()? clock})
       : _clock = clock ?? DateTime.now;
 
   final AppDatabase db;
@@ -58,6 +77,9 @@ class SyncService {
 
   /// Where saved quizzes live; null skips progress sync.
   final SessionStore? sessions;
+
+  /// Where the AI explanation settings live; null skips fetching the configuration.
+  final AiConfigStore? aiConfig;
   final String deviceId;
   final DateTime Function() _clock;
 
@@ -65,6 +87,7 @@ class SyncService {
   static const stateCursor = 'state_seq';
   static const attemptCursor = 'attempt_seq';
   static const examCursor = 'exam_seq';
+  static const noteCursor = 'note_seq';
   static const lastSyncAt = 'last_sync_at';
   static const _batch = 500;
 
@@ -85,6 +108,7 @@ class SyncService {
     final statesUp = await _pushStates();
     await _pushSessions();
     final examsUp = await _pushExams();
+    final notesUp = await _pushNotes();
     final banks = await api.banks();
     final q = await _pullQuestions();
     final statesDown = await _pullStates();
@@ -92,6 +116,8 @@ class SyncService {
     final sessionsDown = await _pullSessions();
     final attemptsDown = await _pullAttempts();
     final examsDown = await _pullExams();
+    final notesDown = await _pullNotes();
+    final ai = await _fetchAiConfig();
     await _replaceBanks(banks);
     await _setMeta(lastSyncAt, _clock().millisecondsSinceEpoch);
     return SyncReport(
@@ -104,6 +130,10 @@ class SyncService {
       examsUploaded: examsUp,
       examsPulled: examsDown,
       sessionsPulled: sessionsDown,
+      notesUploaded: notesUp,
+      notesPulled: notesDown,
+      aiConfigUpdated: ai.updated,
+      aiWarning: ai.warning,
     );
   }
 
@@ -353,6 +383,102 @@ class SyncService {
     } on ApiException catch (e) {
       if (!_unsupported(e)) rethrow;
       return pulled;
+    }
+  }
+
+  static const _noteBatch = 100; // the server's per-request limit
+
+  Future<int> _pushNotes() async {
+    var total = 0;
+    try {
+      while (true) {
+        final rows = await (db.select(db.aiNotes)
+              ..where((n) => n.dirty.equals(true))
+              ..orderBy([(n) => OrderingTerm.asc(n.updatedAt)])
+              ..limit(_noteBatch))
+            .get();
+        if (rows.isEmpty) return total;
+        await api.uploadNotes([
+          for (final r in rows)
+            NoteDto(
+              questionId: r.questionId,
+              content: r.content,
+              updatedAt: r.updatedAt,
+              model: r.model,
+              promptVersion: r.promptVersion,
+              selected: (jsonDecode(r.selectedJson) as List).map((e) => (e as num).toInt()).toList(),
+              deviceId: deviceId,
+            ),
+        ]);
+        // Clear the flag only if the explanation was not regenerated while the upload was in flight.
+        for (final r in rows) {
+          await (db.update(db.aiNotes)..where((n) => n.questionId.equals(r.questionId) & n.updatedAt.equals(r.updatedAt)))
+              .write(const AiNotesCompanion(dirty: Value(false)));
+        }
+        total += rows.length;
+      }
+    } on ApiException catch (e) {
+      if (!_unsupported(e)) rethrow;
+      return total;
+    }
+  }
+
+  /// Last-writer-wins on updated_at, so a newer local explanation survives the pull.
+  Future<int> _pullNotes() async {
+    var pulled = 0;
+    var cursor = await _meta(noteCursor);
+    try {
+      while (true) {
+        final page = await api.syncNotes(since: cursor, limit: _noteBatch);
+        await db.transaction(() async {
+          for (final n in page.items) {
+            final local =
+                await (db.select(db.aiNotes)..where((x) => x.questionId.equals(n.questionId))).getSingleOrNull();
+            if (local != null && local.updatedAt >= n.updatedAt) continue;
+            await db.into(db.aiNotes).insertOnConflictUpdate(AiNotesCompanion.insert(
+                  questionId: n.questionId,
+                  content: n.content,
+                  model: Value(n.model),
+                  promptVersion: Value(n.promptVersion),
+                  selectedJson: Value(jsonEncode(n.selected)),
+                  updatedAt: n.updatedAt,
+                  dirty: const Value(false),
+                ));
+            pulled++;
+          }
+          await _setMeta(noteCursor, page.nextSeq);
+        });
+        cursor = page.nextSeq;
+        if (!page.hasMore) return pulled;
+      }
+    } on ApiException catch (e) {
+      if (!_unsupported(e)) rethrow;
+      return pulled;
+    }
+  }
+
+  /// Fetches the LLM configuration with the access token, when there is one. A
+  /// failure never fails the sync: a wrong token is reported, a server with the
+  /// feature off (404) drops the copy we hold, and anything else keeps what we have.
+  Future<({bool updated, String? warning})> _fetchAiConfig() async {
+    final store = aiConfig;
+    if (store == null || store.token.isEmpty) return (updated: false, warning: null);
+    try {
+      final fresh = await api.aiConfig(token: store.token);
+      final old = store.synced;
+      await store.setSynced(fresh);
+      final changed = old == null || old.toJson().toString() != fresh.toJson().toString();
+      return (updated: changed, warning: null);
+    } on ApiException catch (e) {
+      switch (e.status) {
+        case 401:
+          return (updated: false, warning: 'AI 访问令牌不对，没能更新 AI 配置');
+        case 404:
+          await store.setSynced(null);
+          return (updated: false, warning: null);
+        default:
+          return (updated: false, warning: null);
+      }
     }
   }
 

@@ -99,6 +99,28 @@ class Repository {
   Stream<QuestionState?> watchState(String questionId) =>
       (db.select(db.questionStates)..where((s) => s.questionId.equals(questionId))).watchSingleOrNull();
 
+  /// The AI explanation saved for a question, if any.
+  Stream<AiNote?> watchNote(String questionId) =>
+      (db.select(db.aiNotes)..where((n) => n.questionId.equals(questionId))).watchSingleOrNull();
+
+  /// Saves an explanation, replacing the one the question had, and queues it for upload.
+  Future<void> saveNote({
+    required String questionId,
+    required String content,
+    required String model,
+    required List<int> selected,
+    String promptVersion = '',
+  }) =>
+      db.into(db.aiNotes).insertOnConflictUpdate(AiNotesCompanion.insert(
+            questionId: questionId,
+            content: content,
+            model: Value(model),
+            promptVersion: Value(promptVersion),
+            selectedJson: Value(jsonEncode(selected)),
+            updatedAt: _now(),
+            dirty: const Value(true),
+          ));
+
   Future<QuestionState?> getState(String questionId) =>
       (db.select(db.questionStates)..where((s) => s.questionId.equals(questionId))).getSingleOrNull();
 

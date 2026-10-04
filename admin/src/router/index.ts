@@ -11,6 +11,7 @@ export const router = createRouter({
     { path: '/banks', name: 'banks', component: () => import('@/views/BanksView.vue'), meta: { title: '题库' } },
     { path: '/jobs', name: 'jobs', component: () => import('@/views/JobsView.vue'), meta: { title: '任务' } },
     { path: '/usage', name: 'usage', component: () => import('@/views/UsageView.vue'), meta: { title: '用量' } },
+    { path: '/ai', name: 'ai', component: () => import('@/views/AiView.vue'), meta: { title: 'AI 解读' } },
     { path: '/:pathMatch(.*)*', redirect: '/documents' },
   ],
 })

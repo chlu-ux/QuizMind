@@ -148,6 +148,48 @@ class FakeApi implements QuizApi {
     }
   }
 
+  /// Explanations other devices uploaded, and those this device uploaded.
+  final List<NoteDto> remoteNotes = [];
+  final List<NoteDto> uploadedNotes = [];
+  bool notesUnsupported = false;
+
+  /// What /ai/config answers: the configuration for [aiToken], else 401; null config = 404.
+  AiConfig? aiConfigOnServer;
+  String aiToken = 'tok';
+  final List<String> aiTokensSeen = [];
+
+  @override
+  Future<NotesPage> syncNotes({required int since, int limit = 100}) async {
+    _maybeFail();
+    if (notesUnsupported) throw ApiException('not found', status: 404);
+    final rows = [for (var i = 0; i < remoteNotes.length; i++) (n: remoteNotes[i], seq: i + 1)]
+        .where((r) => r.seq > since)
+        .toList();
+    final take = rows.take(limit).toList();
+    return NotesPage(
+      items: [for (final r in take) r.n],
+      nextSeq: take.isEmpty ? since : take.last.seq,
+      hasMore: rows.length > take.length,
+    );
+  }
+
+  @override
+  Future<void> uploadNotes(List<NoteDto> notes) async {
+    _maybeFail();
+    if (notesUnsupported) throw ApiException('not found', status: 404);
+    uploadedNotes.addAll(notes);
+  }
+
+  @override
+  Future<AiConfig> aiConfig({required String token}) async {
+    _maybeFail();
+    aiTokensSeen.add(token);
+    final c = aiConfigOnServer;
+    if (c == null) throw ApiException('not found', status: 404);
+    if (token != aiToken) throw ApiException('missing or invalid access token', status: 401);
+    return c;
+  }
+
   @override
   Future<void> flagQuestion(String id) async {
     _maybeFail();

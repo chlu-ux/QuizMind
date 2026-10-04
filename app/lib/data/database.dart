@@ -118,13 +118,29 @@ class ExamDrafts extends Table {
   Set<Column> get primaryKey => {bankId};
 }
 
-@DriftDatabase(tables: [Banks, Questions, Attempts, QuestionStates, PendingFlags, SyncMeta, Exams, ExamDrafts])
+/// The AI explanation of a question, one per question (a re-generated one replaces
+/// the old). [content] is Markdown; [selectedJson] the option indexes the learner had
+/// picked when asking. [dirty] true = changed locally, not uploaded.
+class AiNotes extends Table {
+  TextColumn get questionId => text()();
+  TextColumn get content => text()();
+  TextColumn get model => text().withDefault(const Constant(''))();
+  TextColumn get promptVersion => text().withDefault(const Constant(''))();
+  TextColumn get selectedJson => text().withDefault(const Constant('[]'))();
+  IntColumn get updatedAt => integer()();
+  BoolColumn get dirty => boolean().withDefault(const Constant(false))();
+
+  @override
+  Set<Column> get primaryKey => {questionId};
+}
+
+@DriftDatabase(tables: [Banks, Questions, Attempts, QuestionStates, PendingFlags, SyncMeta, Exams, ExamDrafts, AiNotes])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'quizmind'));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -133,6 +149,9 @@ class AppDatabase extends _$AppDatabase {
             // Exams used to live in shared preferences (see importLegacyExams).
             await m.createTable(exams);
             await m.createTable(examDrafts);
+          }
+          if (from < 3) {
+            await m.createTable(aiNotes);
           }
         },
       );

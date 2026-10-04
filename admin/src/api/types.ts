@@ -82,6 +82,10 @@ export interface DocumentDetail extends DocumentRow {
   chunks: ChunkRow[]
 }
 
+export interface DocumentContent extends DocumentRow {
+  content: string
+}
+
 export interface ImportResult {
   document: DocumentRow
   created: boolean
@@ -123,4 +127,47 @@ export interface ServerEvent {
   status: string
   kind?: string
   error?: string
+}
+
+export interface AIConfig {
+  enabled: boolean
+  base_url: string
+  model: string
+  max_tokens: number
+  temperature: number
+  app_token: string
+  api_key_set: boolean
+  api_key_hint: string
+}
+
+/** What is sent when saving; an empty api_key keeps the stored key. */
+export type AIConfigUpdate = Omit<AIConfig, 'api_key_set' | 'api_key_hint'> & { api_key: string }
+
+export interface AITestResult {
+  ok: boolean
+  reply?: string
+  error?: string
+  latency_ms: number
+}
+
+export interface AINote {
+  question_id: string
+  bank_id: string
+  bank_title: string
+  type: Question['type']
+  stem: string
+  options: string[]
+  answer: number[]
+  explanation: string
+  content: string
+  model: string
+  prompt_version: string
+  selected: number[]
+  device_id: string
+  updated_at: number
+}
+
+export interface AINotePage {
+  items: AINote[]
+  total: number
 }

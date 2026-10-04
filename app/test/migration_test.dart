@@ -27,4 +27,24 @@ void main() {
     expect((await db.select(db.exams).get()).single.itemsJson, '[]');
     expect((await db.select(db.attempts).get()).single.id, 'A');
   });
+
+  test('upgrading a version-2 database adds the AI explanation table', () async {
+    final db = AppDatabase(NativeDatabase.memory(setup: (raw) {
+      raw.execute('''
+        CREATE TABLE attempts (
+          id TEXT NOT NULL PRIMARY KEY, question_id TEXT NOT NULL, device_id TEXT NOT NULL,
+          answer_json TEXT NOT NULL, is_correct INTEGER NOT NULL, duration_ms INTEGER,
+          answered_at INTEGER NOT NULL, synced INTEGER NOT NULL DEFAULT 0
+        )''');
+      raw.execute("INSERT INTO attempts (id, question_id, device_id, answer_json, is_correct, answered_at) VALUES ('A', 'q', 'd', '[0]', 1, 5)");
+      raw.execute('PRAGMA user_version = 2');
+    }));
+    addTearDown(db.close);
+
+    expect(await db.select(db.aiNotes).get(), isEmpty);
+    await db.into(db.aiNotes).insert(AiNotesCompanion.insert(questionId: 'q', content: '讲解', updatedAt: 1));
+    final row = (await db.select(db.aiNotes).get()).single;
+    expect((row.model, row.selectedJson, row.dirty), ('', '[]', false));
+    expect((await db.select(db.attempts).get()).single.id, 'A');
+  });
 }

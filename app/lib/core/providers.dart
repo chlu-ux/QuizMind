@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/ai_chat.dart';
+import '../data/ai_config_store.dart';
 import '../data/api.dart';
+import '../data/models.dart';
 import '../data/database.dart';
 import '../data/exam_store.dart';
 import '../data/repository.dart';
@@ -25,6 +28,53 @@ final repositoryProvider = Provider<Repository>((ref) {
 });
 
 final sessionStoreProvider = Provider<SessionStore>((ref) => SessionStore(ref.watch(sharedPrefsProvider)));
+
+final aiConfigStoreProvider = Provider<AiConfigStore>((ref) => AiConfigStore(ref.watch(sharedPrefsProvider)));
+
+/// What the AI explanation settings look like right now; reload() after anything changes them behind its back (a sync).
+class AiSettings {
+  const AiSettings({required this.token, required this.synced, required this.manual});
+
+  final String token;
+  final AiConfig? synced;
+  final AiConfig? manual;
+
+  /// The configuration an explanation request will use, if any.
+  AiConfig? get effective {
+    final m = manual;
+    if (m != null && m.usable) return m;
+    final s = synced;
+    return s != null && s.usable ? s : null;
+  }
+
+  bool get usingManual => manual != null && manual!.usable;
+}
+
+final aiSettingsProvider = NotifierProvider<AiSettingsNotifier, AiSettings>(AiSettingsNotifier.new);
+
+class AiSettingsNotifier extends Notifier<AiSettings> {
+  AiConfigStore get _store => ref.read(aiConfigStoreProvider);
+
+  @override
+  AiSettings build() => _read();
+
+  AiSettings _read() => AiSettings(token: _store.token, synced: _store.synced, manual: _store.manual);
+
+  void reload() => state = _read();
+
+  Future<void> saveToken(String token) async {
+    await _store.setToken(token);
+    reload();
+  }
+
+  Future<void> saveManual(AiConfig? config) async {
+    await _store.setManual(config);
+    reload();
+  }
+}
+
+/// How explanations are fetched from the model; overridden in tests.
+final aiChatProvider = Provider<AiChat>((ref) => HttpAiChat());
 
 /// Rebuilt whenever the server address changes.
 final apiProvider = Provider<QuizApi>((ref) {
@@ -67,6 +117,7 @@ class SyncController extends Notifier<SyncStatus> {
         ref.read(databaseProvider),
         ref.read(apiProvider),
         sessions: ref.read(sessionStoreProvider),
+        aiConfig: ref.read(aiConfigStoreProvider),
         deviceId: ref.read(settingsProvider).deviceId,
       );
 
@@ -87,6 +138,7 @@ class SyncController extends Notifier<SyncStatus> {
     try {
       final report = await _service.run();
       if (!ref.mounted) return;
+      ref.read(aiSettingsProvider.notifier).reload();
       final last = await _service.lastSync();
       if (ref.mounted) state = SyncStatus(message: report.summary, lastSync: last);
     } on ApiException catch (e) {

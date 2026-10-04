@@ -247,4 +247,14 @@ void main() {
     await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
     await tester.runAsync(db.close);
   });
+
+  test('sequential position is remembered per bank and can be cleared', () async {
+    final store = await newStore();
+    expect(store.sequentialPosition('b1'), isNull);
+    await store.setSequentialPosition('b1', 'q7');
+    expect(store.sequentialPosition('b1'), 'q7');
+    expect(store.sequentialPosition('b2'), isNull);
+    await store.setSequentialPosition('b1', null);
+    expect(store.sequentialPosition('b1'), isNull);
+  });
 }

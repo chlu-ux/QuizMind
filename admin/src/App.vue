@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Collection, Document, List, Monitor, TrendCharts, Checked } from '@element-plus/icons-vue'
+import { Collection, Document, List, Monitor, TrendCharts, Checked, MagicStick } from '@element-plus/icons-vue'
 import { useAuth } from '@/stores/auth'
 import { useEvents } from '@/stores/events'
 
@@ -43,6 +43,7 @@ function logout() {
         <el-menu-item index="/banks"><el-icon><Collection /></el-icon>题库</el-menu-item>
         <el-menu-item index="/jobs"><el-icon><List /></el-icon>任务</el-menu-item>
         <el-menu-item index="/usage"><el-icon><TrendCharts /></el-icon>用量</el-menu-item>
+        <el-menu-item index="/ai"><el-icon><MagicStick /></el-icon>AI 解读</el-menu-item>
       </el-menu>
       <div class="aside-foot">
         <el-tooltip :content="events.connected ? '实时进度已连接' : '实时进度未连接，页面不会自动刷新'" placement="right">

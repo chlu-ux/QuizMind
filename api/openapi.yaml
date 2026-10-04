@@ -157,6 +157,50 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/UploadResult" }
         "400": { description: invalid exam }
+  /api/v1/sync/notes:
+    get:
+      summary: Incremental download of AI explanations (one per question)
+      parameters:
+        - { name: since, in: query, schema: { type: integer, default: 0 }, description: "server sync_seq cursor" }
+        - { name: limit, in: query, schema: { type: integer, default: 100, maximum: 100 } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NotesPage" }
+    post:
+      summary: Upload AI explanations (last writer wins on updated_at; unknown questions are ignored)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              maxItems: 100
+              items: { $ref: "#/components/schemas/AiNote" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UploadResult" }
+        "400": { description: invalid note }
+  /api/v1/ai/config:
+    get:
+      summary: The OpenAI-compatible endpoint the app calls for AI explanations (includes the API key)
+      description: >
+        Configured in the admin UI. Unlike the rest of /api/v1 this needs the access token
+        set there: `Authorization: Bearer <token>`. 404 means the feature is switched off,
+        and the app should drop its copy of the configuration.
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AiConfig" }
+        "401": { description: missing or wrong access token }
+        "404": { description: AI explanations are not enabled }
   /api/v1/questions/{id}/flag:
     post:
       summary: Report that a question looks wrong; two reports take it offline
@@ -325,6 +369,34 @@ components:
       required: [items, next_seq, has_more]
       properties:
         items: { type: array, items: { $ref: "#/components/schemas/SessionProgress" } }
+        next_seq: { type: integer }
+        has_more: { type: boolean }
+    AiConfig:
+      type: object
+      required: [base_url, api_key, model, max_tokens, temperature]
+      properties:
+        base_url: { type: string, description: "including the version segment; the app appends /chat/completions" }
+        api_key: { type: string }
+        model: { type: string }
+        max_tokens: { type: integer }
+        temperature: { type: number }
+    AiNote:
+      type: object
+      required: [question_id, content, updated_at]
+      properties:
+        question_id: { type: string }
+        content: { type: string, description: "Markdown, at most 64 KB" }
+        model: { type: string }
+        prompt_version: { type: string }
+        selected: { type: array, items: { type: integer }, description: "option indexes the learner had picked when asking" }
+        updated_at: { type: integer, description: "client clock, ms; last writer wins" }
+        device_id: { type: string }
+        sync_seq: { type: integer, description: "server-assigned; present on download" }
+    NotesPage:
+      type: object
+      required: [items, next_seq, has_more]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/AiNote" } }
         next_seq: { type: integer }
         has_more: { type: boolean }
     UploadResult:

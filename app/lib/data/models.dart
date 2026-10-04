@@ -337,3 +337,90 @@ class SessionsPage {
         hasMore: j['has_more'] as bool,
       );
 }
+
+/// How to reach the LLM for AI explanations: an OpenAI-compatible endpoint. Handed
+/// out by the server (see /api/v1/ai/config) or typed in by hand on this device.
+class AiConfig {
+  const AiConfig({
+    required this.baseUrl,
+    required this.apiKey,
+    required this.model,
+    this.maxTokens = 1500,
+    this.temperature = 0.3,
+  });
+
+  /// Including the version segment, e.g. https://api.openai.com/v1.
+  final String baseUrl;
+  final String apiKey;
+  final String model;
+  final int maxTokens;
+  final double temperature;
+
+  bool get usable => baseUrl.isNotEmpty && apiKey.isNotEmpty && model.isNotEmpty;
+
+  factory AiConfig.fromJson(Map<String, dynamic> j) => AiConfig(
+        baseUrl: (j['base_url'] as String?) ?? '',
+        apiKey: (j['api_key'] as String?) ?? '',
+        model: (j['model'] as String?) ?? '',
+        maxTokens: (j['max_tokens'] as num?)?.toInt() ?? 1500,
+        temperature: (j['temperature'] as num?)?.toDouble() ?? 0.3,
+      );
+
+  Map<String, dynamic> toJson() =>
+      {'base_url': baseUrl, 'api_key': apiKey, 'model': model, 'max_tokens': maxTokens, 'temperature': temperature};
+}
+
+/// An AI explanation as it travels to and from the server.
+class NoteDto {
+  NoteDto({
+    required this.questionId,
+    required this.content,
+    required this.updatedAt,
+    this.model = '',
+    this.promptVersion = '',
+    this.selected = const [],
+    this.deviceId = '',
+  });
+
+  final String questionId;
+  final String content;
+  final int updatedAt;
+  final String model;
+  final String promptVersion;
+  final List<int> selected;
+  final String deviceId;
+
+  factory NoteDto.fromJson(Map<String, dynamic> j) => NoteDto(
+        questionId: j['question_id'] as String,
+        content: j['content'] as String,
+        updatedAt: (j['updated_at'] as num).toInt(),
+        model: (j['model'] as String?) ?? '',
+        promptVersion: (j['prompt_version'] as String?) ?? '',
+        selected: ((j['selected'] as List?) ?? const []).map((e) => (e as num).toInt()).toList(),
+        deviceId: (j['device_id'] as String?) ?? '',
+      );
+
+  Map<String, dynamic> toJson() => {
+        'question_id': questionId,
+        'content': content,
+        'model': model,
+        'prompt_version': promptVersion,
+        'selected': selected,
+        'updated_at': updatedAt,
+        'device_id': deviceId,
+      };
+}
+
+class NotesPage {
+  NotesPage({required this.items, required this.nextSeq, required this.hasMore});
+
+  final List<NoteDto> items;
+  final int nextSeq;
+  final bool hasMore;
+
+  factory NotesPage.fromJson(Map<String, dynamic> j) => NotesPage(
+        items: (j['items'] as List).map((e) => NoteDto.fromJson(e as Map<String, dynamic>)).toList(),
+        nextSeq: (j['next_seq'] as num).toInt(),
+        hasMore: j['has_more'] as bool,
+      );
+}

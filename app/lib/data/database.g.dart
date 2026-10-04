@@ -3498,6 +3498,477 @@ class ExamDraftsCompanion extends UpdateCompanion<ExamDraftRow> {
   }
 }
 
+class $AiNotesTable extends AiNotes with TableInfo<$AiNotesTable, AiNote> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AiNotesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _questionIdMeta = const VerificationMeta(
+    'questionId',
+  );
+  @override
+  late final GeneratedColumn<String> questionId = GeneratedColumn<String>(
+    'question_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modelMeta = const VerificationMeta('model');
+  @override
+  late final GeneratedColumn<String> model = GeneratedColumn<String>(
+    'model',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _promptVersionMeta = const VerificationMeta(
+    'promptVersion',
+  );
+  @override
+  late final GeneratedColumn<String> promptVersion = GeneratedColumn<String>(
+    'prompt_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _selectedJsonMeta = const VerificationMeta(
+    'selectedJson',
+  );
+  @override
+  late final GeneratedColumn<String> selectedJson = GeneratedColumn<String>(
+    'selected_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _dirtyMeta = const VerificationMeta('dirty');
+  @override
+  late final GeneratedColumn<bool> dirty = GeneratedColumn<bool>(
+    'dirty',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("dirty" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    questionId,
+    content,
+    model,
+    promptVersion,
+    selectedJson,
+    updatedAt,
+    dirty,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'ai_notes';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AiNote> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('question_id')) {
+      context.handle(
+        _questionIdMeta,
+        questionId.isAcceptableOrUnknown(data['question_id']!, _questionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_questionIdMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('model')) {
+      context.handle(
+        _modelMeta,
+        model.isAcceptableOrUnknown(data['model']!, _modelMeta),
+      );
+    }
+    if (data.containsKey('prompt_version')) {
+      context.handle(
+        _promptVersionMeta,
+        promptVersion.isAcceptableOrUnknown(
+          data['prompt_version']!,
+          _promptVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('selected_json')) {
+      context.handle(
+        _selectedJsonMeta,
+        selectedJson.isAcceptableOrUnknown(
+          data['selected_json']!,
+          _selectedJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('dirty')) {
+      context.handle(
+        _dirtyMeta,
+        dirty.isAcceptableOrUnknown(data['dirty']!, _dirtyMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {questionId};
+  @override
+  AiNote map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AiNote(
+      questionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}question_id'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      model: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model'],
+      )!,
+      promptVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prompt_version'],
+      )!,
+      selectedJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}selected_json'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      dirty: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}dirty'],
+      )!,
+    );
+  }
+
+  @override
+  $AiNotesTable createAlias(String alias) {
+    return $AiNotesTable(attachedDatabase, alias);
+  }
+}
+
+class AiNote extends DataClass implements Insertable<AiNote> {
+  final String questionId;
+  final String content;
+  final String model;
+  final String promptVersion;
+  final String selectedJson;
+  final int updatedAt;
+  final bool dirty;
+  const AiNote({
+    required this.questionId,
+    required this.content,
+    required this.model,
+    required this.promptVersion,
+    required this.selectedJson,
+    required this.updatedAt,
+    required this.dirty,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['question_id'] = Variable<String>(questionId);
+    map['content'] = Variable<String>(content);
+    map['model'] = Variable<String>(model);
+    map['prompt_version'] = Variable<String>(promptVersion);
+    map['selected_json'] = Variable<String>(selectedJson);
+    map['updated_at'] = Variable<int>(updatedAt);
+    map['dirty'] = Variable<bool>(dirty);
+    return map;
+  }
+
+  AiNotesCompanion toCompanion(bool nullToAbsent) {
+    return AiNotesCompanion(
+      questionId: Value(questionId),
+      content: Value(content),
+      model: Value(model),
+      promptVersion: Value(promptVersion),
+      selectedJson: Value(selectedJson),
+      updatedAt: Value(updatedAt),
+      dirty: Value(dirty),
+    );
+  }
+
+  factory AiNote.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AiNote(
+      questionId: serializer.fromJson<String>(json['questionId']),
+      content: serializer.fromJson<String>(json['content']),
+      model: serializer.fromJson<String>(json['model']),
+      promptVersion: serializer.fromJson<String>(json['promptVersion']),
+      selectedJson: serializer.fromJson<String>(json['selectedJson']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+      dirty: serializer.fromJson<bool>(json['dirty']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'questionId': serializer.toJson<String>(questionId),
+      'content': serializer.toJson<String>(content),
+      'model': serializer.toJson<String>(model),
+      'promptVersion': serializer.toJson<String>(promptVersion),
+      'selectedJson': serializer.toJson<String>(selectedJson),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+      'dirty': serializer.toJson<bool>(dirty),
+    };
+  }
+
+  AiNote copyWith({
+    String? questionId,
+    String? content,
+    String? model,
+    String? promptVersion,
+    String? selectedJson,
+    int? updatedAt,
+    bool? dirty,
+  }) => AiNote(
+    questionId: questionId ?? this.questionId,
+    content: content ?? this.content,
+    model: model ?? this.model,
+    promptVersion: promptVersion ?? this.promptVersion,
+    selectedJson: selectedJson ?? this.selectedJson,
+    updatedAt: updatedAt ?? this.updatedAt,
+    dirty: dirty ?? this.dirty,
+  );
+  AiNote copyWithCompanion(AiNotesCompanion data) {
+    return AiNote(
+      questionId: data.questionId.present
+          ? data.questionId.value
+          : this.questionId,
+      content: data.content.present ? data.content.value : this.content,
+      model: data.model.present ? data.model.value : this.model,
+      promptVersion: data.promptVersion.present
+          ? data.promptVersion.value
+          : this.promptVersion,
+      selectedJson: data.selectedJson.present
+          ? data.selectedJson.value
+          : this.selectedJson,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      dirty: data.dirty.present ? data.dirty.value : this.dirty,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AiNote(')
+          ..write('questionId: $questionId, ')
+          ..write('content: $content, ')
+          ..write('model: $model, ')
+          ..write('promptVersion: $promptVersion, ')
+          ..write('selectedJson: $selectedJson, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('dirty: $dirty')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    questionId,
+    content,
+    model,
+    promptVersion,
+    selectedJson,
+    updatedAt,
+    dirty,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AiNote &&
+          other.questionId == this.questionId &&
+          other.content == this.content &&
+          other.model == this.model &&
+          other.promptVersion == this.promptVersion &&
+          other.selectedJson == this.selectedJson &&
+          other.updatedAt == this.updatedAt &&
+          other.dirty == this.dirty);
+}
+
+class AiNotesCompanion extends UpdateCompanion<AiNote> {
+  final Value<String> questionId;
+  final Value<String> content;
+  final Value<String> model;
+  final Value<String> promptVersion;
+  final Value<String> selectedJson;
+  final Value<int> updatedAt;
+  final Value<bool> dirty;
+  final Value<int> rowid;
+  const AiNotesCompanion({
+    this.questionId = const Value.absent(),
+    this.content = const Value.absent(),
+    this.model = const Value.absent(),
+    this.promptVersion = const Value.absent(),
+    this.selectedJson = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.dirty = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AiNotesCompanion.insert({
+    required String questionId,
+    required String content,
+    this.model = const Value.absent(),
+    this.promptVersion = const Value.absent(),
+    this.selectedJson = const Value.absent(),
+    required int updatedAt,
+    this.dirty = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : questionId = Value(questionId),
+       content = Value(content),
+       updatedAt = Value(updatedAt);
+  static Insertable<AiNote> custom({
+    Expression<String>? questionId,
+    Expression<String>? content,
+    Expression<String>? model,
+    Expression<String>? promptVersion,
+    Expression<String>? selectedJson,
+    Expression<int>? updatedAt,
+    Expression<bool>? dirty,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (questionId != null) 'question_id': questionId,
+      if (content != null) 'content': content,
+      if (model != null) 'model': model,
+      if (promptVersion != null) 'prompt_version': promptVersion,
+      if (selectedJson != null) 'selected_json': selectedJson,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (dirty != null) 'dirty': dirty,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AiNotesCompanion copyWith({
+    Value<String>? questionId,
+    Value<String>? content,
+    Value<String>? model,
+    Value<String>? promptVersion,
+    Value<String>? selectedJson,
+    Value<int>? updatedAt,
+    Value<bool>? dirty,
+    Value<int>? rowid,
+  }) {
+    return AiNotesCompanion(
+      questionId: questionId ?? this.questionId,
+      content: content ?? this.content,
+      model: model ?? this.model,
+      promptVersion: promptVersion ?? this.promptVersion,
+      selectedJson: selectedJson ?? this.selectedJson,
+      updatedAt: updatedAt ?? this.updatedAt,
+      dirty: dirty ?? this.dirty,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (questionId.present) {
+      map['question_id'] = Variable<String>(questionId.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (model.present) {
+      map['model'] = Variable<String>(model.value);
+    }
+    if (promptVersion.present) {
+      map['prompt_version'] = Variable<String>(promptVersion.value);
+    }
+    if (selectedJson.present) {
+      map['selected_json'] = Variable<String>(selectedJson.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (dirty.present) {
+      map['dirty'] = Variable<bool>(dirty.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AiNotesCompanion(')
+          ..write('questionId: $questionId, ')
+          ..write('content: $content, ')
+          ..write('model: $model, ')
+          ..write('promptVersion: $promptVersion, ')
+          ..write('selectedJson: $selectedJson, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('dirty: $dirty, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3509,6 +3980,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SyncMetaTable syncMeta = $SyncMetaTable(this);
   late final $ExamsTable exams = $ExamsTable(this);
   late final $ExamDraftsTable examDrafts = $ExamDraftsTable(this);
+  late final $AiNotesTable aiNotes = $AiNotesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3522,6 +3994,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     syncMeta,
     exams,
     examDrafts,
+    aiNotes,
   ];
 }
 
@@ -5409,6 +5882,251 @@ typedef $$ExamDraftsTableProcessedTableManager =
       ExamDraftRow,
       PrefetchHooks Function()
     >;
+typedef $$AiNotesTableCreateCompanionBuilder = AiNotesCompanion Function({
+  required String questionId,
+  required String content,
+  Value<String> model,
+  Value<String> promptVersion,
+  Value<String> selectedJson,
+  required int updatedAt,
+  Value<bool> dirty,
+  Value<int> rowid,
+});
+typedef $$AiNotesTableUpdateCompanionBuilder = AiNotesCompanion Function({
+  Value<String> questionId,
+  Value<String> content,
+  Value<String> model,
+  Value<String> promptVersion,
+  Value<String> selectedJson,
+  Value<int> updatedAt,
+  Value<bool> dirty,
+  Value<int> rowid,
+});
+
+class $$AiNotesTableFilterComposer
+    extends Composer<_$AppDatabase, $AiNotesTable> {
+  $$AiNotesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get questionId => $composableBuilder(
+    column: $table.questionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get promptVersion => $composableBuilder(
+    column: $table.promptVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get selectedJson => $composableBuilder(
+    column: $table.selectedJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get dirty => $composableBuilder(
+    column: $table.dirty,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AiNotesTableOrderingComposer
+    extends Composer<_$AppDatabase, $AiNotesTable> {
+  $$AiNotesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get questionId => $composableBuilder(
+    column: $table.questionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get promptVersion => $composableBuilder(
+    column: $table.promptVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get selectedJson => $composableBuilder(
+    column: $table.selectedJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get dirty => $composableBuilder(
+    column: $table.dirty,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AiNotesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AiNotesTable> {
+  $$AiNotesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get questionId => $composableBuilder(
+    column: $table.questionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<String> get model =>
+      $composableBuilder(column: $table.model, builder: (column) => column);
+
+  GeneratedColumn<String> get promptVersion => $composableBuilder(
+    column: $table.promptVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get selectedJson => $composableBuilder(
+    column: $table.selectedJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get dirty =>
+      $composableBuilder(column: $table.dirty, builder: (column) => column);
+}
+
+class $$AiNotesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AiNotesTable,
+          AiNote,
+          $$AiNotesTableFilterComposer,
+          $$AiNotesTableOrderingComposer,
+          $$AiNotesTableAnnotationComposer,
+          $$AiNotesTableCreateCompanionBuilder,
+          $$AiNotesTableUpdateCompanionBuilder,
+          (AiNote, BaseReferences<_$AppDatabase, $AiNotesTable, AiNote>),
+          AiNote,
+          PrefetchHooks Function()
+        > {
+  $$AiNotesTableTableManager(_$AppDatabase db, $AiNotesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AiNotesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AiNotesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AiNotesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> questionId = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<String> model = const Value.absent(),
+                Value<String> promptVersion = const Value.absent(),
+                Value<String> selectedJson = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<bool> dirty = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AiNotesCompanion(
+                questionId: questionId,
+                content: content,
+                model: model,
+                promptVersion: promptVersion,
+                selectedJson: selectedJson,
+                updatedAt: updatedAt,
+                dirty: dirty,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String questionId,
+                required String content,
+                Value<String> model = const Value.absent(),
+                Value<String> promptVersion = const Value.absent(),
+                Value<String> selectedJson = const Value.absent(),
+                required int updatedAt,
+                Value<bool> dirty = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AiNotesCompanion.insert(
+                questionId: questionId,
+                content: content,
+                model: model,
+                promptVersion: promptVersion,
+                selectedJson: selectedJson,
+                updatedAt: updatedAt,
+                dirty: dirty,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$AiNotesTable, AiNote>(table),
+                  BaseReferences<_$AppDatabase, $AiNotesTable, AiNote>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AiNotesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AiNotesTable,
+      AiNote,
+      $$AiNotesTableFilterComposer,
+      $$AiNotesTableOrderingComposer,
+      $$AiNotesTableAnnotationComposer,
+      $$AiNotesTableCreateCompanionBuilder,
+      $$AiNotesTableUpdateCompanionBuilder,
+      (AiNote, BaseReferences<_$AppDatabase, $AiNotesTable, AiNote>),
+      AiNote,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5429,4 +6147,6 @@ class $AppDatabaseManager {
       $$ExamsTableTableManager(_db, _db.exams);
   $$ExamDraftsTableTableManager get examDrafts =>
       $$ExamDraftsTableTableManager(_db, _db.examDrafts);
+  $$AiNotesTableTableManager get aiNotes =>
+      $$AiNotesTableTableManager(_db, _db.aiNotes);
 }

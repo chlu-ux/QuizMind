@@ -200,6 +200,17 @@ class SessionStore {
     return true;
   }
 
+  // ---- sequential position (this device only) ----
+
+  static String _seqKey(String scope) => 'quiz.seqpos.$scope';
+
+  /// Id of the question the learner was on when they last left "按顺序刷题" in
+  /// [scope]; null when they have not started or went through the whole bank.
+  String? sequentialPosition(String scope) => _prefs.getString(_seqKey(scope));
+
+  Future<void> setSequentialPosition(String scope, String? questionId) =>
+      questionId == null ? _prefs.remove(_seqKey(scope)) : _prefs.setString(_seqKey(scope), questionId);
+
   int get cursor => _prefs.getInt(_cursorKey) ?? 0;
 
   Future<void> setCursor(int seq) => _prefs.setInt(_cursorKey, seq);

@@ -46,6 +46,7 @@ func New(svc *service.Service, hub *events.Hub, token string, static fs.FS, log 
 		r.Get("/documents", a.listDocuments)
 		r.Post("/documents", a.uploadDocument)
 		r.Get("/documents/{id}", a.getDocument)
+		r.Get("/documents/{id}/content", a.getDocumentContent)
 		r.Post("/documents/{id}/retry", a.retryDocument)
 
 		r.Get("/jobs", a.listJobs)
@@ -60,6 +61,11 @@ func New(svc *service.Service, hub *events.Hub, token string, static fs.FS, log 
 		r.Post("/questions/{id}/reject", a.rejectQuestion)
 
 		r.Get("/usage", a.usage)
+
+		r.Get("/ai", a.getAIConfig)
+		r.Put("/ai", a.putAIConfig)
+		r.Post("/ai/test", a.testAIConfig)
+		r.Get("/ai/notes", a.listAINotes)
 	})
 
 	// The quiz client API is deliberately unauthenticated: practising needs no token.
@@ -74,7 +80,11 @@ func New(svc *service.Service, hub *events.Hub, token string, static fs.FS, log 
 		r.Post("/sync/states", a.syncStatesUp)
 		r.Get("/sync/sessions", a.syncSessionsDown)
 		r.Post("/sync/sessions", a.syncSessionsUp)
+		r.Get("/sync/notes", a.syncNotesDown)
+		r.Post("/sync/notes", a.syncNotesUp)
 		r.Post("/questions/{id}/flag", a.flagQuestion)
+		// Unlike the rest, this one hands out the LLM API key, so it needs the app access token.
+		r.Get("/ai/config", a.appAIConfig)
 	})
 
 	r.NotFound(a.serveUI)
@@ -144,6 +154,8 @@ func (a *API) fail(w http.ResponseWriter, r *http.Request, err error) {
 	switch {
 	case errors.Is(err, service.ErrNotFound):
 		writeError(w, http.StatusNotFound, err.Error())
+	case errors.Is(err, service.ErrUnauthorized):
+		writeError(w, http.StatusUnauthorized, "missing or invalid access token")
 	case errors.Is(err, service.ErrInvalid):
 		writeError(w, http.StatusBadRequest, strings.TrimPrefix(err.Error(), service.ErrInvalid.Error()+": "))
 	default:

@@ -679,3 +679,194 @@ func TestSyncExams(t *testing.T) {
 }
 
 func itoa(n int64) string { return strconv.FormatInt(n, 10) }
+
+func TestAIConfigAccess(t *testing.T) {
+	s := newServer(t)
+
+	// An LLM endpoint stub, to check the admin "test" button end to end.
+	llmSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer sk-secret-key-1234" || r.URL.Path != "/v1/chat/completions" {
+			http.Error(w, `{"error":"bad key"}`, 401)
+			return
+		}
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"content":"pong"}}]}`))
+	}))
+	defer llmSrv.Close()
+
+	appGet := func(auth string) *http.Response {
+		r, _ := http.NewRequest("GET", s.ts.URL+"/api/v1/ai/config", nil)
+		if auth != "" {
+			r.Header.Set("Authorization", "Bearer "+auth)
+		}
+		resp, err := http.DefaultClient.Do(r)
+		require.NoError(t, err)
+		resp.Body.Close()
+		return resp
+	}
+
+	assert.Equal(t, 404, appGet("").StatusCode, "not configured: feature off")
+
+	// Enabling needs the whole configuration and an access token.
+	s.do(t, "PUT", "/admin/ai", `{"enabled":true,"base_url":"`+llmSrv.URL+`/v1","api_key":"sk-secret-key-1234","model":"m"}`, 400, nil)
+	s.do(t, "PUT", "/admin/ai", `{"enabled":true,"base_url":"ftp://x","api_key":"k","model":"m","app_token":"1234"}`, 400, nil)
+	s.do(t, "PUT", "/admin/ai", `{"enabled":false,"app_token":"ab"}`, 400, nil)
+
+	var view map[string]any
+	s.do(t, "PUT", "/admin/ai", `{"enabled":true,"base_url":"`+llmSrv.URL+`/v1/","api_key":"sk-secret-key-1234","model":"m","app_token":"1234","max_tokens":800,"temperature":0.5}`, 200, &view)
+	assert.Equal(t, true, view["api_key_set"])
+	assert.NotContains(t, view, "api_key", "the admin view never returns the key")
+	assert.Equal(t, llmSrv.URL+"/v1", view["base_url"], "trailing slash is trimmed")
+
+	// Saving again with an empty key keeps the stored one.
+	s.do(t, "PUT", "/admin/ai", `{"enabled":true,"base_url":"`+llmSrv.URL+`/v1","api_key":"","model":"m2","app_token":"1234","max_tokens":800,"temperature":0.5}`, 200, &view)
+	assert.Equal(t, true, view["api_key_set"])
+
+	var test struct {
+		OK    bool
+		Reply string
+		Error string
+	}
+	s.do(t, "POST", "/admin/ai/test", "", 200, &test)
+	assert.True(t, test.OK, test.Error)
+	assert.Equal(t, "pong", test.Reply)
+
+	// The app gets the key only with the token.
+	assert.Equal(t, 401, appGet("").StatusCode)
+	assert.Equal(t, 401, appGet("wrong").StatusCode)
+	var cfg struct {
+		BaseURL   string `json:"base_url"`
+		APIKey    string `json:"api_key"`
+		Model     string
+		MaxTokens int `json:"max_tokens"`
+	}
+	r, _ := http.NewRequest("GET", s.ts.URL+"/api/v1/ai/config", nil)
+	r.Header.Set("Authorization", "Bearer 1234")
+	resp, err := http.DefaultClient.Do(r)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	require.Equal(t, 200, resp.StatusCode)
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&cfg))
+	assert.Equal(t, "sk-secret-key-1234", cfg.APIKey)
+	assert.Equal(t, "m2", cfg.Model)
+	assert.Equal(t, 800, cfg.MaxTokens)
+
+	// Switching it off withdraws the configuration, even for a valid token.
+	s.do(t, "PUT", "/admin/ai", `{"enabled":false,"base_url":"`+llmSrv.URL+`/v1","model":"m2","app_token":"1234"}`, 200, nil)
+	assert.Equal(t, 404, appGet("1234").StatusCode)
+
+	// The admin endpoints stay behind the admin token.
+	resp2 := s.req(t, "GET", "/admin/ai", nil, "", false)
+	resp2.Body.Close()
+	assert.Equal(t, 401, resp2.StatusCode)
+}
+
+func TestSyncNotes(t *testing.T) {
+	s := newServer(t)
+	qid := s.publishOne(t)
+
+	type note struct {
+		QuestionID    string `json:"question_id"`
+		Content       string `json:"content"`
+		Model         string `json:"model"`
+		PromptVersion string `json:"prompt_version"`
+		Selected      []int  `json:"selected"`
+		UpdatedAt     int64  `json:"updated_at"`
+		DeviceID      string `json:"device_id"`
+		SyncSeq       int64  `json:"sync_seq"`
+	}
+	type page struct {
+		Items   []note
+		NextSeq int64 `json:"next_seq"`
+		HasMore bool  `json:"has_more"`
+	}
+	put := func(content string, updated int64, device string) (res struct{ Accepted, Ignored int }) {
+		body, _ := json.Marshal([]note{{QuestionID: qid, Content: content, Model: "m", PromptVersion: "v1", Selected: []int{1}, UpdatedAt: updated, DeviceID: device}})
+		s.do(t, "POST", "/api/v1/sync/notes", string(body), 200, &res)
+		return res
+	}
+
+	assert.Equal(t, 1, put("第一版", 100, "a").Accepted)
+	assert.Equal(t, 1, put("重新生成", 200, "b").Accepted, "a newer explanation replaces the old one")
+	assert.Equal(t, 1, put("过期的", 150, "a").Ignored, "an older one is ignored")
+
+	var p page
+	s.do(t, "GET", "/api/v1/sync/notes?since=0", "", 200, &p)
+	require.Len(t, p.Items, 1)
+	assert.Equal(t, "重新生成", p.Items[0].Content)
+	assert.Equal(t, []int{1}, p.Items[0].Selected)
+	assert.Equal(t, "b", p.Items[0].DeviceID)
+
+	var none page
+	s.do(t, "GET", "/api/v1/sync/notes?since="+itoa(p.NextSeq), "", 200, &none)
+	assert.Empty(t, none.Items)
+
+	// Unknown questions are skipped; bad input is rejected.
+	var res struct{ Accepted, Ignored int }
+	s.do(t, "POST", "/api/v1/sync/notes", `[{"question_id":"nope","content":"x","updated_at":1}]`, 200, &res)
+	assert.Equal(t, 1, res.Ignored)
+	s.do(t, "POST", "/api/v1/sync/notes", `[{"question_id":"`+qid+`","content":"  ","updated_at":1}]`, 400, nil)
+	s.do(t, "POST", "/api/v1/sync/notes", `[{"question_id":"`+qid+`","content":"x","updated_at":0}]`, 400, nil)
+}
+
+func TestAdminListAINotes(t *testing.T) {
+	s := newServer(t)
+	qid := s.publishOne(t)
+
+	type page struct {
+		Items []struct {
+			QuestionID string   `json:"question_id"`
+			BankTitle  string   `json:"bank_title"`
+			Stem       string   `json:"stem"`
+			Options    []string `json:"options"`
+			Answer     []int    `json:"answer"`
+			Content    string   `json:"content"`
+			Selected   []int    `json:"selected"`
+		}
+		Total int64
+	}
+	var p page
+	s.do(t, "GET", "/admin/ai/notes", "", 200, &p)
+	assert.Empty(t, p.Items)
+	assert.Zero(t, p.Total)
+
+	var res struct{ Accepted, Ignored int }
+	body := `[{"question_id":"` + qid + `","content":"## 解析\n因为……","model":"m","selected":[1],"updated_at":100,"device_id":"a"}]`
+	s.do(t, "POST", "/api/v1/sync/notes", body, 200, &res)
+
+	s.do(t, "GET", "/admin/ai/notes", "", 200, &p)
+	require.Len(t, p.Items, 1)
+	assert.Equal(t, int64(1), p.Total)
+	assert.Equal(t, qid, p.Items[0].QuestionID)
+	assert.NotEmpty(t, p.Items[0].Stem)
+	assert.NotEmpty(t, p.Items[0].Options)
+	assert.NotEmpty(t, p.Items[0].BankTitle)
+	assert.Equal(t, []int{1}, p.Items[0].Selected)
+	assert.Contains(t, p.Items[0].Content, "因为")
+
+	s.do(t, "GET", "/admin/ai/notes?search=因为", "", 200, &p)
+	assert.Len(t, p.Items, 1)
+	s.do(t, "GET", "/admin/ai/notes?search=不存在的内容", "", 200, &p)
+	assert.Empty(t, p.Items)
+	assert.Zero(t, p.Total)
+	s.do(t, "GET", "/admin/ai/notes?bank_id=nope", "", 200, &p)
+	assert.Empty(t, p.Items)
+}
+
+func TestDocumentContent(t *testing.T) {
+	s := newServer(t)
+	resp := s.upload(t, "notes.md", doc)
+	require.Equal(t, 201, resp.StatusCode)
+	var res struct{ Document struct{ ID string } }
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&res))
+	resp.Body.Close()
+
+	var d struct {
+		ID, Content string
+		SourcePath  string `json:"source_path"`
+	}
+	s.do(t, "GET", "/admin/documents/"+res.Document.ID+"/content", "", 200, &d)
+	assert.Equal(t, res.Document.ID, d.ID)
+	assert.Equal(t, "notes.md", d.SourcePath)
+	assert.Equal(t, doc, d.Content, "the stored source comes back unchanged")
+	s.do(t, "GET", "/admin/documents/nope/content", "", 404, nil)
+}

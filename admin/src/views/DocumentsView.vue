@@ -5,7 +5,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import type { UploadRequestOptions } from 'element-plus'
 import { api, errorMessage } from '@/api/client'
-import type { Bank, DocumentDetail, DocumentRow } from '@/api/types'
+import type { Bank, DocumentContent, DocumentDetail, DocumentRow } from '@/api/types'
+import Markdown from '@/components/Markdown.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import { useEvents } from '@/stores/events'
 import { debounce } from '@/utils/debounce'
@@ -20,6 +21,10 @@ const bankId = ref('')
 const loading = ref(false)
 const drawer = ref(false)
 const detail = ref<DocumentDetail | null>(null)
+const viewer = ref(false)
+const viewing = ref<DocumentContent | null>(null)
+const viewerLoading = ref(false)
+const viewMode = ref<'rendered' | 'source'>('rendered')
 
 const visibleDocs = computed(() => (bankId.value ? docs.value.filter((d) => d.bank_id === bankId.value) : docs.value))
 const bankTitle = (id: string) => banks.value.find((b) => b.id === id)?.title ?? id
@@ -74,6 +79,20 @@ async function open(id: string) {
     drawer.value = true
   } catch (e) {
     ElMessage.error(errorMessage(e))
+  }
+}
+
+async function view(id: string) {
+  viewerLoading.value = true
+  viewing.value = null
+  viewer.value = true
+  try {
+    viewing.value = await api.documentContent(id)
+  } catch (e) {
+    viewer.value = false
+    ElMessage.error(errorMessage(e))
+  } finally {
+    viewerLoading.value = false
   }
 }
 
@@ -149,13 +168,30 @@ onBeforeUnmount(() => {
         </template>
       </el-table-column>
       <el-table-column label="更新" width="105"><template #default="{ row }">{{ formatTime(row.updated_at) }}</template></el-table-column>
-      <el-table-column label="" width="150" align="right" fixed="right">
+      <el-table-column label="" width="190" align="right" fixed="right">
         <template #default="{ row }">
           <el-button v-if="row.status === 'failed'" size="small" type="warning" @click="retry(row.id)">重试</el-button>
+          <el-button size="small" type="primary" plain @click="view(row.id)">查看原文</el-button>
           <el-button size="small" @click="open(row.id)">切块</el-button>
         </template>
       </el-table-column>
     </el-table>
+
+    <el-drawer v-model="viewer" :title="viewing?.title ?? '文档'" size="min(860px, 100%)">
+      <div v-loading="viewerLoading" class="viewer">
+        <template v-if="viewing">
+          <div class="viewer-head">
+            <span class="muted mono small">{{ viewing.source_path }} · {{ viewing.content.length }} 字符</span>
+            <el-radio-group v-model="viewMode" size="small">
+              <el-radio-button value="rendered">渲染</el-radio-button>
+              <el-radio-button value="source">源码</el-radio-button>
+            </el-radio-group>
+          </div>
+          <Markdown v-if="viewMode === 'rendered'" :source="viewing.content" />
+          <pre v-else class="source">{{ viewing.content }}</pre>
+        </template>
+      </div>
+    </el-drawer>
 
     <el-drawer v-model="drawer" :title="detail?.title" size="560px">
       <template v-if="detail">
@@ -185,5 +221,8 @@ onBeforeUnmount(() => {
 .c.warn { color: var(--el-color-warning); }
 .c.ok { color: var(--el-color-success); }
 .c.bad { color: var(--el-color-danger); }
+.viewer { min-height: 120px; }
+.viewer-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; gap: 12px; }
+.source { margin: 0; white-space: pre-wrap; word-break: break-word; font: 13px/1.6 ui-monospace, Menlo, monospace; }
 .spin { margin-left: 4px; vertical-align: middle; }
 </style>

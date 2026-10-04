@@ -148,14 +148,13 @@ Markdown 文档 → AI 生成题目 → 自动校验 → 人工审核 → 发布
 
 | 问题 | 做法 |
 |---|---|
-| 开机自启、崩溃重启 | 用 **launchd**（`~/Library/LaunchAgents/com.quizmind.server.plist`，`RunAtLoad` + `KeepAlive`）托管，日志落到 `~/Library/Logs/quizmind/`。一次性安装：`server/run.sh install`（`uninstall` 卸载，`plist` 预览将写入的内容）；装好后 `start/stop/restart/status/logs` 和 `deploy.sh` 都改走 launchd。plist 只启动 `run.sh serve`，由它读取 `.env` / `.token`，所以密钥不会写进 plist |
-| Mac 休眠导致服务不可达 | 长时间生成任务时用 `caffeinate -i` 防休眠，或在 launchd 中配合 `pmset`；休眠期间 Android 仍可**离线刷题**，唤醒后自动同步 |
+| Mac 休眠导致服务不可达 | 长时间生成任务时用 `caffeinate -i` 防休眠；休眠期间 Android 仍可**离线刷题**，唤醒后自动同步 |
 | Android 如何访问 Mac（**已定：仅局域网**） | 手机和 Mac 连同一个家庭 Wi-Fi，App 里配置 `http://<Mac 的局域网 IP>:8080`。出门在外无法同步，但离线刷题不受影响；以后需要外网访问再加 Tailscale |
 | Mac 的 IP 变化 | 在路由器里给 Mac 做 **DHCP 地址保留**（固定 IP）。App 设置页里服务端地址可编辑，不写死。不依赖 `.local`（mDNS）主机名，Android 上解析不稳定 |
 | Android 明文 HTTP 限制 | Android 9+ 默认禁止明文 HTTP。在 `network_security_config.xml` 里**仅对该局域网 IP 放行明文**（`cleartextTrafficPermitted`），其余域名仍强制 HTTPS |
 | 监听地址 | 配置项 `listen`，默认 `127.0.0.1:8080`（只供 macOS 客户端和 Admin 使用）；要让手机访问时改为 `0.0.0.0:8080` 或 Mac 的局域网 IP。首次监听时 macOS 防火墙会弹窗，需允许。Token 鉴权必开；**不要在咖啡馆等公共 Wi-Fi 下开启局域网监听** |
 | 数据位置 | `~/Library/Application Support/QuizMind/app.db`，纳入 Time Machine；另外定时 `VACUUM INTO` 备份到其他目录 / 网盘 |
-| API Key | 放 `server/.env`（`ANTHROPIC_API_KEY=...`）和 `server/.token`，由 `run.sh serve` 启动时读取；两个文件都不进仓库，也不写进 plist |
+| API Key | 放 `server/.env`（`ANTHROPIC_API_KEY=...`）和 `server/.token`，由 `run.sh` 启动时读取；两个文件都不进仓库 |
 
 由于数据在本机，Litestream 不再是必需项，定时备份即可。
 
@@ -556,6 +555,31 @@ POST /api/v1/sync/exams                             body: [同上，最多 10 �
 
 `POST /api/v1/questions/{id}/flag`：累计 `flag_count`，达到阈值（如 2）自动置为 `needs_review` 并下线，等待重审。
 
+### 7.6 AI 解读（2026-10-03，仅 Flutter 端）
+
+刷题页答题后可以让大模型讲解这道题。**由客户端直接调用 OpenAI 兼容接口**，服务端只保存配置、下发配置、收存解读文本，所以没有服务端时也能解读（只要手机能连上 LLM）。
+
+```
+管理页「AI 解读」（Base URL / API Key / 模型 / 访问令牌）
+      │  app_setting 表，key = "ai"
+      ▼
+GET /api/v1/ai/config      Authorization: Bearer <访问令牌>
+→ { base_url, api_key, model, max_tokens, temperature }
+      │  同步时拉取，存到客户端 shared_preferences，离线也能用
+      ▼
+客户端 POST {base_url}/chat/completions（stream: true）→ 流式显示 → 完成后写入本机 ai_notes 表
+      │  dirty=true，同步时上传
+      ▼
+GET/POST /api/v1/sync/notes   → 服务端 ai_note 表（每题一条，覆盖式）
+```
+
+- **配置在服务端、同步到客户端**：配置存在 `app_setting`（SQLite），在管理页编辑；管理页不回显 API Key（只显示 `sk-…a1b2`），保存时留空表示不改。管理页有「测试已保存的配置」按钮，由服务端发一次最小请求。
+- **访问令牌**：`/api/v1/ai/config` 会交出 API Key，所以不像其他 `/api/v1/*` 那样免鉴权，要带管理页里设置的访问令牌（一个简单的字符串，≥4 位，和管理后台的 `QUIZMIND_TOKEN` 是两回事）。未设置令牌则没有客户端能取；功能关闭时返回 404，客户端据此删掉本机副本；令牌错返回 401（同步不失败，只提示）。客户端在设置页输入令牌，同步时自动取配置。
+- **没连过服务端**：客户端设置页可以手动填一份本机配置（Base URL / Key / 模型）。**本机配置优先于服务器配置**，清除后回到服务器配置。
+- **解读文本**：每题一条，`question_id` 为主键，重新解读覆盖旧文本；同步按 `updated_at` 后写覆盖先写（和 `question_state` 一致），行上带服务端 `sync_seq` 供其他设备增量拉取。字段：`content`（Markdown）、`model`、`prompt_version`（客户端提示词版本，现为 `explain.v1`）、`selected`（提问时所选选项）。内容 ≤ 64 KB，未知题目的笔记被忽略。流式生成过程中中止或出错不保存半截文本。
+- **提示词**：题干、选项、标准答案、学员所选、题库解析、原文出处；选项不带字母（学员看到的是打乱后的顺序）；要求以标准答案为准，确信有误时明确写「疑似题目有误」。
+- **局限**：客户端直连意味着单次 `max_tokens` 之外没有每日用量上限（服务端 `Guard` 管不到）；API Key 会明文存在客户端本地。请求体带 `max_tokens` 和 `temperature`，个别新模型（如要求 `max_completion_tokens` 的）可能不接受。
+
 ---
 
 ## 8. API 概览
@@ -567,8 +591,10 @@ POST /api/v1/sync/exams                             body: [同上，最多 10 �
 | Admin：任务 | `GET /admin/jobs`、`POST /admin/jobs/{id}/retry`、`GET /admin/events`（SSE） | SSE 用 `?access_token=` 传 Token（EventSource 不能设请求头），日志不记录查询串 |
 | Admin：审核 | `GET /admin/questions`、`GET/PATCH /admin/questions/{id}`、`POST …/approve`、`POST …/reject`、`POST /admin/questions/bulk` | 详情带原文块与标题路径，供审核页高亮 `source_quote` |
 | Admin：成本 | `GET /admin/usage?days=30` | 按天、按模型汇总调用次数和 token |
+| Admin：AI 解读 | `GET/PUT /admin/ai`、`POST /admin/ai/test` | LLM 配置与访问令牌（不回显 Key）；测试已保存的配置 |
 | App：同步 | `/api/v1/sync/*` | §7 |
 | App：题库 | `/api/v1/banks`、`/api/v1/questions/{id}/flag` | |
+| App：AI 解读 | `GET /api/v1/ai/config`（需访问令牌）、`/api/v1/sync/notes` | §7.6 |
 | 运维 | `/healthz` | |
 
 文档只通过 Admin 网页手动上传：`POST /admin/documents`（`multipart/form-data`，接收 `.md` / `.markdown` 文件，限制大小如 2MB，校验为合法 UTF-8）。同一文档重新上传时，按 `source_path`（文件名）匹配已有文档，走 §5.2 的增量更新。暂不提供 CLI 批量导入。
@@ -581,7 +607,7 @@ POST /api/v1/sync/exams                             body: [同上，最多 10 �
 
 - **鉴权**：配置文件里一个静态 Bearer Token（App 和 Admin 共用，或各一个）；Token 通过环境变量注入，不进仓库。
 - **传输**：服务端在本机，默认只监听 `127.0.0.1`；手机通过**家庭局域网**以 HTTP 访问时才开启局域网监听。局域网内明文传输的 Token 有被同网设备嗅探的理论风险，家用网络可接受；**不暴露公网**。将来若要外网访问，应加 Tailscale（`tailscale serve` 提供 HTTPS）或反向代理 + HTTPS，并为 Admin 加登录。
-- **密钥**：LLM API Key 只走环境变量，日志中脱敏。
+- **密钥**：出题用的 LLM API Key 只走环境变量，日志中脱敏。AI 解读用的 Key 存在 SQLite（`app_setting`），因为要下发给客户端：数据库文件按敏感文件对待，`/api/v1/ai/config` 必须带访问令牌，管理页不回显。
 - **成本防护**：`daily_token_budget` 与并发/速率限制，防止流水线故障时循环重试烧钱。
 - **提示词注入**：文档内容是不可信数据，输出受 schema 与规则校验约束，不执行文档中的指令。
 - 以后若升级为多用户：补用户表与 JWT，Token 机制换成登录即可，其余不动。
@@ -685,8 +711,9 @@ QuizMind/
 |---|---|---|---|
 | 9 | 交卷不是原子的 | 作答记录、学习状态、考试记录、清草稿放进同一个事务（H5：IndexedDB 事务，失败时显式 abort；Flutter：Drift 事务），失败全部回滚，重试不重复。有故意注入失败的测试，去掉回滚逻辑该测试会失败 | 已完成 |
 | 10 | 缺少界面层测试 | H5 新增 `views.test.ts`（happy-dom + Vue Test Utils：考试设置 / 考试 / 回顾 / 统计页）；Flutter 新增 widget 测试（标记、恢复、回看、30 天与归类切换）。H5 在真实浏览器（手机视口）、Flutter 在 Android 模拟器（发布包原地升级安装，顺带验证数据库 v1→v2 升级）上走过完整流程 | 已完成 |
-| 11 | 服务没有开机自启 | `server/run.sh install` 写入并加载 launchd 用户代理（`RunAtLoad` + `KeepAlive`），`uninstall` 卸载；装好后 `start/stop/restart/status/logs` 与 `deploy.sh` 自动改走 launchd。用隔离副本验证了安装、`kill -9` 后自动拉起、重启、停止、卸载。**尚未在你的 Mac 上安装**——需要你执行一次 `cd server && ./run.sh install`（会先停掉现在手动启动的后台进程） | 脚本已完成，待你执行安装 |
+| 11 | 服务没有开机自启 | 曾实现 launchd 托管（`run.sh install`），后决定不需要开机自启，已移除；服务仍用 `run.sh start/stop/restart/status/logs` 手动启停 | 已取消 |
 | 12 | 大部分代码未纳入 git | `h5/`、`server/`、`admin/`、`api/`、`docs/` 已提交（密钥与数据库文件均在 `.gitignore` 里，提交前检查过） | 已完成 |
+| 13 | 刷题时想让 AI 讲解 | 见 §7.6：Flutter 刷题页答题后「AI 解读」，客户端直连 OpenAI 兼容接口、流式显示、本机保存并可同步到服务端；LLM 配置和访问令牌在管理页设置，客户端同步取回，也可手动填本机配置。H5 暂不做 | 已完成（服务端 + Flutter） |
 
 **升级注意**：服务端迁移 00004 / 00005 在启动时自动执行；`attempt` 增加一列并补号，建议升级前先备份：`sqlite3 "$HOME/Library/Application Support/QuizMind/app.db" "VACUUM INTO '…/app.db.bak-before-exam-sync'"`。Flutter 端数据库升到 v2（新增 `exams`、`exam_drafts` 表），原先存在 SharedPreferences 里的考试成绩在首次启动时自动搬进数据库并补传。
 

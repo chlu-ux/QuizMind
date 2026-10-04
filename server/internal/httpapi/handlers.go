@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -77,6 +78,15 @@ func (a *API) uploadDocument(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) getDocument(w http.ResponseWriter, r *http.Request) {
 	d, err := a.svc.GetDocument(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, d)
+}
+
+func (a *API) getDocumentContent(w http.ResponseWriter, r *http.Request) {
+	d, err := a.svc.GetDocumentContent(r.Context(), chi.URLParam(r, "id"))
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -343,6 +353,84 @@ func (a *API) syncSessionsUp(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) flagQuestion(w http.ResponseWriter, r *http.Request) {
 	res, err := a.svc.FlagQuestion(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, res)
+}
+
+// ---- AI explanation ----
+
+func (a *API) getAIConfig(w http.ResponseWriter, r *http.Request) {
+	v, err := a.svc.AdminAIConfig(r.Context())
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, v)
+}
+
+func (a *API) listAINotes(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	page, err := a.svc.ListAINotes(r.Context(), service.AINoteFilter{
+		BankID: q.Get("bank_id"), Search: q.Get("search"),
+		Limit: intParam(r, "limit", 20), Offset: intParam(r, "offset", 0),
+	})
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, page)
+}
+
+func (a *API) putAIConfig(w http.ResponseWriter, r *http.Request) {
+	var in service.AIConfigUpdate
+	if !decode(w, r, &in) {
+		return
+	}
+	v, err := a.svc.SaveAIConfig(r.Context(), in)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, v)
+}
+
+func (a *API) testAIConfig(w http.ResponseWriter, r *http.Request) {
+	res, err := a.svc.TestAIConfig(r.Context())
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, res)
+}
+
+func (a *API) appAIConfig(w http.ResponseWriter, r *http.Request) {
+	cfg, err := a.svc.AppAIConfig(r.Context(), strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, http.StatusOK, cfg)
+}
+
+func (a *API) syncNotesDown(w http.ResponseWriter, r *http.Request) {
+	page, err := a.svc.SyncNotes(r.Context(), int64(intParam(r, "since", 0)), intParam(r, "limit", 100))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, page)
+}
+
+func (a *API) syncNotesUp(w http.ResponseWriter, r *http.Request) {
+	var in []service.NoteIn
+	if !decode(w, r, &in) {
+		return
+	}
+	res, err := a.svc.UploadNotes(r.Context(), in)
 	if err != nil {
 		a.fail(w, r, err)
 		return

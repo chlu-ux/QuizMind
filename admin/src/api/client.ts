@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios'
 import type {
-  Bank, BulkResult, DocumentDetail, DocumentRow, ImportResult, Job, QuestionDetail,
+  AIConfig, AIConfigUpdate, AINotePage, AITestResult, Bank, BulkResult, DocumentContent, DocumentDetail, DocumentRow, ImportResult, Job, QuestionDetail,
   QuestionEdit, QuestionPage, Question, UsageRow,
 } from './types'
 
@@ -65,6 +65,7 @@ export function errorMessage(e: unknown): string {
 
 const get = <T>(url: string, params?: Record<string, unknown>) =>
   http.get<T>(url, { params }).then((r) => r.data)
+const put = <T>(url: string, body?: unknown) => http.put<T>(url, body).then((r) => r.data)
 const post = <T>(url: string, body?: unknown) => http.post<T>(url, body).then((r) => r.data)
 
 export const api = {
@@ -76,6 +77,7 @@ export const api = {
 
   documents: () => get<DocumentRow[]>('/admin/documents'),
   document: (id: string) => get<DocumentDetail>(`/admin/documents/${id}`),
+  documentContent: (id: string) => get<DocumentContent>(`/admin/documents/${id}/content`),
   retryDocument: (id: string) => post<{ requeued: number }>(`/admin/documents/${id}/retry`),
   upload: (bankId: string, file: File) => {
     const form = new FormData()
@@ -99,4 +101,10 @@ export const api = {
     post<BulkResult>('/admin/questions/bulk', { action, ids, note }),
 
   usage: (days: number) => get<UsageRow[]>('/admin/usage', { days }),
+
+  aiConfig: () => get<AIConfig>('/admin/ai'),
+  saveAIConfig: (c: AIConfigUpdate) => put<AIConfig>('/admin/ai', c),
+  testAI: () => post<AITestResult>('/admin/ai/test'),
+  aiNotes: (params: { bank_id?: string; search?: string; limit?: number; offset?: number }) =>
+    get<AINotePage>('/admin/ai/notes', params),
 }

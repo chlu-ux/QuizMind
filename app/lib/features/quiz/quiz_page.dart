@@ -10,6 +10,7 @@ import '../../data/database.dart';
 import '../../data/progress.dart';
 import '../../data/repository.dart';
 import '../../data/session_store.dart';
+import 'ai_explain_card.dart';
 import 'quiz_session.dart';
 import 'resume.dart';
 
@@ -24,13 +25,14 @@ Future<void> startQuiz(
   int startAt = 0,
   String? scope,
   ResumePlan? resume,
+  ValueChanged<Question?>? onPosition,
 }) {
   if (questions.isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('没有可练习的题目')));
     return Future.value();
   }
   return Navigator.of(context).push(MaterialPageRoute<void>(
-    builder: (_) => QuizPage(title: title, questions: questions, startAt: startAt, scope: scope, resume: resume),
+    builder: (_) => QuizPage(title: title, questions: questions, startAt: startAt, scope: scope, resume: resume, onPosition: onPosition),
   ));
 }
 
@@ -42,6 +44,7 @@ class QuizPage extends ConsumerStatefulWidget {
     this.startAt = 0,
     this.scope,
     this.resume,
+    this.onPosition,
     this.shuffleOptions = true,
   });
 
@@ -52,6 +55,9 @@ class QuizPage extends ConsumerStatefulWidget {
   /// Where progress is saved; null for quizzes that are not worth resuming.
   final String? scope;
   final ResumePlan? resume;
+
+  /// Told which question the learner is on as they move (null once they finish).
+  final ValueChanged<Question?>? onPosition;
   final bool shuffleOptions;
 
   @override
@@ -79,6 +85,10 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       shuffleOptions: widget.shuffleOptions,
       restored: resume?.restored ?? const {},
     );
+    if (widget.onPosition != null) {
+      widget.onPosition!(session.finished ? null : session.current);
+      session.addListener(_reportPosition);
+    }
     final scope = widget.scope;
     if (scope != null) {
       if (resume == null) {
@@ -88,6 +98,15 @@ class _QuizPageState extends ConsumerState<QuizPage> {
       _saved = (session.index, session.answeredCount);
       session.addListener(_persist);
     }
+  }
+
+  int? _reportedIndex;
+
+  void _reportPosition() {
+    final finished = session.finished;
+    if (!finished && session.index == _reportedIndex) return;
+    _reportedIndex = session.index;
+    widget.onPosition!(finished ? null : session.current);
   }
 
   /// Keeps the saved progress in step with the quiz. Finishing clears it: there
@@ -139,11 +158,41 @@ class _QuizPageState extends ConsumerState<QuizPage> {
           },
           child: Focus(
             autofocus: true,
-            child: _QuizScaffold(session: session, onPrimary: _primary, onFlagged: _afterFlag),
+            child: _QuizScaffold(
+              session: session,
+              onPrimary: _primary,
+              onFlagged: _afterFlag,
+              onRestart: widget.onPosition == null ? null : _restart,
+            ),
           ),
         );
       },
     );
+  }
+
+  /// 按顺序刷题 only: drops this round and goes through the same questions again from the first.
+  Future<void> _restart() async {
+    final nav = Navigator.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('从第 1 题重做？'),
+        content: const Text('这一轮的进度会被清掉。'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('取消')),
+          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('重做')),
+        ],
+      ),
+    );
+    if (ok != true || !mounted) return;
+    unawaited(nav.pushReplacement(MaterialPageRoute<void>(
+      builder: (_) => QuizPage(
+        title: widget.title,
+        questions: widget.questions,
+        scope: widget.scope,
+        onPosition: widget.onPosition,
+      ),
+    )));
   }
 
   Future<void> _afterFlag() async {
@@ -160,11 +209,12 @@ class _QuizPageState extends ConsumerState<QuizPage> {
 }
 
 class _QuizScaffold extends ConsumerWidget {
-  const _QuizScaffold({required this.session, required this.onPrimary, required this.onFlagged});
+  const _QuizScaffold({required this.session, required this.onPrimary, required this.onFlagged, this.onRestart});
 
   final QuizSession session;
   final VoidCallback onPrimary;
   final Future<void> Function() onFlagged;
+  final VoidCallback? onRestart;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -192,8 +242,12 @@ class _QuizScaffold extends ConsumerWidget {
           PopupMenuButton<String>(
             onSelected: (v) async {
               if (v == 'flag') await onFlagged();
+              if (v == 'restart') onRestart?.call();
             },
-            itemBuilder: (_) => const [PopupMenuItem(value: 'flag', child: Text('题目有误，反馈'))],
+            itemBuilder: (_) => [
+              const PopupMenuItem(value: 'flag', child: Text('题目有误，反馈')),
+              if (onRestart != null) const PopupMenuItem(value: 'restart', child: Text('从第 1 题重做')),
+            ],
           ),
         ],
         bottom: PreferredSize(
@@ -233,6 +287,8 @@ class _QuizScaffold extends ConsumerWidget {
                 if (session.outcome case final o?) ...[
                   const SizedBox(height: 8),
                   _ResultCard(outcome: o, question: q, answerLabel: q.answer.map((i) => q.type == 'judge' ? q.options[i] : session.labelOf(i)).join('、')),
+                  const SizedBox(height: 8),
+                  AiExplainCard(key: ValueKey(q.id), question: q, selected: session.selected),
                 ],
               ],
             ),

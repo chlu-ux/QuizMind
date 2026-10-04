@@ -20,9 +20,15 @@ make sqlc                               # after editing internal/db/migrations o
 ./run.sh                 # rebuild and restart
 ./run.sh restart -w      # also rebuild the admin and phone web UIs
 ./run.sh start|stop|status|logs
-./run.sh install         # start at login and restart after a crash (launchd); logs in ~/Library/Logs/quizmind/
-./run.sh uninstall
 ```
 
-Secrets go in `server/.env` (e.g. `ANTHROPIC_API_KEY=...`) and `server/.token`; neither is committed, and neither ends up in the launch agent.
+Secrets go in `server/.env` (e.g. `ANTHROPIC_API_KEY=...`) and `server/.token`; neither is committed.
 
+
+## AI explanations
+
+The quiz app (Flutter) can ask an LLM to explain a question. The app calls an
+OpenAI-compatible endpoint itself; the server stores the endpoint, key and an access
+token in the database and hands them to the app (`GET /api/v1/ai/config`, needs the
+token). Set them up on the admin UI's "AI 解读" page. Saved explanations sync through
+`/api/v1/sync/notes`. Back up `app.db` like any secret: it now holds that API key.
