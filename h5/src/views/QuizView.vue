@@ -3,7 +3,8 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Md from '@/components/Md.vue'
 import { bump, getRepo, runSync, showToast } from '@/core/app'
-import { pendingQuiz, startQuiz } from '@/quiz/launch'
+import { pendingQuiz, startQuiz, type QuizLaunch } from '@/quiz/launch'
+import { setSequentialPosition } from '@/quiz/position'
 import { QuizSession } from '@/quiz/session'
 
 const router = useRouter()
@@ -13,28 +14,53 @@ const menu = ref(false)
 
 // Where this quiz is saved so it can be continued (a bank id); undefined for lists not worth resuming.
 let scope: string | undefined
+// Set for 按顺序刷题: the bank whose reading position follows the learner.
+let sequentialScope: string | undefined
 // What was last written, so opening a resumed quiz does not count as a change.
 let savedKey = ''
 const progressKey = (q: { index: number; answeredCount: number; finished: boolean }) =>
   `${q.index}/${q.answeredCount}/${q.finished}`
 
-onMounted(async () => {
-  const launch = pendingQuiz.value
-  if (!launch) return router.replace('/')
+async function begin(launch: QuizLaunch, startAt: number, resume: QuizLaunch['resume']) {
   const repo = await getRepo()
-  const resume = launch.resume
   const q = reactive(
-    new QuizSession(launch.title, launch.questions, repo, launch.startAt, undefined, {
+    new QuizSession(launch.title, launch.questions, repo, startAt, undefined, {
       seed: resume?.seed,
       restored: resume?.restored,
     }),
   ) as QuizSession
   scope = launch.scope
+  sequentialScope = launch.sequential ? launch.scope : undefined
+  if (sequentialScope) setSequentialPosition(sequentialScope, q.current.id)
   if (scope && !resume) await repo.saveSession(scope, q.snapshot())
   savedKey = progressKey(q)
   session.value = q
+}
+
+onMounted(async () => {
+  const launch = pendingQuiz.value
+  if (!launch) return router.replace('/')
+  await begin(launch, launch.startAt, launch.resume)
   window.addEventListener('keydown', onKey)
 })
+
+/** 按顺序刷题 only: throw this round away and go through the bank from the first question again. */
+async function restart() {
+  menu.value = false
+  const launch = pendingQuiz.value
+  if (!launch || !launch.sequential) return
+  if (!window.confirm('从第 1 题重新开始？这一轮的进度会被清掉。')) return
+  await begin(launch, 0, undefined)
+}
+
+watch(
+  () => (session.value ? `${session.value.index}/${session.value.finished}` : ''),
+  () => {
+    const cur = session.value
+    if (!cur || !sequentialScope) return
+    setSequentialPosition(sequentialScope, cur.finished ? null : cur.current.id)
+  },
+)
 
 // Keep the saved progress in step with the quiz; finishing it clears the saved copy.
 watch(
@@ -134,7 +160,10 @@ function retry() {
       <button class="icon-btn" :aria-label="favorite ? '取消收藏' : '收藏'" @click="toggleFavorite">{{ favorite ? '★' : '☆' }}</button>
       <div class="menu-wrap">
         <button class="icon-btn" aria-label="更多" @click="menu = !menu">⋯</button>
-        <div v-if="menu" class="menu" @click="flag">题目有误，反馈</div>
+        <div v-if="menu" class="menu">
+          <div @click="flag">题目有误，反馈</div>
+          <div v-if="pendingQuiz?.sequential" @click="restart">从第 1 题重做</div>
+        </div>
       </div>
     </header>
     <div class="bar thin"><div class="fill" :style="{ width: ((s.index + (s.submitted ? 1 : 0)) / s.length) * 100 + '%' }" /></div>

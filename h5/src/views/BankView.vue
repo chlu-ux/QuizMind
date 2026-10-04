@@ -6,6 +6,7 @@ import type { BankStats } from '@/data/repo'
 import type { Bank, SessionData } from '@/data/types'
 import { orderQuestions, type QuizOrder } from '@/quiz/session'
 import { startQuiz } from '@/quiz/launch'
+import { sequentialPosition, setSequentialPosition } from '@/quiz/position'
 import { planResume } from '@/quiz/resume'
 
 const props = defineProps<{ id: string }>()
@@ -15,6 +16,8 @@ const stats = ref<BankStats | null>(null)
 const saved = ref<SessionData | null>(null)
 const examInProgress = ref(false)
 const loaded = ref(false)
+// Where 按顺序刷题 left off (0-based place in the bank's order), if anywhere.
+const seqIndex = ref<number | null>(null)
 
 async function load() {
   const repo = await getRepo()
@@ -22,6 +25,9 @@ async function load() {
   stats.value = await repo.bankStats(props.id)
   saved.value = await repo.savedSession(props.id)
   examInProgress.value = !!(await repo.examDraft(props.id))
+  const seqId = sequentialPosition(props.id)
+  const at = seqId ? (await repo.bankQuestions(props.id)).findIndex((q) => q.id === seqId) : -1
+  seqIndex.value = at > 0 ? at : null
   loaded.value = true
 }
 onMounted(load)
@@ -29,7 +35,7 @@ watch([dataVersion, () => props.id], load)
 
 const progress = computed(() => (stats.value && stats.value.total ? (stats.value.answered / stats.value.total) * 100 : 0))
 
-async function start(order: QuizOrder, onlyNew: boolean) {
+async function start(order: QuizOrder, onlyNew: boolean, fromStart = false) {
   const repo = await getRepo()
   let qs = await repo.bankQuestions(props.id)
   if (onlyNew) {
@@ -38,7 +44,16 @@ async function start(order: QuizOrder, onlyNew: boolean) {
     if (qs.length === 0) return showToast('这个题库的题都做过了')
   }
   if (qs.length === 0) return showToast('这个题库还没有题目')
-  startQuiz(bank.value?.title ?? '刷题', orderQuestions(qs, order), 0, false, { scope: props.id })
+  const ordered = orderQuestions(qs, order)
+  const sequential = order === 'sequential'
+  let startAt = 0
+  if (sequential) {
+    // Picks up at the question the learner was last on, wherever the bank has grown since.
+    const seqId = fromStart ? null : sequentialPosition(props.id)
+    if (fromStart) setSequentialPosition(props.id, null)
+    startAt = Math.max(0, ordered.findIndex((q) => q.id === seqId))
+  }
+  startQuiz(bank.value?.title ?? '刷题', ordered, startAt, false, { scope: props.id, sequential })
 }
 
 async function resume() {
@@ -77,7 +92,10 @@ async function resume() {
         </template>
         <button v-else class="btn primary block" @click="start('random', false)">🔀 随机刷题</button>
         <button class="btn block" @click="start('random', true)">🆕 只做没做过的</button>
-        <button class="btn block" @click="start('sequential', false)">🔢 按顺序刷题</button>
+        <button class="btn block" @click="start('sequential', false)">
+          🔢 按顺序刷题<template v-if="seqIndex !== null"> · 从第 {{ seqIndex + 1 }} 题继续</template>
+        </button>
+        <button v-if="seqIndex !== null" class="btn block" @click="start('sequential', false, true)">🔄 按顺序重做（从第 1 题）</button>
         <button class="btn block" @click="router.push(`/bank/${props.id}/exam`)">📝 模拟考试<template v-if="examInProgress"> · 有未完成的考试</template></button>
         <button class="btn block" @click="router.push(`/bank/${props.id}/stats`)">📊 统计分析</button>
       </div>
