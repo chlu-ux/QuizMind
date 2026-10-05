@@ -206,6 +206,15 @@ class QuizSession extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Moves to the question at [position] (0-based, clamped), e.g. to pick up where an earlier round stopped.
+  void jumpTo(int position) {
+    final target = position.clamp(0, questions.length - 1);
+    if (target == _index) return;
+    _bookInBackground();
+    _index = target;
+    notifyListeners();
+  }
+
   /// Hides the current question after a report and moves on.
   Future<void> flagCurrent({FlagReason reason = FlagReason.other}) async {
     await repo.flagQuestion(current.id, reason: reason);

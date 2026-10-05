@@ -179,6 +179,7 @@ class _QuizPageState extends ConsumerState<QuizPage> with WidgetsBindingObserver
               onPrimary: _primary,
               onFlagged: _afterFlag,
               onRestart: widget.onPosition == null ? null : _restart,
+              onJump: widget.onPosition == null ? null : _jump,
             ),
           ),
         );
@@ -211,6 +212,16 @@ class _QuizPageState extends ConsumerState<QuizPage> with WidgetsBindingObserver
     )));
   }
 
+  /// 按顺序刷题 only: asks for a question number and goes there, so an earlier position can be picked up again.
+  Future<void> _jump() async {
+    final n = await showDialog<int>(
+      context: context,
+      builder: (_) => _JumpDialog(length: session.length, current: session.index + 1),
+    );
+    if (n == null || n < 1 || !mounted) return;
+    session.jumpTo(n - 1);
+  }
+
   Future<void> _afterFlag() async {
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
@@ -241,12 +252,13 @@ class _QuizPageState extends ConsumerState<QuizPage> with WidgetsBindingObserver
 }
 
 class _QuizScaffold extends ConsumerWidget {
-  const _QuizScaffold({required this.session, required this.onPrimary, required this.onFlagged, this.onRestart});
+  const _QuizScaffold({required this.session, required this.onPrimary, required this.onFlagged, this.onRestart, this.onJump});
 
   final QuizSession session;
   final VoidCallback onPrimary;
   final Future<void> Function() onFlagged;
   final VoidCallback? onRestart;
+  final VoidCallback? onJump;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -275,9 +287,11 @@ class _QuizScaffold extends ConsumerWidget {
             onSelected: (v) async {
               if (v == 'flag') await onFlagged();
               if (v == 'restart') onRestart?.call();
+              if (v == 'jump') onJump?.call();
             },
             itemBuilder: (_) => [
               const PopupMenuItem(value: 'flag', child: Text('题目有误，反馈')),
+              if (onJump != null) const PopupMenuItem(value: 'jump', child: Text('跳到第几题…')),
               if (onRestart != null) const PopupMenuItem(value: 'restart', child: Text('从第 1 题重做')),
             ],
           ),
@@ -516,6 +530,46 @@ class QuizSummary extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Asks for a question number between 1 and [length].
+class _JumpDialog extends StatefulWidget {
+  const _JumpDialog({required this.length, required this.current});
+
+  final int length;
+  final int current;
+
+  @override
+  State<_JumpDialog> createState() => _JumpDialogState();
+}
+
+class _JumpDialogState extends State<_JumpDialog> {
+  final _ctl = TextEditingController();
+
+  @override
+  void dispose() {
+    _ctl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('跳到第几题'),
+      content: TextField(
+        controller: _ctl,
+        autofocus: true,
+        keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        decoration: InputDecoration(hintText: '1 – ${widget.length}', helperText: '当前第 ${widget.current} 题'),
+        onSubmitted: (v) => Navigator.pop(context, int.tryParse(v)),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('取消')),
+        FilledButton(onPressed: () => Navigator.pop(context, int.tryParse(_ctl.text)), child: const Text('跳转')),
+      ],
     );
   }
 }

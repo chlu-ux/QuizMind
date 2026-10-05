@@ -192,6 +192,9 @@ void main() {
           difficulty: difficulty,
           tagsJson: '[${tags.map((t) => '"$t"').join(',')}]',
           sourceQuote: '',
+          documentId: '',
+          documentTitle: '',
+          documentOrder: 0,
           syncSeq: 1,
           hidden: false,
         );

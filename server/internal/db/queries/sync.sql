@@ -75,3 +75,9 @@ SELECT * FROM exam
 WHERE sync_seq > sqlc.arg(since)
 ORDER BY sync_seq ASC
 LIMIT sqlc.arg(page_limit);
+
+-- name: ListChunkDocuments :many
+-- The document (a module / chapter of a bank) each of the given chunks belongs to.
+SELECT c.id AS chunk_id, d.id AS document_id, d.title AS document_title, d.created_at AS document_created_at
+FROM chunk c JOIN document d ON d.id = c.document_id
+WHERE c.id IN (sqlc.slice(chunk_ids));

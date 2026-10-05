@@ -8,6 +8,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"strings"
 )
 
 const bumpQuestionFlag = `-- name: BumpQuestionFlag :one
@@ -164,6 +165,58 @@ func (q *Queries) ListAttemptsSince(ctx context.Context, arg ListAttemptsSincePa
 			&i.ReceivedAt,
 			&i.SyncSeq,
 			&i.ReviewMs,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listChunkDocuments = `-- name: ListChunkDocuments :many
+SELECT c.id AS chunk_id, d.id AS document_id, d.title AS document_title, d.created_at AS document_created_at
+FROM chunk c JOIN document d ON d.id = c.document_id
+WHERE c.id IN (/*SLICE:chunk_ids*/?)
+`
+
+type ListChunkDocumentsRow struct {
+	ChunkID           string `json:"chunk_id"`
+	DocumentID        string `json:"document_id"`
+	DocumentTitle     string `json:"document_title"`
+	DocumentCreatedAt int64  `json:"document_created_at"`
+}
+
+// The document (a module / chapter of a bank) each of the given chunks belongs to.
+func (q *Queries) ListChunkDocuments(ctx context.Context, chunkIds []string) ([]ListChunkDocumentsRow, error) {
+	query := listChunkDocuments
+	var queryParams []interface{}
+	if len(chunkIds) > 0 {
+		for _, v := range chunkIds {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:chunk_ids*/?", strings.Repeat(",?", len(chunkIds))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:chunk_ids*/?", "NULL", 1)
+	}
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListChunkDocumentsRow{}
+	for rows.Next() {
+		var i ListChunkDocumentsRow
+		if err := rows.Scan(
+			&i.ChunkID,
+			&i.DocumentID,
+			&i.DocumentTitle,
+			&i.DocumentCreatedAt,
 		); err != nil {
 			return nil, err
 		}

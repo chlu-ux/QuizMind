@@ -393,10 +393,12 @@ func TestAppSync(t *testing.T) {
 
 	type syncPage struct {
 		Items []struct {
-			ID      string
-			Answer  []int
-			Options []string
-			SyncSeq int64 `json:"sync_seq"`
+			ID            string
+			Answer        []int
+			Options       []string
+			SyncSeq       int64  `json:"sync_seq"`
+			DocumentID    string `json:"document_id"`
+			DocumentTitle string `json:"document_title"`
 		}
 		Deleted []string
 		NextSeq int64 `json:"next_seq"`
@@ -408,6 +410,8 @@ func TestAppSync(t *testing.T) {
 	assert.Equal(t, qid, q1.Items[0].ID)
 	assert.Equal(t, []int{0}, q1.Items[0].Answer)
 	assert.Len(t, q1.Items[0].Options, 4)
+	assert.NotEmpty(t, q1.Items[0].DocumentID, "a question names the document (module) it came from")
+	assert.NotEmpty(t, q1.Items[0].DocumentTitle)
 	assert.Empty(t, q1.Deleted)
 	assert.False(t, q1.HasMore)
 	assert.Equal(t, q1.Items[0].SyncSeq, q1.NextSeq)

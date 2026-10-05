@@ -43,6 +43,9 @@ class QuestionDto {
     required this.difficulty,
     required this.tags,
     required this.sourceQuote,
+    this.documentId = '',
+    this.documentTitle = '',
+    this.documentOrder = 0,
     required this.syncSeq,
   });
 
@@ -56,6 +59,11 @@ class QuestionDto {
   final int difficulty;
   final List<String> tags;
   final String sourceQuote;
+
+  /// The document (module) the question came from; empty when the server is too old to say.
+  final String documentId;
+  final String documentTitle;
+  final int documentOrder;
   final int syncSeq;
 
   factory QuestionDto.fromJson(Map<String, dynamic> j) => QuestionDto(
@@ -69,6 +77,9 @@ class QuestionDto {
         difficulty: (j['difficulty'] as num?)?.toInt() ?? 3,
         tags: ((j['tags'] as List?) ?? const []).cast<String>(),
         sourceQuote: (j['source_quote'] as String?) ?? '',
+        documentId: (j['document_id'] as String?) ?? '',
+        documentTitle: (j['document_title'] as String?) ?? '',
+        documentOrder: (j['document_created_at'] as num?)?.toInt() ?? 0,
         syncSeq: (j['sync_seq'] as num).toInt(),
       );
 }

@@ -14,6 +14,9 @@ Question q(String id, {String type = 'single', int difficulty = 2, List<String> 
       difficulty: difficulty,
       tagsJson: '[${tags.map((t) => '"$t"').join(',')}]',
       sourceQuote: '',
+      documentId: '',
+      documentTitle: '',
+      documentOrder: 0,
       syncSeq: 1,
       hidden: false,
     );

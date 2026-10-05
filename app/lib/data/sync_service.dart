@@ -520,6 +520,9 @@ class SyncService {
                 difficulty: Value(q.difficulty),
                 tagsJson: Value(jsonEncode(q.tags)),
                 sourceQuote: Value(q.sourceQuote),
+                documentId: Value(q.documentId),
+                documentTitle: Value(q.documentTitle),
+                documentOrder: Value(q.documentOrder),
                 syncSeq: q.syncSeq,
                 hidden: const Value(false),
               ));

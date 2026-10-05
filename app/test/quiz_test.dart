@@ -174,6 +174,35 @@ void main() {
     await tearDownUi(tester, db);
   });
 
+  testWidgets('sequential QuizPage jumps to a typed question number and reports the new position', (tester) async {
+    final db = memoryDb();
+    final qs = await tester.runAsync(() => seed(db, 5)) as List<Question>;
+    final seen = <String?>[];
+    await pumpWith(tester, db, QuizPage(title: '测试', questions: qs, shuffleOptions: false, onPosition: (q) => seen.add(q?.id)));
+
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('跳到第几题…'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '4');
+    await tester.tap(find.text('跳转'));
+    await tester.pumpAndSettle();
+    expect(find.text('题干 q4'), findsOneWidget);
+    expect(seen.last, 'q4');
+
+    // A number past the end lands on the last question rather than failing.
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('跳到第几题…'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '99');
+    await tester.tap(find.text('跳转'));
+    await tester.pumpAndSettle();
+    expect(find.text('题干 q5'), findsOneWidget);
+
+    await tearDownUi(tester, db);
+  });
+
   testWidgets('QuizPage reports nothing when the reason sheet is dismissed', (tester) async {
     final db = memoryDb();
     final qs = await tester.runAsync(() => seed(db, 2)) as List<Question>;

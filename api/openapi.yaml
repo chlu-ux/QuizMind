@@ -256,6 +256,9 @@ components:
         difficulty: { type: integer, minimum: 1, maximum: 5 }
         tags: { type: array, items: { type: string } }
         source_quote: { type: string }
+        document_id: { type: string, description: "the document (module / chapter) the question was generated from; empty if unknown. Older servers omit it" }
+        document_title: { type: string, description: "title of that document" }
+        document_created_at: { type: integer, description: "when that document was uploaded (ms); modules are listed in this order. 0 if unknown" }
         sync_seq: { type: integer }
         updated_at: { type: integer }
     QuestionsPage:

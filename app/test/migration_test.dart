@@ -3,6 +3,15 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quizmind_app/data/database.dart';
 
+/// The questions table as it was before the module columns (schema version 5).
+const _questionsV5 = '''
+  CREATE TABLE questions (
+    id TEXT NOT NULL PRIMARY KEY, bank_id TEXT NOT NULL, type TEXT NOT NULL, stem TEXT NOT NULL,
+    options_json TEXT NOT NULL, answer_json TEXT NOT NULL, explanation TEXT NOT NULL DEFAULT '',
+    difficulty INTEGER NOT NULL DEFAULT 3, tags_json TEXT NOT NULL DEFAULT '[]',
+    source_quote TEXT NOT NULL DEFAULT '', sync_seq INTEGER NOT NULL, hidden INTEGER NOT NULL DEFAULT 0
+  )''';
+
 void main() {
   test('upgrading a version-1 database adds the exam tables and keeps what was there', () async {
     // What version 1 left behind: user_version 1 and an attempts table with a row in it.
@@ -15,6 +24,7 @@ void main() {
         )''');
       raw.execute("INSERT INTO attempts (id, question_id, device_id, answer_json, is_correct, answered_at) VALUES ('A', 'q', 'd', '[0]', 1, 5)");
       raw.execute('CREATE TABLE pending_flags (question_id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL)');
+      raw.execute(_questionsV5);
       raw.execute('PRAGMA user_version = 1');
     }));
     addTearDown(db.close);
@@ -39,6 +49,7 @@ void main() {
         )''');
       raw.execute("INSERT INTO attempts (id, question_id, device_id, answer_json, is_correct, answered_at) VALUES ('A', 'q', 'd', '[0]', 1, 5)");
       raw.execute('CREATE TABLE pending_flags (question_id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL)');
+      raw.execute(_questionsV5);
       raw.execute('PRAGMA user_version = 2');
     }));
     addTearDown(db.close);
@@ -60,6 +71,7 @@ void main() {
         )''');
       raw.execute("INSERT INTO attempts (id, question_id, device_id, answer_json, is_correct, duration_ms, answered_at, synced) VALUES ('A', 'q', 'd', '[0]', 1, 800, 5, 1)");
       raw.execute('CREATE TABLE pending_flags (question_id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL)');
+      raw.execute(_questionsV5);
       raw.execute('PRAGMA user_version = 3');
     }));
     addTearDown(db.close);
@@ -74,6 +86,7 @@ void main() {
     final db = AppDatabase(NativeDatabase.memory(setup: (raw) {
       raw.execute('CREATE TABLE pending_flags (question_id TEXT NOT NULL PRIMARY KEY, created_at INTEGER NOT NULL)');
       raw.execute("INSERT INTO pending_flags (question_id, created_at) VALUES ('q1', 7)");
+      raw.execute(_questionsV5);
       raw.execute('PRAGMA user_version = 4');
     }));
     addTearDown(db.close);

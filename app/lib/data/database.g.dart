@@ -428,6 +428,42 @@ class $QuestionsTable extends Questions
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _documentIdMeta = const VerificationMeta(
+    'documentId',
+  );
+  @override
+  late final GeneratedColumn<String> documentId = GeneratedColumn<String>(
+    'document_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _documentTitleMeta = const VerificationMeta(
+    'documentTitle',
+  );
+  @override
+  late final GeneratedColumn<String> documentTitle = GeneratedColumn<String>(
+    'document_title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _documentOrderMeta = const VerificationMeta(
+    'documentOrder',
+  );
+  @override
+  late final GeneratedColumn<int> documentOrder = GeneratedColumn<int>(
+    'document_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _syncSeqMeta = const VerificationMeta(
     'syncSeq',
   );
@@ -464,6 +500,9 @@ class $QuestionsTable extends Questions
     difficulty,
     tagsJson,
     sourceQuote,
+    documentId,
+    documentTitle,
+    documentOrder,
     syncSeq,
     hidden,
   ];
@@ -557,6 +596,30 @@ class $QuestionsTable extends Questions
         ),
       );
     }
+    if (data.containsKey('document_id')) {
+      context.handle(
+        _documentIdMeta,
+        documentId.isAcceptableOrUnknown(data['document_id']!, _documentIdMeta),
+      );
+    }
+    if (data.containsKey('document_title')) {
+      context.handle(
+        _documentTitleMeta,
+        documentTitle.isAcceptableOrUnknown(
+          data['document_title']!,
+          _documentTitleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('document_order')) {
+      context.handle(
+        _documentOrderMeta,
+        documentOrder.isAcceptableOrUnknown(
+          data['document_order']!,
+          _documentOrderMeta,
+        ),
+      );
+    }
     if (data.containsKey('sync_seq')) {
       context.handle(
         _syncSeqMeta,
@@ -620,6 +683,18 @@ class $QuestionsTable extends Questions
         DriftSqlType.string,
         data['${effectivePrefix}source_quote'],
       )!,
+      documentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}document_id'],
+      )!,
+      documentTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}document_title'],
+      )!,
+      documentOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}document_order'],
+      )!,
       syncSeq: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}sync_seq'],
@@ -648,6 +723,12 @@ class Question extends DataClass implements Insertable<Question> {
   final int difficulty;
   final String tagsJson;
   final String sourceQuote;
+
+  /// The document (module / chapter) the question was generated from; empty for questions
+  /// synced before the server sent it. [documentOrder] is when that document was uploaded (ms).
+  final String documentId;
+  final String documentTitle;
+  final int documentOrder;
   final int syncSeq;
   final bool hidden;
   const Question({
@@ -661,6 +742,9 @@ class Question extends DataClass implements Insertable<Question> {
     required this.difficulty,
     required this.tagsJson,
     required this.sourceQuote,
+    required this.documentId,
+    required this.documentTitle,
+    required this.documentOrder,
     required this.syncSeq,
     required this.hidden,
   });
@@ -677,6 +761,9 @@ class Question extends DataClass implements Insertable<Question> {
     map['difficulty'] = Variable<int>(difficulty);
     map['tags_json'] = Variable<String>(tagsJson);
     map['source_quote'] = Variable<String>(sourceQuote);
+    map['document_id'] = Variable<String>(documentId);
+    map['document_title'] = Variable<String>(documentTitle);
+    map['document_order'] = Variable<int>(documentOrder);
     map['sync_seq'] = Variable<int>(syncSeq);
     map['hidden'] = Variable<bool>(hidden);
     return map;
@@ -694,6 +781,9 @@ class Question extends DataClass implements Insertable<Question> {
       difficulty: Value(difficulty),
       tagsJson: Value(tagsJson),
       sourceQuote: Value(sourceQuote),
+      documentId: Value(documentId),
+      documentTitle: Value(documentTitle),
+      documentOrder: Value(documentOrder),
       syncSeq: Value(syncSeq),
       hidden: Value(hidden),
     );
@@ -715,6 +805,9 @@ class Question extends DataClass implements Insertable<Question> {
       difficulty: serializer.fromJson<int>(json['difficulty']),
       tagsJson: serializer.fromJson<String>(json['tagsJson']),
       sourceQuote: serializer.fromJson<String>(json['sourceQuote']),
+      documentId: serializer.fromJson<String>(json['documentId']),
+      documentTitle: serializer.fromJson<String>(json['documentTitle']),
+      documentOrder: serializer.fromJson<int>(json['documentOrder']),
       syncSeq: serializer.fromJson<int>(json['syncSeq']),
       hidden: serializer.fromJson<bool>(json['hidden']),
     );
@@ -733,6 +826,9 @@ class Question extends DataClass implements Insertable<Question> {
       'difficulty': serializer.toJson<int>(difficulty),
       'tagsJson': serializer.toJson<String>(tagsJson),
       'sourceQuote': serializer.toJson<String>(sourceQuote),
+      'documentId': serializer.toJson<String>(documentId),
+      'documentTitle': serializer.toJson<String>(documentTitle),
+      'documentOrder': serializer.toJson<int>(documentOrder),
       'syncSeq': serializer.toJson<int>(syncSeq),
       'hidden': serializer.toJson<bool>(hidden),
     };
@@ -749,6 +845,9 @@ class Question extends DataClass implements Insertable<Question> {
     int? difficulty,
     String? tagsJson,
     String? sourceQuote,
+    String? documentId,
+    String? documentTitle,
+    int? documentOrder,
     int? syncSeq,
     bool? hidden,
   }) => Question(
@@ -762,6 +861,9 @@ class Question extends DataClass implements Insertable<Question> {
     difficulty: difficulty ?? this.difficulty,
     tagsJson: tagsJson ?? this.tagsJson,
     sourceQuote: sourceQuote ?? this.sourceQuote,
+    documentId: documentId ?? this.documentId,
+    documentTitle: documentTitle ?? this.documentTitle,
+    documentOrder: documentOrder ?? this.documentOrder,
     syncSeq: syncSeq ?? this.syncSeq,
     hidden: hidden ?? this.hidden,
   );
@@ -787,6 +889,15 @@ class Question extends DataClass implements Insertable<Question> {
       sourceQuote: data.sourceQuote.present
           ? data.sourceQuote.value
           : this.sourceQuote,
+      documentId: data.documentId.present
+          ? data.documentId.value
+          : this.documentId,
+      documentTitle: data.documentTitle.present
+          ? data.documentTitle.value
+          : this.documentTitle,
+      documentOrder: data.documentOrder.present
+          ? data.documentOrder.value
+          : this.documentOrder,
       syncSeq: data.syncSeq.present ? data.syncSeq.value : this.syncSeq,
       hidden: data.hidden.present ? data.hidden.value : this.hidden,
     );
@@ -805,6 +916,9 @@ class Question extends DataClass implements Insertable<Question> {
           ..write('difficulty: $difficulty, ')
           ..write('tagsJson: $tagsJson, ')
           ..write('sourceQuote: $sourceQuote, ')
+          ..write('documentId: $documentId, ')
+          ..write('documentTitle: $documentTitle, ')
+          ..write('documentOrder: $documentOrder, ')
           ..write('syncSeq: $syncSeq, ')
           ..write('hidden: $hidden')
           ..write(')'))
@@ -823,6 +937,9 @@ class Question extends DataClass implements Insertable<Question> {
     difficulty,
     tagsJson,
     sourceQuote,
+    documentId,
+    documentTitle,
+    documentOrder,
     syncSeq,
     hidden,
   );
@@ -840,6 +957,9 @@ class Question extends DataClass implements Insertable<Question> {
           other.difficulty == this.difficulty &&
           other.tagsJson == this.tagsJson &&
           other.sourceQuote == this.sourceQuote &&
+          other.documentId == this.documentId &&
+          other.documentTitle == this.documentTitle &&
+          other.documentOrder == this.documentOrder &&
           other.syncSeq == this.syncSeq &&
           other.hidden == this.hidden);
 }
@@ -855,6 +975,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
   final Value<int> difficulty;
   final Value<String> tagsJson;
   final Value<String> sourceQuote;
+  final Value<String> documentId;
+  final Value<String> documentTitle;
+  final Value<int> documentOrder;
   final Value<int> syncSeq;
   final Value<bool> hidden;
   final Value<int> rowid;
@@ -869,6 +992,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
     this.difficulty = const Value.absent(),
     this.tagsJson = const Value.absent(),
     this.sourceQuote = const Value.absent(),
+    this.documentId = const Value.absent(),
+    this.documentTitle = const Value.absent(),
+    this.documentOrder = const Value.absent(),
     this.syncSeq = const Value.absent(),
     this.hidden = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -884,6 +1010,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
     this.difficulty = const Value.absent(),
     this.tagsJson = const Value.absent(),
     this.sourceQuote = const Value.absent(),
+    this.documentId = const Value.absent(),
+    this.documentTitle = const Value.absent(),
+    this.documentOrder = const Value.absent(),
     required int syncSeq,
     this.hidden = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -905,6 +1034,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
     Expression<int>? difficulty,
     Expression<String>? tagsJson,
     Expression<String>? sourceQuote,
+    Expression<String>? documentId,
+    Expression<String>? documentTitle,
+    Expression<int>? documentOrder,
     Expression<int>? syncSeq,
     Expression<bool>? hidden,
     Expression<int>? rowid,
@@ -920,6 +1052,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
       if (difficulty != null) 'difficulty': difficulty,
       if (tagsJson != null) 'tags_json': tagsJson,
       if (sourceQuote != null) 'source_quote': sourceQuote,
+      if (documentId != null) 'document_id': documentId,
+      if (documentTitle != null) 'document_title': documentTitle,
+      if (documentOrder != null) 'document_order': documentOrder,
       if (syncSeq != null) 'sync_seq': syncSeq,
       if (hidden != null) 'hidden': hidden,
       if (rowid != null) 'rowid': rowid,
@@ -937,6 +1072,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
     Value<int>? difficulty,
     Value<String>? tagsJson,
     Value<String>? sourceQuote,
+    Value<String>? documentId,
+    Value<String>? documentTitle,
+    Value<int>? documentOrder,
     Value<int>? syncSeq,
     Value<bool>? hidden,
     Value<int>? rowid,
@@ -952,6 +1090,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
       difficulty: difficulty ?? this.difficulty,
       tagsJson: tagsJson ?? this.tagsJson,
       sourceQuote: sourceQuote ?? this.sourceQuote,
+      documentId: documentId ?? this.documentId,
+      documentTitle: documentTitle ?? this.documentTitle,
+      documentOrder: documentOrder ?? this.documentOrder,
       syncSeq: syncSeq ?? this.syncSeq,
       hidden: hidden ?? this.hidden,
       rowid: rowid ?? this.rowid,
@@ -991,6 +1132,15 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
     if (sourceQuote.present) {
       map['source_quote'] = Variable<String>(sourceQuote.value);
     }
+    if (documentId.present) {
+      map['document_id'] = Variable<String>(documentId.value);
+    }
+    if (documentTitle.present) {
+      map['document_title'] = Variable<String>(documentTitle.value);
+    }
+    if (documentOrder.present) {
+      map['document_order'] = Variable<int>(documentOrder.value);
+    }
     if (syncSeq.present) {
       map['sync_seq'] = Variable<int>(syncSeq.value);
     }
@@ -1016,6 +1166,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
           ..write('difficulty: $difficulty, ')
           ..write('tagsJson: $tagsJson, ')
           ..write('sourceQuote: $sourceQuote, ')
+          ..write('documentId: $documentId, ')
+          ..write('documentTitle: $documentTitle, ')
+          ..write('documentOrder: $documentOrder, ')
           ..write('syncSeq: $syncSeq, ')
           ..write('hidden: $hidden, ')
           ..write('rowid: $rowid')
@@ -4299,6 +4452,9 @@ typedef $$QuestionsTableCreateCompanionBuilder = QuestionsCompanion Function({
   Value<int> difficulty,
   Value<String> tagsJson,
   Value<String> sourceQuote,
+  Value<String> documentId,
+  Value<String> documentTitle,
+  Value<int> documentOrder,
   required int syncSeq,
   Value<bool> hidden,
   Value<int> rowid,
@@ -4314,6 +4470,9 @@ typedef $$QuestionsTableUpdateCompanionBuilder = QuestionsCompanion Function({
   Value<int> difficulty,
   Value<String> tagsJson,
   Value<String> sourceQuote,
+  Value<String> documentId,
+  Value<String> documentTitle,
+  Value<int> documentOrder,
   Value<int> syncSeq,
   Value<bool> hidden,
   Value<int> rowid,
@@ -4375,6 +4534,21 @@ class $$QuestionsTableFilterComposer
 
   ColumnFilters<String> get sourceQuote => $composableBuilder(
     column: $table.sourceQuote,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get documentId => $composableBuilder(
+    column: $table.documentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get documentTitle => $composableBuilder(
+    column: $table.documentTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get documentOrder => $composableBuilder(
+    column: $table.documentOrder,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4448,6 +4622,21 @@ class $$QuestionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get documentId => $composableBuilder(
+    column: $table.documentId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get documentTitle => $composableBuilder(
+    column: $table.documentTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get documentOrder => $composableBuilder(
+    column: $table.documentOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get syncSeq => $composableBuilder(
     column: $table.syncSeq,
     builder: (column) => ColumnOrderings(column),
@@ -4508,6 +4697,21 @@ class $$QuestionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get documentId => $composableBuilder(
+    column: $table.documentId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get documentTitle => $composableBuilder(
+    column: $table.documentTitle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get documentOrder => $composableBuilder(
+    column: $table.documentOrder,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get syncSeq =>
       $composableBuilder(column: $table.syncSeq, builder: (column) => column);
 
@@ -4553,6 +4757,9 @@ class $$QuestionsTableTableManager
                 Value<int> difficulty = const Value.absent(),
                 Value<String> tagsJson = const Value.absent(),
                 Value<String> sourceQuote = const Value.absent(),
+                Value<String> documentId = const Value.absent(),
+                Value<String> documentTitle = const Value.absent(),
+                Value<int> documentOrder = const Value.absent(),
                 Value<int> syncSeq = const Value.absent(),
                 Value<bool> hidden = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -4567,6 +4774,9 @@ class $$QuestionsTableTableManager
                 difficulty: difficulty,
                 tagsJson: tagsJson,
                 sourceQuote: sourceQuote,
+                documentId: documentId,
+                documentTitle: documentTitle,
+                documentOrder: documentOrder,
                 syncSeq: syncSeq,
                 hidden: hidden,
                 rowid: rowid,
@@ -4583,6 +4793,9 @@ class $$QuestionsTableTableManager
                 Value<int> difficulty = const Value.absent(),
                 Value<String> tagsJson = const Value.absent(),
                 Value<String> sourceQuote = const Value.absent(),
+                Value<String> documentId = const Value.absent(),
+                Value<String> documentTitle = const Value.absent(),
+                Value<int> documentOrder = const Value.absent(),
                 required int syncSeq,
                 Value<bool> hidden = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -4597,6 +4810,9 @@ class $$QuestionsTableTableManager
                 difficulty: difficulty,
                 tagsJson: tagsJson,
                 sourceQuote: sourceQuote,
+                documentId: documentId,
+                documentTitle: documentTitle,
+                documentOrder: documentOrder,
                 syncSeq: syncSeq,
                 hidden: hidden,
                 rowid: rowid,

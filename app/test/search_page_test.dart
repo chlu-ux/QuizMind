@@ -98,8 +98,10 @@ void main() {
     final db = await seeded(tester);
     await pumpWith(tester, db, Scaffold(body: BankDetail(bank: bank)));
     await settleUi(tester);
-    final entry = find.widgetWithText(OutlinedButton, '搜索题目');
+    final entry = find.text('搜索题目');
     await tester.scrollUntilVisible(entry, 200, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(entry);
+    await tester.pumpAndSettle();
     await tester.tap(entry);
     await tester.pumpAndSettle();
     expect(find.text('搜索 · 题库'), findsOneWidget);

@@ -23,6 +23,9 @@ Question q(
       difficulty: 2,
       tagsJson: jsonEncode(tags),
       sourceQuote: '',
+      documentId: '',
+      documentTitle: '',
+      documentOrder: 0,
       syncSeq: 1,
       hidden: hidden,
     );

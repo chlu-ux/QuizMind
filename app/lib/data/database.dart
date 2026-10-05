@@ -26,6 +26,12 @@ class Questions extends Table {
   IntColumn get difficulty => integer().withDefault(const Constant(3))();
   TextColumn get tagsJson => text().withDefault(const Constant('[]'))();
   TextColumn get sourceQuote => text().withDefault(const Constant(''))();
+
+  /// The document (module / chapter) the question was generated from; empty for questions
+  /// synced before the server sent it. [documentOrder] is when that document was uploaded (ms).
+  TextColumn get documentId => text().withDefault(const Constant(''))();
+  TextColumn get documentTitle => text().withDefault(const Constant(''))();
+  IntColumn get documentOrder => integer().withDefault(const Constant(0))();
   IntColumn get syncSeq => integer()();
   BoolColumn get hidden => boolean().withDefault(const Constant(false))();
 
@@ -147,7 +153,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'quizmind'));
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -165,6 +171,11 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 5) {
             await m.addColumn(pendingFlags, pendingFlags.reason);
+          }
+          if (from < 6) {
+            await m.addColumn(questions, questions.documentId);
+            await m.addColumn(questions, questions.documentTitle);
+            await m.addColumn(questions, questions.documentOrder);
           }
         },
       );

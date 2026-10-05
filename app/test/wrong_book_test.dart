@@ -181,8 +181,10 @@ void main() {
       await pumpWith(tester, db, Scaffold(body: BankDetail(bank: bank('a', '甲题库'))));
       await settleUi(tester);
 
-      final entry = find.widgetWithText(OutlinedButton, '本题库错题本 · 1 题');
+      final entry = find.text('错题本');
       await tester.scrollUntilVisible(entry, 200, scrollable: find.byType(Scrollable).first);
+      await tester.ensureVisible(entry);
+      await tester.pumpAndSettle();
       await tester.tap(entry);
       await tester.pumpAndSettle();
       expect(find.text('共 1 题'), findsOneWidget);
@@ -195,9 +197,12 @@ void main() {
       await tester.pumpWidget(const SizedBox());
       await pumpWith(tester, db, Scaffold(body: BankDetail(bank: bank('b', '乙题库'))));
       await settleUi(tester);
-      final none = find.widgetWithText(OutlinedButton, '本题库错题本 · 没有错题');
+      final none = find.text('错题本');
       await tester.scrollUntilVisible(none, 200, scrollable: find.byType(Scrollable).first);
-      expect(tester.widget<OutlinedButton>(none).onPressed, isNull);
+      await tester.ensureVisible(none);
+      await tester.pumpAndSettle();
+      expect(find.text('没有错题'), findsOneWidget);
+      expect(tester.widget<InkWell>(find.ancestor(of: none, matching: find.byType(InkWell))).onTap, isNull);
       await tearDownUi(tester, db);
     });
   });

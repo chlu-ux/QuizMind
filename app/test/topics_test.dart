@@ -23,6 +23,9 @@ Question q(String id, List<String> tags) => Question(
       difficulty: 2,
       tagsJson: jsonEncode(tags),
       sourceQuote: '',
+      documentId: '',
+      documentTitle: '',
+      documentOrder: 0,
       syncSeq: 1,
       hidden: false,
     );
@@ -237,8 +240,10 @@ void main() {
       });
       await pumpWith(tester, db, Scaffold(body: BankDetail(bank: bank)));
       await settleUi(tester);
-      final entry = find.widgetWithText(OutlinedButton, '按知识点刷题');
+      final entry = find.text('按知识点刷题');
       await tester.scrollUntilVisible(entry, 200, scrollable: find.byType(Scrollable).first);
+      await tester.ensureVisible(entry);
+      await tester.pumpAndSettle();
       await tester.tap(entry);
       await tester.pumpAndSettle();
       expect(find.text('按知识点刷题 · 题库'), findsOneWidget);

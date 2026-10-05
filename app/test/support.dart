@@ -223,6 +223,7 @@ Future<List<Question>> seedQs(
   String Function(int i)? stem,
   List<String> Function(int i)? tags,
   String Function(int i)? explanation,
+  ({String id, String title, int order})? Function(int i)? module,
   int firstSeq = 1,
 }) async {
   final ids = <String>[];
@@ -238,6 +239,9 @@ Future<List<Question>> seedQs(
           answerJson: '[1]',
           explanation: Value(explanation?.call(i) ?? '解析 $id'),
           tagsJson: Value(_json(tags?.call(i) ?? const ['锁'])),
+          documentId: Value(module?.call(i)?.id ?? ''),
+          documentTitle: Value(module?.call(i)?.title ?? ''),
+          documentOrder: Value(module?.call(i)?.order ?? 0),
           syncSeq: firstSeq + i - 1,
         ));
   }

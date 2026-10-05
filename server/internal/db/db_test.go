@@ -140,7 +140,7 @@ func TestMigration_BackfillsAttemptSyncSeq(t *testing.T) {
 		`DROP INDEX idx_attempt_sync`,
 		`ALTER TABLE attempt DROP COLUMN sync_seq`,
 		`ALTER TABLE attempt DROP COLUMN review_ms`,
-		`DELETE FROM goose_db_version WHERE version_id IN (4, 5, 6, 7, 8)`,
+		`DELETE FROM goose_db_version WHERE version_id IN (4, 5, 6, 7, 8, 9)`,
 		`UPDATE sync_counter SET value = 10 WHERE id = 1`,
 		`INSERT INTO attempt (id, question_id, device_id, answer, is_correct, answered_at, received_at) VALUES
 		   ('B', 'q', 'd', '[0]', 1, 1, 200), ('A', 'q', 'd', '[0]', 1, 1, 100), ('C', 'q', 'd', '[0]', 0, 1, 200)`,
@@ -167,4 +167,47 @@ func TestMigration_BackfillsAttemptSyncSeq(t *testing.T) {
 	var counter int
 	require.NoError(t, d.Read.QueryRow(`SELECT value FROM sync_counter WHERE id = 1`).Scan(&counter))
 	assert.Equal(t, 13, counter, "new rows continue after the backfill")
+}
+
+// Questions gain a document (module) in the sync payload, which devices only see by pulling them
+// again: the migration moves every synced question's sync_seq past the counter, keeping its old order.
+func TestMigration_RenumbersQuestionsForModuleSync(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "app.db")
+	d, err := db.Open(path)
+	require.NoError(t, err)
+	for _, stmt := range []string{
+		`DELETE FROM goose_db_version WHERE version_id = 9`,
+		`UPDATE sync_counter SET value = 100 WHERE id = 1`,
+		`INSERT INTO bank (id, title, created_at) VALUES ('b', 't', 1)`,
+		`INSERT INTO question (id, bank_id, type, stem, answer, source_quote, status, content_hash, sync_seq, created_at, updated_at) VALUES
+		   ('q2', 'b', 'single', 's', '[0]', 'x', 'published', 'h2', 7, 1, 1),
+		   ('q1', 'b', 'single', 's', '[0]', 'x', 'published', 'h1', 3, 1, 1),
+		   ('q3', 'b', 'single', 's', '[0]', 'x', 'rejected', 'h3', 9, 1, 1),
+		   ('q4', 'b', 'single', 's', '[0]', 'x', 'draft', 'h4', NULL, 1, 1)`,
+	} {
+		_, err := d.Write.Exec(stmt)
+		require.NoError(t, err, stmt)
+	}
+	require.NoError(t, d.Close())
+
+	d, err = db.Open(path)
+	require.NoError(t, err)
+	defer d.Close()
+	got := map[string]sql.NullInt64{}
+	rows, err := d.Read.Query(`SELECT id, sync_seq FROM question`)
+	require.NoError(t, err)
+	for rows.Next() {
+		var id string
+		var seq sql.NullInt64
+		require.NoError(t, rows.Scan(&id, &seq))
+		got[id] = seq
+	}
+	require.NoError(t, rows.Err())
+	assert.Equal(t, int64(103), got["q1"].Int64)
+	assert.Equal(t, int64(107), got["q2"].Int64, "the old order is kept")
+	assert.Equal(t, int64(109), got["q3"].Int64, "withdrawn questions are re-announced too")
+	assert.False(t, got["q4"].Valid, "a question that was never synced stays unsynced")
+	var counter int
+	require.NoError(t, d.Read.QueryRow(`SELECT value FROM sync_counter WHERE id = 1`).Scan(&counter))
+	assert.Equal(t, 109, counter, "new rows continue after the renumbered ones")
 }

@@ -55,8 +55,14 @@ type SyncQuestion struct {
 	Difficulty  int64    `json:"difficulty"`
 	Tags        []string `json:"tags"`
 	SourceQuote string   `json:"source_quote"`
-	SyncSeq     int64    `json:"sync_seq"`
-	UpdatedAt   int64    `json:"updated_at"`
+	// The document the question was generated from: one module / chapter of the bank. Empty when
+	// the question has no source chunk.
+	DocumentID    string `json:"document_id"`
+	DocumentTitle string `json:"document_title"`
+	// When the document was uploaded (ms): modules are listed in the order they were added.
+	DocumentCreatedAt int64 `json:"document_created_at"`
+	SyncSeq           int64 `json:"sync_seq"`
+	UpdatedAt         int64 `json:"updated_at"`
 }
 
 type SyncQuestionsPage struct {
@@ -83,6 +89,22 @@ func (s *Service) SyncQuestions(ctx context.Context, since int64, limit int) (Sy
 	if len(rows) > limit {
 		rows, page.HasMore = rows[:limit], true
 	}
+	var chunkIDs []string
+	for _, q := range rows {
+		if q.Status == "published" && q.ChunkID.Valid {
+			chunkIDs = append(chunkIDs, q.ChunkID.String)
+		}
+	}
+	docs := map[string]store.ListChunkDocumentsRow{}
+	if len(chunkIDs) > 0 {
+		found, err := s.reader().ListChunkDocuments(ctx, chunkIDs)
+		if err != nil {
+			return SyncQuestionsPage{}, err
+		}
+		for _, d := range found {
+			docs[d.ChunkID] = d
+		}
+	}
 	for _, q := range rows {
 		page.NextSeq = q.SyncSeq.Int64
 		if q.Status != "published" {
@@ -93,7 +115,9 @@ func (s *Service) SyncQuestions(ctx context.Context, since int64, limit int) (Sy
 		page.Items = append(page.Items, SyncQuestion{
 			ID: v.ID, BankID: v.BankID, Type: v.Type, Stem: v.Stem, Options: v.Options, Answer: v.Answer,
 			Explanation: v.Explanation, Difficulty: v.Difficulty, Tags: v.Tags, SourceQuote: v.SourceQuote,
-			SyncSeq: q.SyncSeq.Int64, UpdatedAt: v.UpdatedAt,
+			DocumentID: docs[q.ChunkID.String].DocumentID, DocumentTitle: docs[q.ChunkID.String].DocumentTitle,
+			DocumentCreatedAt: docs[q.ChunkID.String].DocumentCreatedAt,
+			SyncSeq:           q.SyncSeq.Int64, UpdatedAt: v.UpdatedAt,
 		})
 	}
 	return page, nil
