@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers.dart';
 import '../../data/database.dart';
 import '../../data/exam_store.dart';
+import '../quiz/quiz_media.dart';
 import 'exam_result_view.dart';
 import 'exam_session.dart';
 
@@ -303,9 +304,8 @@ class _ExamPageState extends ConsumerState<ExamPage> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                MarkdownBody(
-                  data: q.stem,
-                  selectable: true,
+                QuizMarkdown(
+                  q.stem,
                   styleSheet: MarkdownStyleSheet.fromTheme(theme)
                       .copyWith(p: theme.textTheme.titleMedium?.copyWith(height: 1.5)),
                 ),
@@ -384,7 +384,7 @@ class _ExamOption extends StatelessWidget {
                   child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
                 ),
                 const SizedBox(width: 12),
-                Expanded(child: Text(text, style: Theme.of(context).textTheme.bodyLarge)),
+                Expanded(child: OptionText(text, style: Theme.of(context).textTheme.bodyLarge)),
               ],
             ),
           ),

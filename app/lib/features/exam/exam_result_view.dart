@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../../data/database.dart';
+import '../../data/media_text.dart';
 import '../../data/models.dart';
 import '../../data/progress.dart';
+import '../quiz/quiz_media.dart';
 import '../quiz/quiz_page.dart';
 import 'exam_session.dart';
 
@@ -17,7 +18,7 @@ class ExamResultView extends StatelessWidget {
   final String title;
 
   String _option(Question q, int i) =>
-      q.type == 'judge' ? q.options[i] : '${String.fromCharCode(65 + i)}. ${q.options[i]}';
+      q.type == 'judge' ? q.options[i] : '${String.fromCharCode(65 + i)}. ${plainText(q.options[i])}';
 
   String _picked(ExamEntry e) =>
       e.selected.isEmpty || e.question == null ? '未作答' : e.selected.map((i) => _option(e.question!, i)).join('、');
@@ -163,7 +164,7 @@ class _ReviewTile extends StatelessWidget {
         collapsedShape: const Border(),
         leading: Icon(ok ? Icons.check_circle : Icons.cancel, color: color),
         title: Text(
-          '${index + 1}. ${q?.stem ?? '（这道题已下线）'}',
+          '${index + 1}. ${q == null ? '（这道题已下线）' : plainText(q.stem)}',
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
         ),
@@ -177,7 +178,7 @@ class _ReviewTile extends StatelessWidget {
                 ),
               ]
             : [
-                MarkdownBody(data: q.stem, selectable: true),
+                QuizMarkdown(q.stem),
                 const SizedBox(height: 8),
                 Text.rich(
                   TextSpan(
@@ -204,7 +205,7 @@ class _ReviewTile extends StatelessWidget {
                   ),
                 if (q.explanation.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  MarkdownBody(data: q.explanation, selectable: true),
+                  QuizMarkdown(q.explanation),
                 ],
                 if (q.sourceQuote.isNotEmpty) ...[
                   const SizedBox(height: 8),

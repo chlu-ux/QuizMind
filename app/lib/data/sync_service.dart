@@ -5,6 +5,8 @@ import 'package:drift/drift.dart';
 import 'ai_config_store.dart';
 import 'api.dart';
 import 'database.dart';
+import 'media_store.dart';
+import 'media_text.dart';
 import 'models.dart';
 import 'session_store.dart';
 
@@ -21,6 +23,7 @@ class SyncReport {
     this.sessionsPulled = 0,
     this.notesUploaded = 0,
     this.notesPulled = 0,
+    this.picturesDownloaded = 0,
     this.aiConfigUpdated = false,
     this.aiWarning,
   });
@@ -43,6 +46,9 @@ class SyncReport {
   final int notesUploaded;
   final int notesPulled;
 
+  /// Pictures used by questions that were saved on this device for offline use.
+  final int picturesDownloaded;
+
   /// The LLM configuration was fetched from the server (a new or changed one).
   final bool aiConfigUpdated;
 
@@ -59,6 +65,7 @@ class SyncReport {
       if (sessionsPulled > 0) '同步了 $sessionsPulled 个题库的刷题进度',
       if (notesUploaded > 0) '上传 $notesUploaded 条 AI 解读',
       if (notesPulled > 0) '同步了 $notesPulled 条 AI 解读',
+      if (picturesDownloaded > 0) '下载了 $picturesDownloaded 张题目配图',
       if (aiConfigUpdated) '已更新 AI 配置',
       ?aiWarning,
     ];
@@ -69,7 +76,7 @@ class SyncReport {
 /// Uploads the outbox, then pulls server changes. Uploading first means a
 /// device never loses local progress to a stale pull.
 class SyncService {
-  SyncService(this.db, this.api, {this.sessions, this.aiConfig, this.deviceId = '', DateTime Function()? clock})
+  SyncService(this.db, this.api, {this.sessions, this.aiConfig, this.media, this.deviceId = '', DateTime Function()? clock})
       : _clock = clock ?? DateTime.now;
 
   final AppDatabase db;
@@ -80,6 +87,9 @@ class SyncService {
 
   /// Where the AI explanation settings live; null skips fetching the configuration.
   final AiConfigStore? aiConfig;
+
+  /// Where the pictures of questions are saved; null leaves them to be loaded when shown.
+  final MediaStore? media;
   final String deviceId;
   final DateTime Function() _clock;
 
@@ -120,6 +130,7 @@ class SyncService {
     final ai = await _fetchAiConfig();
     await _replaceBanks(banks);
     await _setMeta(lastSyncAt, _clock().millisecondsSinceEpoch);
+    final pictures = await _downloadPictures();
     return SyncReport(
       questionsUpdated: q.$1,
       questionsRemoved: q.$2,
@@ -132,9 +143,28 @@ class SyncService {
       sessionsPulled: sessionsDown,
       notesUploaded: notesUp,
       notesPulled: notesDown,
+      picturesDownloaded: pictures,
       aiConfigUpdated: ai.updated,
       aiWarning: ai.warning,
     );
+  }
+
+  /// Saves every picture the (visible) questions use, so they show without a connection. Last, and
+  /// never fatal: a picture that cannot be fetched now is loaded when it is first shown.
+  Future<int> _downloadPictures() async {
+    final store = media;
+    if (store == null) return 0;
+    try {
+      final rows = await (db.select(db.questions)
+            ..where((q) => q.hidden.equals(false) & (q.stem.like('%(media:%') | q.optionsJson.like('%(media:%') | q.explanation.like('%(media:%'))))
+          .get();
+      final ids = mediaIds([
+        for (final q in rows) ...[q.stem, q.optionsJson, q.explanation],
+      ]);
+      return await store.prefetch(ids);
+    } catch (_) {
+      return 0;
+    }
   }
 
   Future<int> _pushAttempts() async {

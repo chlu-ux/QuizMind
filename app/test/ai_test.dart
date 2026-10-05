@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -7,6 +8,8 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quizmind_app/core/providers.dart';
 import 'package:quizmind_app/core/settings.dart';
@@ -15,10 +18,12 @@ import 'package:quizmind_app/data/ai_config_store.dart';
 import 'package:quizmind_app/data/ai_prompt.dart';
 import 'package:quizmind_app/data/api.dart';
 import 'package:quizmind_app/data/database.dart';
+import 'package:quizmind_app/data/media_store.dart';
 import 'package:quizmind_app/data/models.dart';
 import 'package:quizmind_app/data/repository.dart';
 import 'package:quizmind_app/data/sync_service.dart';
 import 'package:quizmind_app/features/quiz/ai_explain_card.dart';
+import 'package:quizmind_app/features/quiz/quiz_media.dart';
 import 'package:quizmind_app/features/settings/settings_page.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -51,12 +56,12 @@ class StubAdapter implements HttpClientAdapter {
   void close({bool force = false}) {}
 }
 
-Future<Question> storedQuestion(AppDatabase db, {String id = 'q1'}) async {
+Future<Question> storedQuestion(AppDatabase db, {String id = 'q1', String? stem}) async {
   await db.into(db.questions).insert(QuestionsCompanion.insert(
         id: id,
         bankId: 'b1',
         type: 'single',
-        stem: '题干 $id',
+        stem: stem ?? '题干 $id',
         optionsJson: '["甲","乙","丙","丁"]',
         answerJson: '[1]',
         explanation: const Value('解析'),
@@ -68,22 +73,27 @@ Future<Question> storedQuestion(AppDatabase db, {String id = 'q1'}) async {
 
 /// Replays canned pieces and records what it was asked.
 class FakeChat implements AiChat {
-  FakeChat(this.pieces, {this.error, this.gate});
+  FakeChat(this.pieces, {this.error, this.gate, this.refuseImages = false});
 
   final List<String> pieces;
   final AiException? error;
 
   /// When set, the stream waits for it before the last piece, to test stopping mid-way.
   final Completer<void>? gate;
+  /// Answers 400 to a request that carries pictures, like a model that cannot look at images.
+  final bool refuseImages;
   int calls = 0;
   AiConfig? lastConfig;
   List<ChatMessage>? lastMessages;
+  final allMessages = <List<ChatMessage>>[];
 
   @override
   Stream<String> stream(AiConfig config, List<ChatMessage> messages, {CancelToken? cancel}) async* {
     calls++;
     lastConfig = config;
     lastMessages = messages;
+    allMessages.add(messages);
+    if (refuseImages && messages.any((m) => m.images.isNotEmpty)) throw AiException('请求被拒绝（400）', status: 400);
     for (var i = 0; i < pieces.length; i++) {
       if (gate != null && i == pieces.length - 1) await gate!.future;
       yield pieces[i];
@@ -173,6 +183,31 @@ void main() {
       expect(user, contains('原文'));
       expect(buildExplainMessages(q, [1]).last.content, contains('学员所选：乙（答对了）'));
       expect(buildExplainMessages(q, const []).last.content, isNot(contains('学员所选')));
+    });
+
+    test('numbers the pictures of a question and attaches them for a model that can look', () async {
+      final db = memoryDb();
+      addTearDown(db.close);
+      const id = '0123456789abcdef01234567';
+      final q = await storedQuestion(db, stem: '如图所示的类图，哪项正确？\n\n![类图](media:$id)');
+
+      final withImage = buildExplainMessages(q, const [], images: {id: 'data:image/png;base64,AAAA'}).last;
+      expect(withImage.content, contains('如图所示的类图，哪项正确？\n\n[图1]'));
+      expect(withImage.content, contains('题目含 1 张图片'));
+      expect(withImage.content, isNot(contains('media:')), reason: 'the reference itself means nothing to a model');
+      expect(withImage.images, ['data:image/png;base64,AAAA']);
+      expect(withImage.toJson()['content'], [
+        {'type': 'text', 'text': withImage.content},
+        {
+          'type': 'image_url',
+          'image_url': {'url': 'data:image/png;base64,AAAA'},
+        },
+      ]);
+
+      final without = buildExplainMessages(q, const []).last;
+      expect(without.content, contains('图片内容没有提供给你'));
+      expect(without.images, isEmpty);
+      expect(without.toJson(), {'role': 'user', 'content': without.content}, reason: 'plain text for a plain request');
     });
   });
 
@@ -327,17 +362,24 @@ void main() {
 
     late AppDatabase db;
 
-    Future<FakeChat> pump(WidgetTester tester, FakeChat chat, {Map<String, Object> prefs = const {}}) async {
+    Future<FakeChat> pump(
+      WidgetTester tester,
+      FakeChat chat, {
+      Map<String, Object> prefs = const {},
+      String? stem,
+      List<Override> overrides = const [],
+    }) async {
       SharedPreferences.resetStatic();
       SharedPreferences.setMockInitialValues(prefs);
       final sp = await SharedPreferences.getInstance();
       db = AppDatabase(NativeDatabase.memory());
-      final q = await tester.runAsync(() => storedQuestion(db)) as Question;
+      final q = await tester.runAsync(() => storedQuestion(db, stem: stem)) as Question;
       await tester.pumpWidget(ProviderScope(
         overrides: [
           sharedPrefsProvider.overrideWithValue(sp),
           databaseProvider.overrideWithValue(db),
           aiChatProvider.overrideWithValue(chat),
+          ...overrides,
         ],
         child: MaterialApp(
           home: Scaffold(body: SingleChildScrollView(child: AiExplainCard(key: ValueKey(q.id), question: q, selected: const [2]))),
@@ -376,6 +418,76 @@ void main() {
       expect(saved.content, '## 结论\n选乙。');
       expect([saved.model, saved.promptVersion, saved.selectedJson], ['m1', aiPromptVersion, '[2]']);
       expect(saved.dirty, isTrue, reason: 'queued for upload');
+      await teardown(tester);
+    });
+
+    group('a question with a picture', () {
+      const id = '0123456789abcdef01234567';
+      late Directory dir;
+
+      setUp(() {
+        dir = Directory.systemTemp.createTempSync('ai_media');
+        Directory('${dir.path}/media').createSync();
+        File('${dir.path}/media/$id').writeAsBytesSync(base64Decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='));
+      });
+      tearDown(() => dir.deleteSync(recursive: true));
+
+      Override store() => mediaStoreProvider.overrideWithValue(MediaStore(baseUrl: '', directory: () async => dir));
+
+      testWidgets('is sent to the model together with its pictures', (tester) async {
+        final chat = await pump(tester, FakeChat(['看图讲解']),
+            prefs: withConfig, stem: '看图\n\n![](media:$id)', overrides: [store()]);
+        await tester.tap(find.text('让 AI 讲解这道题'));
+        for (var i = 0; i < 15; i++) {
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 30)));
+          await tester.pump();
+        }
+
+        expect(chat.calls, 1);
+        final user = chat.lastMessages!.last;
+        expect(user.images, hasLength(1));
+        expect(user.images.single, startsWith('data:image/png;base64,'));
+        expect(user.content, contains('[图1]'));
+        expect(find.textContaining('看图讲解'), findsOneWidget);
+        await teardown(tester);
+      });
+
+      testWidgets('is asked again as text when the model cannot take images', (tester) async {
+        final chat = await pump(tester, FakeChat(['只看文字的讲解'], refuseImages: true),
+            prefs: withConfig, stem: '看图\n\n![](media:$id)', overrides: [store()]);
+        await tester.tap(find.text('让 AI 讲解这道题'));
+        for (var i = 0; i < 15; i++) {
+          await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 30)));
+          await tester.pump();
+        }
+
+        expect(chat.calls, 2, reason: 'once with the picture, refused, once without');
+        expect(chat.allMessages.first.last.images, isNotEmpty);
+        expect(chat.allMessages.last.last.images, isEmpty);
+        expect(chat.allMessages.last.last.content, contains('图片内容没有提供给你'));
+        expect(find.textContaining('只看文字的讲解'), findsOneWidget);
+        expect(find.text('当前模型不支持看图，这次只依据文字讲解'), findsOneWidget);
+        expect((await notes(tester)).single.content, '只看文字的讲解');
+        await teardown(tester);
+      });
+    });
+
+    testWidgets('draws a diagram the model wrote as an svg block, and shows code while it is unfinished', (tester) async {
+      const svg = '<svg viewBox="0 0 100 50"><rect width="100" height="50" fill="#fff"/><text x="10" y="30">开始</text></svg>';
+      final gate = Completer<void>();
+      final chat = await pump(tester, FakeChat(['流程如下：\n```svg\n', svg, '\n```\n', '这就是全部。'], gate: gate), prefs: withConfig);
+      await tester.tap(find.text('让 AI 讲解这道题'));
+      await tester.pump();
+      await settle(tester);
+      // Everything but the last piece has arrived and the block is closed: it is drawn.
+      expect(find.byType(SvgFigure), findsOneWidget);
+      expect(find.byType(SvgPicture), findsOneWidget);
+      expect(find.textContaining('<svg'), findsNothing);
+      gate.complete();
+      await settle(tester);
+      expect(find.textContaining('这就是全部。'), findsOneWidget);
+      expect(chat.calls, 1);
       await teardown(tester);
     });
 

@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { onBeforeRouteLeave, useRouter } from 'vue-router'
 import ExamResultPanel from '@/components/ExamResultPanel.vue'
 import Md from '@/components/Md.vue'
+import OptText from '@/components/OptText.vue'
 import { bump, getRepo, runSync, showToast } from '@/core/app'
 import { ExamSession } from '@/quiz/exam'
 import { pendingExam } from '@/quiz/examLaunch'
@@ -181,7 +182,7 @@ function optionClass(i: number) {
           @click="s.select(opt.original)"
         >
           <span class="letter">{{ s.labelOf(opt.original) }}</span>
-          <span class="grow">{{ opt.text }}</span>
+          <OptText class="grow" :text="opt.text" />
         </button>
       </main>
       <footer class="actionbar">

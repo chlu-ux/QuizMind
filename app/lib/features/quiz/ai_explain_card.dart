@@ -1,16 +1,21 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../data/ai_chat.dart';
 import '../../data/ai_prompt.dart';
 import '../../data/database.dart';
+import '../../data/media_store.dart';
+import '../../data/media_text.dart';
+import '../../data/models.dart';
+import '../../data/progress.dart';
 import '../settings/settings_page.dart';
+import 'quiz_media.dart';
 
 /// "AI 解读" under an answered question: asks the model, streams the answer in,
 /// and saves it (replacing any earlier one) once it is complete. A saved
@@ -34,6 +39,13 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
   CancelToken? _cancel;
   String? _partial; // non-null while a request is running
   String? _error;
+
+  /// Said above the answer when the model could not be shown the question's pictures.
+  String? _notice;
+
+  /// Pictures sent along with the question are capped, so a request stays a sensible size.
+  static const _maxImageBytes = 6 << 20;
+  static const _visionRefused = {400, 415, 422};
 
   bool get _loading => _partial != null;
 
@@ -64,6 +76,12 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
       ));
       return;
     }
+    unawaited(_run(config, withImages: true));
+  }
+
+  /// Streams the answer. A question with pictures is first tried with the pictures attached; a model
+  /// that cannot take images refuses that, and the question is asked again as text only.
+  Future<void> _run(AiConfig config, {required bool withImages}) async {
     final q = widget.question;
     final selected = widget.selected;
     final repo = ref.read(repositoryProvider);
@@ -73,10 +91,13 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
     setState(() {
       _partial = '';
       _error = null;
+      _notice = withImages ? null : '当前模型不支持看图，这次只依据文字讲解';
     });
+    final images = withImages ? await _loadImages(q) : const <String, String>{};
+    if (!mounted || cancel.isCancelled) return;
     _sub = ref
         .read(aiChatProvider)
-        .stream(config, buildExplainMessages(q, selected), cancel: cancel)
+        .stream(config, buildExplainMessages(q, selected, images: images), cancel: cancel)
         .listen(
       (piece) {
         buffer.write(piece);
@@ -84,6 +105,10 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
       },
       onError: (Object e) {
         if (!mounted) return;
+        if (images.isNotEmpty && e is AiException && _visionRefused.contains(e.status)) {
+          unawaited(_run(config, withImages: false));
+          return;
+        }
         setState(() {
           _partial = null;
           _error = e is AiException ? e.message : '解读失败：$e';
@@ -104,6 +129,24 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
       },
       cancelOnError: true,
     );
+  }
+
+  /// The question's pictures as `data:` URIs, by picture id. One that cannot be had is left out.
+  Future<Map<String, String>> _loadImages(Question q) async {
+    final store = ref.read(mediaStoreProvider);
+    final out = <String, String>{};
+    var total = 0;
+    for (final id in mediaIds([q.stem, ...q.options, q.explanation])) {
+      try {
+        final bytes = await (await store.fetch(id)).readAsBytes();
+        total += bytes.length;
+        if (total > _maxImageBytes) break;
+        out[id] = 'data:${imageMime(bytes)};base64,${base64Encode(bytes)}';
+      } on MediaException {
+        continue;
+      }
+    }
+    return out;
   }
 
   void _cancelRequest() {
@@ -147,9 +190,11 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
               TextButton(onPressed: _ask, child: const Text('重新解读')),
             ],
           ]),
+          if (_notice != null)
+            Padding(padding: const EdgeInsets.only(top: 4), child: Text(_notice!, style: theme.textTheme.labelSmall)),
           if (text != null && text.isNotEmpty) ...[
             const SizedBox(height: 4),
-            MarkdownBody(data: text, selectable: !_loading),
+            QuizMarkdown(text, selectable: !_loading),
           ],
           if (_loading && (text == null || text.isEmpty))
             const Padding(

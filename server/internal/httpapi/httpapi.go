@@ -61,6 +61,8 @@ func New(svc *service.Service, hub *events.Hub, token string, static fs.FS, log 
 		r.Post("/questions/{id}/reject", a.rejectQuestion)
 		r.Post("/questions/{id}/dismiss-flags", a.dismissFlags)
 
+		r.Post("/media", a.uploadMedia)
+
 		r.Get("/usage", a.usage)
 
 		r.Get("/ai", a.getAIConfig)
@@ -72,6 +74,9 @@ func New(svc *service.Service, hub *events.Hub, token string, static fs.FS, log 
 	// The quiz client API is deliberately unauthenticated: practising needs no token.
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/banks", a.appBanks)
+		// Pictures used by questions. Unauthenticated like the rest of practising; the ids are
+		// content hashes, and the answer to a question is never inside a picture's URL.
+		r.Get("/media/{id}", a.getMedia)
 		r.Get("/sync/questions", a.syncQuestions)
 		r.Get("/sync/states", a.syncStatesDown)
 		r.Get("/sync/attempts", a.syncAttemptsDown)

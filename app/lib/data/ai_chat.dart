@@ -8,9 +8,12 @@ import 'models.dart';
 
 /// Thrown when the LLM call fails; [message] is safe to show to the user.
 class AiException implements Exception {
-  AiException(this.message);
+  AiException(this.message, {this.status});
 
   final String message;
+
+  /// The HTTP status of the model service's answer, if it gave one.
+  final int? status;
 
   @override
   String toString() => message;
@@ -82,7 +85,7 @@ class HttpAiChat implements AiChat {
         _ when status >= 500 => '模型服务出错了',
         _ => '请求被拒绝',
       };
-      return AiException('$hint（$status）${detail.isEmpty ? '' : '：$detail'}');
+      return AiException('$hint（$status）${detail.isEmpty ? '' : '：$detail'}', status: status);
     }
     return switch (e.type) {
       DioExceptionType.connectionTimeout ||

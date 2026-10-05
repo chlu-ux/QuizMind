@@ -76,6 +76,7 @@ func run() error {
 	questionsPath := flag.String("questions", "", "hand-written questions JSON keyed by section path (required with -doc)")
 	title := flag.String("bank", "", "bank title (required with -doc)")
 	desc := flag.String("desc", "", "bank description (with -doc)")
+	images := flag.String("images", "", "folder holding the pictures that the document and the questions reference by relative path, e.g. ![](uml/class.png) (default: the folder of -doc)")
 	flag.Parse()
 
 	// Built-in sample unless the caller brings their own material. Hand-written
@@ -96,6 +97,9 @@ func run() error {
 			return err
 		}
 		bankName, bankDesc, docName = *title, *desc, filepath.Base(*docPath)
+		if *images == "" {
+			*images = filepath.Dir(*docPath)
+		}
 	}
 
 	cfg, err := config.Load(*configPath)
@@ -105,11 +109,6 @@ func run() error {
 	// Small chunks so each section of the sample becomes its own chunk.
 	cfg.Pipeline.ChunkMinChars = 100
 	cfg.Pipeline.QuestionsPerChunk = 10
-
-	var byPath map[string][]json.RawMessage
-	if err := json.Unmarshal(fixture, &byPath); err != nil {
-		return fmt.Errorf("fixture: %w", err)
-	}
 
 	d, err := db.Open(cfg.DBPath())
 	if err != nil {
@@ -122,11 +121,29 @@ func run() error {
 	q := jobs.NewQueue(d)
 	reg := llm.NewRegistry()
 	guard := llm.NewGuard(llm.Limits{MaxConcurrency: 4}, service.LLMRecorder{DB: d})
-	reg.Set(llm.RoleGenerator, guard.Wrap(llm.RoleGenerator, fixtureClient{byPath: byPath}))
 	svc := service.New(d, cfg, reg, q, hub, log)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// Pictures written as relative paths are uploaded and replaced by media: references, in the
+	// document (so the admin can show it) and in the questions.
+	if *images != "" {
+		text, err := svc.ImportLocalImages(ctx, string(doc), *images)
+		if err != nil {
+			return fmt.Errorf("document: %w", err)
+		}
+		doc = []byte(text)
+		if text, err = svc.ImportLocalImages(ctx, string(fixture), *images); err != nil {
+			return fmt.Errorf("questions: %w", err)
+		}
+		fixture = []byte(text)
+	}
+	var byPath map[string][]json.RawMessage
+	if err := json.Unmarshal(fixture, &byPath); err != nil {
+		return fmt.Errorf("fixture: %w", err)
+	}
+	reg.Set(llm.RoleGenerator, guard.Wrap(llm.RoleGenerator, fixtureClient{byPath: byPath}))
 
 	banks, err := svc.ListBanks(ctx)
 	if err != nil {

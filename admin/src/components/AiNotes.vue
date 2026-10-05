@@ -4,6 +4,8 @@ import { ElMessage } from 'element-plus'
 import { api, errorMessage } from '@/api/client'
 import type { AINote, Bank } from '@/api/types'
 import Markdown from '@/components/Markdown.vue'
+import OptText from '@/components/OptText.vue'
+import { plainText } from '@/utils/media'
 import { formatTime } from '@/utils/format'
 
 const PAGE_SIZE = 20
@@ -68,22 +70,22 @@ watch(page, load)
         <template #default="{ row }">
           <div class="detail">
             <h4>题目</h4>
-            <div class="stem">{{ row.stem }}</div>
+            <Markdown class="stem" :source="row.stem" />
             <ul class="opts">
               <li v-for="(o, i) in row.options" :key="i" :class="{ right: row.answer.includes(i) }">
-                <b>{{ label(row, i) }}.</b> {{ o }}
+                <b>{{ label(row, i) }}.</b> <OptText :text="o" />
                 <el-tag v-if="row.answer.includes(i)" size="small" type="success">正确答案</el-tag>
                 <el-tag v-if="row.selected.includes(i)" size="small" type="warning">提问时所选</el-tag>
               </li>
             </ul>
-            <div v-if="row.explanation" class="orig"><b>原解析：</b>{{ row.explanation }}</div>
+            <div v-if="row.explanation" class="orig"><b>原解析：</b><Markdown :source="row.explanation" /></div>
             <h4>AI 解读</h4>
             <div class="content"><Markdown :source="row.content" /></div>
           </div>
         </template>
       </el-table-column>
       <el-table-column label="题目" min-width="320">
-        <template #default="{ row }"><div class="clamp">{{ row.stem }}</div></template>
+        <template #default="{ row }"><div class="clamp">{{ plainText(row.stem) }}</div></template>
       </el-table-column>
       <el-table-column label="题库" prop="bank_title" width="160" show-overflow-tooltip />
       <el-table-column label="提问时所选" width="100">
@@ -106,7 +108,6 @@ watch(page, load)
 .pager { margin-top: 14px; justify-content: flex-end; }
 .detail { padding: 8px 16px 12px 48px; max-width: 860px; line-height: 1.7; }
 .detail h4 { margin: 10px 0 6px; font-size: 13px; color: var(--el-text-color-secondary); }
-.stem { white-space: pre-wrap; }
 .opts { margin: 6px 0; padding: 0; list-style: none; }
 .opts li { padding: 2px 0; }
 .opts li.right { color: var(--el-color-success); }

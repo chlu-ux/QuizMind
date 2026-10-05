@@ -2,8 +2,10 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import Md from '@/components/Md.vue'
+import OptText from '@/components/OptText.vue'
 import { bump, getRepo, runSync, showToast } from '@/core/app'
 import { pendingQuiz, startQuiz, type QuizLaunch } from '@/quiz/launch'
+import { plainText } from '@/quiz/media'
 import { setSequentialPosition } from '@/quiz/position'
 import { QuizSession } from '@/quiz/session'
 import { FLAG_REASONS, type FlagReason } from '@/data/types'
@@ -207,7 +209,7 @@ function retry() {
         @click="s.select(opt.original)"
       >
         <span class="letter">{{ s.labelOf(opt.original) }}</span>
-        <span class="grow">{{ opt.text }}</span>
+        <OptText class="grow" :text="opt.text" />
         <span v-if="s.submitted && s.current.answer.includes(opt.original)">✔</span>
         <span v-else-if="s.submitted && s.selected.includes(opt.original)">✘</span>
       </button>
@@ -243,7 +245,7 @@ function retry() {
       <p>答对 {{ s.correctCount }} / {{ s.answeredCount }} 题</p>
       <template v-if="s.missed.length">
         <h2 class="left">本次错题</h2>
-        <div v-for="q in s.missed" :key="q.id" class="card"><span class="err">✘</span><span class="grow clamp2">{{ q.stem }}</span></div>
+        <div v-for="q in s.missed" :key="q.id" class="card"><span class="err">✘</span><span class="grow clamp2">{{ plainText(q.stem) }}</span></div>
         <button class="btn primary block" @click="retry">重做错题（{{ s.missed.length }}）</button>
       </template>
       <button class="btn block" @click="router.back()">返回</button>

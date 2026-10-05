@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../data/database.dart';
+import '../../data/media_text.dart';
 import '../../data/stats.dart';
 import '../exam/exam_session.dart';
 import '../quiz/quiz_page.dart';
@@ -437,7 +438,7 @@ class _Weakest extends StatelessWidget {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 dense: true,
-                title: Text(w.question.stem, maxLines: 2, overflow: TextOverflow.ellipsis),
+                title: Text(plainText(w.question.stem), maxLines: 2, overflow: TextOverflow.ellipsis),
                 trailing: Text('错 ${w.wrong}/${w.attempts}', style: TextStyle(color: theme.colorScheme.error)),
               ),
             const SizedBox(height: 8),

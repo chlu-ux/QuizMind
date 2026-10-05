@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -453,4 +454,45 @@ func (a *API) syncNotesUp(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, res)
+}
+
+func (a *API) uploadMedia(w http.ResponseWriter, r *http.Request) {
+	limit := int64(service.MaxMediaBytes) + 1<<20 // headroom for multipart framing
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
+	if err := r.ParseMultipartForm(limit); err != nil {
+		writeError(w, http.StatusRequestEntityTooLarge, "upload too large or malformed")
+		return
+	}
+	file, _, err := r.FormFile("file")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, `multipart field "file" is required`)
+		return
+	}
+	defer file.Close()
+	data, err := io.ReadAll(io.LimitReader(file, int64(service.MaxMediaBytes)+1))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "could not read upload")
+		return
+	}
+	v, err := a.svc.PutMedia(r.Context(), data)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, v)
+}
+
+func (a *API) getMedia(w http.ResponseWriter, r *http.Request) {
+	m, err := a.svc.GetMedia(r.Context(), chi.URLParam(r, "id"))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	h := w.Header()
+	h.Set("Content-Type", m.Mime)
+	h.Set("X-Content-Type-Options", "nosniff")
+	// The id is the content hash, so a given URL never changes.
+	h.Set("Cache-Control", "public, max-age=31536000, immutable")
+	h.Set("Content-Length", strconv.Itoa(len(m.Data)))
+	_, _ = w.Write(m.Data)
 }

@@ -1,12 +1,25 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import DOMPurify from 'dompurify'
-import { marked } from 'marked'
+import { Marked } from 'marked'
+import { isPlainSvg, svgDataUri, withMediaUrls } from '@/utils/media'
 
 const props = defineProps<{ source: string }>()
 
 // Uploaded files and model replies are not trusted markup: sanitize before v-html.
-const html = computed(() => DOMPurify.sanitize(marked.parse(props.source, { async: false, gfm: true, breaks: false })))
+// A ```svg block in an AI answer is a diagram: shown as an image, which cannot run scripts.
+const marked = new Marked({
+  async: false,
+  gfm: true,
+  breaks: false,
+  renderer: {
+    code({ text, lang }) {
+      return lang === 'svg' && isPlainSvg(text) ? `<img class="svgfig" alt="示意图" src="${svgDataUri(text)}">` : false
+    },
+  },
+})
+
+const html = computed(() => DOMPurify.sanitize(marked.parse(withMediaUrls(props.source)) as string))
 </script>
 
 <template>
@@ -29,6 +42,7 @@ const html = computed(() => DOMPurify.sanitize(marked.parse(props.source, { asyn
 .md :deep(blockquote) { margin: 0.8em 0; padding: 0 1em; color: var(--el-text-color-secondary); border-left: 4px solid var(--el-border-color); }
 .md :deep(table) { border-collapse: collapse; display: block; overflow-x: auto; }
 .md :deep(th), .md :deep(td) { padding: 6px 12px; border: 1px solid var(--el-border-color); }
-.md :deep(img) { max-width: 100%; }
+.md :deep(img) { max-width: 100%; background: #fff; }
+.md :deep(img.svgfig) { padding: 8px; border: 1px solid var(--el-border-color); border-radius: 6px; }
 .md :deep(hr) { border: 0; border-top: 1px solid var(--el-border-color); }
 </style>

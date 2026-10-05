@@ -508,6 +508,13 @@ CREATE TABLE question_state (           -- 每题的学习状态
 
 CREATE TABLE sync_counter (id INTEGER PRIMARY KEY CHECK (id=1), value INTEGER NOT NULL);
 
+-- 题目配图（UML 图、流程图…），见 §7.7。id 是内容 SHA-256 的前 24 位十六进制，同一张图只存一份
+CREATE TABLE media (
+  id TEXT PRIMARY KEY, mime TEXT NOT NULL, size INTEGER NOT NULL,
+  width INTEGER NOT NULL DEFAULT 0, height INTEGER NOT NULL DEFAULT 0,
+  data BLOB NOT NULL, created_at INTEGER NOT NULL
+);
+
 CREATE TABLE llm_call_log (
   id TEXT PRIMARY KEY, job_id TEXT, role TEXT, provider TEXT, model TEXT,
   input_tokens INTEGER, output_tokens INTEGER, cached_tokens INTEGER,
@@ -609,9 +616,32 @@ GET/POST /api/v1/sync/notes   → 服务端 ai_note 表（每题一条，覆盖�
 - **配置在服务端、同步到客户端**：配置存在 `app_setting`（SQLite），在管理页编辑；管理页不回显 API Key（只显示 `sk-…a1b2`），保存时留空表示不改。管理页有「测试已保存的配置」按钮，由服务端发一次最小请求。
 - **访问令牌**：`/api/v1/ai/config` 会交出 API Key，所以不像其他 `/api/v1/*` 那样免鉴权，要带管理页里设置的访问令牌（一个简单的字符串，≥4 位，和管理后台的 `QUIZMIND_TOKEN` 是两回事）。未设置令牌则没有客户端能取；功能关闭时返回 404，客户端据此删掉本机副本；令牌错返回 401（同步不失败，只提示）。客户端在设置页输入令牌，同步时自动取配置。
 - **没连过服务端**：客户端设置页可以手动填一份本机配置（Base URL / Key / 模型）。**本机配置优先于服务器配置**，清除后回到服务器配置。
-- **解读文本**：每题一条，`question_id` 为主键，重新解读覆盖旧文本；同步按 `updated_at` 后写覆盖先写（和 `question_state` 一致），行上带服务端 `sync_seq` 供其他设备增量拉取。字段：`content`（Markdown）、`model`、`prompt_version`（客户端提示词版本，现为 `explain.v1`）、`selected`（提问时所选选项）。内容 ≤ 64 KB，未知题目的笔记被忽略。流式生成过程中中止或出错不保存半截文本。
-- **提示词**：题干、选项、标准答案、学员所选、题库解析、原文出处；选项不带字母（学员看到的是打乱后的顺序）；要求以标准答案为准，确信有误时明确写「疑似题目有误」。
+- **解读文本**：每题一条，`question_id` 为主键，重新解读覆盖旧文本；同步按 `updated_at` 后写覆盖先写（和 `question_state` 一致），行上带服务端 `sync_seq` 供其他设备增量拉取。字段：`content`（Markdown）、`model`、`prompt_version`（客户端提示词版本，现为 `explain.v2`）、`selected`（提问时所选选项）。内容 ≤ 64 KB，未知题目的笔记被忽略。流式生成过程中中止或出错不保存半截文本。
+- **提示词**：题干、选项、标准答案、学员所选、题库解析、原文出处；选项不带字母（学员看到的是打乱后的顺序）；要求以标准答案为准，确信有误时明确写「疑似题目有误」。题目带图时的处理和模型画图见 §7.7。
 - **局限**：客户端直连意味着单次 `max_tokens` 之外没有每日用量上限（服务端 `Guard` 管不到）；API Key 会明文存在客户端本地。请求体带 `max_tokens` 和 `temperature`，个别新模型（如要求 `max_completion_tokens` 的）可能不接受。
+
+### 7.7 题目配图与 AI 画图（2026-10-05）
+
+软考这类题的题干或选项里常有 UML 图、流程图。题干、选项、解析本来就是 Markdown，现在配图用 `![说明](media:<id>)` 引用服务端存的图片，三端（H5、Flutter、管理后台）都不改数据结构。
+
+```
+管理后台编辑题目 → 插入图片 / 直接粘贴截图 → POST /admin/media（multipart: file）→ { id, ref: "media:<id>" }
+devseed 导入讲义和题目 JSON → -images 目录里的相对路径图片自动上传并改写成 media:<id>
+      │  图片只进题干 / 选项 / 解析的文字里，同步协议不变
+      ▼
+客户端把 media:<id> 解析成 GET /api/v1/media/<id>（免鉴权，Cache-Control: immutable）
+      │  H5 / 管理后台：<img>，浏览器缓存；点击放大
+      │  Flutter：同步结束后把所有题目用到的图下载到本机（离线可看），没下载到的在显示时再取，失败可点「重试」；点击全屏、双指缩放
+```
+
+- **存储**：`media` 表（BLOB），id 是内容哈希，所以同一张图重复上传得到同一个 id、一个 URL 永远指向同一份内容，可以永久缓存。只收 PNG / JPEG / GIF / WebP，按内容判断类型而不是文件名，≤ 5 MB；**不收 SVG**（可能带脚本，手机端也画不了）。
+- **引用检查**：管理后台保存题目时，引用了没上传过的图会被拒绝（400）；上传接口要管理令牌，读取接口不要（和其他刷题接口一致）。
+- **选项里的图**：选项仍按纯文本显示（可能含 `*p++`、`<T>`，按 Markdown 会被吃掉），只识别图片语法并就地画图；点图放大，点其余部分选择。
+- **列表、搜索、错题本**：把图片引用显示成 `[图]` / `[图：说明]`，搜索也不会命中图片 id。去重按文本比较，图片 id 是文本的一部分，所以只换图的两道题不会被当成重复。
+- **本地资料导入**：`devseed -images <目录>`（有 `-doc` 时默认是讲义所在目录）把讲义和题目 JSON 里的相对路径图片上传并改写；路径不能跑出这个目录，网址、`media:`、绝对路径原样保留。
+- **AI 解读带图（Flutter）**：题目里的图在提示词中标为 `[图1]`、`[图2]`，图片本身以 `image_url`（data URI，合计 ≤ 6 MB）随消息发给模型；模型不接受图片（400 / 415 / 422）时自动改成纯文字重问一次，并在卡片上注明。提示词版本 `explain.v2`。
+- **AI 画图**：不做文生图（位图里的文字容易画错、UML 要求精确、成本高）。提示词允许模型在回答里写一个 ` ```svg ` 代码块；Flutter（`flutter_svg`）和管理后台画成图，**写完（有结尾围栏）才画**，流式生成中仍显示为代码。SVG 含 `<script>`、`<foreignObject>`、`<image>` 或超过 60 KB 时不画，按代码显示；管理后台用 `<img src="data:image/svg+xml,…">` 显示，图片里的脚本不会执行。
+- **局限**：AI 出题流水线（讲义 → 题目）仍是纯文本，看不到图，只会在摘录里看到 `![](media:…)`；要带图的题目需要手写（JSON 或后台编辑）。图片不随 `question` 行同步，换图等于换一个 id，旧题要重新保存引用；服务端没有清理不再被引用的图。
 
 ---
 
@@ -623,10 +653,12 @@ GET/POST /api/v1/sync/notes   → 服务端 ai_note 表（每题一条，覆盖�
 | Admin：文档 | `GET/POST /admin/documents`、`GET /admin/documents/{id}`、`POST /admin/documents/{id}/retry` | 上传（multipart：`bank_id` + `file`）、详情（含切块列表）、重试失败任务 |
 | Admin：任务 | `GET /admin/jobs`、`POST /admin/jobs/{id}/retry`、`GET /admin/events`（SSE） | SSE 用 `?access_token=` 传 Token（EventSource 不能设请求头），日志不记录查询串 |
 | Admin：审核 | `GET /admin/questions`（`?flagged=1` 列出有未处理反馈的题）、`GET/PATCH /admin/questions/{id}`、`POST …/approve`、`POST …/reject`、`POST …/dismiss-flags`、`POST /admin/questions/bulk` | 详情带原文块与标题路径，供审核页高亮 `source_quote`；带 `flags`（反馈原因与时间，最新在前） |
+| Admin：配图 | `POST /admin/media` | 上传一张图（multipart：`file`），返回 `id` 和 Markdown 引用 `media:<id>`，§7.7 |
 | Admin：成本 | `GET /admin/usage?days=30` | 按天、按模型汇总调用次数和 token |
 | Admin：AI 解读 | `GET/PUT /admin/ai`、`POST /admin/ai/test` | LLM 配置与访问令牌（不回显 Key）；测试已保存的配置 |
 | App：同步 | `/api/v1/sync/*` | §7 |
 | App：题库 | `/api/v1/banks`、`/api/v1/questions/{id}/flag` | 反馈可带可选的 `reason`，§7.5 |
+| App：配图 | `GET /api/v1/media/{id}` | 题目里的图，免鉴权、永久可缓存，§7.7 |
 | App：AI 解读 | `GET /api/v1/ai/config`（需访问令牌）、`/api/v1/sync/notes` | §7.6 |
 | 运维 | `/healthz` | |
 
@@ -763,6 +795,19 @@ QuizMind/
 | 5 | 错题本与收藏分题库 | H5、Flutter | 无 | 已完成 |
 
 **升级注意**：迁移 00008 在服务端启动时自动执行，只新增一张表；升级前照例备份数据库。Flutter 数据库自动升到 v5（`pending_flags` 加一列 `reason`）。H5 的 IndexedDB 不需要升级（`flags` 记录多一个可选字段）。系统级定时通知（Flutter）、跨题库全局搜索、反馈的自由文字说明、目标 / 提醒的跨设备同步、间隔重复复习队列，本轮明确不做。
+
+### 12.5 题目配图与 AI 画图（2026-10-05）
+
+回应「软考有 UML 图、流程图，能不能带图、AI 解读能不能出图」。设计和取舍见 §7.7。
+
+| # | 改进 | 范围 | 协议 / 数据库 | 状态 |
+|---|---|---|---|---|
+| 1 | 题目配图：上传、存储、三端显示（题干 / 选项 / 解析）、点击放大、列表占位 | 服务端、管理后台、H5、Flutter | 新表 `media`（迁移 00010）；`POST /admin/media`、`GET /api/v1/media/{id}`；同步载荷不变 | 已完成 |
+| 2 | 录入：后台插入 / 粘贴图片；`devseed -images` 导入本地图片 | 管理后台、devseed | 无 | 已完成 |
+| 3 | Flutter 离线：同步时下载配图到本机，缺的在显示时补，可重试 | Flutter | 无 | 已完成 |
+| 4 | AI：带图的题把图片发给多模态模型（不支持则退回纯文字）；允许模型画 SVG 示意图 | Flutter、管理后台 | 提示词 `explain.v2`；新依赖 `flutter_svg` | 已完成 |
+
+**升级注意**：迁移 00010 在服务端启动时自动执行，只新增一张表；图片存在数据库里，数据库备份会随之变大。旧版 App 看到带 `media:` 的题会显示成一张加载失败的图或一段文字，需要升级 App（H5 刷新即可）。
 
 ---
 

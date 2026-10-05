@@ -95,6 +95,16 @@ export interface DocumentContent extends DocumentRow {
   content: string
 }
 
+export interface MediaView {
+  id: string
+  /** What to put in Markdown: `media:<id>`. */
+  ref: string
+  mime: string
+  size: number
+  width: number
+  height: number
+}
+
 export interface ImportResult {
   document: DocumentRow
   created: boolean

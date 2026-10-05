@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../data/database.dart';
+import '../../data/media_text.dart';
 import '../quiz/quiz_page.dart';
 import '../quiz/quiz_session.dart';
 import 'bank_filter.dart';
@@ -112,7 +113,7 @@ class _QuestionListPageState extends ConsumerState<QuestionListPage> {
                       final q = qs[i];
                       final type = q.type == 'judge' ? '判断题' : '单选题';
                       return ListTile(
-                        title: Text(q.stem, maxLines: 2, overflow: TextOverflow.ellipsis),
+                        title: Text(plainText(q.stem), maxLines: 2, overflow: TextOverflow.ellipsis),
                         subtitle: Text(active.isEmpty ? '$type · ${nameOf(q.bankId)}' : type),
                         trailing: IconButton(
                           tooltip: wrong ? '移出错题本' : '取消收藏',

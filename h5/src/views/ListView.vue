@@ -5,6 +5,7 @@ import SyncButton from '@/components/SyncButton.vue'
 import { bump, dataVersion, getRepo } from '@/core/app'
 import type { Bank, LocalQuestion } from '@/data/types'
 import { bankOptions, inBank, rememberBank, rememberedBank } from '@/quiz/bankFilter'
+import { plainText } from '@/quiz/media'
 import { orderQuestions } from '@/quiz/session'
 import { startQuiz } from '@/quiz/launch'
 
@@ -88,7 +89,7 @@ async function remove(q: LocalQuestion) {
       </div>
       <div v-for="(q, i) in items" :key="q.id" class="card">
         <button class="grow plain" @click="startQuiz(title, items, i)">
-          <div class="clamp2">{{ q.stem }}</div>
+          <div class="clamp2">{{ plainText(q.stem) }}</div>
           <div class="muted small">
             {{ q.type === 'judge' ? '判断题' : '单选题' }}
             <template v-if="!active"> · {{ bankName(q.bank_id) }}</template>

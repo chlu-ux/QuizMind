@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import type { Question } from '@/api/types'
+import Markdown from '@/components/Markdown.vue'
+import OptText from '@/components/OptText.vue'
 import { OPTION_LETTERS, TYPE_LABEL } from '@/utils/format'
 
 defineProps<{ q: Pick<Question, 'type' | 'stem' | 'options' | 'answer' | 'difficulty' | 'tags'> }>()
@@ -12,11 +14,11 @@ defineProps<{ q: Pick<Question, 'type' | 'stem' | 'options' | 'answer' | 'diffic
       <el-rate :model-value="q.difficulty" disabled :max="5" size="small" />
       <el-tag v-for="t in q.tags" :key="t" size="small" type="info" effect="plain">{{ t }}</el-tag>
     </div>
-    <div class="stem">{{ q.stem }}</div>
+    <Markdown class="stem" :source="q.stem" />
     <ul class="options">
       <li v-for="(o, i) in q.options" :key="i" :class="{ correct: q.answer.includes(i) }">
         <span class="letter">{{ OPTION_LETTERS[i] }}</span>
-        <span class="text">{{ o }}</span>
+        <OptText class="text" :text="o" />
         <span v-if="q.answer.includes(i)" class="tick">✓ 正确答案</span>
       </li>
     </ul>

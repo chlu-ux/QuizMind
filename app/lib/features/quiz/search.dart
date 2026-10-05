@@ -1,4 +1,5 @@
 import '../../data/database.dart';
+import '../../data/media_text.dart';
 import '../../data/progress.dart';
 
 /// Where a question matched, best first: a hit in the stem outranks one in an option or tag, which outranks the explanation.
@@ -86,10 +87,10 @@ const _before = 24;
 const _after = 48;
 
 Map<SearchWhere, List<String>> _fieldsOf(Question q) => {
-      SearchWhere.stem: [q.stem],
-      SearchWhere.option: q.options,
+      SearchWhere.stem: [plainText(q.stem)],
+      SearchWhere.option: [for (final o in q.options) plainText(o)],
       SearchWhere.tag: q.tags,
-      SearchWhere.explanation: q.explanation.isEmpty ? const [] : [q.explanation],
+      SearchWhere.explanation: q.explanation.isEmpty ? const [] : [plainText(q.explanation)],
     };
 
 /// Where in [text] the first of [terms] occurs, as offsets in the original; null if none does.

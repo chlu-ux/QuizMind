@@ -34,6 +34,15 @@ review page, filter by "被反馈" to see every question with unresolved reports
 "处理完毕" (`POST /admin/questions/{id}/dismiss-flags`) clears the reports and brings a question the
 reports took offline back, and approve / reject settle them too.
 
+## Question pictures
+
+A stem, option or explanation may contain pictures (UML diagrams, flow charts), written
+`![alt](media:<id>)`. Upload them from the question editor in the admin UI ("插入图片", or paste a
+screenshot), or for hand-written material let devseed upload them: relative image paths in the
+lecture notes and the questions JSON are replaced by `media:` references (`devseed -images <dir>`;
+the default is the folder of `-doc`). Pictures are stored in `app.db` (PNG, JPEG, GIF, WebP, up to
+5 MB, de-duplicated by content) and served at `GET /api/v1/media/{id}`. Back up `app.db` accordingly.
+
 ## AI explanations
 
 The quiz app (Flutter) can ask an LLM to explain a question. The app calls an

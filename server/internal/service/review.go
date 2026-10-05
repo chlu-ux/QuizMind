@@ -215,6 +215,9 @@ func (s *Service) EditQuestion(ctx context.Context, id string, e QuestionEdit) (
 		if err != nil {
 			return invalid("%v", err)
 		}
+		if err := checkMedia(ctx, qs, append([]string{v.Stem, v.Explanation}, v.Options...)...); err != nil {
+			return err
+		}
 		now := nowMs()
 		if err := qs.UpdateQuestionContent(ctx, store.UpdateQuestionContentParams{
 			Type: v.Type, Stem: v.Stem, Options: jsonArray(v.Options), Answer: jsonArray([]int{v.AnswerIndex}),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../data/ai_chat.dart';
 import '../data/ai_config_store.dart';
@@ -8,6 +9,7 @@ import '../data/api.dart';
 import '../data/models.dart';
 import '../data/database.dart';
 import '../data/exam_store.dart';
+import '../data/media_store.dart';
 import '../data/repository.dart';
 import '../data/session_store.dart';
 import '../data/stats.dart';
@@ -83,6 +85,12 @@ final apiProvider = Provider<QuizApi>((ref) {
   return HttpQuizApi(baseUrl: s.baseUrl);
 });
 
+/// Pictures of questions, saved on this device. Rebuilt when the server address changes; overridden in tests.
+final mediaStoreProvider = Provider<MediaStore>((ref) {
+  final baseUrl = ref.watch(settingsProvider.select((s) => s.baseUrl));
+  return MediaStore(baseUrl: baseUrl, directory: getApplicationSupportDirectory);
+});
+
 final banksProvider = StreamProvider<List<Bank>>((ref) => ref.watch(repositoryProvider).watchBanks());
 final wrongBookProvider = StreamProvider<List<Question>>((ref) => ref.watch(repositoryProvider).watchWrongBook());
 
@@ -128,6 +136,7 @@ class SyncController extends Notifier<SyncStatus> {
         ref.read(apiProvider),
         sessions: ref.read(sessionStoreProvider),
         aiConfig: ref.read(aiConfigStoreProvider),
+        media: ref.read(mediaStoreProvider),
         deviceId: ref.read(settingsProvider).deviceId,
       );
 

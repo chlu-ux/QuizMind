@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"image"
+	"image/png"
 	"io"
 	"log/slog"
 	"mime/multipart"
@@ -1027,4 +1029,88 @@ func TestDismissFlags(t *testing.T) {
 	s.do(t, "POST", "/admin/questions/"+qid+"/dismiss-flags", "", 200, &v)
 	assert.Equal(t, "rejected", v.Status)
 	s.do(t, "POST", "/admin/questions/missing/dismiss-flags", "", 404, nil)
+}
+
+func (s *server) uploadMedia(t *testing.T, filename string, content []byte, auth bool) *http.Response {
+	t.Helper()
+	var buf bytes.Buffer
+	mw := multipart.NewWriter(&buf)
+	fw, err := mw.CreateFormFile("file", filename)
+	require.NoError(t, err)
+	_, _ = fw.Write(content)
+	require.NoError(t, mw.Close())
+	return s.req(t, "POST", "/admin/media", &buf, mw.FormDataContentType(), auth)
+}
+
+func TestMedia(t *testing.T) {
+	s := newServer(t)
+
+	var pic bytes.Buffer
+	require.NoError(t, png.Encode(&pic, image.NewRGBA(image.Rect(0, 0, 40, 30))))
+
+	resp := s.uploadMedia(t, "uml.png", pic.Bytes(), false)
+	resp.Body.Close()
+	assert.Equal(t, 401, resp.StatusCode, "uploading needs the admin token")
+
+	resp = s.uploadMedia(t, "uml.png", pic.Bytes(), true)
+	require.Equal(t, 201, resp.StatusCode)
+	var m struct {
+		ID, Ref, Mime string
+		Width, Height int
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&m))
+	resp.Body.Close()
+	assert.Equal(t, "media:"+m.ID, m.Ref)
+	assert.Equal(t, "image/png", m.Mime)
+	assert.Equal(t, [2]int{40, 30}, [2]int{m.Width, m.Height})
+
+	// The same bytes give the same id.
+	resp = s.uploadMedia(t, "again.png", pic.Bytes(), true)
+	var again struct{ ID string }
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&again))
+	resp.Body.Close()
+	assert.Equal(t, m.ID, again.ID)
+
+	// The type is judged by content: a script renamed to .png is refused, and so is SVG.
+	for _, bad := range []string{"alert(1)", `<svg xmlns="http://www.w3.org/2000/svg"></svg>`} {
+		resp = s.uploadMedia(t, "x.png", []byte(bad), true)
+		resp.Body.Close()
+		assert.Equal(t, 400, resp.StatusCode, bad)
+	}
+	resp = s.uploadMedia(t, "x.png", append([]byte("\x89PNG\r\n\x1a\n"), "junk"...), true)
+	resp.Body.Close()
+	assert.Equal(t, 400, resp.StatusCode, "a truncated PNG is not an image")
+
+	// Phones fetch it without a token.
+	resp = s.req(t, "GET", "/api/v1/media/"+m.ID, nil, "", false)
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	require.Equal(t, 200, resp.StatusCode)
+	assert.Equal(t, pic.Bytes(), body)
+	assert.Equal(t, "image/png", resp.Header.Get("Content-Type"))
+	assert.Contains(t, resp.Header.Get("Cache-Control"), "immutable")
+	assert.Equal(t, "nosniff", resp.Header.Get("X-Content-Type-Options"))
+
+	resp = s.req(t, "GET", "/api/v1/media/000000000000000000000000", nil, "", false)
+	resp.Body.Close()
+	assert.Equal(t, 404, resp.StatusCode)
+
+	// A question may reference an uploaded picture, but not one that does not exist.
+	up := s.upload(t, "notes.md", doc)
+	require.Equal(t, 201, up.StatusCode)
+	var res struct{ Document struct{ ID string } }
+	require.NoError(t, json.NewDecoder(up.Body).Decode(&res))
+	up.Body.Close()
+	var page struct{ Items []struct{ ID string } }
+	require.Eventually(t, func() bool {
+		s.do(t, "GET", "/admin/questions?status=needs_review&document_id="+res.Document.ID, "", 200, &page)
+		return len(page.Items) == 1
+	}, 10*time.Second, 25*time.Millisecond)
+	id := page.Items[0].ID
+
+	var edited struct{ Stem string }
+	s.do(t, "PATCH", "/admin/questions/"+id, `{"stem":"如图所示的读写锁类图中，哪个说法正确？\n\n![类图](`+m.Ref+`)"}`, 200, &edited)
+	assert.Contains(t, edited.Stem, m.Ref)
+	s.do(t, "PATCH", "/admin/questions/"+id, `{"stem":"如图所示的读写锁类图中，哪个说法正确？![类图](media:0123456789abcdef01234567)"}`, 400, nil)
+	s.do(t, "PATCH", "/admin/questions/"+id, `{"options":["![](`+m.Ref+`)","b","c","d"]}`, 200, nil)
 }

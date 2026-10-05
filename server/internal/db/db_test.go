@@ -134,13 +134,14 @@ func TestMigration_BackfillsAttemptSyncSeq(t *testing.T) {
 		`PRAGMA foreign_keys = OFF`,
 		`DROP INDEX idx_flag_question`,
 		`DROP TABLE question_flag`,
+		`DROP TABLE media`,
 		`DROP TABLE ai_note`,
 		`DROP TABLE app_setting`,
 		`DROP TABLE exam`,
 		`DROP INDEX idx_attempt_sync`,
 		`ALTER TABLE attempt DROP COLUMN sync_seq`,
 		`ALTER TABLE attempt DROP COLUMN review_ms`,
-		`DELETE FROM goose_db_version WHERE version_id IN (4, 5, 6, 7, 8, 9)`,
+		`DELETE FROM goose_db_version WHERE version_id IN (4, 5, 6, 7, 8, 9, 10)`,
 		`UPDATE sync_counter SET value = 10 WHERE id = 1`,
 		`INSERT INTO attempt (id, question_id, device_id, answer, is_correct, answered_at, received_at) VALUES
 		   ('B', 'q', 'd', '[0]', 1, 1, 200), ('A', 'q', 'd', '[0]', 1, 1, 100), ('C', 'q', 'd', '[0]', 0, 1, 200)`,
@@ -176,7 +177,8 @@ func TestMigration_RenumbersQuestionsForModuleSync(t *testing.T) {
 	d, err := db.Open(path)
 	require.NoError(t, err)
 	for _, stmt := range []string{
-		`DELETE FROM goose_db_version WHERE version_id = 9`,
+		`DROP TABLE media`,
+		`DELETE FROM goose_db_version WHERE version_id IN (9, 10)`,
 		`UPDATE sync_counter SET value = 100 WHERE id = 1`,
 		`INSERT INTO bank (id, title, created_at) VALUES ('b', 't', 1)`,
 		`INSERT INTO question (id, bank_id, type, stem, answer, source_quote, status, content_hash, sync_seq, created_at, updated_at) VALUES

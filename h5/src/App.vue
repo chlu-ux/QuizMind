@@ -3,6 +3,7 @@ import { watch } from 'vue'
 import { useRoute } from 'vue-router'
 import TabBar from './components/TabBar.vue'
 import { showToast, syncStatus, toast } from './core/app'
+import { closeImage, lightbox } from './core/lightbox'
 
 const route = useRoute()
 
@@ -22,6 +23,9 @@ watch(
     </router-view>
   </div>
   <TabBar v-if="route.meta.tabs" />
+  <div v-if="lightbox.src" class="lightbox" role="dialog" aria-label="查看图片" @click="closeImage">
+    <img :src="lightbox.src" :alt="lightbox.alt" />
+  </div>
   <transition name="fade">
     <div v-if="toast.text" :key="toast.seq" class="toast" :class="{ err: toast.error }" role="status">{{ toast.text }}</div>
   </transition>

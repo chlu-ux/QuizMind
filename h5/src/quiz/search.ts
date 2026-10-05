@@ -1,4 +1,5 @@
 import type { LocalQuestion } from '@/data/types'
+import { plainText } from './media'
 
 /** Where a question matched, best first: a hit in the stem outranks one in an option or tag, which outranks the explanation. */
 export type SearchWhere = 'stem' | 'option' | 'tag' | 'explanation'
@@ -62,7 +63,12 @@ const BEFORE = 24
 const AFTER = 48
 
 function fieldsOf(q: LocalQuestion): Record<SearchWhere, string[]> {
-  return { stem: [q.stem], option: q.options, tag: q.tags, explanation: q.explanation ? [q.explanation] : [] }
+  return {
+    stem: [plainText(q.stem)],
+    option: q.options.map(plainText),
+    tag: q.tags,
+    explanation: q.explanation ? [plainText(q.explanation)] : [],
+  }
 }
 
 /** Where in [text] the first of [terms] occurs, as offsets in the original; null if none does. */

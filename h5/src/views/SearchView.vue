@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { getRepo } from '@/core/app'
 import type { Bank, LocalQuestion } from '@/data/types'
 import { startQuiz } from '@/quiz/launch'
+import { plainText } from '@/quiz/media'
 import { highlight, searchQuestions, searchTerms } from '@/quiz/search'
 import { orderQuestions } from '@/quiz/session'
 
@@ -79,7 +80,7 @@ function practice() {
         <div v-for="(h, i) in shown" :key="h.question.id" class="card">
           <button class="grow plain" @click="start(i)">
             <div class="clamp2">
-              <template v-for="(p, k) in highlight(h.question.stem, terms)" :key="k">
+              <template v-for="(p, k) in highlight(plainText(h.question.stem), terms)" :key="k">
                 <mark v-if="p.hit">{{ p.text }}</mark>
                 <template v-else>{{ p.text }}</template>
               </template>

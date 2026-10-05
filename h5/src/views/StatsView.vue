@@ -6,6 +6,7 @@ import { durationParts, formatDuration, formatMinutes, percent, type BankReport,
 import type { Bank } from '@/data/types'
 import { PASS_PERCENT } from '@/quiz/exam'
 import { startQuiz } from '@/quiz/launch'
+import { plainText } from '@/quiz/media'
 import { orderQuestions } from '@/quiz/session'
 import { topicQuestions } from '@/quiz/topics'
 
@@ -218,7 +219,7 @@ function practiseWeak() {
       <section v-if="weakest.length" class="card col">
         <h2>最常做错的题</h2>
         <div v-for="w in weakest" :key="w.question.id" class="weak">
-          <span class="grow clamp2">{{ w.question.stem }}</span>
+          <span class="grow clamp2">{{ plainText(w.question.stem) }}</span>
           <span class="err small nowrap">错 {{ w.wrong }}/{{ w.attempts }}</span>
         </div>
         <button class="btn primary block" @click="practiseWeak">专攻薄弱题（最多 20 道）</button>

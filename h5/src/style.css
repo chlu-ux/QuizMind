@@ -155,6 +155,18 @@ button { font: inherit; color: inherit; }
 .md pre { margin: 0.6em 0; padding: 10px 12px; border-radius: 10px; background: var(--bg); overflow-x: auto; }
 .md pre code { padding: 0; background: none; }
 
+.qimg {
+  display: block; max-width: 100%; height: auto; margin: 0.5em 0; padding: 6px; border-radius: 8px;
+  background: #fff; /* line drawings are usually transparent PNGs drawn for a white page */
+  border: 1px solid var(--line); cursor: zoom-in;
+}
+.opt-text .qimg { margin: 2px 0; }
+.lightbox {
+  position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 12px; overflow: auto;
+  background: rgb(0 0 0 / 0.86); cursor: zoom-out;
+}
+.lightbox img { max-width: none; width: min(96vw, 1400px); height: auto; padding: 8px; border-radius: 8px; background: #fff; }
+
 .toast {
   position: fixed; left: 50%; bottom: calc(var(--tab-h) + var(--safe-b) + 16px); transform: translateX(-50%); z-index: 50;
   max-width: calc(100vw - 32px); padding: 10px 16px; border-radius: 10px; background: #2b2f33; color: #fff; font-size: 14px;

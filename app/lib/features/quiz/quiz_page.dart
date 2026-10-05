@@ -7,11 +7,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../data/database.dart';
+import '../../data/media_text.dart';
 import '../../data/models.dart';
 import '../../data/progress.dart';
 import '../../data/repository.dart';
 import '../../data/session_store.dart';
 import 'ai_explain_card.dart';
+import 'quiz_media.dart';
 import 'quiz_session.dart';
 import 'resume.dart';
 
@@ -317,7 +319,7 @@ class _QuizScaffold extends ConsumerWidget {
                   Text('难度 ${'★' * q.difficulty}', style: theme.textTheme.labelMedium),
                 ]),
                 const SizedBox(height: 8),
-                MarkdownBody(data: q.stem, selectable: true, styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
+                QuizMarkdown(q.stem, styleSheet: MarkdownStyleSheet.fromTheme(theme).copyWith(
                   p: theme.textTheme.titleMedium?.copyWith(height: 1.5),
                 )),
                 const SizedBox(height: 16),
@@ -423,7 +425,7 @@ class _OptionTile extends StatelessWidget {
                 child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
               ),
               const SizedBox(width: 12),
-              Expanded(child: Text(text, style: Theme.of(context).textTheme.bodyLarge)),
+              Expanded(child: OptionText(text, style: Theme.of(context).textTheme.bodyLarge)),
               if (icon != null) Icon(icon, color: border),
             ]),
           ),
@@ -466,7 +468,7 @@ class _ResultCard extends StatelessWidget {
             ),
           if (question.explanation.isNotEmpty) ...[
             const SizedBox(height: 8),
-            MarkdownBody(data: question.explanation, selectable: true),
+            QuizMarkdown(question.explanation),
           ],
           if (question.sourceQuote.isNotEmpty) ...[
             const SizedBox(height: 8),
@@ -511,7 +513,7 @@ class QuizSummary extends ConsumerWidget {
                 Text('本次错题', style: theme.textTheme.titleSmall),
                 const SizedBox(height: 8),
                 for (final q in missed)
-                  ListTile(dense: true, leading: const Icon(Icons.close, color: Colors.red), title: Text(q.stem, maxLines: 2, overflow: TextOverflow.ellipsis)),
+                  ListTile(dense: true, leading: const Icon(Icons.close, color: Colors.red), title: Text(plainText(q.stem), maxLines: 2, overflow: TextOverflow.ellipsis)),
                 const SizedBox(height: 16),
                 FilledButton.icon(
                   onPressed: () {

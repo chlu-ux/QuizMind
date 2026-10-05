@@ -2,6 +2,7 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:quizmind_app/core/providers.dart';
 import 'package:quizmind_app/core/settings.dart';
@@ -260,6 +261,7 @@ Future<ProviderContainer> pumpWith(
   Widget child, {
   Map<String, Object> prefsValues = const {},
   DateTime Function()? clock,
+  List<Override> overrides = const [],
 }) async {
   SharedPreferences.setMockInitialValues(prefsValues);
   final prefs = await SharedPreferences.getInstance();
@@ -269,6 +271,7 @@ Future<ProviderContainer> pumpWith(
       sharedPrefsProvider.overrideWithValue(prefs),
       databaseProvider.overrideWithValue(db),
       apiProvider.overrideWithValue(FakeApi()),
+      ...overrides,
     ],
     child: Builder(builder: (context) {
       container = ProviderScope.containerOf(context);

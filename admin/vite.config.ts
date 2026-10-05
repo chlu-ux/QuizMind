@@ -9,7 +9,10 @@ export default defineConfig({
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   server: {
     port: 5173,
-    proxy: { '/admin': { target: 'http://127.0.0.1:8080', changeOrigin: false } },
+    proxy: {
+      '/admin': { target: 'http://127.0.0.1:8080', changeOrigin: false },
+      '/api': { target: 'http://127.0.0.1:8080', changeOrigin: false }, // pictures used by questions
+    },
   },
   build: { outDir: 'dist', chunkSizeWarningLimit: 1200 },
   test: { environment: 'node' },

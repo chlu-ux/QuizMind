@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../data/database.dart';
+import '../../data/media_text.dart';
 import '../../data/progress.dart';
 import '../quiz/quiz_page.dart';
 import '../quiz/quiz_session.dart';
@@ -126,7 +127,7 @@ class _SearchPageState extends ConsumerState<SearchPage> {
                     final h = hits[i];
                     final q = h.question;
                     return ListTile(
-                      title: Text.rich(spans(q.stem, null), maxLines: 2, overflow: TextOverflow.ellipsis),
+                      title: Text.rich(spans(plainText(q.stem), null), maxLines: 2, overflow: TextOverflow.ellipsis),
                       subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         if (h.snippet.isNotEmpty)
                           Padding(

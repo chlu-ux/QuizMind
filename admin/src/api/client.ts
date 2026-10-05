@@ -1,6 +1,6 @@
 import axios, { AxiosError } from 'axios'
 import type {
-  AIConfig, AIConfigUpdate, AINotePage, AITestResult, Bank, BulkResult, DocumentContent, DocumentDetail, DocumentRow, ImportResult, Job, QuestionDetail,
+  AIConfig, AIConfigUpdate, AINotePage, AITestResult, Bank, BulkResult, DocumentContent, DocumentDetail, DocumentRow, ImportResult, Job, MediaView, QuestionDetail,
   QuestionEdit, QuestionPage, Question, UsageRow,
 } from './types'
 
@@ -84,6 +84,13 @@ export const api = {
     form.append('bank_id', bankId)
     form.append('file', file)
     return http.post<ImportResult>('/admin/documents', form).then((r) => r.data)
+  },
+
+  /** Uploads a picture for use in a question; the same bytes always give the same id. */
+  uploadMedia: (file: File | Blob) => {
+    const form = new FormData()
+    form.append('file', file)
+    return http.post<MediaView>('/admin/media', form).then((r) => r.data)
   },
 
   jobs: (params: { status?: string; document_id?: string; limit?: number } = {}) =>

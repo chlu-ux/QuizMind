@@ -114,6 +114,16 @@ type LlmCallLog struct {
 	CreatedAt    int64  `json:"created_at"`
 }
 
+type Medium struct {
+	ID        string `json:"id"`
+	Mime      string `json:"mime"`
+	Size      int64  `json:"size"`
+	Width     int64  `json:"width"`
+	Height    int64  `json:"height"`
+	Data      []byte `json:"data"`
+	CreatedAt int64  `json:"created_at"`
+}
+
 type Question struct {
 	ID               string         `json:"id"`
 	BankID           string         `json:"bank_id"`

@@ -4,11 +4,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api, errorMessage } from '@/api/client'
 import type { Bank, DocumentRow, Question, QuestionDetail } from '@/api/types'
+import Markdown from '@/components/Markdown.vue'
 import QuestionCard from '@/components/QuestionCard.vue'
 import SourceExcerpt from '@/components/SourceExcerpt.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import EditQuestionDialog from '@/components/EditQuestionDialog.vue'
 import { FLAG_REASON_LABEL, QUESTION_STATUS_LABEL, TYPE_LABEL, formatTime } from '@/utils/format'
+import { plainText } from '@/utils/media'
 
 const route = useRoute()
 const router = useRouter()
@@ -304,7 +306,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
         >
           <el-checkbox :model-value="checked.has(q.id)" @click.stop @change="(v: boolean | string | number) => toggle(q.id, v)" />
           <div class="row-main">
-            <div class="row-stem">{{ q.stem }}</div>
+            <div class="row-stem">{{ plainText(q.stem) }}</div>
             <div class="row-meta">
               <el-tag size="small" effect="plain">{{ TYPE_LABEL[q.type] ?? q.type }}</el-tag>
               <StatusTag kind="question" :status="q.status" />
@@ -363,7 +365,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
           />
 
           <QuestionCard :q="detail" />
-          <div v-if="detail.explanation" class="expl"><b>解析：</b>{{ detail.explanation }}</div>
+          <div v-if="detail.explanation" class="expl"><b>解析：</b><Markdown :source="detail.explanation" /></div>
 
           <h4>原文依据 <span class="muted path">{{ detail.heading_path }}</span></h4>
           <SourceExcerpt :text="detail.chunk_text" :quote="detail.source_quote" />

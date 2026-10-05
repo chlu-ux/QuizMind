@@ -4,6 +4,7 @@ import Md from '@/components/Md.vue'
 import type { ExamRecord } from '@/data/types'
 import { PASS_PERCENT, type ExamEntry } from '@/quiz/exam'
 import { startQuiz } from '@/quiz/launch'
+import { plainText } from '@/quiz/media'
 
 const props = defineProps<{ record: ExamRecord; entries: ExamEntry[] }>()
 
@@ -51,7 +52,7 @@ function retryMissed() {
     <details v-for="(e, i) in entries" :key="e.id" class="card col review left">
       <summary>
         <span :class="e.correct ? 'ok' : 'err'">{{ e.correct ? '✔' : '✘' }}</span>
-        {{ i + 1 }}. <span class="clamp2 inline">{{ e.question ? e.question.stem : '（这道题已下线）' }}</span>
+        {{ i + 1 }}. <span class="clamp2 inline">{{ e.question ? plainText(e.question.stem) : '（这道题已下线）' }}</span>
       </summary>
       <template v-if="e.question">
         <Md :source="e.question.stem" />
