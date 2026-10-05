@@ -125,7 +125,7 @@ func (a *API) retryJob(w http.ResponseWriter, r *http.Request) {
 func (a *API) listQuestions(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	page, err := a.svc.ListQuestions(r.Context(), service.QuestionFilter{
-		Status: q.Get("status"), BankID: q.Get("bank_id"), DocumentID: q.Get("document_id"),
+		Status: q.Get("status"), BankID: q.Get("bank_id"), DocumentID: q.Get("document_id"), Search: q.Get("search"),
 		Flagged: q.Get("flagged") == "1",
 		Limit:   intParam(r, "limit", 50), Offset: intParam(r, "offset", 0),
 	})

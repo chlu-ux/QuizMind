@@ -11,6 +11,7 @@ import StatusTag from '@/components/StatusTag.vue'
 import EditQuestionDialog from '@/components/EditQuestionDialog.vue'
 import { FLAG_REASON_LABEL, QUESTION_STATUS_LABEL, TYPE_LABEL, formatTime } from '@/utils/format'
 import { plainText } from '@/utils/media'
+import { debounce } from '@/utils/debounce'
 
 const route = useRoute()
 const router = useRouter()
@@ -23,6 +24,7 @@ const statuses = ['needs_review', FLAGGED, 'published', 'rejected', 'stale', 're
 const status = ref<string>((route.query.status as string) ?? 'needs_review')
 const bankId = ref<string>((route.query.bank_id as string) ?? '')
 const documentId = ref<string>((route.query.document_id as string) ?? '')
+const search = ref<string>((route.query.search as string) ?? '')
 const banks = ref<Bank[]>([])
 const documents = ref<DocumentRow[]>([])
 
@@ -81,6 +83,7 @@ async function load(keepSelection = true) {
       flagged: status.value === FLAGGED ? 1 : undefined,
       bank_id: bankId.value || undefined,
       document_id: documentId.value || undefined,
+      search: search.value.trim() || undefined,
       limit: PAGE,
       offset: (page.value - 1) * PAGE,
     })
@@ -116,6 +119,13 @@ watch([status, bankId, documentId], () => {
   syncQuery()
   load(false)
 })
+// Typing fires on every keystroke; wait for a pause before querying.
+const searchLater = debounce(() => {
+  page.value = 1
+  syncQuery()
+  load(false)
+}, 300)
+watch(search, searchLater)
 watch(bankId, () => {
   if (documentId.value && !docOptions.value.some((d) => d.id === documentId.value)) documentId.value = ''
 })
@@ -126,6 +136,7 @@ function syncQuery() {
       ...(status.value !== 'needs_review' ? { status: status.value } : {}),
       ...(bankId.value ? { bank_id: bankId.value } : {}),
       ...(documentId.value ? { document_id: documentId.value } : {}),
+      ...(search.value.trim() ? { search: search.value.trim() } : {}),
     },
   })
 }
@@ -268,13 +279,16 @@ onMounted(async () => {
   flaggedCount.value = b.reduce((n, x) => n + (x.question_counts.flagged ?? 0), 0)
   await load(false)
 })
-onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKey)
+  searchLater.cancel()
+})
 </script>
 
 <template>
   <div class="review">
     <div class="filters">
-      <el-select v-model="status" style="width: 150px">
+      <el-select v-model="status" placeholder="全部状态" style="width: 150px">
         <el-option v-for="s in statuses" :key="s" :label="statusLabel(s)" :value="s" />
       </el-select>
       <el-select v-model="bankId" clearable placeholder="全部题库" style="width: 180px">
@@ -283,6 +297,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       <el-select v-model="documentId" clearable placeholder="全部文档" style="width: 200px">
         <el-option v-for="d in docOptions" :key="d.id" :label="d.title" :value="d.id" />
       </el-select>
+      <el-input v-model="search" clearable placeholder="搜索题干、选项、解析" style="width: 220px" />
       <span class="muted">共 {{ total }} 道</span>
       <span class="grow" />
       <span class="muted keys">快捷键：<kbd>J</kbd>/<kbd>K</kbd> 切换 · <kbd>A</kbd> 通过 · <kbd>R</kbd> 驳回 · <kbd>E</kbd> 编辑 · <kbd>D</kbd> 处理完毕</span>

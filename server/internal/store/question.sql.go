@@ -17,6 +17,10 @@ WHERE (?1 IS NULL OR q.status = ?1)
   AND (?2 IS NULL OR q.bank_id = ?2)
   AND (?3 IS NULL OR c.document_id = ?3)
   AND (?4 = 0 OR q.flag_count > 0)
+  AND (?5 IS NULL
+       OR instr(lower(q.stem), lower(?5)) > 0
+       OR instr(lower(q.options), lower(?5)) > 0
+       OR instr(lower(q.explanation), lower(?5)) > 0)
 `
 
 type CountQuestionsParams struct {
@@ -24,6 +28,7 @@ type CountQuestionsParams struct {
 	BankID     interface{} `json:"bank_id"`
 	DocumentID interface{} `json:"document_id"`
 	Flagged    interface{} `json:"flagged"`
+	Search     interface{} `json:"search"`
 }
 
 func (q *Queries) CountQuestions(ctx context.Context, arg CountQuestionsParams) (int64, error) {
@@ -32,6 +37,7 @@ func (q *Queries) CountQuestions(ctx context.Context, arg CountQuestionsParams) 
 		arg.BankID,
 		arg.DocumentID,
 		arg.Flagged,
+		arg.Search,
 	)
 	var count int64
 	err := row.Scan(&count)
@@ -270,8 +276,12 @@ WHERE (?1 IS NULL OR q.status = ?1)
   AND (?2 IS NULL OR q.bank_id = ?2)
   AND (?3 IS NULL OR c.document_id = ?3)
   AND (?4 = 0 OR q.flag_count > 0)
+  AND (?5 IS NULL
+       OR instr(lower(q.stem), lower(?5)) > 0
+       OR instr(lower(q.options), lower(?5)) > 0
+       OR instr(lower(q.explanation), lower(?5)) > 0)
 ORDER BY q.created_at DESC, q.id DESC
-LIMIT ?6 OFFSET ?5
+LIMIT ?7 OFFSET ?6
 `
 
 type ListQuestionsParams struct {
@@ -279,6 +289,7 @@ type ListQuestionsParams struct {
 	BankID     interface{} `json:"bank_id"`
 	DocumentID interface{} `json:"document_id"`
 	Flagged    interface{} `json:"flagged"`
+	Search     interface{} `json:"search"`
 	PageOffset int64       `json:"page_offset"`
 	PageLimit  int64       `json:"page_limit"`
 }
@@ -289,6 +300,7 @@ func (q *Queries) ListQuestions(ctx context.Context, arg ListQuestionsParams) ([
 		arg.BankID,
 		arg.DocumentID,
 		arg.Flagged,
+		arg.Search,
 		arg.PageOffset,
 		arg.PageLimit,
 	)

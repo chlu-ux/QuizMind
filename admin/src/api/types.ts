@@ -64,6 +64,8 @@ export interface Bank {
   title: string
   description: string
   created_at: number
+  documents: number
+  last_updated: number
   question_counts: Counts
 }
 

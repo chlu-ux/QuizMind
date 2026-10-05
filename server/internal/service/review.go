@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/chlu-ux/quizmind/server/internal/pipeline"
 	"github.com/chlu-ux/quizmind/server/internal/store"
@@ -69,6 +70,8 @@ func questionView(q store.Question) QuestionView {
 
 type QuestionFilter struct {
 	Status, BankID, DocumentID string
+	// Search is a case-insensitive substring match on the stem, options and explanation.
+	Search string
 	// Flagged keeps only questions with unresolved reports, whatever their status.
 	Flagged       bool
 	Limit, Offset int
@@ -92,20 +95,24 @@ func (s *Service) ListQuestions(ctx context.Context, f QuestionFilter) (Question
 		}
 		return v
 	}
+	var search any
+	if t := strings.TrimSpace(f.Search); t != "" {
+		search = t
+	}
 	flagged := int64(0)
 	if f.Flagged {
 		flagged = 1
 	}
 	qs := s.reader()
 	rows, err := qs.ListQuestions(ctx, store.ListQuestionsParams{
-		Status: opt(f.Status), BankID: opt(f.BankID), DocumentID: opt(f.DocumentID), Flagged: flagged,
+		Status: opt(f.Status), BankID: opt(f.BankID), DocumentID: opt(f.DocumentID), Flagged: flagged, Search: search,
 		PageLimit: int64(f.Limit), PageOffset: int64(f.Offset),
 	})
 	if err != nil {
 		return QuestionPage{}, err
 	}
 	total, err := qs.CountQuestions(ctx, store.CountQuestionsParams{
-		Status: opt(f.Status), BankID: opt(f.BankID), DocumentID: opt(f.DocumentID), Flagged: flagged,
+		Status: opt(f.Status), BankID: opt(f.BankID), DocumentID: opt(f.DocumentID), Flagged: flagged, Search: search,
 	})
 	if err != nil {
 		return QuestionPage{}, err

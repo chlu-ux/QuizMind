@@ -328,3 +328,36 @@ func TestImport_Validation(t *testing.T) {
 	_, err = e.svc.ImportDocument(ctx, e.bank, "bom.md", body)
 	assert.NoError(t, err)
 }
+
+func TestListQuestions_SearchAndBankStats(t *testing.T) {
+	e := newEnv(t)
+	ctx := context.Background()
+	res, err := e.svc.ImportDocument(ctx, e.bank, "locks.md", []byte("# 锁\n\n"+section("读写锁", lockA)))
+	require.NoError(t, err)
+	e.waitStatus(t, res.Document.ID, "review")
+
+	all, err := e.svc.ListQuestions(ctx, service.QuestionFilter{BankID: e.bank})
+	require.NoError(t, err)
+	require.NotEmpty(t, all.Items)
+
+	stem := "Needle 关键词：下面哪项正确？"
+	_, err = e.svc.EditQuestion(ctx, all.Items[0].ID, service.QuestionEdit{Stem: &stem})
+	require.NoError(t, err)
+
+	hit, err := e.svc.ListQuestions(ctx, service.QuestionFilter{BankID: e.bank, Search: " needle "})
+	require.NoError(t, err)
+	assert.EqualValues(t, 1, hit.Total, "case-insensitive, surrounding spaces ignored")
+	assert.Equal(t, all.Items[0].ID, hit.Items[0].ID)
+
+	for _, wild := range []string{"%", "_"} {
+		none, err := e.svc.ListQuestions(ctx, service.QuestionFilter{BankID: e.bank, Search: wild})
+		require.NoError(t, err)
+		assert.Zero(t, none.Total, "%q is matched literally, not as a wildcard", wild)
+	}
+
+	banks, err := e.svc.ListBanks(ctx)
+	require.NoError(t, err)
+	require.Len(t, banks, 1)
+	assert.EqualValues(t, 1, banks[0].Documents)
+	assert.Positive(t, banks[0].LastUpdated)
+}

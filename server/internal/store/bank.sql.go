@@ -9,6 +9,40 @@ import (
 	"context"
 )
 
+const bankDocumentStats = `-- name: BankDocumentStats :many
+SELECT bank_id, COUNT(*) AS documents, MAX(updated_at) AS last_updated
+FROM document GROUP BY bank_id
+`
+
+type BankDocumentStatsRow struct {
+	BankID      string      `json:"bank_id"`
+	Documents   int64       `json:"documents"`
+	LastUpdated interface{} `json:"last_updated"`
+}
+
+func (q *Queries) BankDocumentStats(ctx context.Context) ([]BankDocumentStatsRow, error) {
+	rows, err := q.db.QueryContext(ctx, bankDocumentStats)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []BankDocumentStatsRow{}
+	for rows.Next() {
+		var i BankDocumentStatsRow
+		if err := rows.Scan(&i.BankID, &i.Documents, &i.LastUpdated); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const countPublishedQuestionsByBank = `-- name: CountPublishedQuestionsByBank :one
 SELECT COUNT(*) FROM question WHERE bank_id = ? AND status = 'published'
 `

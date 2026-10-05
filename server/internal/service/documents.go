@@ -19,6 +19,8 @@ import (
 
 type BankView struct {
 	store.Bank
+	Documents      int64            `json:"documents"`
+	LastUpdated    int64            `json:"last_updated"`
 	QuestionCounts map[string]int64 `json:"question_counts"`
 }
 
@@ -38,13 +40,26 @@ func (s *Service) ListBanks(ctx context.Context) ([]BankView, error) {
 	if err != nil {
 		return nil, err
 	}
+	stats, err := qs.BankDocumentStats(ctx)
+	if err != nil {
+		return nil, err
+	}
+	docs := map[string]store.BankDocumentStatsRow{}
+	for _, st := range stats {
+		docs[st.BankID] = st
+	}
 	out := make([]BankView, 0, len(banks))
 	for _, b := range banks {
 		counts, err := s.questionCounts(ctx, b.ID)
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, BankView{Bank: b, QuestionCounts: counts})
+		st := docs[b.ID]
+		last, _ := st.LastUpdated.(int64)
+		if last == 0 {
+			last = b.CreatedAt
+		}
+		out = append(out, BankView{Bank: b, Documents: st.Documents, LastUpdated: last, QuestionCounts: counts})
 	}
 	return out, nil
 }

@@ -17,7 +17,8 @@ const events = useEvents()
 
 const banks = ref<Bank[]>([])
 const docs = ref<DocumentRow[]>([])
-const bankId = ref('')
+// ?bank_id= preselects the bank, e.g. when coming from the bank list.
+const bankId = ref((route.query.bank_id as string) ?? '')
 const loading = ref(false)
 const drawer = ref(false)
 const detail = ref<DocumentDetail | null>(null)
