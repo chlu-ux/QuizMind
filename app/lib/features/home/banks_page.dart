@@ -11,6 +11,10 @@ import '../quiz/quiz_page.dart';
 import '../quiz/quiz_session.dart';
 import '../quiz/resume.dart';
 import '../stats/stats_page.dart';
+import 'goal_card.dart';
+import 'question_list_page.dart';
+import 'search_page.dart';
+import 'topics_page.dart';
 import 'sync_widgets.dart';
 
 /// Bank list. On wide screens the bank detail sits to the right of the list;
@@ -64,9 +68,10 @@ class _BanksPageState extends ConsumerState<BanksPage> {
               },
             ),
           );
-          if (!wide) return listView;
+          final withGoal = Column(children: [const GoalCard(), Expanded(child: listView)]);
+          if (!wide) return withGoal;
           return Row(children: [
-            SizedBox(width: 320, child: listView),
+            SizedBox(width: 320, child: withGoal),
             const VerticalDivider(width: 1),
             Expanded(child: BankDetail(key: ValueKey(selected.id), bank: selected)),
           ]);
@@ -228,6 +233,29 @@ class _BankDetailState extends ConsumerState<BankDetail> {
               icon: const Icon(Icons.assignment_outlined),
               label: Text(_examInProgress ? '模拟考试 · 有未完成的考试' : '模拟考试'),
             ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => _open(TopicsPage(bank: bank)),
+              icon: const Icon(Icons.label_outline),
+              label: const Text('按知识点刷题'),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              onPressed: () => _open(SearchPage(bank: bank)),
+              icon: const Icon(Icons.search),
+              label: const Text('搜索题目'),
+            ),
+            const SizedBox(height: 8),
+            Consumer(builder: (context, ref, _) {
+              final count = ref.watch(bankWrongBookProvider(bank.id)).value?.length ?? 0;
+              return OutlinedButton.icon(
+                onPressed: count == 0
+                    ? null
+                    : () => _open(QuestionListPage(kind: QuestionListKind.wrongBook, initialBankId: bank.id)),
+                icon: const Icon(Icons.error_outline),
+                label: Text(count == 0 ? '本题库错题本 · 没有错题' : '本题库错题本 · $count 题'),
+              );
+            }),
             const SizedBox(height: 8),
             OutlinedButton.icon(
               onPressed: () => _open(StatsPage(bank: bank)),

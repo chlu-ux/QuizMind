@@ -1,8 +1,10 @@
 import { tagLabeler } from './tags'
 import type { ExamRecord, LocalAttempt, LocalQuestion } from './types'
 
-/** Attempts that took longer than this (a page left open) count as this long in the study-time total. */
+/** An answer that took longer than this (a page left open) counts as this long in the practice-time total. */
 const MAX_ATTEMPT_MS = 2 * 60 * 1000
+/** Likewise for the time spent reading after an answer (explanations are read for longer than questions). */
+const MAX_REVIEW_MS = 3 * 60 * 1000
 
 export interface Tally {
   attempts: number
@@ -14,7 +16,15 @@ export interface GroupStat extends Tally {
   label: string
 }
 
-export interface DayStat extends Tally {
+/** Time split the way the stats show it: answering, reading after answering. */
+export interface Spent {
+  /** Time from showing a question to answering it. */
+  practiceMs: number
+  /** Time spent on a question after answering it (explanation). */
+  reviewMs: number
+}
+
+export interface DayStat extends Tally, Spent {
   /** Local calendar day, "M/D". */
   label: string
 }
@@ -49,6 +59,11 @@ export interface BankReport {
   correct: number
   /** Share of all attempts that were right, 0-100; null before the first attempt. */
   accuracy: number | null
+  /** Time spent answering questions. */
+  practiceMs: number
+  /** Time spent reading explanations after answering. */
+  reviewMs: number
+  /** Practice plus review: everything spent studying. */
   studyMs: number
   /** Consecutive days with at least one attempt, counting back from today (or yesterday if nothing yet today). */
   streakDays: number
@@ -70,13 +85,22 @@ export interface BankReport {
 
 export const percent = (t: Tally): number | null => (t.attempts ? Math.round((t.correct * 100) / t.attempts) : null)
 
-function dayStart(t: number): number {
+/** Time an answer counts for in the study totals: answering and reading afterwards, each capped. */
+export function attemptTimes(a: Pick<LocalAttempt, 'duration_ms' | 'review_ms'>): Spent {
+  return {
+    practiceMs: Math.min(Math.max(a.duration_ms ?? 0, 0), MAX_ATTEMPT_MS),
+    reviewMs: Math.min(Math.max(a.review_ms ?? 0, 0), MAX_REVIEW_MS),
+  }
+}
+
+/** Midnight at the start of the local day of [t]. */
+export function dayStart(t: number): number {
   const d = new Date(t)
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime()
 }
 
 /** Start of the day [offset] days before the day of [t], in local time (DST-safe). */
-function dayStartBefore(t: number, offset: number): number {
+export function dayStartBefore(t: number, offset: number): number {
   const d = new Date(t)
   return new Date(d.getFullYear(), d.getMonth(), d.getDate() - offset).getTime()
 }
@@ -118,14 +142,15 @@ export function buildReport(
   const merge = tagLabeler(questions.flatMap((q) => q.tags), true)
   const recent = new Map<string, boolean[]>() // each question's results, oldest first
   const days = new Set<number>()
-  let studyMs = 0
+  let practiceMs = 0
+  let reviewMs = 0
 
   const today = dayStart(now)
   const daily: (DayStat & { start: number })[] = []
   for (let i = 29; i >= 0; i--) {
     const start = dayStartBefore(now, i)
     const d = new Date(start)
-    daily.push({ start, label: `${d.getMonth() + 1}/${d.getDate()}`, attempts: 0, correct: 0 })
+    daily.push({ start, label: `${d.getMonth() + 1}/${d.getDate()}`, attempts: 0, correct: 0, practiceMs: 0, reviewMs: 0 })
   }
 
   for (const a of mine) {
@@ -142,12 +167,18 @@ export function buildReport(
     const results = recent.get(q.id) ?? []
     results.push(a.is_correct)
     recent.set(q.id, results)
-    studyMs += Math.min(Math.max(a.duration_ms ?? 0, 0), MAX_ATTEMPT_MS)
+    const { practiceMs: practice, reviewMs: review } = attemptTimes(a)
+    practiceMs += practice
+    reviewMs += review
 
     const day = dayStart(a.answered_at)
     days.add(day)
     const bucket = daily.find((d) => d.start === day)
-    if (bucket) add(bucket, a.is_correct)
+    if (bucket) {
+      add(bucket, a.is_correct)
+      bucket.practiceMs += practice
+      bucket.reviewMs += review
+    }
   }
 
   let streakDays = 0
@@ -181,10 +212,12 @@ export function buildReport(
     attempts: total.attempts,
     correct: total.correct,
     accuracy: percent(total),
-    studyMs,
+    practiceMs,
+    reviewMs,
+    studyMs: practiceMs + reviewMs,
     streakDays,
-    daily: daily.slice(-7).map(({ label, attempts, correct }) => ({ label, attempts, correct })),
-    daily30: daily.map(({ label, attempts, correct }) => ({ label, attempts, correct })),
+    daily: daily.slice(-7).map(({ start: _s, ...day }) => day),
+    daily30: daily.map(({ start: _s, ...day }) => day),
     examTrend: [...exams]
       .sort((a, b) => a.finished_at - b.finished_at)
       .slice(-20)
@@ -205,4 +238,21 @@ export function formatDuration(ms: number): string {
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
   return m ? `${h} 小时 ${m} 分` : `${h} 小时`
+}
+
+/** The same as [formatDuration], split into number and unit for a big figure: "1"+"小时", "5"+"分". */
+export function durationParts(ms: number): { v: string; u: string }[] {
+  const minutes = Math.floor(ms / 60000)
+  if (minutes < 1) return [{ v: ms > 0 ? '<1' : '0', u: '分钟' }]
+  if (minutes < 60) return [{ v: String(minutes), u: '分钟' }]
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return m ? [{ v: String(h), u: '小时' }, { v: String(m), u: '分' }] : [{ v: String(h), u: '小时' }]
+}
+
+/** Minutes only, for the label over a day's bar: "12 分" / "<1 分". */
+export function formatMinutes(ms: number): string {
+  if (ms <= 0) return ''
+  const m = Math.round(ms / 60000)
+  return m < 1 ? '<1分' : `${m}分`
 }

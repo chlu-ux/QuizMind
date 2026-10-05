@@ -2,10 +2,12 @@
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { dataVersion, getRepo, showToast } from '@/core/app'
-import { formatDuration, percent, type BankReport, type Tally } from '@/data/stats'
+import { durationParts, formatDuration, formatMinutes, percent, type BankReport, type Tally } from '@/data/stats'
 import type { Bank } from '@/data/types'
 import { PASS_PERCENT } from '@/quiz/exam'
 import { startQuiz } from '@/quiz/launch'
+import { orderQuestions } from '@/quiz/session'
+import { topicQuestions } from '@/quiz/topics'
 
 const props = defineProps<{ id: string }>()
 const router = useRouter()
@@ -25,8 +27,17 @@ const coverage = computed(() =>
 )
 const range = ref<7 | 30>(7)
 const days = computed(() => (range.value === 7 ? report.value?.daily : report.value?.daily30) ?? [])
-const maxDaily = computed(() => Math.max(1, ...days.value.map((d) => d.attempts)))
+// The bars show how many questions were answered, or how long was spent.
+const metric = ref<'count' | 'time'>('count')
+const spent = (d: { practiceMs: number; reviewMs: number }) => d.practiceMs + d.reviewMs
+const maxDaily = computed(() =>
+  Math.max(1, ...days.value.map((d) => (metric.value === 'count' ? d.attempts : spent(d)))),
+)
 const rangeTotal = computed(() => days.value.reduce((n, d) => n + d.attempts, 0))
+const rangePractice = computed(() => days.value.reduce((n, d) => n + d.practiceMs, 0))
+const rangeReview = computed(() => days.value.reduce((n, d) => n + d.reviewMs, 0))
+const today = computed(() => report.value?.daily30[report.value.daily30.length - 1])
+const todayStudy = computed(() => (today.value ? spent(today.value) : 0))
 // Related tags are merged by default ("UML 辨析" into "UML"); the detailed view lists them as tagged.
 const merged = ref(true)
 const tags = computed(() => (merged.value ? report.value?.byTagMerged : report.value?.byTag)?.slice(0, 8) ?? [])
@@ -50,6 +61,13 @@ const pct = (t: Tally) => percent(t)
 function tone(p: number | null) {
   if (p === null) return ''
   return p >= 80 ? 'good' : p >= 60 ? 'mid' : 'bad'
+}
+
+/** Practise one knowledge point, as the list above groups it (merged or detailed). */
+async function practiseTopic(label: string) {
+  const qs = topicQuestions(await (await getRepo()).bankQuestions(props.id), label, merged.value)
+  if (qs.length === 0) return showToast('这个知识点没有可练习的题目')
+  void startQuiz(`知识点 · ${label}`, orderQuestions(qs, 'random'))
 }
 
 function practiseWeak() {
@@ -87,12 +105,22 @@ function practiseWeak() {
         <div class="card col stat">
           <span class="muted small">连续学习</span>
           <strong class="big-num">{{ report.streakDays }}<small> 天</small></strong>
-          <span class="muted small">累计 {{ formatDuration(report.studyMs) }}</span>
+          <span class="muted small">今天学习 {{ formatDuration(todayStudy) }}</span>
         </div>
         <div class="card col stat">
           <span class="muted small">当前状态</span>
           <strong class="big-num">{{ report.latestCorrect }}<small> 题</small></strong>
           <span class="muted small">最近一次答对 · 错题本 {{ report.wrongBook }}</span>
+        </div>
+        <div class="card col stat">
+          <span class="muted small">刷题时间</span>
+          <strong class="big-num"><template v-for="p in durationParts(report.practiceMs)" :key="p.u">{{ p.v }}<small> {{ p.u }} </small></template></strong>
+          <span class="muted small">答题用时 · 今天 {{ formatDuration(today?.practiceMs ?? 0) }}</span>
+        </div>
+        <div class="card col stat">
+          <span class="muted small">学习时间</span>
+          <strong class="big-num"><template v-for="p in durationParts(report.studyMs)" :key="p.u">{{ p.v }}<small> {{ p.u }} </small></template></strong>
+          <span class="muted small">含看解析 {{ formatDuration(report.reviewMs) }}</span>
         </div>
       </div>
 
@@ -104,18 +132,31 @@ function practiseWeak() {
             <button :class="{ on: range === 30 }" @click="range = 30">30 天</button>
           </div>
         </div>
-        <span class="muted small">共 {{ rangeTotal }} 次作答</span>
+        <div class="row between">
+          <span class="muted small">
+            共 {{ rangeTotal }} 次作答 · 刷题 {{ formatDuration(rangePractice) }} · 解析 {{ formatDuration(rangeReview) }}
+          </span>
+          <div class="seg-toggle" role="group" aria-label="柱状图内容">
+            <button :class="{ on: metric === 'count' }" @click="metric = 'count'">次数</button>
+            <button :class="{ on: metric === 'time' }" @click="metric = 'time'">时长</button>
+          </div>
+        </div>
         <div class="days" :class="{ dense: range === 30 }">
           <div v-for="(d, i) in days" :key="i" class="day">
-            <span class="small muted">{{ range === 7 && d.attempts ? pct(d) + '%' : '' }}</span>
-            <div class="col-bar">
+            <span class="small muted">{{ range === 7 ? (metric === 'count' ? (d.attempts ? pct(d) + '%' : '') : formatMinutes(spent(d))) : '' }}</span>
+            <div v-if="metric === 'count'" class="col-bar">
               <div class="seg wrong" :style="{ height: ((d.attempts - d.correct) / maxDaily) * 100 + '%' }" />
               <div class="seg right" :style="{ height: (d.correct / maxDaily) * 100 + '%' }" />
+            </div>
+            <div v-else class="col-bar">
+              <div class="seg review" :style="{ height: (d.reviewMs / maxDaily) * 100 + '%' }" />
+              <div class="seg practice" :style="{ height: (d.practiceMs / maxDaily) * 100 + '%' }" />
             </div>
             <span class="small muted">{{ range === 7 || i % 5 === 4 ? d.label : '' }}</span>
           </div>
         </div>
-        <div class="legend small muted"><i class="dot right" />答对 <i class="dot wrong" />答错</div>
+        <div v-if="metric === 'count'" class="legend small muted"><i class="dot right" />答对 <i class="dot wrong" />答错</div>
+        <div v-else class="legend small muted"><i class="dot practice" />刷题（答题用时） <i class="dot review" />看解析</div>
       </section>
 
       <section class="card col">
@@ -156,8 +197,17 @@ function practiseWeak() {
             <button :class="{ on: !merged }" @click="merged = false">细分</button>
           </div>
         </div>
-        <span class="muted small">共 {{ tagCount }} 个，显示前 {{ tags.length }} 个<template v-if="merged">；相近的标签已合并（如「UML 辨析」归入「UML」）</template></span>
-        <div v-for="g in tags" :key="g.key" class="meter">
+        <span class="muted small">点一个知识点直接开始刷；共 {{ tagCount }} 个，显示前 {{ tags.length }} 个<template v-if="merged">；相近的标签已合并（如「UML 辨析」归入「UML」）</template></span>
+        <div
+          v-for="g in tags"
+          :key="g.key"
+          class="meter tappable"
+          role="button"
+          tabindex="0"
+          :aria-label="`练习知识点 ${g.label}`"
+          @click="practiseTopic(g.label)"
+          @keydown.enter="practiseTopic(g.label)"
+        >
           <span class="name clamp">{{ g.label }}</span>
           <div class="bar"><div class="fill" :class="tone(pct(g))" :style="{ width: pct(g) + '%' }" /></div>
           <span class="val" :class="tone(pct(g))">{{ pct(g) }}%</span>

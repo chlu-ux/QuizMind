@@ -15,6 +15,7 @@ const bank = ref<Bank | null>(null)
 const stats = ref<BankStats | null>(null)
 const saved = ref<SessionData | null>(null)
 const examInProgress = ref(false)
+const wrongCount = ref(0)
 const loaded = ref(false)
 // Where 按顺序刷题 left off (0-based place in the bank's order), if anywhere.
 const seqIndex = ref<number | null>(null)
@@ -25,6 +26,7 @@ async function load() {
   stats.value = await repo.bankStats(props.id)
   saved.value = await repo.savedSession(props.id)
   examInProgress.value = !!(await repo.examDraft(props.id))
+  wrongCount.value = (await repo.wrongBook(props.id)).length
   const seqId = sequentialPosition(props.id)
   const at = seqId ? (await repo.bankQuestions(props.id)).findIndex((q) => q.id === seqId) : -1
   seqIndex.value = at > 0 ? at : null
@@ -97,6 +99,11 @@ async function resume() {
         </button>
         <button v-if="seqIndex !== null" class="btn block" @click="start('sequential', false, true)">🔄 按顺序重做（从第 1 题）</button>
         <button class="btn block" @click="router.push(`/bank/${props.id}/exam`)">📝 模拟考试<template v-if="examInProgress"> · 有未完成的考试</template></button>
+        <button class="btn block" @click="router.push(`/bank/${props.id}/topics`)">🏷️ 按知识点刷题</button>
+        <button class="btn block" @click="router.push(`/bank/${props.id}/search`)">🔍 搜索题目</button>
+        <button class="btn block" :disabled="wrongCount === 0" @click="router.push({ path: '/wrong', query: { bank: props.id } })">
+          📕 本题库错题本<template v-if="wrongCount"> · {{ wrongCount }} 题</template><template v-else> · 没有错题</template>
+        </button>
         <button class="btn block" @click="router.push(`/bank/${props.id}/stats`)">📊 统计分析</button>
       </div>
     </template>

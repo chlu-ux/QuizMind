@@ -133,6 +133,52 @@ describe('repo + sync', () => {
       expect(s.dirty).toBe(1)
     })
 
+    it('wrong book and favourites can be narrowed to one bank', async () => {
+      api.published = [
+        question('q1', { answer: [1], sync_seq: 1 }),
+        question('q2', { bank_id: 'b2', answer: [1], sync_seq: 2 }),
+        question('q3', { bank_id: 'b2', answer: [1], sync_seq: 3 }),
+      ]
+      await sync.run()
+      const q = async (id: string) => (await db.get('questions', id))!
+      for (const id of ['q1', 'q2', 'q3']) await repo.recordAnswer(await q(id), [0], 1)
+      await repo.setFavorite('q2', true)
+
+      expect((await repo.wrongBook()).map((x) => x.id).sort()).toEqual(['q1', 'q2', 'q3'])
+      expect((await repo.wrongBook('b2')).map((x) => x.id).sort()).toEqual(['q2', 'q3'])
+      expect((await repo.wrongBook('nope'))).toEqual([])
+      expect((await repo.favorites('b2')).map((x) => x.id)).toEqual(['q2'])
+      expect(await repo.favorites('b1')).toEqual([])
+
+      // Taken out of the wrong book, or withdrawn by the server: gone from the bank's list.
+      await repo.clearFromWrongBook('q2')
+      expect((await repo.wrongBook('b2')).map((x) => x.id)).toEqual(['q3'])
+      await db.put('questions', { ...(await q('q3')), hidden: true })
+      expect(await repo.wrongBook('b2')).toEqual([])
+    })
+
+    it('today\'s progress counts this local day over all banks, with the stats caps, minus withdrawn questions', async () => {
+      api.published = [question('q1', { sync_seq: 1 }), question('q2', { bank_id: 'b2', sync_seq: 2 }), question('q3', { sync_seq: 3 })]
+      await sync.run()
+      const noon = new Date(2026, 9, 5, 12, 0).getTime()
+      const put = (id: string, question_id: string, answered_at: number, o: Record<string, unknown> = {}) =>
+        db.put('attempts', { id, question_id, device_id: 'other', answer: [0], is_correct: true, duration_ms: 30_000, answered_at, synced: 1, ...o } as never)
+      await put('a1', 'q1', noon - 3600_000, { duration_ms: 30_000, review_ms: 20_000 })
+      await put('a2', 'q2', noon, { duration_ms: 10 * 60_000, review_ms: 60 * 60_000 }) // another bank, another device; capped to 2 + 3 min
+      await put('a3', 'q1', new Date(2026, 9, 5, 0, 0, 0).getTime()) // midnight today counts
+      await put('a4', 'q1', new Date(2026, 9, 4, 23, 59, 59).getTime()) // yesterday does not
+      await put('a5', 'q1', new Date(2026, 9, 6, 0, 0, 0).getTime()) // tomorrow does not
+      await put('a6', 'q3', noon)
+      await db.put('questions', { ...(await db.get('questions', 'q3'))!, hidden: true })
+      await put('a7', 'gone', noon) // a question this device never had
+
+      const p = await repo.todayProgress(noon)
+      expect(p.questions).toBe(3)
+      expect(p.ms).toBe(50_000 + (2 + 3) * 60_000 + 30_000)
+      expect(await repo.todayProgress(new Date(2026, 9, 4, 12, 0).getTime())).toMatchObject({ questions: 1 })
+      expect(await repo.todayProgress(new Date(2026, 9, 10, 12, 0).getTime())).toEqual({ questions: 0, ms: 0 })
+    })
+
     it('bank stats use the latest attempt per question', async () => {
       const [q] = await repo.bankQuestions('b1')
       await repo.recordAnswer(q, [0], 1)
@@ -173,16 +219,24 @@ describe('repo + sync', () => {
     })
 
     it('a pending flag is uploaded then dropped; a 404 is tolerated', async () => {
-      await repo.flagQuestion('q1')
+      await repo.flagQuestion('q1', 'wrong_answer')
       expect(await repo.bankQuestions('b1')).toHaveLength(0)
       await sync.run()
       expect(api.flagged).toEqual(['q1'])
+      expect(api.flagReasons).toEqual(['wrong_answer'])
       expect(await db.count('flags')).toBe(0)
 
       await repo.flagQuestion('gone')
       api.flagError = new ApiError('not found', 404)
       await sync.run()
       expect(await db.count('flags')).toBe(0)
+    })
+
+    it('a report queued before reasons existed is uploaded without one', async () => {
+      await db.put('flags', { question_id: 'q1', created_at: 1 })
+      await sync.run()
+      expect(api.flagged).toEqual(['q1'])
+      expect(api.flagReasons).toEqual([undefined])
     })
   })
 
@@ -251,6 +305,47 @@ describe('repo + sync', () => {
       const r = await sync.run()
       expect(r.attemptsPulled).toBe(0)
       expect(await db.count('attempts')).toBe(1)
+    })
+
+    it('uploads an attempt again when reading time was added after it was synced, and keeps it queued if added mid-upload', async () => {
+      const [q] = await repo.bankQuestions('b1')
+      const { attemptId } = await repo.recordAnswer(q, [1], 500)
+      await sync.run()
+      expect(api.uploadedAttempts).toHaveLength(1)
+      expect(api.uploadedAttempts[0].review_ms ?? null).toBeNull()
+
+      await repo.addReviewTime(attemptId!, 7000)
+      await repo.addReviewTime(attemptId!, 3000)
+      expect(await repo.pendingUploads()).toBe(1)
+      await sync.run()
+      expect(api.uploadedAttempts).toHaveLength(2)
+      expect(api.uploadedAttempts[1]).toMatchObject({ id: attemptId, duration_ms: 500, review_ms: 10_000 })
+      expect(await repo.pendingUploads()).toBe(0)
+
+      // Reading time that arrives while the upload is in flight must not be marked as sent.
+      const upload = api.uploadAttempts.bind(api)
+      api.uploadAttempts = async (a) => {
+        await repo.addReviewTime(attemptId!, 1000)
+        await upload(a)
+      }
+      await repo.addReviewTime(attemptId!, 500)
+      await sync.run()
+      expect(await repo.pendingUploads()).toBe(1)
+      expect((await db.get('attempts', attemptId!))!.review_ms).toBe(11_500)
+    })
+
+    it('takes a larger review time from the server for an attempt it already has, without counting it as new', async () => {
+      const [q] = await repo.bankQuestions('b1')
+      const { attemptId } = await repo.recordAnswer(q, [1], 500)
+      await repo.addReviewTime(attemptId!, 2000)
+      await sync.run()
+      api.remoteAttempts = [{ ...api.uploadedAttempts[0], review_ms: 9000 }]
+      const r = await sync.run()
+      expect(r.attemptsPulled).toBe(0)
+      expect((await db.get('attempts', attemptId!))!.review_ms).toBe(9000)
+      api.remoteAttempts = [{ ...api.uploadedAttempts[0], review_ms: 1000 }, { ...api.uploadedAttempts[0], review_ms: 1000 }]
+      await sync.run()
+      expect((await db.get('attempts', attemptId!))!.review_ms).toBe(9000) // never shrinks
     })
 
     it('pages through a long history', async () => {

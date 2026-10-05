@@ -8,6 +8,7 @@ import '../../data/ai_prompt.dart';
 import '../../data/api.dart';
 import '../../data/models.dart';
 import '../home/sync_widgets.dart';
+import 'goal_settings.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -111,6 +112,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   padding: const EdgeInsets.only(top: 12),
                   child: Text(_result!, style: TextStyle(color: _resultOk ? Colors.green : theme.colorScheme.error)),
                 ),
+              const Divider(height: 40),
+              const GoalSettingsSection(),
               const Divider(height: 40),
               Text('同步', style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),

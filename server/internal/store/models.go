@@ -34,6 +34,7 @@ type Attempt struct {
 	AnsweredAt int64         `json:"answered_at"`
 	ReceivedAt int64         `json:"received_at"`
 	SyncSeq    int64         `json:"sync_seq"`
+	ReviewMs   sql.NullInt64 `json:"review_ms"`
 }
 
 type Bank struct {
@@ -134,6 +135,14 @@ type Question struct {
 	SyncSeq          sql.NullInt64  `json:"sync_seq"`
 	CreatedAt        int64          `json:"created_at"`
 	UpdatedAt        int64          `json:"updated_at"`
+}
+
+type QuestionFlag struct {
+	ID         string        `json:"id"`
+	QuestionID string        `json:"question_id"`
+	Reason     string        `json:"reason"`
+	CreatedAt  int64         `json:"created_at"`
+	ResolvedAt sql.NullInt64 `json:"resolved_at"`
 }
 
 type QuestionState struct {

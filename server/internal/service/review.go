@@ -32,11 +32,21 @@ type QuestionView struct {
 	UpdatedAt        int64    `json:"updated_at"`
 }
 
+// FlagView is one report from an app. ResolvedAt is nil while it is unhandled.
+type FlagView struct {
+	Reason     string `json:"reason"`
+	CreatedAt  int64  `json:"created_at"`
+	ResolvedAt *int64 `json:"resolved_at"`
+}
+
 type QuestionDetail struct {
 	QuestionView
 	ChunkText   string `json:"chunk_text"`
 	HeadingPath string `json:"heading_path"`
 	DocumentID  string `json:"document_id"`
+	// Flags lists the reports, newest first. Counts that predate the question_flag
+	// table have no rows here, so flag_count can exceed the unresolved ones listed.
+	Flags []FlagView `json:"flags"`
 }
 
 func questionView(q store.Question) QuestionView {
@@ -59,7 +69,9 @@ func questionView(q store.Question) QuestionView {
 
 type QuestionFilter struct {
 	Status, BankID, DocumentID string
-	Limit, Offset              int
+	// Flagged keeps only questions with unresolved reports, whatever their status.
+	Flagged       bool
+	Limit, Offset int
 }
 
 type QuestionPage struct {
@@ -80,16 +92,20 @@ func (s *Service) ListQuestions(ctx context.Context, f QuestionFilter) (Question
 		}
 		return v
 	}
+	flagged := int64(0)
+	if f.Flagged {
+		flagged = 1
+	}
 	qs := s.reader()
 	rows, err := qs.ListQuestions(ctx, store.ListQuestionsParams{
-		Status: opt(f.Status), BankID: opt(f.BankID), DocumentID: opt(f.DocumentID),
+		Status: opt(f.Status), BankID: opt(f.BankID), DocumentID: opt(f.DocumentID), Flagged: flagged,
 		PageLimit: int64(f.Limit), PageOffset: int64(f.Offset),
 	})
 	if err != nil {
 		return QuestionPage{}, err
 	}
 	total, err := qs.CountQuestions(ctx, store.CountQuestionsParams{
-		Status: opt(f.Status), BankID: opt(f.BankID), DocumentID: opt(f.DocumentID),
+		Status: opt(f.Status), BankID: opt(f.BankID), DocumentID: opt(f.DocumentID), Flagged: flagged,
 	})
 	if err != nil {
 		return QuestionPage{}, err
@@ -102,11 +118,29 @@ func (s *Service) ListQuestions(ctx context.Context, f QuestionFilter) (Question
 }
 
 func (s *Service) GetQuestion(ctx context.Context, id string) (QuestionDetail, error) {
-	d, err := s.reader().GetQuestionDetail(ctx, id)
+	return questionDetail(ctx, s.reader(), id)
+}
+
+func questionDetail(ctx context.Context, qs *store.Queries, id string) (QuestionDetail, error) {
+	d, err := qs.GetQuestionDetail(ctx, id)
 	if err != nil {
 		return QuestionDetail{}, notFound(err, "question")
 	}
-	return detailView(d), nil
+	flags, err := qs.ListQuestionFlags(ctx, id)
+	if err != nil {
+		return QuestionDetail{}, err
+	}
+	out := detailView(d)
+	out.Flags = make([]FlagView, 0, len(flags))
+	for _, f := range flags {
+		v := FlagView{Reason: f.Reason, CreatedAt: f.CreatedAt}
+		if f.ResolvedAt.Valid {
+			t := f.ResolvedAt.Int64
+			v.ResolvedAt = &t
+		}
+		out.Flags = append(out.Flags, v)
+	}
+	return out, nil
 }
 
 func detailView(d store.GetQuestionDetailRow) QuestionDetail {
@@ -201,22 +235,23 @@ func (s *Service) EditQuestion(ctx context.Context, id string, e QuestionEdit) (
 				return err
 			}
 		}
-		nd, err := qs.GetQuestionDetail(ctx, id)
-		if err != nil {
-			return err
-		}
-		out = detailView(nd)
-		return nil
+		out, err = questionDetail(ctx, qs, id)
+		return err
 	})
 	return out, err
 }
 
 // ApproveQuestion publishes a question. Rejected questions may be approved too,
-// which lets a reviewer overrule an automatic rejection.
+// which lets a reviewer overrule an automatic rejection. Approving also settles
+// the question's reports. A published question that still has reports is a
+// "the reports are wrong" ruling, so it goes through DismissFlags.
 func (s *Service) ApproveQuestion(ctx context.Context, id string) (QuestionView, error) {
 	return s.transition(ctx, id, func(q store.Question) (string, string, bool, error) {
 		switch q.Status {
 		case "published":
+			if q.FlagCount > 0 {
+				return "published", "", true, nil
+			}
 			return "", "", false, nil
 		case "needs_review", "validated", "rejected", "draft":
 			return "published", "", true, nil
@@ -270,10 +305,71 @@ func (s *Service) transition(ctx context.Context, id string,
 			}
 			seq = sql.NullInt64{Int64: n, Valid: true}
 		}
+		now := nowMs()
 		if err := qs.SetQuestionStatus(ctx, store.SetQuestionStatusParams{
-			Status: status, ReviewNote: note, SyncSeq: seq, UpdatedAt: nowMs(), ID: id,
+			Status: status, ReviewNote: note, SyncSeq: seq, UpdatedAt: now, ID: id,
 		}); err != nil {
 			return err
+		}
+		// Publishing or rejecting is the reviewer's verdict on the reports too.
+		if err := settleFlags(ctx, qs, id, now); err != nil {
+			return err
+		}
+		q2, err := qs.GetQuestion(ctx, id)
+		if err != nil {
+			return err
+		}
+		out = questionView(q2)
+		return nil
+	})
+	return out, err
+}
+
+// settleFlags marks every open report on a question as handled and zeroes its counter.
+func settleFlags(ctx context.Context, qs *store.Queries, id string, now int64) error {
+	if err := qs.ResolveQuestionFlags(ctx, store.ResolveQuestionFlagsParams{
+		ResolvedAt: sql.NullInt64{Int64: now, Valid: true}, QuestionID: id,
+	}); err != nil {
+		return err
+	}
+	return qs.ClearQuestionFlagCount(ctx, id)
+}
+
+// DismissFlags is the reviewer's "dealt with it": the reports are marked handled
+// and the counter goes back to zero.
+//   - A question the reports took offline is published again.
+//   - A published question gets a fresh sync_seq, so a device that hid it after
+//     its own report gets it back.
+//   - Any other state (an automatic check failed, say) is left as it is; only
+//     the reports are cleared.
+func (s *Service) DismissFlags(ctx context.Context, id string) (QuestionView, error) {
+	var out QuestionView
+	err := s.DB.WithTx(ctx, func(tx *sql.Tx) error {
+		qs := store.New(tx)
+		q, err := qs.GetQuestion(ctx, id)
+		if err != nil {
+			return notFound(err, "question")
+		}
+		now := nowMs()
+		if err := settleFlags(ctx, qs, id, now); err != nil {
+			return err
+		}
+		offlineByFlags := q.Status == "needs_review" && q.ReviewNote == flagNote
+		if q.Status == "published" || offlineByFlags {
+			seq, err := qs.NextSyncSeq(ctx)
+			if err != nil {
+				return err
+			}
+			note := q.ReviewNote
+			if offlineByFlags {
+				note = ""
+			}
+			if err := qs.SetQuestionStatus(ctx, store.SetQuestionStatusParams{
+				Status: "published", ReviewNote: note, SyncSeq: sql.NullInt64{Int64: seq, Valid: true},
+				UpdatedAt: now, ID: id,
+			}); err != nil {
+				return err
+			}
 		}
 		q2, err := qs.GetQuestion(ctx, id)
 		if err != nil {

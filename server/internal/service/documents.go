@@ -62,6 +62,15 @@ func (s *Service) questionCounts(ctx context.Context, bankID string) (map[string
 	for _, r := range rows {
 		m[r.Status] = r.N
 	}
+	// "flagged" is not a status: it counts the questions with unresolved reports,
+	// which can sit in any status, so it overlaps the others.
+	flagged, err := s.reader().CountFlaggedQuestions(ctx, arg)
+	if err != nil {
+		return nil, err
+	}
+	if flagged > 0 {
+		m["flagged"] = flagged
+	}
 	return m, nil
 }
 

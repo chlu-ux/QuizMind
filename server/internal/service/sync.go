@@ -108,6 +108,8 @@ type AttemptIn struct {
 	Answer     []int  `json:"answer"`
 	IsCorrect  bool   `json:"is_correct"`
 	DurationMs *int64 `json:"duration_ms"`
+	// ReviewMs is the time spent after answering; it can be raised by re-uploading the attempt.
+	ReviewMs   *int64 `json:"review_ms"`
 	AnsweredAt int64  `json:"answered_at"`
 }
 
@@ -120,7 +122,7 @@ const maxBatch = 500
 
 // UploadAttempts appends attempts. Duplicates (same id) and attempts for
 // unknown questions are ignored rather than failing the batch, so the app's
-// outbox always drains.
+// outbox always drains. A duplicate that carries a larger review_ms raises it.
 func (s *Service) UploadAttempts(ctx context.Context, in []AttemptIn) (UploadResult, error) {
 	if len(in) > maxBatch {
 		return UploadResult{}, invalid("at most %d attempts per request", maxBatch)
@@ -135,9 +137,12 @@ func (s *Service) UploadAttempts(ctx context.Context, in []AttemptIn) (UploadRes
 	err := s.DB.WithTx(ctx, func(tx *sql.Tx) error {
 		qs := store.New(tx)
 		for _, a := range in {
-			var dur sql.NullInt64
+			var dur, review sql.NullInt64
 			if a.DurationMs != nil {
 				dur = sql.NullInt64{Int64: *a.DurationMs, Valid: true}
+			}
+			if a.ReviewMs != nil && *a.ReviewMs >= 0 {
+				review = sql.NullInt64{Int64: *a.ReviewMs, Valid: true}
 			}
 			correct := int64(0)
 			if a.IsCorrect {
@@ -149,7 +154,7 @@ func (s *Service) UploadAttempts(ctx context.Context, in []AttemptIn) (UploadRes
 			}
 			n, err := qs.InsertAttempt(ctx, store.InsertAttemptParams{
 				ID: a.ID, QuestionID: a.QuestionID, DeviceID: a.DeviceID, Answer: jsonArray(a.Answer),
-				IsCorrect: correct, DurationMs: dur, AnsweredAt: a.AnsweredAt, ReceivedAt: now, SyncSeq: seq,
+				IsCorrect: correct, DurationMs: dur, ReviewMs: review, AnsweredAt: a.AnsweredAt, ReceivedAt: now, SyncSeq: seq,
 			})
 			if err != nil {
 				return err
@@ -205,6 +210,10 @@ func (s *Service) SyncAttempts(ctx context.Context, since int64, limit int) (Syn
 		if r.DurationMs.Valid {
 			v := r.DurationMs.Int64
 			out.DurationMs = &v
+		}
+		if r.ReviewMs.Valid {
+			v := r.ReviewMs.Int64
+			out.ReviewMs = &v
 		}
 		page.NextSeq = r.SyncSeq
 		page.Items = append(page.Items, out)
@@ -418,10 +427,29 @@ type FlagResult struct {
 	Status    string `json:"status"`
 }
 
-// FlagQuestion records an "answer looks wrong" report. Reaching flagThreshold
-// takes the question offline (needs_review) and bumps its sync_seq so every
-// device drops it. Flagging a question that is already offline is a no-op.
-func (s *Service) FlagQuestion(ctx context.Context, id string) (FlagResult, error) {
+// flagNote is the review note a question gets when reports take it offline. It
+// is how DismissFlags tells "went offline because of reports" from "went offline
+// for another reason" (a failed automatic check, say).
+const flagNote = "flagged by app users"
+
+// FlagReasons are the reasons a client may attach to a report. Anything else is
+// stored as "other", so a newer client never gets an older server to reject it.
+var FlagReasons = []string{"wrong_answer", "ambiguous", "typo", "other"}
+
+func normalizeFlagReason(r string) string {
+	for _, v := range FlagReasons {
+		if r == v {
+			return r
+		}
+	}
+	return "other"
+}
+
+// FlagQuestion records a "this question has a problem" report with its reason.
+// Reaching flagThreshold unresolved reports takes the question offline
+// (needs_review) and bumps its sync_seq so every device drops it. Flagging a
+// question that is already offline is a no-op.
+func (s *Service) FlagQuestion(ctx context.Context, id, reason string) (FlagResult, error) {
 	var res FlagResult
 	err := s.DB.WithTx(ctx, func(tx *sql.Tx) error {
 		qs := store.New(tx)
@@ -433,7 +461,13 @@ func (s *Service) FlagQuestion(ctx context.Context, id string) (FlagResult, erro
 		if q.Status != "published" {
 			return nil
 		}
-		count, err := qs.BumpQuestionFlag(ctx, store.BumpQuestionFlagParams{UpdatedAt: nowMs(), ID: id})
+		now := nowMs()
+		if err := qs.InsertQuestionFlag(ctx, store.InsertQuestionFlagParams{
+			ID: newID(), QuestionID: id, Reason: normalizeFlagReason(reason), CreatedAt: now,
+		}); err != nil {
+			return err
+		}
+		count, err := qs.BumpQuestionFlag(ctx, store.BumpQuestionFlagParams{UpdatedAt: now, ID: id})
 		if err != nil {
 			return err
 		}
@@ -447,8 +481,8 @@ func (s *Service) FlagQuestion(ctx context.Context, id string) (FlagResult, erro
 		}
 		res.Status = "needs_review"
 		return qs.SetQuestionStatus(ctx, store.SetQuestionStatusParams{
-			Status: res.Status, ReviewNote: "flagged by app users", SyncSeq: sql.NullInt64{Int64: seq, Valid: true},
-			UpdatedAt: nowMs(), ID: id,
+			Status: res.Status, ReviewNote: flagNote, SyncSeq: sql.NullInt64{Int64: seq, Valid: true},
+			UpdatedAt: now, ID: id,
 		})
 	})
 	return res, err

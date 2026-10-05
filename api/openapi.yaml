@@ -203,9 +203,24 @@ paths:
         "404": { description: AI explanations are not enabled }
   /api/v1/questions/{id}/flag:
     post:
-      summary: Report that a question looks wrong; two reports take it offline
+      summary: Report that a question has a problem; two unresolved reports take it offline
+      description: |
+        The body is optional. Clients that send none (or an unknown reason) are recorded as `other`.
+        A reviewer settling the reports (approve, reject, or "dismiss flags" in the admin UI) resets
+        the count, so `flag_count` is the number of unresolved reports.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  enum: [wrong_answer, ambiguous, typo, other]
+                  description: wrong answer / ambiguous stem / typo in options or text / other
       responses:
         "200":
           description: ok
@@ -278,7 +293,8 @@ components:
         device_id: { type: string }
         answer: { type: array, items: { type: integer } }
         is_correct: { type: boolean }
-        duration_ms: { type: integer, nullable: true }
+        duration_ms: { type: integer, nullable: true, description: "time from showing the question to answering it" }
+        review_ms: { type: integer, nullable: true, description: "time spent on the question after answering (explanation, AI); re-uploading with a larger value raises it, a smaller one is ignored" }
         answered_at: { type: integer }
     AttemptsPage:
       type: object

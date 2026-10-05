@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
 import '../../data/database.dart';
+import '../../data/models.dart';
 import '../../data/progress.dart';
 import '../../data/repository.dart';
+import 'active_timer.dart';
 
 enum QuizOrder { random, sequential }
 
@@ -58,12 +61,14 @@ class QuizSession extends ChangeNotifier {
     int? seed,
     this.shuffleOptions = true,
     Map<String, RestoredAnswer> restored = const {},
+    DateTime Function()? clock,
   })  : assert(questions.isNotEmpty),
         seed = seed ?? Random().nextInt(1 << 30),
         _index = startAt.clamp(0, questions.length - 1),
         _selected = List.generate(questions.length, (_) => const <int>[]),
-        _outcomes = List.filled(questions.length, null) {
-    _startedAt = DateTime.now();
+        _outcomes = List.filled(questions.length, null),
+        _waited = List.filled(questions.length, 0),
+        _timer = ActiveTimer(clock: clock) {
     for (var i = 0; i < questions.length; i++) {
       final r = restored[questions[i].id];
       if (r == null) continue;
@@ -81,9 +86,14 @@ class QuizSession extends ChangeNotifier {
   int _index;
   bool _finished = false;
   bool _busy = false;
-  late DateTime _startedAt;
   final List<List<int>> _selected;
   final List<AnswerOutcome?> _outcomes;
+
+  /// Counts the time on the current question; a backgrounded app does not count.
+  final ActiveTimer _timer;
+
+  /// Time spent on each question before it was answered, over earlier visits.
+  final List<int> _waited;
 
   int get index => _index;
   int get length => questions.length;
@@ -151,32 +161,53 @@ class QuizSession extends ChangeNotifier {
     _busy = true;
     notifyListeners();
     try {
-      final elapsed = DateTime.now().difference(_startedAt).inMilliseconds;
-      _outcomes[_index] = await repo.recordAnswer(question: current, selected: selected, durationMs: max(elapsed, 0));
+      final at = _index;
+      final elapsed = _waited[at] + _timer.lap();
+      _waited[at] = 0;
+      _outcomes[at] = await repo.recordAnswer(question: questions[at], selected: _selected[at], durationMs: elapsed);
     } finally {
       _busy = false;
       notifyListeners();
     }
   }
 
+  /// Books the time since the last call to the question on screen: an answered one
+  /// gains reading time (explanation, AI), an unanswered one carries it into its
+  /// answer time. Called whenever the learner leaves a question or the app, so
+  /// little is lost if the app is closed.
+  Future<void> flush() {
+    final ms = _timer.lap();
+    final at = _index;
+    final attemptId = _outcomes[at]?.attemptId;
+    if (_outcomes[at] == null) _waited[at] += ms;
+    return attemptId == null ? Future.value() : repo.addReviewTime(attemptId, ms);
+  }
+
+  /// The app went to the background or came back; background time is not counted.
+  void setVisible(bool visible) => _timer.setVisible(visible);
+
+  /// Booking reading time is best effort: a failed write must not disturb moving on.
+  void _bookInBackground() => unawaited(flush().catchError((Object _) {}));
+
   void next() {
+    _bookInBackground();
     if (isLast) {
       if (answeredCount > 0) _finished = true;
     } else {
       _index++;
-      _startedAt = DateTime.now();
     }
     notifyListeners();
   }
 
   void previous() {
     if (!canGoBack) return;
+    _bookInBackground();
     _index--;
     notifyListeners();
   }
 
   /// Hides the current question after a report and moves on.
-  Future<void> flagCurrent() async {
-    await repo.flagQuestion(current.id);
+  Future<void> flagCurrent({FlagReason reason = FlagReason.other}) async {
+    await repo.flagQuestion(current.id, reason: reason);
   }
 }

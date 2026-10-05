@@ -11,8 +11,10 @@ import 'stats.dart';
 
 /// What the quiz screen shows about the question just answered.
 class AnswerOutcome {
-  const AnswerOutcome({required this.correct, required this.enteredWrongBook, required this.state});
+  const AnswerOutcome({this.attemptId, required this.correct, required this.enteredWrongBook, required this.state});
 
+  /// The attempt this answer was logged as; null for outcomes restored from a saved quiz.
+  final String? attemptId;
   final bool correct;
   final bool enteredWrongBook;
   final QuestionState state;
@@ -80,15 +82,17 @@ class Repository {
     return [for (final id in ids) if (found[id] != null) found[id]!];
   }
 
-  Stream<List<Question>> watchWrongBook() => _watchByState((s) => s.inWrongBook);
+  /// The wrong book, most recently touched first; of one bank when [bankId] is given.
+  Stream<List<Question>> watchWrongBook({String? bankId}) => _watchByState((s) => s.inWrongBook, bankId);
 
-  Stream<List<Question>> watchFavorites() => _watchByState((s) => s.favorite);
+  Stream<List<Question>> watchFavorites({String? bankId}) => _watchByState((s) => s.favorite, bankId);
 
-  Stream<List<Question>> _watchByState(bool Function(QuestionState) keep) {
+  Stream<List<Question>> _watchByState(bool Function(QuestionState) keep, String? bankId) {
     final query = db.select(db.questions).join([
       innerJoin(db.questionStates, db.questionStates.questionId.equalsExp(db.questions.id)),
     ])
-      ..where(db.questions.hidden.equals(false))
+      ..where(db.questions.hidden.equals(false) &
+          (bankId == null ? const Constant(true) : db.questions.bankId.equals(bankId)))
       ..orderBy([OrderingTerm.desc(db.questionStates.updatedAt)]);
     return query.watch().map((rows) => [
           for (final r in rows)
@@ -137,6 +141,39 @@ class Repository {
       last[a.questionId] = a.isCorrect;
     }
     return BankStats(total: qs.length, answered: last.length, correct: last.values.where((v) => v).length);
+  }
+
+  /// What was done on the local calendar day of [day] over all banks, kept up to date. It counts what the
+  /// stats pages count (answers from every device, minus those to questions since withdrawn), so the
+  /// home page and a bank's stats agree.
+  Stream<DayProgress> watchDayProgress(DateTime day) {
+    final from = DateTime(day.year, day.month, day.day).millisecondsSinceEpoch;
+    final to = DateTime(day.year, day.month, day.day + 1).millisecondsSinceEpoch;
+    final query = db.select(db.attempts).join([
+      innerJoin(db.questions, db.questions.id.equalsExp(db.attempts.questionId)),
+    ])
+      ..where(db.questions.hidden.equals(false) &
+          db.attempts.answeredAt.isBiggerOrEqualValue(from) &
+          db.attempts.answeredAt.isSmallerThanValue(to));
+    return query.watch().map((rows) {
+      var ms = 0;
+      for (final r in rows) {
+        final t = attemptTimes(r.readTable(db.attempts));
+        ms += t.practiceMs + t.reviewMs;
+      }
+      return DayProgress(questions: rows.length, ms: ms);
+    });
+  }
+
+  /// Every answer given to a visible question of the bank, oldest first.
+  Future<List<Attempt>> bankAttempts(String bankId) async {
+    final ids = [for (final q in await bankQuestions(bankId)) q.id];
+    final attempts = <Attempt>[];
+    for (var i = 0; i < ids.length; i += 500) {
+      final chunk = ids.sublist(i, i + 500 > ids.length ? ids.length : i + 500);
+      attempts.addAll(await (db.select(db.attempts)..where((a) => a.questionId.isIn(chunk))).get());
+    }
+    return attempts..sort((a, b) => a.answeredAt.compareTo(b.answeredAt));
   }
 
   /// Practice statistics for a bank, from the attempt log.
@@ -298,8 +335,9 @@ class Repository {
 
   Future<AnswerOutcome> _apply(Question question, List<int> selected, int durationMs, int now) async {
     final correct = isCorrect(selected, question.answer);
+    final attemptId = newUlid(now: _clock());
     await db.into(db.attempts).insert(AttemptsCompanion.insert(
-          id: newUlid(now: _clock()),
+          id: attemptId,
           questionId: question.id,
           deviceId: deviceId,
           answerJson: jsonEncode(selected),
@@ -320,7 +358,20 @@ class Repository {
       dirty: const Value(true),
     ));
     final after = (await getState(question.id))!;
-    return AnswerOutcome(correct: correct, enteredWrongBook: !wasIn && after.inWrongBook, state: after);
+    return AnswerOutcome(attemptId: attemptId, correct: correct, enteredWrongBook: !wasIn && after.inWrongBook, state: after);
+  }
+
+  /// Adds [ms] of reading time to an answered question and queues the attempt for
+  /// upload again (the server keeps the larger review time). An unknown attempt is ignored.
+  Future<void> addReviewTime(String attemptId, int ms) {
+    if (ms <= 0) return Future.value();
+    return db.transaction(() async {
+      final a = await (db.select(db.attempts)..where((t) => t.id.equals(attemptId))).getSingleOrNull();
+      if (a == null) return;
+      await (db.update(db.attempts)..where((t) => t.id.equals(attemptId))).write(
+        AttemptsCompanion(reviewMs: Value((a.reviewMs ?? 0) + ms), synced: const Value(false)),
+      );
+    });
   }
 
   Future<void> setFavorite(String questionId, bool favorite) async {
@@ -353,11 +404,11 @@ class Repository {
 
   /// Queues a "this question looks wrong" report and hides the question here
   /// right away; the server confirms by withdrawing it on a later sync.
-  Future<void> flagQuestion(String questionId) async {
+  Future<void> flagQuestion(String questionId, {FlagReason reason = FlagReason.other}) async {
     await db.transaction(() async {
-      await db
-          .into(db.pendingFlags)
-          .insertOnConflictUpdate(PendingFlagsCompanion.insert(questionId: questionId, createdAt: _now()));
+      await db.into(db.pendingFlags).insertOnConflictUpdate(
+            PendingFlagsCompanion.insert(questionId: questionId, createdAt: _now(), reason: Value(reason.wire)),
+          );
       await (db.update(db.questions)..where((q) => q.id.equals(questionId)))
           .write(const QuestionsCompanion(hidden: Value(true)));
     });

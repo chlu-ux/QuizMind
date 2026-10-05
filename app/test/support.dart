@@ -1,7 +1,14 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:quizmind_app/core/providers.dart';
+import 'package:quizmind_app/core/settings.dart';
 import 'package:quizmind_app/data/api.dart';
 import 'package:quizmind_app/data/database.dart';
 import 'package:quizmind_app/data/models.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 AppDatabase memoryDb() => AppDatabase(NativeDatabase.memory());
 
@@ -36,8 +43,12 @@ class FakeApi implements QuizApi {
   /// Behave like a server from before attempt/exam download existed (404).
   bool historyUnsupported = false;
   final List<String> flagged = [];
+  final List<String?> flagReasons = [];
   int pageSize = 1000;
   Object? failWith;
+
+  /// Runs while an attempt upload is in flight (something the learner does meanwhile).
+  Future<void> Function()? duringAttemptUpload;
 
   /// Saved quizzes by scope, with the server sequence of their last change.
   final Map<String, ({SessionDto session, int seq})> sessions = {};
@@ -77,6 +88,7 @@ class FakeApi implements QuizApi {
   @override
   Future<void> uploadAttempts(List<AttemptDto> attempts) async {
     _maybeFail();
+    await duringAttemptUpload?.call();
     uploadedAttempts.addAll(attempts);
   }
 
@@ -191,12 +203,89 @@ class FakeApi implements QuizApi {
   }
 
   @override
-  Future<void> flagQuestion(String id) async {
+  Future<void> flagQuestion(String id, {String? reason}) async {
     _maybeFail();
     flagged.add(id);
+    flagReasons.add(reason);
   }
 
   void _maybeFail() {
     if (failWith != null) throw failWith!;
   }
+}
+
+/// Puts [n] questions into the database. Question [i] (1-based) gets the stem, tags and bank given by
+/// the callbacks; the right answer is always option 1 ("乙") and none of them is hidden.
+Future<List<Question>> seedQs(
+  AppDatabase db, {
+  int n = 3,
+  String bank = 'b1',
+  String Function(int i)? stem,
+  List<String> Function(int i)? tags,
+  String Function(int i)? explanation,
+  int firstSeq = 1,
+}) async {
+  final ids = <String>[];
+  for (var i = 1; i <= n; i++) {
+    final id = '$bank-q$i';
+    ids.add(id);
+    await db.into(db.questions).insert(QuestionsCompanion.insert(
+          id: id,
+          bankId: bank,
+          type: 'single',
+          stem: stem?.call(i) ?? '题干 $id',
+          optionsJson: '["甲","乙","丙","丁"]',
+          answerJson: '[1]',
+          explanation: Value(explanation?.call(i) ?? '解析 $id'),
+          tagsJson: Value(_json(tags?.call(i) ?? const ['锁'])),
+          syncSeq: firstSeq + i - 1,
+        ));
+  }
+  return (db.select(db.questions)..where((q) => q.id.isIn(ids))).get();
+}
+
+String _json(List<String> tags) => '[${tags.map((t) => '"$t"').join(',')}]';
+
+Future<void> addBank(AppDatabase db, String id, String title, {int count = 0}) =>
+    db.into(db.banks).insertOnConflictUpdate(BanksCompanion.insert(id: id, title: title, questionCount: Value(count)));
+
+/// Mounts [child] in a MaterialApp over [db] and a fake server.
+Future<ProviderContainer> pumpWith(
+  WidgetTester tester,
+  AppDatabase db,
+  Widget child, {
+  Map<String, Object> prefsValues = const {},
+  DateTime Function()? clock,
+}) async {
+  SharedPreferences.setMockInitialValues(prefsValues);
+  final prefs = await SharedPreferences.getInstance();
+  late ProviderContainer container;
+  await tester.pumpWidget(ProviderScope(
+    overrides: [
+      sharedPrefsProvider.overrideWithValue(prefs),
+      databaseProvider.overrideWithValue(db),
+      apiProvider.overrideWithValue(FakeApi()),
+    ],
+    child: Builder(builder: (context) {
+      container = ProviderScope.containerOf(context);
+      return MaterialApp(home: child);
+    }),
+  ));
+  await tester.pump();
+  return container;
+}
+
+/// Lets database streams and futures that run outside the fake clock deliver.
+Future<void> settleUi(WidgetTester tester) async {
+  await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 100)));
+  await tester.pump();
+  await tester.pump();
+}
+
+/// Leaves the page and closes the database; drift cancels its stream queries on a fake-clock timer.
+Future<void> tearDownUi(WidgetTester tester, AppDatabase db) async {
+  await tester.pumpWidget(const SizedBox());
+  await tester.pump(const Duration(seconds: 1));
+  await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
+  await tester.runAsync(db.close);
 }

@@ -1,6 +1,20 @@
 /// JSON shapes of the app API (see api/openapi.yaml).
 library;
 
+/// Why a question is reported (api/openapi.yaml, POST /questions/{id}/flag).
+enum FlagReason {
+  wrongAnswer('wrong_answer', '答案不对'),
+  ambiguous('ambiguous', '题干有歧义'),
+  typo('typo', '选项或文字有误'),
+  other('other', '其他');
+
+  const FlagReason(this.wire, this.label);
+
+  /// The value the server knows it by.
+  final String wire;
+  final String label;
+}
+
 class BankDto {
   BankDto({required this.id, required this.title, required this.description, required this.questionCount});
 
@@ -133,6 +147,7 @@ class AttemptDto {
     required this.answer,
     required this.isCorrect,
     this.durationMs,
+    this.reviewMs,
     required this.answeredAt,
   });
 
@@ -141,7 +156,12 @@ class AttemptDto {
   final String deviceId;
   final List<int> answer;
   final bool isCorrect;
+
+  /// From showing the question to answering it.
   final int? durationMs;
+
+  /// Time spent on the question after answering it; the server keeps the larger value.
+  final int? reviewMs;
   final int answeredAt;
 
   factory AttemptDto.fromJson(Map<String, dynamic> j) => AttemptDto(
@@ -151,6 +171,7 @@ class AttemptDto {
         answer: ((j['answer'] as List?) ?? const []).map((e) => (e as num).toInt()).toList(),
         isCorrect: j['is_correct'] as bool,
         durationMs: (j['duration_ms'] as num?)?.toInt(),
+        reviewMs: (j['review_ms'] as num?)?.toInt(),
         answeredAt: (j['answered_at'] as num).toInt(),
       );
 
@@ -161,6 +182,7 @@ class AttemptDto {
         'answer': answer,
         'is_correct': isCorrect,
         'duration_ms': durationMs,
+        'review_ms': reviewMs,
         'answered_at': answeredAt,
       };
 }

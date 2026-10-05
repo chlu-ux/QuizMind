@@ -19,6 +19,13 @@ export const QUESTION_STATUS_LABEL: Record<string, string> = {
   retired: '已下线',
 }
 
+export const FLAG_REASON_LABEL: Record<string, string> = {
+  wrong_answer: '答案不对',
+  ambiguous: '题干有歧义',
+  typo: '选项或文字有误',
+  other: '其他',
+}
+
 export const DOCUMENT_STATUS_LABEL: Record<string, string> = {
   imported: '已导入',
   chunking: '切块中',

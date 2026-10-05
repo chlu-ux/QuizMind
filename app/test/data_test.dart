@@ -176,10 +176,11 @@ void main() {
     });
 
     test('a pending flag is uploaded then dropped; unknown questions are tolerated', () async {
-      await repo.flagQuestion(q.id);
+      await repo.flagQuestion(q.id, reason: FlagReason.wrongAnswer);
       expect(await repo.bankQuestions('b1'), isEmpty, reason: 'hidden immediately');
       await sync.run();
       expect(api.flagged, ['q1']);
+      expect(api.flagReasons, ['wrong_answer']);
       expect(await db.select(db.pendingFlags).get(), isEmpty);
 
       await repo.flagQuestion('gone');
@@ -187,6 +188,15 @@ void main() {
       // flag 404 is swallowed; the next call (banks) then fails with the same error
       await expectLater(sync.run(), throwsA(isA<ApiException>()));
       expect(await db.select(db.pendingFlags).get(), isEmpty);
+    });
+  });
+
+  group('report reasons', () {
+    test('a report queued before reasons existed is uploaded without one', () async {
+      await db.into(db.pendingFlags).insert(PendingFlagsCompanion.insert(questionId: 'q1', createdAt: 1));
+      await sync.run();
+      expect(api.flagged, ['q1']);
+      expect(api.flagReasons, [null]);
     });
   });
 
@@ -263,6 +273,46 @@ void main() {
       api.remoteAttempts.addAll(api.uploadedAttempts); // the server echoes it
       expect((await sync.run()).attemptsPulled, 0);
       expect(await db.select(db.attempts).get(), hasLength(1));
+    });
+
+    test('uploads an attempt again when reading time was added after it was synced, and keeps it queued if added mid-upload', () async {
+      final q = (await repo.bankQuestions('b1')).single;
+      final id = (await repo.recordAnswer(question: q, selected: [1], durationMs: 500)).attemptId!;
+      await sync.run();
+      expect(api.uploadedAttempts, hasLength(1));
+      expect(api.uploadedAttempts.single.reviewMs, isNull);
+
+      await repo.addReviewTime(id, 7000);
+      await repo.addReviewTime(id, 3000);
+      expect((await db.select(db.attempts).getSingle()).synced, isFalse);
+      await sync.run();
+      expect(api.uploadedAttempts, hasLength(2));
+      expect((api.uploadedAttempts[1].id, api.uploadedAttempts[1].durationMs, api.uploadedAttempts[1].reviewMs), (id, 500, 10000));
+      expect((await db.select(db.attempts).getSingle()).synced, isTrue);
+
+      // Reading time that arrives while the upload is in flight must not be marked as sent.
+      api.duringAttemptUpload = () => repo.addReviewTime(id, 1000);
+      await repo.addReviewTime(id, 500);
+      await sync.run();
+      final row = await db.select(db.attempts).getSingle();
+      expect(row.synced, isFalse);
+      expect(row.reviewMs, 11500);
+    });
+
+    test('takes a larger review time from the server for an attempt it already has, without counting it as new', () async {
+      final q = (await repo.bankQuestions('b1')).single;
+      final id = (await repo.recordAnswer(question: q, selected: [1], durationMs: 500)).attemptId!;
+      await repo.addReviewTime(id, 2000);
+      await sync.run();
+      AttemptDto echo(int review) => AttemptDto(
+            id: id, questionId: 'q1', deviceId: 'd', answer: [1], isCorrect: true, durationMs: 500, reviewMs: review, answeredAt: 1,
+          );
+      api.remoteAttempts.add(echo(9000));
+      expect((await sync.run()).attemptsPulled, 0);
+      expect((await db.select(db.attempts).getSingle()).reviewMs, 9000);
+      api.remoteAttempts.addAll([echo(1000), echo(1000)]);
+      await sync.run();
+      expect((await db.select(db.attempts).getSingle()).reviewMs, 9000, reason: 'never shrinks');
     });
 
     test('pages through a long history', () async {

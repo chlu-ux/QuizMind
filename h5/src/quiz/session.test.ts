@@ -91,6 +91,69 @@ describe('QuizSession', () => {
   })
 })
 
+describe('QuizSession timing', () => {
+  async function setup(...ids: string[]) {
+    const db = await freshDb()
+    const qs = ids.map(q)
+    for (const x of qs) await db.put('questions', x)
+    let t = 10_000
+    const s = new QuizSession('t', qs, new Repo(db, 'd'), 0, undefined, { clock: () => t })
+    return { db, s, advance: (ms: number) => (t += ms) }
+  }
+
+  it('times the answer up to submit and the reading after it as review time', async () => {
+    const { db, s, advance } = await setup('q1', 'q2')
+    advance(8000)
+    s.select(1)
+    await s.submit()
+    advance(20_000) // reading the explanation
+    s.next()
+    await s.flush() // the next question has just been shown
+    const [a] = await db.getAll('attempts')
+    expect(a.duration_ms).toBe(8000)
+    expect(a.review_ms).toBe(20_000)
+    expect(a.synced).toBe(0)
+  })
+
+  it('adds up every visit to an answered question, and lets an unanswered one carry its time', async () => {
+    const { db, s, advance } = await setup('q1', 'q2', 'q3')
+    advance(4000)
+    s.next() // q1 skipped for now: 4s on it
+    advance(1000)
+    s.previous()
+    advance(3000)
+    s.select(1)
+    await s.submit() // 4s + 3s before answering q1
+    advance(2000)
+    s.next()
+    advance(5000)
+    s.previous() // back on q1 to read the explanation again
+    advance(6000)
+    await s.flush()
+    const [a] = await db.getAll('attempts')
+    expect(a.duration_ms).toBe(7000)
+    expect(a.review_ms).toBe(2000 + 6000)
+  })
+
+  it('does not count the time the page was hidden', async () => {
+    const { db, s, advance } = await setup('q1')
+    advance(3000)
+    s.setVisible(false)
+    advance(600_000)
+    s.setVisible(true)
+    advance(1000)
+    s.select(1)
+    await s.submit()
+    advance(500)
+    s.setVisible(false)
+    advance(600_000)
+    await s.flush()
+    const [a] = await db.getAll('attempts')
+    expect(a.duration_ms).toBe(4000)
+    expect(a.review_ms).toBe(500)
+  })
+})
+
 describe('option shuffling', () => {
   const seeded = (seed: number) => () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
 

@@ -3,13 +3,22 @@ import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import router from '@/router'
 import { getRepo } from '@/core/app'
+import { DEFAULT_GOALS, updateGoals } from '@/core/goals'
 import { newUlid } from '@/core/ulid'
 import type { ExamDraft, ExamRecord, LocalQuestion } from '@/data/types'
 import { pendingExam } from '@/quiz/examLaunch'
+import { pendingQuiz, startQuiz } from '@/quiz/launch'
 import ExamReviewView from './ExamReviewView.vue'
 import ExamSetupView from './ExamSetupView.vue'
 import ExamView from './ExamView.vue'
+import BankView from './BankView.vue'
+import BanksView from './BanksView.vue'
+import ListView from './ListView.vue'
+import QuizView from './QuizView.vue'
+import SearchView from './SearchView.vue'
+import SettingsView from './SettingsView.vue'
 import StatsView from './StatsView.vue'
+import TopicsView from './TopicsView.vue'
 
 let bankSeq = 0
 let bank: string
@@ -290,6 +299,417 @@ describe('StatsView', () => {
     expect(w.text()).toContain('共 1 个') // UML + UML 辨析 merged (范式 was never answered)
     await button(w, '细分').trigger('click')
     expect(w.text()).toContain('共 2 个')
+    w.unmount()
+  })
+})
+
+describe('StatsView topics', () => {
+  it('a tag row starts practice on that knowledge point, following the merged / detailed switch', async () => {
+    const { repo, qs } = await seed(4, (i) => (i === 1 ? ['UML'] : i === 2 ? ['UML 辨析'] : i === 3 ? ['UML'] : ['范式']))
+    for (const q of qs) await repo.recordAnswer(q, [1], 1000)
+    const w = await open(`/bank/${bank}/stats`, StatsView, { id: bank })
+
+    await w.find('[aria-label="练习知识点 UML"]').trigger('click')
+    await flush()
+    expect(router.currentRoute.value.path).toBe('/quiz')
+    expect(pendingQuiz.value!.questions.map((q) => q.id).sort()).toEqual([qs[0].id, qs[1].id, qs[2].id].sort())
+    expect(pendingQuiz.value!.title).toBe('知识点 · UML')
+    expect(pendingQuiz.value!.scope).toBeUndefined() // a one-off drill must not replace the bank's saved round
+
+    await router.push(`/bank/${bank}/stats`)
+    await button(w, '细分').trigger('click')
+    await w.find('[aria-label="练习知识点 UML"]').trigger('click')
+    await flush()
+    expect(pendingQuiz.value!.questions.map((q) => q.id).sort()).toEqual([qs[0].id, qs[2].id].sort()) // "UML 辨析" stays out
+    w.unmount()
+  })
+})
+
+describe('TopicsView', () => {
+  it('lists knowledge points biggest first with counts and accuracy, and starts the topic at random', async () => {
+    const { repo, qs } = await seed(6, (i) => (i <= 3 ? ['锁'] : i <= 5 ? ['范式'] : ['UML']))
+    await repo.recordAnswer(qs[0], [1], 1) // right
+    await repo.recordAnswer(qs[1], [0], 1) // wrong
+    const w = await open(`/bank/${bank}/topics`, TopicsView, { id: bank })
+
+    const rows = w.findAll('.topic').map((r) => r.text().replace(/\s+/g, ' '))
+    expect(rows).toHaveLength(3)
+    expect(rows[0]).toContain('锁')
+    expect(rows[0]).toContain('3 题')
+    expect(rows[0]).toContain('做过 2')
+    expect(rows[0]).toContain('50%')
+    expect(rows[1]).toContain('范式')
+    expect(rows[1]).toContain('未做')
+
+    await w.findAll('.topic')[0].trigger('click')
+    await flush()
+    expect(router.currentRoute.value.path).toBe('/quiz')
+    expect(pendingQuiz.value!.questions.map((q) => q.id).sort()).toEqual([qs[0].id, qs[1].id, qs[2].id].sort())
+    expect(pendingQuiz.value!.title).toBe('知识点 · 锁')
+    expect(pendingQuiz.value!.scope).toBeUndefined()
+    w.unmount()
+  })
+
+  it('"only unanswered" and "only missed" narrow the draw, exclude each other and toggle off', async () => {
+    const { repo, qs } = await seed(3, () => ['锁'])
+    await repo.recordAnswer(qs[0], [1], 1) // right
+    await repo.recordAnswer(qs[1], [0], 1) // wrong
+    const w = await open(`/bank/${bank}/topics`, TopicsView, { id: bank })
+    const draw = async () => {
+      await w.findAll('.topic')[0].trigger('click')
+      await flush()
+      const ids = pendingQuiz.value!.questions.map((q) => q.id).sort()
+      await router.push(`/bank/${bank}/topics`)
+      return ids
+    }
+
+    await button(w, '只刷没做过的').trigger('click')
+    expect(w.text()).toContain('可刷 1')
+    expect(await draw()).toEqual([qs[2].id])
+
+    await button(w, '只刷做错过的').trigger('click')
+    expect(button(w, '只刷没做过的').attributes('aria-pressed')).toBe('false')
+    expect(w.text()).toContain('可刷 1')
+    expect(await draw()).toEqual([qs[1].id])
+
+    await button(w, '只刷做错过的').trigger('click') // off again
+    expect(w.text()).not.toContain('可刷')
+    expect(await draw()).toHaveLength(3)
+    w.unmount()
+  })
+
+  it('says so instead of starting an empty quiz', async () => {
+    const { repo, qs } = await seed(2, () => ['锁'])
+    for (const q of qs) await repo.recordAnswer(q, [1], 1) // everything answered, nothing wrong
+    pendingQuiz.value = null
+    const w = await open(`/bank/${bank}/topics`, TopicsView, { id: bank })
+    await button(w, '只刷做错过的').trigger('click')
+    expect(w.find('.topic').classes()).toContain('off')
+    await w.find('.topic').trigger('click')
+    await flush()
+    expect(pendingQuiz.value).toBeNull()
+    expect(router.currentRoute.value.path).toBe(`/bank/${bank}/topics`)
+    w.unmount()
+  })
+
+  it('merges related tags by default and shows them apart in the detailed view', async () => {
+    await seed(2, (i) => (i === 1 ? ['UML'] : ['UML 辨析']))
+    const w = await open(`/bank/${bank}/topics`, TopicsView, { id: bank })
+    expect(w.findAll('.topic')).toHaveLength(1)
+    await button(w, '细分').trigger('click')
+    expect(w.findAll('.topic')).toHaveLength(2)
+    w.unmount()
+  })
+
+  it('is reachable from the bank page and tells when there are no tags', async () => {
+    await seed(2, () => [])
+    const page = await open(`/bank/${bank}`, BankView, { id: bank })
+    await button(page, '按知识点刷题').trigger('click')
+    await flush()
+    expect(router.currentRoute.value.path).toBe(`/bank/${bank}/topics`)
+    page.unmount()
+    const w = await open(`/bank/${bank}/topics`, TopicsView, { id: bank })
+    expect(w.text()).toContain('还没有知识点标签')
+    w.unmount()
+  })
+})
+
+describe('QuizView', () => {
+  it('asks why a question is reported and queues the report with that reason', async () => {
+    const { repo, qs } = await seed(2)
+    await startQuiz('练习', qs)
+    const w = await open('/quiz', QuizView)
+
+    await w.find('[aria-label="更多"]').trigger('click')
+    await w.findAll('.menu div').find((d) => d.text().includes('反馈'))!.trigger('click')
+    await flush()
+    expect(w.text()).toContain('这道题哪里有问题')
+    for (const label of ['答案不对', '题干有歧义', '选项或文字有误', '其他']) expect(w.text()).toContain(label)
+
+    await button(w, '题干有歧义').trigger('click')
+    await flush()
+    const flags = await repo.db.getAll('flags')
+    expect(flags.map((f) => [f.question_id, f.reason])).toEqual([[qs[0].id, 'ambiguous']])
+    expect(w.text()).not.toContain('这道题哪里有问题')
+    w.unmount()
+  })
+})
+
+describe('wrong book by bank', () => {
+  // Two banks with wrong answers in each; the first bank's title sorts first.
+  async function seedWrong() {
+    const a = await seed(3)
+    const bankA = bank
+    const titleA = `题库${bankSeq}`
+    bank = `${bank}b`
+    const b = await seed(2)
+    const titleB = `${titleA}乙`
+    await b.repo.db.put('banks', { id: bank, title: titleB, description: '', question_count: 2 })
+    for (const q of [...a.qs.slice(0, 2), ...b.qs]) await a.repo.recordAnswer(q, [0], 1)
+    return { repo: a.repo, bankA, bankB: bank, titleA, titleB, qa: a.qs, qb: b.qs }
+  }
+  const chip = (w: VueWrapper, text: string) => w.findAll('.bank-filter .pick').find((x) => x.text().includes(text))!
+
+  beforeEach(async () => {
+    sessionStorage.clear()
+    pendingQuiz.value = null
+    // The database is shared by the tests in this file: start each from an empty wrong book and favourites.
+    const repo = await getRepo()
+    await repo.db.clear('states')
+  })
+
+  it('shows every bank by default, with the bank of each question and a count per bank', async () => {
+    const { titleA, titleB } = await seedWrong()
+    const w = await open('/wrong', ListView, { kind: 'wrong' })
+    expect(w.findAll('.bank-filter .pick').map((c) => c.text())).toEqual(['全部 4', `${titleA} 2`, `${titleB} 2`])
+    expect(w.text()).toContain('共 4 题')
+    expect(w.findAll('.card .small').every((r) => r.text().includes('题库'))).toBe(true) // each row names its bank
+    w.unmount()
+  })
+
+  it('narrows the list and the random practice to the chosen bank, and remembers the choice for the session', async () => {
+    const { qb, titleB } = await seedWrong()
+    const w = await open('/wrong', ListView, { kind: 'wrong' })
+    await chip(w, '乙').trigger('click')
+    await flush()
+    expect(w.text()).toContain('共 2 题')
+    expect(w.findAll('.card')).toHaveLength(2)
+
+    await button(w, '随机练习').trigger('click')
+    await flush()
+    expect(pendingQuiz.value!.title).toBe(`错题本 · ${titleB}`)
+    expect(pendingQuiz.value!.questions.map((q) => q.id).sort()).toEqual(qb.map((q) => q.id).sort())
+    w.unmount()
+
+    // Back on the list in the same session it is still narrowed.
+    const again = await open('/wrong', ListView, { kind: 'wrong' })
+    expect(again.text()).toContain('共 2 题')
+    again.unmount()
+  })
+
+  it('opens on the bank named in the address when coming from the bank page', async () => {
+    const { bankA, qa } = await seedWrong()
+    const w = await open(`/wrong?bank=${bankA}`, ListView, { kind: 'wrong' })
+    expect(w.text()).toContain('共 2 题')
+    expect(chip(w, '全部').classes()).not.toContain('on')
+    expect(w.text()).toContain(qa[0].stem)
+    w.unmount()
+  })
+
+  it('falls back to everything when the remembered bank has no wrong questions left', async () => {
+    await seedWrong()
+    sessionStorage.setItem('quizmind.listBank.wrong', 'gone')
+    const w = await open('/wrong', ListView, { kind: 'wrong' })
+    expect(w.text()).toContain('共 4 题')
+    w.unmount()
+  })
+
+  it('the favourites list is split by bank the same way', async () => {
+    const { repo, qa, qb } = await seedWrong()
+    await repo.setFavorite(qa[0].id, true)
+    await repo.setFavorite(qb[0].id, true)
+    const w = await open('/fav', ListView, { kind: 'fav' })
+    expect(w.findAll('.bank-filter .pick')).toHaveLength(3)
+    await chip(w, '乙').trigger('click')
+    await flush()
+    expect(w.text()).toContain('共 1 题')
+    w.unmount()
+  })
+
+  it('the bank page links to its own wrong book, greyed out when it has none', async () => {
+    const { bankA, bankB } = await seedWrong()
+    const w = await open(`/bank/${bankA}`, BankView, { id: bankA })
+    const link = button(w, '本题库错题本')
+    expect(link.text()).toContain('2 题')
+    expect(link.attributes('disabled')).toBeUndefined()
+    await link.trigger('click')
+    await flush()
+    expect(router.currentRoute.value.path).toBe('/wrong')
+    expect(router.currentRoute.value.query.bank).toBe(bankA)
+    w.unmount()
+
+    // A bank whose questions were never answered wrongly.
+    bank = `${bankB}c`
+    await seed(2)
+    const empty = await open(`/bank/${bank}`, BankView, { id: bank })
+    expect(button(empty, '本题库错题本').attributes('disabled')).toBeDefined()
+    expect(empty.text()).toContain('没有错题')
+    empty.unmount()
+  })
+})
+
+describe('SearchView', () => {
+  const type = async (w: VueWrapper, text: string) => {
+    await w.find('input').setValue(text)
+    await new Promise((r) => setTimeout(r, 260)) // the box is debounced by 200 ms
+    await flush()
+  }
+
+  async function seedSearch() {
+    const repo = await getRepo()
+    await repo.db.put('banks', { id: bank, title: `题库${bankSeq}`, description: '', question_count: 4 })
+    const qs = [
+      question(`${bank}-1`, { stem: '读写锁允许多个读者同时持有锁' }),
+      question(`${bank}-2`, { stem: '互斥锁只允许一个线程持有', explanation: '和读写锁相比，互斥锁更简单' }),
+      question(`${bank}-3`, { stem: '哪个是缓存淘汰算法', tags: ['LRU'], options: ['先进先出', 'LRU', '随机', '轮转'] }),
+      question(`${bank}-4`, { stem: '被服务器撤回的题 读写锁', hidden: true }),
+    ]
+    for (const q of qs) await repo.db.put('questions', q)
+    return qs
+  }
+
+  it('finds questions as you type, highlights the words and says where a hidden match is', async () => {
+    await seedSearch()
+    const w = await open(`/bank/${bank}/search`, SearchView, { id: bank })
+    expect(w.text()).toContain('输入关键词开始搜索')
+
+    await type(w, '读写锁')
+    expect(w.text()).toContain('找到 2 题')
+    expect(w.findAll('.card')).toHaveLength(2) // the withdrawn question is not offered
+    expect(w.findAll('mark').map((m) => m.text())).toContain('读写锁')
+    expect(w.findAll('.snippet')).toHaveLength(1) // only the one that matched in the explanation
+    expect(w.find('.snippet').text()).toContain('解析')
+
+    await type(w, 'lru 缓存')
+    expect(w.text()).toContain('找到 1 题')
+    await type(w, 'ＬＲＵ')
+    expect(w.text()).toContain('找到 1 题')
+    expect(w.find('.snippet').text()).toContain('选项') // the option "LRU" comes before the tag
+    w.unmount()
+  })
+
+  it('says so when nothing matches, and shows nothing for a blank box', async () => {
+    await seedSearch()
+    const w = await open(`/bank/${bank}/search`, SearchView, { id: bank })
+    await type(w, '不存在的词')
+    expect(w.text()).toContain('没有找到')
+    expect(w.findAll('.card')).toHaveLength(0)
+    await type(w, '   ')
+    expect(w.text()).not.toContain('没有找到')
+    expect(w.text()).toContain('输入关键词开始搜索')
+    w.unmount()
+  })
+
+  it('starts the quiz from the tapped result over the whole result list, or practises all of it', async () => {
+    const qs = await seedSearch()
+    const w = await open(`/bank/${bank}/search`, SearchView, { id: bank })
+    await type(w, '锁')
+    await w.findAll('.card button')[1].trigger('click')
+    await flush()
+    expect(router.currentRoute.value.path).toBe('/quiz')
+    expect(pendingQuiz.value!.questions.map((q) => q.id)).toEqual([qs[0].id, qs[1].id])
+    expect(pendingQuiz.value!.startAt).toBe(1)
+    expect(pendingQuiz.value!.scope).toBeUndefined() // a one-off search does not replace the bank's saved round
+    expect(pendingQuiz.value!.title).toBe('搜索：锁')
+
+    await router.push(`/bank/${bank}/search`)
+    await type(w, '锁')
+    await button(w, '练习这 2 道').trigger('click')
+    await flush()
+    expect(pendingQuiz.value!.questions.map((q) => q.id).sort()).toEqual([qs[0].id, qs[1].id].sort())
+    w.unmount()
+  })
+
+  it('draws at most 100 rows and tells how many more there are', async () => {
+    const repo = await getRepo()
+    await repo.db.put('banks', { id: bank, title: 'big', description: '', question_count: 130 })
+    for (let i = 0; i < 130; i++) await repo.db.put('questions', question(`${bank}-${i}`, { stem: `共同的词 ${i}` }))
+    const w = await open(`/bank/${bank}/search`, SearchView, { id: bank })
+    await type(w, '共同的词')
+    expect(w.text()).toContain('找到 130 题')
+    expect(w.findAll('.card')).toHaveLength(100)
+    expect(w.text()).toContain('还有 30 条，请缩小范围')
+    w.unmount()
+  })
+
+  it('is reachable from the bank page', async () => {
+    await seedSearch()
+    const w = await open(`/bank/${bank}`, BankView, { id: bank })
+    await button(w, '搜索题目').trigger('click')
+    await flush()
+    expect(router.currentRoute.value.path).toBe(`/bank/${bank}/search`)
+    w.unmount()
+  })
+})
+
+describe('daily goal', () => {
+  beforeEach(async () => {
+    localStorage.clear()
+    updateGoals(DEFAULT_GOALS)
+    await (await getRepo()).db.clear('attempts')
+  })
+
+  /** Answers [n] questions of a fresh bank now. */
+  async function answer(n: number) {
+    const { repo, qs } = await seed(Math.max(n, 1))
+    for (const q of qs.slice(0, n)) await repo.recordAnswer(q, [1], 1000)
+  }
+
+  it('shows no progress card without a goal', async () => {
+    await answer(3)
+    const w = await open('/', BanksView)
+    expect(w.find('[aria-label="今日进度"]').exists()).toBe(false)
+    w.unmount()
+  })
+
+  it('shows how far today is toward each goal, and celebrates when both are met', async () => {
+    await answer(3)
+    updateGoals({ questions: 5, minutes: 30 })
+    const w = await open('/', BanksView)
+    const card = w.find('[aria-label="今日进度"]')
+    expect(card.text()).toContain('3 / 5 题')
+    expect(card.text()).toContain('0 / 30 分钟')
+    expect(card.text()).toContain('还差 2 题、30 分钟')
+    expect(card.text()).not.toContain('目标完成')
+    w.unmount()
+
+    updateGoals({ questions: 3, minutes: null })
+    const done = await open('/', BanksView)
+    expect(done.find('[aria-label="今日进度"]').text()).toContain('今天的目标完成了')
+    expect(done.find('[aria-label="今日进度"]').text()).not.toContain('分钟') // the minutes goal is off
+    done.unmount()
+  })
+
+  it('turns into a reminder once the set time has passed and the goal is still open', async () => {
+    await answer(1)
+    updateGoals({ questions: 5, remind: true, remindAt: '00:00' }) // already past
+    const due = await open('/', BanksView)
+    expect(due.find('[aria-label="今日进度"]').classes()).toContain('due')
+    expect(due.find('.goal-nudge').text()).toContain('还差 4 题')
+    due.unmount()
+
+    updateGoals({ remindAt: '23:59' })
+    const early = new Date()
+    if (early.getHours() === 23 && early.getMinutes() === 59) return // the one minute this cannot tell
+    const w = await open('/', BanksView)
+    expect(w.find('[aria-label="今日进度"]').classes()).not.toContain('due')
+    w.unmount()
+
+    updateGoals({ remindAt: '00:00', remind: false })
+    const off = await open('/', BanksView)
+    expect(off.find('[aria-label="今日进度"]').classes()).not.toContain('due')
+    off.unmount()
+  })
+
+  it('the settings page sets and clears goals, with presets or a custom number, and the reminder time', async () => {
+    const w = await open('/settings', SettingsView)
+    const group = (label: string) => w.find(`[aria-label="${label}"][role="group"]`)
+
+    await group('每天做题').findAll('button').find((b) => b.text() === '20')!.trigger('click')
+    await group('每天学习').findAll('button').find((b) => b.text() === '自定义')!.trigger('click')
+    await flush()
+    const input = w.find('input[aria-label="每天学习（自定义）"]')
+    await input.setValue('45')
+    expect(JSON.parse(localStorage.getItem('quizmind.goals')!)).toMatchObject({ questions: 20, minutes: 45 })
+
+    expect(w.find('input[aria-label="提醒时间"]').exists()).toBe(false)
+    await w.find('input[aria-label="每日提醒"]').setValue(true)
+    await w.find('input[aria-label="提醒时间"]').setValue('21:30')
+    expect(JSON.parse(localStorage.getItem('quizmind.goals')!)).toMatchObject({ remind: true, remindAt: '21:30' })
+    expect(w.text()).toContain('不会在后台弹通知')
+
+    await group('每天做题').findAll('button').find((b) => b.text() === '关闭')!.trigger('click')
+    expect(JSON.parse(localStorage.getItem('quizmind.goals')!).questions).toBeNull()
     w.unmount()
   })
 })

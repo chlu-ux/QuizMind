@@ -6,11 +6,13 @@ import { bump, getRepo, runSync, showToast } from '@/core/app'
 import { pendingQuiz, startQuiz, type QuizLaunch } from '@/quiz/launch'
 import { setSequentialPosition } from '@/quiz/position'
 import { QuizSession } from '@/quiz/session'
+import { FLAG_REASONS, type FlagReason } from '@/data/types'
 
 const router = useRouter()
 const session = ref<QuizSession | null>(null)
 const favorite = ref(false)
 const menu = ref(false)
+const reasonSheet = ref(false)
 
 // Where this quiz is saved so it can be continued (a bank id); undefined for lists not worth resuming.
 let scope: string | undefined
@@ -42,7 +44,18 @@ onMounted(async () => {
   if (!launch) return router.replace('/')
   await begin(launch, launch.startAt, launch.resume)
   window.addEventListener('keydown', onKey)
+  document.addEventListener('visibilitychange', onVisibility)
 })
+
+/** Hidden pages stop the clock; whatever was read so far is booked in case the app never comes back. */
+function onVisibility() {
+  const cur = session.value
+  if (!cur) return
+  if (document.hidden) {
+    void cur.flush()
+    cur.setVisible(false)
+  } else cur.setVisible(true)
+}
 
 /** 按顺序刷题 only: throw this round away and go through the bank from the first question again. */
 async function restart() {
@@ -50,6 +63,7 @@ async function restart() {
   const launch = pendingQuiz.value
   if (!launch || !launch.sequential) return
   if (!window.confirm('从第 1 题重新开始？这一轮的进度会被清掉。')) return
+  await session.value?.flush()
   await begin(launch, 0, undefined)
 }
 
@@ -77,8 +91,12 @@ watch(
 
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKey)
-  // Push what was answered while the learner is probably still online.
-  void runSync()
+  document.removeEventListener('visibilitychange', onVisibility)
+  // Book the reading time of the question on screen, then push what was answered while the learner is probably still online.
+  void (async () => {
+    await session.value?.flush()
+    await runSync()
+  })()
 })
 
 const s = computed(() => session.value)
@@ -106,11 +124,16 @@ async function primary() {
   }
 }
 
-async function flag() {
-  const cur = s.value
+function openFlag() {
   menu.value = false
+  reasonSheet.value = true
+}
+
+async function flag(reason: FlagReason) {
+  const cur = s.value
+  reasonSheet.value = false
   if (!cur) return
-  await cur.flagCurrent()
+  await cur.flagCurrent(reason)
   showToast('已反馈，下次同步时提交给服务器')
   if (cur.isLast && cur.answeredCount === 0) router.back()
   else cur.next()
@@ -161,7 +184,7 @@ function retry() {
       <div class="menu-wrap">
         <button class="icon-btn" aria-label="更多" @click="menu = !menu">⋯</button>
         <div v-if="menu" class="menu">
-          <div @click="flag">题目有误，反馈</div>
+          <div @click="openFlag">题目有误，反馈</div>
           <div v-if="pendingQuiz?.sequential" @click="restart">从第 1 题重做</div>
         </div>
       </div>
@@ -196,6 +219,14 @@ function retry() {
         <blockquote v-if="s.current.source_quote">原文：{{ s.current.source_quote }}</blockquote>
       </section>
     </main>
+
+    <div v-if="reasonSheet" class="scrim" @click.self="reasonSheet = false">
+      <div class="reason-sheet" role="dialog" aria-label="反馈原因">
+        <h2>这道题哪里有问题？</h2>
+        <button v-for="r in FLAG_REASONS" :key="r.value" class="btn block" @click="flag(r.value)">{{ r.label }}</button>
+        <button class="btn block muted" @click="reasonSheet = false">取消</button>
+      </div>
+    </div>
 
     <footer class="actionbar">
       <button class="btn" :disabled="!s.canGoBack" @click="s.previous()">上一题</button>

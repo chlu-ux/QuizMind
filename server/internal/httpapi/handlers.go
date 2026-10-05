@@ -125,7 +125,8 @@ func (a *API) listQuestions(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	page, err := a.svc.ListQuestions(r.Context(), service.QuestionFilter{
 		Status: q.Get("status"), BankID: q.Get("bank_id"), DocumentID: q.Get("document_id"),
-		Limit: intParam(r, "limit", 50), Offset: intParam(r, "offset", 0),
+		Flagged: q.Get("flagged") == "1",
+		Limit:   intParam(r, "limit", 50), Offset: intParam(r, "offset", 0),
 	})
 	if err != nil {
 		a.fail(w, r, err)
@@ -173,6 +174,15 @@ func (a *API) rejectQuestion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	q, err := a.svc.RejectQuestion(r.Context(), chi.URLParam(r, "id"), in.Note)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, q)
+}
+
+func (a *API) dismissFlags(w http.ResponseWriter, r *http.Request) {
+	q, err := a.svc.DismissFlags(r.Context(), chi.URLParam(r, "id"))
 	if err != nil {
 		a.fail(w, r, err)
 		return
@@ -352,7 +362,14 @@ func (a *API) syncSessionsUp(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *API) flagQuestion(w http.ResponseWriter, r *http.Request) {
-	res, err := a.svc.FlagQuestion(r.Context(), chi.URLParam(r, "id"))
+	// The body is optional: clients from before report reasons send none.
+	var in struct {
+		Reason string `json:"reason"`
+	}
+	if r.ContentLength != 0 && !decode(w, r, &in) {
+		return
+	}
+	res, err := a.svc.FlagQuestion(r.Context(), chi.URLParam(r, "id"), in.Reason)
 	if err != nil {
 		a.fail(w, r, err)
 		return

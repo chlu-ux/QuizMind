@@ -51,6 +51,71 @@ void main() {
     expect(qs.map((q) => q.id).toList(), ['q1', 'q2', 'q3', 'q4', 'q5', 'q6'], reason: 'input untouched');
   });
 
+  group('QuizSession timing', () {
+    late AppDatabase db;
+    late List<Question> qs;
+    late QuizSession s;
+    var t = DateTime(2026, 10, 3, 12);
+    void advance(int ms) => t = t.add(Duration(milliseconds: ms));
+
+    setUp(() async {
+      db = memoryDb();
+      addTearDown(db.close);
+      qs = await seed(db, 3);
+      t = DateTime(2026, 10, 3, 12);
+      s = QuizSession(title: 't', questions: qs, repo: Repository(db, deviceId: 'd'), clock: () => t);
+    });
+
+    test('times the answer up to submit and the reading after it as review time', () async {
+      advance(8000);
+      s.select(1);
+      await s.submit();
+      advance(20000); // reading the explanation
+      s.next();
+      await s.flush();
+      final a = (await db.select(db.attempts).get()).single;
+      expect(a.durationMs, 8000);
+      expect(a.reviewMs, 20000);
+      expect(a.synced, isFalse);
+    });
+
+    test('adds up every visit to an answered question, and lets an unanswered one carry its time', () async {
+      advance(4000);
+      s.next(); // q1 skipped for now: 4s on it
+      advance(1000);
+      s.previous();
+      advance(3000);
+      s.select(1);
+      await s.submit(); // 4s + 3s before answering q1
+      advance(2000);
+      s.next();
+      advance(5000);
+      s.previous(); // back on q1 to read the explanation again
+      advance(6000);
+      await s.flush();
+      final a = (await db.select(db.attempts).get()).single;
+      expect(a.durationMs, 7000);
+      expect(a.reviewMs, 2000 + 6000);
+    });
+
+    test('does not count the time the app was in the background', () async {
+      advance(3000);
+      s.setVisible(false);
+      advance(600000);
+      s.setVisible(true);
+      advance(1000);
+      s.select(1);
+      await s.submit();
+      advance(500);
+      s.setVisible(false);
+      advance(600000);
+      await s.flush();
+      final a = (await db.select(db.attempts).get()).single;
+      expect(a.durationMs, 4000);
+      expect(a.reviewMs, 500);
+    });
+  });
+
   test('QuizSession: answer, review, finish and collect misses', () async {
     final db = memoryDb();
     addTearDown(db.close);
@@ -84,6 +149,46 @@ void main() {
     expect(s.finished, isTrue);
     expect((s.answeredCount, s.correctCount), (3, 2));
     expect(s.missed.map((q) => q.id), ['q1']);
+  });
+
+  testWidgets('QuizPage asks why a question is reported and queues the report with that reason', (tester) async {
+    final db = memoryDb();
+    final qs = await tester.runAsync(() => seed(db, 2)) as List<Question>;
+    await pumpWith(tester, db, QuizPage(title: '测试', questions: qs, shuffleOptions: false));
+
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('题目有误，反馈'));
+    await tester.pumpAndSettle();
+    expect(find.text('这道题哪里有问题？'), findsOneWidget);
+    for (final label in ['答案不对', '题干有歧义', '选项或文字有误', '其他']) {
+      expect(find.text(label), findsOneWidget);
+    }
+
+    await tester.tap(find.text('题干有歧义'));
+    await tester.pumpAndSettle();
+    final flags = await tester.runAsync(() => db.select(db.pendingFlags).get()) as List<PendingFlag>;
+    expect(flags.map((f) => (f.questionId, f.reason)), [('q1', 'ambiguous')]);
+    expect(find.text('题干 q2'), findsOneWidget, reason: 'moves on to the next question');
+
+    await tearDownUi(tester, db);
+  });
+
+  testWidgets('QuizPage reports nothing when the reason sheet is dismissed', (tester) async {
+    final db = memoryDb();
+    final qs = await tester.runAsync(() => seed(db, 2)) as List<Question>;
+    await pumpWith(tester, db, QuizPage(title: '测试', questions: qs, shuffleOptions: false));
+
+    await tester.tap(find.byType(PopupMenuButton<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('题目有误，反馈'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('取消'));
+    await tester.pumpAndSettle();
+    expect(await tester.runAsync(() => db.select(db.pendingFlags).get()), isEmpty);
+    expect(find.text('题干 q1'), findsOneWidget);
+
+    await tearDownUi(tester, db);
   });
 
   testWidgets('QuizPage works from the keyboard and records the answer', (tester) async {

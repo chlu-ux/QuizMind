@@ -26,13 +26,33 @@ export interface LocalQuestion extends Question {
   hidden: boolean
 }
 
+/** Why a question is reported (api/openapi.yaml, POST /questions/{id}/flag). */
+export type FlagReason = 'wrong_answer' | 'ambiguous' | 'typo' | 'other'
+
+export const FLAG_REASONS: { value: FlagReason; label: string }[] = [
+  { value: 'wrong_answer', label: '答案不对' },
+  { value: 'ambiguous', label: '题干有歧义' },
+  { value: 'typo', label: '选项或文字有误' },
+  { value: 'other', label: '其他' },
+]
+
+/** A report waiting to be uploaded. Reports queued before reasons existed have none. */
+export interface LocalFlag {
+  question_id: string
+  created_at: number
+  reason?: FlagReason
+}
+
 export interface AttemptDto {
   id: string
   question_id: string
   device_id: string
   answer: number[]
   is_correct: boolean
+  /** From showing the question to answering it. */
   duration_ms: number | null
+  /** Time spent on the question after answering (explanation); grows while the learner stays on it. */
+  review_ms?: number | null
   answered_at: number
 }
 

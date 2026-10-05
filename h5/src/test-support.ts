@@ -6,6 +6,7 @@ import type {
   Bank,
   ExamRecord,
   ExamsPage,
+  FlagReason,
   Question,
   SessionDto,
   SessionsPage,
@@ -44,6 +45,7 @@ export class FakeApi implements QuizApi {
   /** Behave like a server from before attempt/exam download existed (404). */
   historyUnsupported = false
   flagged: string[] = []
+  flagReasons: (string | undefined)[] = []
   pageSize = 1000
   failWith: Error | null = null
   flagError: Error | null = null
@@ -132,10 +134,11 @@ export class FakeApi implements QuizApi {
       this.sessions.set(dto.scope, { dto, seq: ++this.sessionSeq })
     }
   }
-  async flagQuestion(id: string) {
+  async flagQuestion(id: string, reason?: FlagReason) {
     this.check()
     if (this.flagError) throw this.flagError
     this.flagged.push(id)
+    this.flagReasons.push(reason)
   }
 }
 

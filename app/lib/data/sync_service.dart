@@ -139,9 +139,11 @@ class SyncService {
 
   Future<int> _pushAttempts() async {
     var total = 0;
+    // An attempt that gains reading time mid-upload stays queued; it goes out with the next sync, not in a loop here.
+    final sent = <String>{};
     while (true) {
       final rows = await (db.select(db.attempts)
-            ..where((a) => a.synced.equals(false))
+            ..where((a) => a.synced.equals(false) & a.id.isNotIn(sent))
             ..orderBy([(a) => OrderingTerm.asc(a.answeredAt)])
             ..limit(_batch))
           .get();
@@ -155,11 +157,19 @@ class SyncService {
             answer: (jsonDecode(r.answerJson) as List).map((e) => (e as num).toInt()).toList(),
             isCorrect: r.isCorrect,
             durationMs: r.durationMs,
+            reviewMs: r.reviewMs,
             answeredAt: r.answeredAt,
           ),
       ]);
-      await (db.update(db.attempts)..where((a) => a.id.isIn(rows.map((r) => r.id))))
-          .write(const AttemptsCompanion(synced: Value(true)));
+      sent.addAll(rows.map((r) => r.id));
+      // Leave a row queued if reading time was added while the upload was in flight.
+      await db.transaction(() async {
+        for (final r in rows) {
+          final stillSame = r.reviewMs == null ? db.attempts.reviewMs.isNull() : db.attempts.reviewMs.equals(r.reviewMs!);
+          await (db.update(db.attempts)..where((a) => a.id.equals(r.id) & stillSame))
+              .write(const AttemptsCompanion(synced: Value(true)));
+        }
+      });
       total += rows.length;
     }
   }
@@ -168,7 +178,7 @@ class SyncService {
     final rows = await db.select(db.pendingFlags).get();
     for (final f in rows) {
       try {
-        await api.flagQuestion(f.questionId);
+        await api.flagQuestion(f.questionId, reason: f.reason);
       } on ApiException catch (e) {
         // A question the server no longer knows cannot be flagged; drop the report.
         if (e.status != 404) rethrow;
@@ -281,7 +291,8 @@ class SyncService {
   }
 
   /// Answers of every device, so statistics cover everything. Attempts are an
-  /// append-only log: only unknown ids are added.
+  /// append-only log: only unknown ids are added. The one thing a known attempt can
+  /// still gain is review time.
   Future<int> _pullAttempts() async {
     var pulled = 0;
     var cursor = await _meta(attemptCursor);
@@ -301,12 +312,20 @@ class SyncService {
                       answerJson: jsonEncode(a.answer),
                       isCorrect: a.isCorrect,
                       durationMs: Value(a.durationMs),
+                      reviewMs: Value(a.reviewMs),
                       answeredAt: a.answeredAt,
                       synced: const Value(true),
                     ),
                 ],
                 mode: InsertMode.insertOrIgnore,
               ));
+          for (final a in page.items) {
+            final review = a.reviewMs;
+            if (review == null) continue;
+            // Already known: only a larger review time is taken (it never shrinks).
+            await (db.update(db.attempts)..where((t) => t.id.equals(a.id) & (t.reviewMs.isNull() | t.reviewMs.isSmallerThanValue(review))))
+                .write(AttemptsCompanion(reviewMs: Value(review)));
+          }
           await _setMeta(attemptCursor, page.nextSeq);
         });
         pulled += await _count(db.attempts) - before;

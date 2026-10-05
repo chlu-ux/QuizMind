@@ -25,6 +25,15 @@ make sqlc                               # after editing internal/db/migrations o
 Secrets go in `server/.env` (e.g. `ANTHROPIC_API_KEY=...`) and `server/.token`; neither is committed.
 
 
+## Question reports
+
+The apps let a learner report a question (`POST /api/v1/questions/{id}/flag`, optional `{"reason": ...}`).
+Every report is a `question_flag` row; `question.flag_count` is the number of unresolved ones, and two of
+them take a published question offline (`needs_review`, note `flagged by app users`). In the admin
+review page, filter by "被反馈" to see every question with unresolved reports whatever its status;
+"处理完毕" (`POST /admin/questions/{id}/dismiss-flags`) clears the reports and brings a question the
+reports took offline back, and approve / reject settle them too.
+
 ## AI explanations
 
 The quiz app (Flutter) can ask an LLM to explain a question. The app calls an

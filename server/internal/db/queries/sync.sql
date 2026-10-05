@@ -11,11 +11,15 @@ SELECT bank_id, COUNT(*) AS n FROM question WHERE status = 'published' GROUP BY 
 SELECT value FROM sync_counter WHERE id = 1;
 
 -- name: InsertAttempt :execrows
-INSERT INTO attempt (id, question_id, device_id, answer, is_correct, duration_ms, answered_at, received_at, sync_seq)
+-- Attempts are append-only except review_ms, which grows when the learner keeps reading
+-- after answering. A re-upload with a larger review_ms raises it (and re-publishes the row
+-- to the other devices); anything else is a no-op.
+INSERT INTO attempt (id, question_id, device_id, answer, is_correct, duration_ms, review_ms, answered_at, received_at, sync_seq)
 SELECT sqlc.arg(id), q.id, sqlc.arg(device_id), sqlc.arg(answer), sqlc.arg(is_correct),
-       sqlc.arg(duration_ms), sqlc.arg(answered_at), sqlc.arg(received_at), sqlc.arg(sync_seq)
+       sqlc.arg(duration_ms), sqlc.arg(review_ms), sqlc.arg(answered_at), sqlc.arg(received_at), sqlc.arg(sync_seq)
 FROM question q WHERE q.id = sqlc.arg(question_id)
-ON CONFLICT(id) DO NOTHING;
+ON CONFLICT(id) DO UPDATE SET review_ms = excluded.review_ms, sync_seq = excluded.sync_seq
+WHERE excluded.review_ms > COALESCE(attempt.review_ms, 0);
 
 -- name: ListAttemptsSince :many
 SELECT * FROM attempt

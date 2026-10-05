@@ -28,10 +28,19 @@ export interface Question {
   updated_at: number
 }
 
+/** One report from an app; resolved_at is null while it is unhandled. */
+export interface QuestionFlag {
+  reason: 'wrong_answer' | 'ambiguous' | 'typo' | 'other'
+  created_at: number
+  resolved_at: number | null
+}
+
 export interface QuestionDetail extends Question {
   chunk_text: string
   heading_path: string
   document_id: string
+  /** Newest first. flag_count can exceed the unresolved rows: counts from before reasons were recorded have none. */
+  flags: QuestionFlag[]
 }
 
 export interface QuestionPage {

@@ -6,6 +6,8 @@ import '../../data/database.dart';
 import '../../data/stats.dart';
 import '../exam/exam_session.dart';
 import '../quiz/quiz_page.dart';
+import '../quiz/quiz_session.dart';
+import '../quiz/topics.dart';
 
 /// Practice statistics of one bank: accuracy, coverage, a 7/30-day chart, exam scores, and the weak spots.
 class StatsPage extends ConsumerStatefulWidget {
@@ -76,6 +78,7 @@ class _StatsPageState extends ConsumerState<StatsPage> {
                       groups: _merged ? r.byTagMerged : r.byTag,
                       merged: _merged,
                       onMerged: (v) => setState(() => _merged = v),
+                      onTopic: _practiseTopic,
                     ),
                   ],
                   if (r.weakest.isNotEmpty) ...[
@@ -89,6 +92,18 @@ class _StatsPageState extends ConsumerState<StatsPage> {
         },
       ),
     );
+  }
+
+  /// Practises one knowledge point, as the list groups it (merged or detailed).
+  Future<void> _practiseTopic(String label) async {
+    final all = await ref.read(repositoryProvider).bankQuestions(widget.bank.id);
+    if (!mounted) return;
+    final qs = topicQuestions(all, label, merged: _merged);
+    if (qs.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('这个知识点没有可练习的题目')));
+      return;
+    }
+    await startQuiz(context, title: '知识点 · $label', questions: orderQuestions(qs, QuizOrder.random));
   }
 
   void _practise(BankReport r) {
@@ -123,12 +138,17 @@ class _Overview extends StatelessWidget {
       children: [
         _StatTile('总正确率', '${r.accuracy}%', '答对 ${r.correct} / ${r.attempts} 次', color: _tone(context, r.accuracy)),
         _StatTile('覆盖率', '$coverage%', '做过 ${r.answeredQuestions} / ${r.totalQuestions} 题'),
-        _StatTile('连续学习', '${r.streakDays} 天', '累计 ${formatDuration(r.studyMs)}'),
+        _StatTile('连续学习', '${r.streakDays} 天', '今天学习 ${formatDuration(r.daily30.last.studyMs)}'),
         _StatTile('当前状态', '${r.latestCorrect} 题', '最近一次答对 · 错题本 ${r.wrongBook}'),
+        _StatTile('刷题时间', _duration(r.practiceMs), '答题用时 · 今天 ${formatDuration(r.daily30.last.practiceMs)}'),
+        _StatTile('学习时间', _duration(r.studyMs), '含看解析 ${formatDuration(r.reviewMs)}'),
       ],
     );
   }
 }
+
+/// "1小时5分" / "12分钟" / "<1分钟" for a big figure.
+String _duration(int ms) => durationParts(ms).map((p) => '${p.v}${p.u}').join();
 
 class _StatTile extends StatelessWidget {
   const _StatTile(this.label, this.value, this.note, {this.color});
@@ -162,22 +182,39 @@ class _StatTile extends StatelessWidget {
   }
 }
 
-class _DailyChart extends StatelessWidget {
+class _DailyChart extends StatefulWidget {
   const _DailyChart({required this.days, required this.range, required this.onRange});
 
   final List<DayStat> days;
   final int range;
   final ValueChanged<int> onRange;
 
+  @override
+  State<_DailyChart> createState() => _DailyChartState();
+}
+
+class _DailyChartState extends State<_DailyChart> {
   static const _barHeight = 96.0;
+
+  /// The bars show how many questions were answered, or how long was spent.
+  bool _time = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final peak = days.fold<int>(1, (m, d) => d.attempts > m ? d.attempts : m);
+    final days = widget.days;
+    final range = widget.range;
+    final peak = days.fold<int>(1, (m, d) {
+      final v = _time ? d.studyMs : d.attempts;
+      return v > m ? v : m;
+    });
     final total = days.fold<int>(0, (n, d) => n + d.attempts);
+    final practice = days.fold<int>(0, (n, d) => n + d.practiceMs);
+    final review = days.fold<int>(0, (n, d) => n + d.reviewMs);
     final ok = Colors.green.shade600;
     final bad = theme.colorScheme.error;
+    final main = theme.colorScheme.primary;
+    final soft = Color.alphaBlend(main.withValues(alpha: 0.4), theme.colorScheme.surface);
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -192,13 +229,36 @@ class _DailyChart extends StatelessWidget {
                 SegmentedButton<int>(
                   showSelectedIcon: false,
                   style: const ButtonStyle(visualDensity: VisualDensity.compact),
-                  segments: const [ButtonSegment(value: 7, label: Text('7 天')), ButtonSegment(value: 30, label: Text('30 天'))],
+                  segments: const [
+                    ButtonSegment(value: 7, label: Text('7 天')),
+                    ButtonSegment(value: 30, label: Text('30 天')),
+                  ],
                   selected: {range},
-                  onSelectionChanged: (s) => onRange(s.first),
+                  onSelectionChanged: (s) => widget.onRange(s.first),
                 ),
               ],
             ),
-            Text('共 $total 次作答', style: theme.textTheme.bodySmall),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    '共 $total 次作答 · 刷题 ${formatDuration(practice)} · 解析 ${formatDuration(review)}',
+                    style: theme.textTheme.bodySmall,
+                  ),
+                ),
+                SegmentedButton<bool>(
+                  showSelectedIcon: false,
+                  style: const ButtonStyle(visualDensity: VisualDensity.compact),
+                  segments: const [
+                    ButtonSegment(value: false, label: Text('次数')),
+                    ButtonSegment(value: true, label: Text('时长')),
+                  ],
+                  selected: {_time},
+                  onSelectionChanged: (s) => setState(() => _time = s.first),
+                ),
+              ],
+            ),
             const SizedBox(height: 10),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -209,9 +269,17 @@ class _DailyChart extends StatelessWidget {
                       children: [
                         SizedBox(
                           height: 16,
-                          child: Text(
-                            range == 7 && days[i].attempts > 0 ? '${days[i].percent}%' : '',
-                            style: theme.textTheme.labelSmall,
+                          child: OverflowBox(
+                            maxWidth: 40,
+                            child: Text(
+                              range != 7
+                                  ? ''
+                                  : _time
+                                  ? formatMinutes(days[i].studyMs)
+                                  : (days[i].attempts > 0 ? '${days[i].percent}%' : ''),
+                              style: theme.textTheme.labelSmall,
+                              maxLines: 1,
+                            ),
                           ),
                         ),
                         Container(
@@ -225,10 +293,18 @@ class _DailyChart extends StatelessWidget {
                           clipBehavior: Clip.antiAlias,
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              Container(height: _barHeight * (days[i].attempts - days[i].correct) / peak, color: bad),
-                              Container(height: _barHeight * days[i].correct / peak, color: ok),
-                            ],
+                            children: _time
+                                ? [
+                                    Container(height: _barHeight * days[i].reviewMs / peak, color: soft),
+                                    Container(height: _barHeight * days[i].practiceMs / peak, color: main),
+                                  ]
+                                : [
+                                    Container(
+                                      height: _barHeight * (days[i].attempts - days[i].correct) / peak,
+                                      color: bad,
+                                    ),
+                                    Container(height: _barHeight * days[i].correct / peak, color: ok),
+                                  ],
                           ),
                         ),
                         const SizedBox(height: 4),
@@ -251,13 +327,13 @@ class _DailyChart extends StatelessWidget {
             const SizedBox(height: 8),
             Row(
               children: [
-                Icon(Icons.square_rounded, size: 12, color: ok),
-                const SizedBox(width: 4),
-                Text('答对', style: theme.textTheme.bodySmall),
-                const SizedBox(width: 12),
-                Icon(Icons.square_rounded, size: 12, color: bad),
-                const SizedBox(width: 4),
-                Text('答错', style: theme.textTheme.bodySmall),
+                for (final (color, label)
+                    in _time ? [(main, '刷题（答题用时）'), (soft, '看解析')] : [(ok, '答对'), (bad, '答错')]) ...[
+                  Icon(Icons.square_rounded, size: 12, color: color),
+                  const SizedBox(width: 4),
+                  Text(label, style: theme.textTheme.bodySmall),
+                  const SizedBox(width: 12),
+                ],
               ],
             ),
           ],
@@ -268,12 +344,15 @@ class _DailyChart extends StatelessWidget {
 }
 
 class _MeterCard extends StatelessWidget {
-  const _MeterCard({required this.title, required this.groups, this.note, this.trailing});
+  const _MeterCard({required this.title, required this.groups, this.note, this.trailing, this.onTap});
 
   final String title;
   final List<GroupStat> groups;
   final String? note;
   final Widget? trailing;
+
+  /// Makes each row tappable, told its label.
+  final ValueChanged<String>? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -285,36 +364,49 @@ class _MeterCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(children: [Expanded(child: Text(title, style: theme.textTheme.titleSmall)), ?trailing]),
-            if (note != null) Padding(padding: const EdgeInsets.only(top: 2), child: Text(note!, style: theme.textTheme.bodySmall)),
+            Row(
+              children: [
+                Expanded(child: Text(title, style: theme.textTheme.titleSmall)),
+                ?trailing,
+              ],
+            ),
+            if (note != null)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(note!, style: theme.textTheme.bodySmall),
+              ),
             const SizedBox(height: 8),
             for (final g in groups)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    SizedBox(width: 84, child: Text(g.label, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                    Expanded(
-                      child: LinearProgressIndicator(
-                        value: (g.percent ?? 0) / 100,
-                        minHeight: 8,
-                        borderRadius: BorderRadius.circular(4),
-                        color: _tone(context, g.percent),
+              InkWell(
+                onTap: onTap == null ? null : () => onTap!(g.label),
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Row(
+                    children: [
+                      SizedBox(width: 84, child: Text(g.label, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                      Expanded(
+                        child: LinearProgressIndicator(
+                          value: (g.percent ?? 0) / 100,
+                          minHeight: 8,
+                          borderRadius: BorderRadius.circular(4),
+                          color: _tone(context, g.percent),
+                        ),
                       ),
-                    ),
-                    SizedBox(
-                      width: 48,
-                      child: Text(
-                        '${g.percent}%',
-                        textAlign: TextAlign.end,
-                        style: TextStyle(fontWeight: FontWeight.w600, color: _tone(context, g.percent)),
+                      SizedBox(
+                        width: 48,
+                        child: Text(
+                          '${g.percent}%',
+                          textAlign: TextAlign.end,
+                          style: TextStyle(fontWeight: FontWeight.w600, color: _tone(context, g.percent)),
+                        ),
                       ),
-                    ),
-                    SizedBox(
-                      width: 44,
-                      child: Text('${g.attempts}次', textAlign: TextAlign.end, style: theme.textTheme.bodySmall),
-                    ),
-                  ],
+                      SizedBox(
+                        width: 44,
+                        child: Text('${g.attempts}次', textAlign: TextAlign.end, style: theme.textTheme.bodySmall),
+                      ),
+                    ],
+                  ),
                 ),
               ),
           ],
@@ -362,26 +454,31 @@ class _Weakest extends StatelessWidget {
 
 /// Knowledge-point accuracy with a toggle between merged ("归类") and as-tagged ("细分") views.
 class _TagCard extends StatelessWidget {
-  const _TagCard({required this.groups, required this.merged, required this.onMerged});
+  const _TagCard({required this.groups, required this.merged, required this.onMerged, required this.onTopic});
 
   final List<GroupStat> groups;
   final bool merged;
   final ValueChanged<bool> onMerged;
+  final ValueChanged<String> onTopic;
 
   @override
   Widget build(BuildContext context) {
     final shown = groups.length < 8 ? groups.length : 8;
     return _MeterCard(
       title: '知识点（薄弱的在前）',
-      note: '共 ${groups.length} 个，显示前 $shown 个${merged ? '；相近的标签已合并（如「UML 辨析」归入「UML」）' : ''}',
+      note: '点一个知识点直接开始刷；共 ${groups.length} 个，显示前 $shown 个${merged ? '；相近的标签已合并（如「UML 辨析」归入「UML」）' : ''}',
       trailing: SegmentedButton<bool>(
         showSelectedIcon: false,
         style: const ButtonStyle(visualDensity: VisualDensity.compact),
-        segments: const [ButtonSegment(value: true, label: Text('归类')), ButtonSegment(value: false, label: Text('细分'))],
+        segments: const [
+          ButtonSegment(value: true, label: Text('归类')),
+          ButtonSegment(value: false, label: Text('细分')),
+        ],
         selected: {merged},
         onSelectionChanged: (s) => onMerged(s.first),
       ),
       groups: groups.take(8).toList(),
+      onTap: onTopic,
     );
   }
 }
@@ -475,7 +572,10 @@ class _TrendPainter extends CustomPainter {
 
     void label(String t, Offset at, {TextAlign align = TextAlign.left}) {
       final tp = TextPainter(
-        text: TextSpan(text: t, style: TextStyle(color: text, fontSize: 11)),
+        text: TextSpan(
+          text: t,
+          style: TextStyle(color: text, fontSize: 11),
+        ),
         textDirection: TextDirection.ltr,
       )..layout();
       final dx = align == TextAlign.center ? at.dx - tp.width / 2 : at.dx;

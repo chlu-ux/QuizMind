@@ -33,7 +33,7 @@ class Questions extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-/// Append-only answer log. [synced] false = still in the outbox.
+/// Answer log. Rows never change except [reviewMs], which only grows. [synced] false = still in the outbox.
 class Attempts extends Table {
   TextColumn get id => text()(); // client ULID, idempotency key
   TextColumn get questionId => text()();
@@ -41,6 +41,10 @@ class Attempts extends Table {
   TextColumn get answerJson => text()();
   BoolColumn get isCorrect => boolean()();
   IntColumn get durationMs => integer().nullable()();
+
+  /// Time spent on the question after answering it (explanation, AI). Grows while
+  /// the learner stays on it, so an uploaded attempt can be queued again.
+  IntColumn get reviewMs => integer().nullable()();
   IntColumn get answeredAt => integer()();
   BoolColumn get synced => boolean().withDefault(const Constant(false))();
 
@@ -68,6 +72,9 @@ class QuestionStates extends Table {
 class PendingFlags extends Table {
   TextColumn get questionId => text()();
   IntColumn get createdAt => integer()();
+
+  /// A FlagReason wire value; null for reports queued before reasons existed.
+  TextColumn get reason => text().nullable()();
 
   @override
   Set<Column> get primaryKey => {questionId};
@@ -140,7 +147,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'quizmind'));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -152,6 +159,12 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 3) {
             await m.createTable(aiNotes);
+          }
+          if (from < 4) {
+            await m.addColumn(attempts, attempts.reviewMs);
+          }
+          if (from < 5) {
+            await m.addColumn(pendingFlags, pendingFlags.reason);
           }
         },
       );

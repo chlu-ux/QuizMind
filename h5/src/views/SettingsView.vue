@@ -2,6 +2,8 @@
 import { onMounted, ref, watch } from 'vue'
 import { dataVersion, formatTime, getRepo, runSync, settings, syncStatus, testConnection } from '@/core/app'
 import { ApiError } from '@/data/api'
+import GoalPicker from '@/components/GoalPicker.vue'
+import { goals, MAX_MINUTES, MAX_QUESTIONS, updateGoals } from '@/core/goals'
 
 const testing = ref(false)
 const result = ref('')
@@ -40,6 +42,22 @@ async function test() {
         <button class="btn" :disabled="testing" @click="test">{{ testing ? '测试中…' : '测试连接' }}</button>
       </div>
       <p v-if="result" :class="resultOk ? 'ok' : 'err'">{{ result }}</p>
+    </section>
+
+    <section class="card col">
+      <h2>学习目标</h2>
+      <p class="muted small">每天做多少题、学多少分钟，两项可以分别开关；都开时要同时做到才算完成。只存在这台设备上，不会同步。</p>
+      <GoalPicker label="每天做题" unit="题" :presets="[10, 20, 30, 50]" :max="MAX_QUESTIONS" :model-value="goals.questions" @update:model-value="updateGoals({ questions: $event })" />
+      <GoalPicker label="每天学习" unit="分钟" :presets="[15, 30, 60]" :max="MAX_MINUTES" :model-value="goals.minutes" @update:model-value="updateGoals({ minutes: $event })" />
+      <label class="row between">
+        <span>每日提醒</span>
+        <input type="checkbox" class="switch" :checked="goals.remind" aria-label="每日提醒" @change="updateGoals({ remind: ($event.target as HTMLInputElement).checked })" />
+      </label>
+      <label v-if="goals.remind" class="row between">
+        <span>提醒时间</span>
+        <input class="input time-input" type="time" :value="goals.remindAt" aria-label="提醒时间" @change="updateGoals({ remindAt: ($event.target as HTMLInputElement).value })" />
+      </label>
+      <p class="muted small">提醒只在打开 App 时出现：过了提醒时间、目标还没完成，首页会提示还差多少。不会在后台弹通知。</p>
     </section>
 
     <section class="card col">

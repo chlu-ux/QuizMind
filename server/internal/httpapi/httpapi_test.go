@@ -437,6 +437,7 @@ func TestAppSync(t *testing.T) {
 			Answer     []int
 			IsCorrect  bool   `json:"is_correct"`
 			DurationMs *int64 `json:"duration_ms"`
+			ReviewMs   *int64 `json:"review_ms"`
 			AnsweredAt int64  `json:"answered_at"`
 		}
 		NextSeq int64 `json:"next_seq"`
@@ -461,6 +462,25 @@ func TestAppSync(t *testing.T) {
 	s.do(t, "GET", "/api/v1/sync/attempts?since="+itoa(at2.NextSeq), "", 200, &at3)
 	assert.Empty(t, at3.Items)
 	assert.Equal(t, at2.NextSeq, at3.NextSeq, "an empty page keeps the cursor")
+
+	// Review time is the one thing an uploaded attempt may still gain: it only grows, and
+	// the row is published again so the other devices pick the new value up.
+	assert.Nil(t, at1.Items[0].ReviewMs)
+	withReview := func(ms int) string {
+		return `[{"id":"A1","question_id":"` + qid + `","device_id":"d1","answer":[0],"is_correct":true,"duration_ms":1500,"review_ms":` + itoa(int64(ms)) + `,"answered_at":1000}]`
+	}
+	s.do(t, "POST", "/api/v1/sync/attempts", withReview(4000), 200, &up)
+	assert.Equal(t, 1, up.Accepted, "a first review time is taken")
+	s.do(t, "POST", "/api/v1/sync/attempts", withReview(3000), 200, &up)
+	assert.Equal(t, 0, up.Accepted, "a smaller review time is ignored")
+	s.do(t, "POST", "/api/v1/sync/attempts", withReview(9000), 200, &up)
+	assert.Equal(t, 1, up.Accepted, "a larger one replaces it")
+	var at4 attemptsPage
+	s.do(t, "GET", "/api/v1/sync/attempts?since="+itoa(at3.NextSeq), "", 200, &at4)
+	require.Len(t, at4.Items, 1, "the raised attempt is downloaded again")
+	assert.Equal(t, "A1", at4.Items[0].ID)
+	assert.EqualValues(t, 9000, *at4.Items[0].ReviewMs)
+	assert.EqualValues(t, 1500, *at4.Items[0].DurationMs)
 	var paged attemptsPage
 	s.do(t, "GET", "/api/v1/sync/attempts?since=0&limit=1", "", 200, &paged)
 	assert.Len(t, paged.Items, 1)
@@ -869,4 +889,138 @@ func TestDocumentContent(t *testing.T) {
 	assert.Equal(t, "notes.md", d.SourcePath)
 	assert.Equal(t, doc, d.Content, "the stored source comes back unchanged")
 	s.do(t, "GET", "/admin/documents/nope/content", "", 404, nil)
+}
+
+type flagView struct {
+	Status     string `json:"status"`
+	ReviewNote string `json:"review_note"`
+	FlagCount  int64  `json:"flag_count"`
+	SyncSeq    *int64 `json:"sync_seq"`
+}
+
+type flagDetail struct {
+	flagView
+	Flags []struct {
+		Reason     string `json:"reason"`
+		CreatedAt  int64  `json:"created_at"`
+		ResolvedAt *int64 `json:"resolved_at"`
+	} `json:"flags"`
+}
+
+func (s *server) flag(t *testing.T, qid, body string) (f struct {
+	FlagCount int64 `json:"flag_count"`
+	Status    string
+}) {
+	t.Helper()
+	s.do(t, "POST", "/api/v1/questions/"+qid+"/flag", body, 200, &f)
+	return f
+}
+
+// Reports carry a reason, show up in the admin filter whatever the status, and
+// are settled by the reviewer: approving a question the reports took offline
+// clears them, so the next report does not take it straight down again.
+func TestFlagReview(t *testing.T) {
+	s := newServer(t)
+	qid := s.publishOne(t)
+
+	// Old clients send no body; unknown reasons fall back to "other".
+	assert.EqualValues(t, 1, s.flag(t, qid, "").FlagCount)
+	var d flagDetail
+	s.do(t, "GET", "/admin/questions/"+qid, "", 200, &d)
+	require.Len(t, d.Flags, 1)
+	assert.Equal(t, "other", d.Flags[0].Reason)
+	assert.Nil(t, d.Flags[0].ResolvedAt)
+
+	// One report keeps the question published but makes it show up under flagged=1.
+	var page struct {
+		Items []struct{ ID string }
+		Total int
+	}
+	s.do(t, "GET", "/admin/questions?flagged=1", "", 200, &page)
+	require.Equal(t, 1, page.Total)
+	assert.Equal(t, qid, page.Items[0].ID)
+	var banks []struct {
+		QuestionCounts map[string]int64 `json:"question_counts"`
+	}
+	s.do(t, "GET", "/admin/banks", "", 200, &banks)
+	assert.EqualValues(t, 1, banks[0].QuestionCounts["flagged"])
+
+	// The second report, with a reason, takes it offline.
+	assert.Equal(t, "needs_review", s.flag(t, qid, `{"reason":"wrong_answer"}`).Status)
+	s.do(t, "GET", "/admin/questions/"+qid, "", 200, &d)
+	require.Len(t, d.Flags, 2)
+	assert.Equal(t, "wrong_answer", d.Flags[0].Reason, "newest first")
+	assert.Equal(t, "flagged by app users", d.ReviewNote)
+	s.do(t, "GET", "/admin/questions?flagged=1&status=needs_review", "", 200, &page)
+	assert.Equal(t, 1, page.Total, "offline questions stay in the flagged list")
+
+	// Approving settles the reports; the next one starts from zero.
+	var v flagView
+	s.do(t, "POST", "/admin/questions/"+qid+"/approve", "", 200, &v)
+	assert.Equal(t, "published", v.Status)
+	assert.EqualValues(t, 0, v.FlagCount)
+	s.do(t, "GET", "/admin/questions?flagged=1", "", 200, &page)
+	assert.Equal(t, 0, page.Total)
+	s.do(t, "GET", "/admin/questions/"+qid, "", 200, &d)
+	require.Len(t, d.Flags, 2)
+	for _, f := range d.Flags {
+		assert.NotNil(t, f.ResolvedAt)
+	}
+	f := s.flag(t, qid, `{"reason":"typo"}`)
+	assert.EqualValues(t, 1, f.FlagCount)
+	assert.Equal(t, "published", f.Status, "no instant second take-down")
+
+	// An unknown reason is stored as "other".
+	s.flag(t, qid, `{"reason":"nonsense"}`)
+	s.do(t, "GET", "/admin/questions/"+qid, "", 200, &d)
+	assert.Equal(t, "other", d.Flags[0].Reason)
+}
+
+func TestDismissFlags(t *testing.T) {
+	s := newServer(t)
+	qid := s.publishOne(t)
+	seqOf := func() int64 {
+		var v flagView
+		s.do(t, "GET", "/admin/questions/"+qid, "", 200, &v)
+		require.NotNil(t, v.SyncSeq)
+		return *v.SyncSeq
+	}
+
+	// Published with one report: cleared, and re-announced so a device that
+	// hid it after its own report gets it back.
+	s.flag(t, qid, `{"reason":"ambiguous"}`)
+	before := seqOf()
+	var v flagView
+	s.do(t, "POST", "/admin/questions/"+qid+"/dismiss-flags", "", 200, &v)
+	assert.Equal(t, "published", v.Status)
+	assert.EqualValues(t, 0, v.FlagCount)
+	assert.Greater(t, seqOf(), before)
+
+	// Taken offline by reports: dismissing publishes it again and drops the note.
+	s.flag(t, qid, "")
+	s.flag(t, qid, "")
+	s.do(t, "GET", "/admin/questions/"+qid, "", 200, &v)
+	require.Equal(t, "needs_review", v.Status)
+	before = seqOf()
+	s.do(t, "POST", "/admin/questions/"+qid+"/dismiss-flags", "", 200, &v)
+	assert.Equal(t, "published", v.Status)
+	assert.Empty(t, v.ReviewNote)
+	assert.EqualValues(t, 0, v.FlagCount)
+	assert.Greater(t, seqOf(), before)
+	var q struct {
+		Items   []struct{ ID string }
+		Deleted []string
+	}
+	s.do(t, "GET", "/api/v1/sync/questions?since="+itoa(before), "", 200, &q)
+	require.Len(t, q.Items, 1, "the clients are told to take it back")
+
+	// Rejecting a flagged question settles its reports too, and dismissing on a
+	// question that is offline for another reason does not publish it.
+	s.flag(t, qid, "")
+	s.do(t, "POST", "/admin/questions/"+qid+"/reject", "", 200, &v)
+	assert.Equal(t, "rejected", v.Status)
+	assert.EqualValues(t, 0, v.FlagCount)
+	s.do(t, "POST", "/admin/questions/"+qid+"/dismiss-flags", "", 200, &v)
+	assert.Equal(t, "rejected", v.Status)
+	s.do(t, "POST", "/admin/questions/missing/dismiss-flags", "", 404, nil)
 }

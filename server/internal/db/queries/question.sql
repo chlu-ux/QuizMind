@@ -23,6 +23,7 @@ LEFT JOIN chunk c ON c.id = q.chunk_id
 WHERE (sqlc.narg(status) IS NULL OR q.status = sqlc.narg(status))
   AND (sqlc.narg(bank_id) IS NULL OR q.bank_id = sqlc.narg(bank_id))
   AND (sqlc.narg(document_id) IS NULL OR c.document_id = sqlc.narg(document_id))
+  AND (sqlc.arg(flagged) = 0 OR q.flag_count > 0)
 ORDER BY q.created_at DESC, q.id DESC
 LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 
@@ -31,7 +32,8 @@ SELECT COUNT(*) FROM question q
 LEFT JOIN chunk c ON c.id = q.chunk_id
 WHERE (sqlc.narg(status) IS NULL OR q.status = sqlc.narg(status))
   AND (sqlc.narg(bank_id) IS NULL OR q.bank_id = sqlc.narg(bank_id))
-  AND (sqlc.narg(document_id) IS NULL OR c.document_id = sqlc.narg(document_id));
+  AND (sqlc.narg(document_id) IS NULL OR c.document_id = sqlc.narg(document_id))
+  AND (sqlc.arg(flagged) = 0 OR q.flag_count > 0);
 
 -- name: UpdateQuestionContent :exec
 UPDATE question

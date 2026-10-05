@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildReport, formatDuration, percent } from './stats'
+import { buildReport, durationParts, formatDuration, formatMinutes, percent } from './stats'
 import type { ExamRecord, LocalAttempt, LocalQuestion } from './types'
 
 const q = (id: string, o: Partial<LocalQuestion> = {}): LocalQuestion => ({
@@ -131,6 +131,41 @@ describe('buildReport', () => {
   })
 })
 
+describe('buildReport: practice and study time', () => {
+  const withReview = (a: LocalAttempt, review_ms: number | null): LocalAttempt => ({ ...a, review_ms })
+
+  it('splits answering from reading, caps each, and totals both as study time', () => {
+    const r = buildReport(
+      [q('a'), q('b')],
+      [
+        withReview(at('a', true, NOW, 30_000), 45_000),
+        withReview(at('b', true, NOW, 10 * 60_000), 20 * 60_000), // page left open: 2 min + 3 min
+        at('a', true, NOW, 5000), // an older attempt without review time
+      ],
+      new Set(),
+      NOW,
+    )
+    expect(r.practiceMs).toBe(30_000 + 120_000 + 5000)
+    expect(r.reviewMs).toBe(45_000 + 180_000)
+    expect(r.studyMs).toBe(r.practiceMs + r.reviewMs)
+  })
+
+  it('attributes time to the day of the answer', () => {
+    const r = buildReport(
+      [q('a')],
+      [
+        withReview(at('a', true, NOW, 10_000), 5000),
+        withReview(at('a', false, NOW - 24 * 3600_000, 20_000), 15_000),
+      ],
+      new Set(),
+      NOW,
+    )
+    expect(r.daily.map((d) => [d.practiceMs, d.reviewMs]).slice(-2)).toEqual([[20_000, 15_000], [10_000, 5000]])
+    expect(r.daily30[0]).toMatchObject({ practiceMs: 0, reviewMs: 0 })
+    expect(r.daily30.reduce((n, d) => n + d.practiceMs, 0)).toBe(r.practiceMs)
+  })
+})
+
 describe('buildReport: longer views and ranking', () => {
   const day = (back: number) => noon(2026, 10, 3 - back)
 
@@ -205,5 +240,20 @@ describe('formatDuration', () => {
     expect(formatDuration(12 * 60_000)).toBe('12 分钟')
     expect(formatDuration(65 * 60_000)).toBe('1 小时 5 分')
     expect(formatDuration(120 * 60_000)).toBe('2 小时')
+  })
+})
+
+describe('durationParts / formatMinutes', () => {
+  it('splits a duration into figures and units', () => {
+    expect(durationParts(0)).toEqual([{ v: '0', u: '分钟' }])
+    expect(durationParts(20_000)).toEqual([{ v: '<1', u: '分钟' }])
+    expect(durationParts(12 * 60_000)).toEqual([{ v: '12', u: '分钟' }])
+    expect(durationParts(65 * 60_000)).toEqual([{ v: '1', u: '小时' }, { v: '5', u: '分' }])
+    expect(durationParts(120 * 60_000)).toEqual([{ v: '2', u: '小时' }])
+  })
+  it('labels a day with whole minutes', () => {
+    expect(formatMinutes(0)).toBe('')
+    expect(formatMinutes(10_000)).toBe('<1分')
+    expect(formatMinutes(12.4 * 60_000)).toBe('12分')
   })
 })

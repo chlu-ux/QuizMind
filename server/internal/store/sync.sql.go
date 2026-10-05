@@ -40,11 +40,12 @@ func (q *Queries) CurrentSyncSeq(ctx context.Context) (int64, error) {
 }
 
 const insertAttempt = `-- name: InsertAttempt :execrows
-INSERT INTO attempt (id, question_id, device_id, answer, is_correct, duration_ms, answered_at, received_at, sync_seq)
+INSERT INTO attempt (id, question_id, device_id, answer, is_correct, duration_ms, review_ms, answered_at, received_at, sync_seq)
 SELECT ?1, q.id, ?2, ?3, ?4,
-       ?5, ?6, ?7, ?8
-FROM question q WHERE q.id = ?9
-ON CONFLICT(id) DO NOTHING
+       ?5, ?6, ?7, ?8, ?9
+FROM question q WHERE q.id = ?10
+ON CONFLICT(id) DO UPDATE SET review_ms = excluded.review_ms, sync_seq = excluded.sync_seq
+WHERE excluded.review_ms > COALESCE(attempt.review_ms, 0)
 `
 
 type InsertAttemptParams struct {
@@ -53,12 +54,16 @@ type InsertAttemptParams struct {
 	Answer     string        `json:"answer"`
 	IsCorrect  int64         `json:"is_correct"`
 	DurationMs sql.NullInt64 `json:"duration_ms"`
+	ReviewMs   sql.NullInt64 `json:"review_ms"`
 	AnsweredAt int64         `json:"answered_at"`
 	ReceivedAt int64         `json:"received_at"`
 	SyncSeq    int64         `json:"sync_seq"`
 	QuestionID string        `json:"question_id"`
 }
 
+// Attempts are append-only except review_ms, which grows when the learner keeps reading
+// after answering. A re-upload with a larger review_ms raises it (and re-publishes the row
+// to the other devices); anything else is a no-op.
 func (q *Queries) InsertAttempt(ctx context.Context, arg InsertAttemptParams) (int64, error) {
 	result, err := q.db.ExecContext(ctx, insertAttempt,
 		arg.ID,
@@ -66,6 +71,7 @@ func (q *Queries) InsertAttempt(ctx context.Context, arg InsertAttemptParams) (i
 		arg.Answer,
 		arg.IsCorrect,
 		arg.DurationMs,
+		arg.ReviewMs,
 		arg.AnsweredAt,
 		arg.ReceivedAt,
 		arg.SyncSeq,
@@ -127,7 +133,7 @@ func (q *Queries) InsertExam(ctx context.Context, arg InsertExamParams) (int64, 
 }
 
 const listAttemptsSince = `-- name: ListAttemptsSince :many
-SELECT id, question_id, device_id, answer, is_correct, duration_ms, answered_at, received_at, sync_seq FROM attempt
+SELECT id, question_id, device_id, answer, is_correct, duration_ms, answered_at, received_at, sync_seq, review_ms FROM attempt
 WHERE sync_seq > ?1
 ORDER BY sync_seq ASC
 LIMIT ?2
@@ -157,6 +163,7 @@ func (q *Queries) ListAttemptsSince(ctx context.Context, arg ListAttemptsSincePa
 			&i.AnsweredAt,
 			&i.ReceivedAt,
 			&i.SyncSeq,
+			&i.ReviewMs,
 		); err != nil {
 			return nil, err
 		}

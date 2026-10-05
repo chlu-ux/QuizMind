@@ -24,13 +24,14 @@ final now = noon(2026, 10, 3);
 DateTime day(int back) => noon(2026, 10, 3 - back);
 
 var _n = 0;
-Attempt at(String questionId, bool ok, DateTime when, {int? ms = 1000}) => Attempt(
+Attempt at(String questionId, bool ok, DateTime when, {int? ms = 1000, int? review}) => Attempt(
       id: 'a${_n++}',
       questionId: questionId,
       deviceId: 'd',
       answerJson: '[0]',
       isCorrect: ok,
       durationMs: ms,
+      reviewMs: review,
       answeredAt: when.millisecondsSinceEpoch,
       synced: true,
     );
@@ -131,6 +132,45 @@ void main() {
       ['a', 1, 2],
     ]);
     expect(r.studyMs, 1000 + 1000 + 60000 + 120000);
+  });
+
+  test('splits answering from reading, caps each, and totals both as study time', () {
+    final r = buildReport(
+      [q('a'), q('b')],
+      [
+        at('a', true, now, ms: 30000, review: 45000),
+        at('b', true, now, ms: 10 * 60000, review: 20 * 60000), // page left open: 2 min + 3 min
+        at('a', true, now, ms: 5000), // an older attempt without review time
+      ],
+      {},
+      now,
+    );
+    expect(r.practiceMs, 30000 + 120000 + 5000);
+    expect(r.reviewMs, 45000 + 180000);
+    expect(r.studyMs, r.practiceMs + r.reviewMs);
+  });
+
+  test('attributes time to the day of the answer', () {
+    final r = buildReport(
+      [q('a')],
+      [at('a', true, now, ms: 10000, review: 5000), at('a', false, day(1), ms: 20000, review: 15000)],
+      {},
+      now,
+    );
+    expect([for (final d in r.daily.skip(5)) (d.practiceMs, d.reviewMs)], [(20000, 15000), (10000, 5000)]);
+    expect(r.daily30.first.studyMs, 0);
+    expect(r.daily30.fold<int>(0, (n, d) => n + d.practiceMs), r.practiceMs);
+  });
+
+  test('durationParts and formatMinutes', () {
+    expect(durationParts(0), [(v: '0', u: '分钟')]);
+    expect(durationParts(20000), [(v: '<1', u: '分钟')]);
+    expect(durationParts(12 * 60000), [(v: '12', u: '分钟')]);
+    expect(durationParts(65 * 60000), [(v: '1', u: '小时'), (v: '5', u: '分')]);
+    expect(durationParts(120 * 60000), [(v: '2', u: '小时')]);
+    expect(formatMinutes(0), '');
+    expect(formatMinutes(10000), '<1分');
+    expect(formatMinutes((12.4 * 60000).round()), '12分');
   });
 
   test('formatDuration reads naturally', () {

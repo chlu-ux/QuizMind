@@ -132,12 +132,15 @@ func TestMigration_BackfillsAttemptSyncSeq(t *testing.T) {
 	// Roll the schema back to what 00003 left, then add attempts the old way.
 	for _, stmt := range []string{
 		`PRAGMA foreign_keys = OFF`,
+		`DROP INDEX idx_flag_question`,
+		`DROP TABLE question_flag`,
 		`DROP TABLE ai_note`,
 		`DROP TABLE app_setting`,
 		`DROP TABLE exam`,
 		`DROP INDEX idx_attempt_sync`,
 		`ALTER TABLE attempt DROP COLUMN sync_seq`,
-		`DELETE FROM goose_db_version WHERE version_id IN (4, 5, 6)`,
+		`ALTER TABLE attempt DROP COLUMN review_ms`,
+		`DELETE FROM goose_db_version WHERE version_id IN (4, 5, 6, 7, 8)`,
 		`UPDATE sync_counter SET value = 10 WHERE id = 1`,
 		`INSERT INTO attempt (id, question_id, device_id, answer, is_correct, answered_at, received_at) VALUES
 		   ('B', 'q', 'd', '[0]', 1, 1, 200), ('A', 'q', 'd', '[0]', 1, 1, 100), ('C', 'q', 'd', '[0]', 0, 1, 200)`,

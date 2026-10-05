@@ -3,8 +3,37 @@ import 'models.dart';
 import 'progress.dart'; // for Question.tags
 import 'tags.dart';
 
-/// Attempts that took longer than this (a screen left open) count as this long in the study-time total.
+/// An answer that took longer than this (a screen left open) counts as this long in the practice-time total.
 const _maxAttemptMs = 2 * 60 * 1000;
+
+/// Likewise for the time spent reading after an answer (explanations are read for longer than questions).
+const _maxReviewMs = 3 * 60 * 1000;
+
+/// What was done on one local calendar day, across every bank.
+class DayProgress {
+  const DayProgress({this.questions = 0, this.ms = 0});
+
+  /// Answers given.
+  final int questions;
+
+  /// Study time in ms: answering plus reading explanations, each capped like on the stats page.
+  final int ms;
+
+  @override
+  bool operator ==(Object other) => other is DayProgress && other.questions == questions && other.ms == ms;
+
+  @override
+  int get hashCode => Object.hash(questions, ms);
+
+  @override
+  String toString() => 'DayProgress($questions, ${ms}ms)';
+}
+
+/// Time an answer counts for in the study totals: answering and reading afterwards, each capped.
+({int practiceMs, int reviewMs}) attemptTimes(Attempt a) => (
+      practiceMs: (a.durationMs ?? 0).clamp(0, _maxAttemptMs),
+      reviewMs: (a.reviewMs ?? 0).clamp(0, _maxReviewMs),
+    );
 
 class Tally {
   Tally([this.attempts = 0, this.correct = 0]);
@@ -32,6 +61,11 @@ class DayStat extends Tally {
   DayStat(this.start) : label = '${start.month}/${start.day}';
 
   final DateTime start;
+
+  /// Time from showing a question to answering it, and the time spent on it after answering (explanation).
+  int practiceMs = 0;
+  int reviewMs = 0;
+  int get studyMs => practiceMs + reviewMs;
 
   /// Local calendar day, "M/D".
   final String label;
@@ -70,7 +104,8 @@ class BankReport {
     required this.attempts,
     required this.correct,
     required this.accuracy,
-    required this.studyMs,
+    required this.practiceMs,
+    required this.reviewMs,
     required this.streakDays,
     required this.daily,
     required this.daily30,
@@ -95,7 +130,15 @@ class BankReport {
 
   /// Share of all attempts that were right, 0-100; null before the first attempt.
   final int? accuracy;
-  final int studyMs;
+
+  /// Time spent answering questions.
+  final int practiceMs;
+
+  /// Time spent reading explanations after answering.
+  final int reviewMs;
+
+  /// Practice plus review: everything spent studying.
+  int get studyMs => practiceMs + reviewMs;
 
   /// Consecutive days with at least one attempt, counting back from today
   /// (or yesterday if nothing has been done today yet).
@@ -150,7 +193,8 @@ BankReport buildReport(
   final merge = tagLabeler(allTags, merge: true);
   final recent = <String, List<bool>>{}; // each question's results, oldest first
   final days = <DateTime>{};
-  var studyMs = 0;
+  var practiceMs = 0;
+  var reviewMs = 0;
 
   final today = _dayStart(now);
   final daily = [for (var i = 29; i >= 0; i--) DayStat(_dayStart(now, i))];
@@ -172,12 +216,17 @@ BankReport buildReport(
       group(mergedTags, tag.toLowerCase(), tag, a.isCorrect);
     }
     recent.putIfAbsent(q.id, () => []).add(a.isCorrect);
-    studyMs += (a.durationMs ?? 0).clamp(0, _maxAttemptMs);
+    final (practiceMs: practice, reviewMs: review) = attemptTimes(a);
+    practiceMs += practice;
+    reviewMs += review;
 
     final day = _dayStart(DateTime.fromMillisecondsSinceEpoch(a.answeredAt));
     days.add(day);
     for (final d in daily) {
-      if (d.start == day) d.add(a.isCorrect);
+      if (d.start != day) continue;
+      d.add(a.isCorrect);
+      d.practiceMs += practice;
+      d.reviewMs += review;
     }
   }
 
@@ -226,7 +275,8 @@ BankReport buildReport(
     attempts: total.attempts,
     correct: total.correct,
     accuracy: total.percent,
-    studyMs: studyMs,
+    practiceMs: practiceMs,
+    reviewMs: reviewMs,
     streakDays: streak,
     daily: daily.sublist(23),
     daily30: daily,
@@ -250,4 +300,21 @@ String formatDuration(int ms) {
   final h = minutes ~/ 60;
   final m = minutes % 60;
   return m == 0 ? '$h 小时' : '$h 小时 $m 分';
+}
+
+/// The same as [formatDuration], split into number and unit for a big figure: 1 + 小时, 5 + 分.
+List<({String v, String u})> durationParts(int ms) {
+  final minutes = ms ~/ 60000;
+  if (minutes < 1) return [(v: ms > 0 ? '<1' : '0', u: '分钟')];
+  if (minutes < 60) return [(v: '$minutes', u: '分钟')];
+  final h = minutes ~/ 60;
+  final m = minutes % 60;
+  return m == 0 ? [(v: '$h', u: '小时')] : [(v: '$h', u: '小时'), (v: '$m', u: '分')];
+}
+
+/// Minutes only, for the label over a day's bar: "12分" / "<1分".
+String formatMinutes(int ms) {
+  if (ms <= 0) return '';
+  final m = (ms / 60000).round();
+  return m < 1 ? '<1分' : '$m分';
 }

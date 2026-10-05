@@ -165,12 +165,14 @@ Markdown 文档 → AI 生成题目 → 自动校验 → 人工审核 → 发布
 两个客户端（H5、Flutter）行为一致，入口都在题库详情页。
 
 **统计分析**（每个题库一页）：由本机的作答记录（`attempt`）算出。作答记录会双向同步（§7.2），所以统计覆盖所有设备上做过的题，各设备数字一致。
-- 概览：总正确率（按作答次数）、覆盖率（做过的题 / 总题数）、连续学习天数、累计学习时长、最近一次答对的题数、错题本题数。
-- 最近 7 天 / 30 天每天作答次数与正确率（答对 / 答错堆叠柱），可切换。
+- 概览：总正确率（按作答次数）、覆盖率（做过的题 / 总题数）、连续学习天数（附今天学习时长）、**刷题时间**（答题用时，附今天）、**学习时间**（刷题 + 看解析，附看解析时长）、最近一次答对的题数、错题本题数。
+- 最近 7 天 / 30 天每天作答次数与正确率（答对 / 答错堆叠柱），可切换；柱图还可切到「时长」视图（刷题 / 看解析堆叠），并汇总该时段的刷题与解析时长。
 - 考试成绩折线（最近 20 场，虚线为及格线）。
 - 按题型、难度、知识点（`tags`）的正确率，知识点按薄弱程度排序。标签由模型生成，可能很碎，所以有「归类 / 细分」切换：归类时大小写、全半角、空格差异先折叠，再把「UML 辨析」并入「UML」、「数据库/范式」并入「数据库」（前缀至少 2 个字，拉丁字母前缀只在词边界合并，所以 `OSI` 不会并入 `OS`）。
 - 最常做错的题，可一键「专攻薄弱题」（最多 20 道）。排序只看每题最近 5 次作答，并把小样本拉向先验错误率（相当于 4 次、错误率 25% 的先验），所以「只做过 1 次且错」排在「近 5 次错 3 次」之后。
-- 口径：只统计题库里当前可见的题；单次作答耗时超过 2 分钟按 2 分钟算（页面挂着不动不算学习时长）；连续学习天数在「今天还没做、昨天做了」时仍保持。
+- 口径：只统计题库里当前可见的题；连续学习天数在「今天还没做、昨天做了」时仍保持。
+- **时长口径**：每条作答记录有两段时间。`duration_ms` ＝ **刷题时间**，从题目出现到提交答案；`review_ms` ＝ **看解析时间**，提交之后停留在这道题上的时间（读解析、问 AI、回看）。学习时间 ＝ 两者之和。计时只算页面在前台的时间（H5 看 `visibilitychange`，Flutter 看 App 生命周期），切到后台、锁屏都不算；未作答就翻走的题，那段时间并入它最终的答题用时。统计时 `duration_ms` 单条最多算 2 分钟、`review_ms` 最多算 3 分钟（页面挂着不动不算），原始值照存。每条记录按作答当天归日。
+- `review_ms` 在离开这道题（下一题 / 上一题 / 退出 / 切后台）时累加写入本机；已同步的记录因此会重新进入上传队列，服务端对同一条 `attempt` 只在 `review_ms` **变大**时更新并重新发布（`sync_seq` 前进），其它设备拉到后取较大值，所以时长只增不减。旧版本客户端不带 `review_ms`，按 0 算。模拟考试里每题只有 `duration_ms`（没有看解析的环节）；考试里没作答的题、交卷前后翻看的时间不计入这两项，考试总用时单独记在考试记录的 `used_ms`。
 
 **模拟考试**：
 - 出卷：**出卷方式**三选一——随机；查漏补缺（先抽上次做错的和在错题本里的，再抽没做过的，最后才是做对的）；难度均衡（简单 1–2 / 中等 3 / 困难 4–5 按 4 : 4 : 2，某档不够就从其余补）。可选**知识点**（多选，用归类后的标签）限定范围。再选题量（10 / 20 / 50 / 100 / 全部）和时间（每题 30 秒 / 1 分钟 / 2 分钟 / 不限时）；60% 及格。
@@ -179,6 +181,18 @@ Markdown 文档 → AI 生成题目 → 自动校验 → 人工审核 → 发布
 - 交卷：统一评分，没作答的按答错算。**已作答的题**写入作答记录（所以计入统计、答错进错题本、随同步上传），**未作答的不写**；中途退出不留作答记录。**整张卷子在一个事务里写入**（作答记录、学习状态、考试记录、清掉草稿），失败则全部回滚，重试不会重复计入。
 - 结果：分数、是否及格、用时、答题卡对错、逐题解析（你的答案 / 正确答案 / 解析 / 原文），可一键重做错题。
 - 考试记录**会同步**（§7.4）：每场考试连同逐题所选答案一起上传服务端，任何设备都能在考试设置页点进历史记录回看整张卷子；回看时已下线的题显示为「这道题已下线」。升级前的旧记录只有成绩，没有逐题明细。
+
+**每日目标与提醒**（2026-10-05，两端一致，目标只存本机）：
+- 设置页「学习目标」：每天做题（关闭 / 10 / 20 / 30 / 50 / 自定义）与每天学习分钟数（关闭 / 15 / 30 / 60 / 自定义），可分别开关，都开时**同时**达成才算完成；默认全关。存在 H5 的 `localStorage`（`quizmind.goals`）/ Flutter 的 `SharedPreferences`（`goals`），**不同步**，手机和电脑可以有不同目标。
+- 首页（题库列表）顶部显示「今日进度」卡片：已做题 / 目标、已学分钟 / 目标，各一条进度条；达成后变为「今天的目标完成了」；没设目标时不显示。
+- 「今日」＝本地自然日、**所有题库**合计；题数 ＝ 当天的作答条数（考试里作答的题也算），分钟 ＝ 当天各条 `duration_ms + review_ms`，沿用上面的封顶规则（单条 2 / 3 分钟），所以与统计页「今天学习 X 分钟」同口径；其他设备同步来的作答也算，**已下线的题的作答不算**（与统计页一致）。实现：H5 `Repo.todayProgress`、Flutter `Repository.watchDayProgress`，单条折算共用统计里的 `attemptTimes`。
+- 提醒**只做站内提醒**：设置里可开「每日提醒」并选时间（默认 20:00）；过了这个时间、目标还没达成，首页卡片变成醒目的「还差 X 题 / Y 分钟」（页面开着时到点自动出现；跨过午夜则从零重新算）。**不会在后台弹系统通知**：H5 跑在局域网 HTTP 上，不是安全上下文，浏览器通知与 Service Worker 都不可用；Flutter 的系统定时通知要新增依赖并改 Android 权限 / Gradle，作为后续单独评估。
+
+**按知识点刷题**（2026-10-05）：题库页「按知识点刷题」进入知识点列表（`/bank/:id/topics`）：每行显示名称、题数、做过几题、正确率（没做过显示「未做」），按题数从多到少排，右上有「归类 / 细分」切换。点一行 ＝ 随机刷这个知识点下的**全部题**；上方两个互斥的开关「只刷没做过的」「只刷做错过的」（做错过 ＝ 曾经答错过，哪怕之后答对了；开着时每行显示「可刷 N」，没有可刷的题时给出提示而不是开一轮空的）。统计页的知识点行也可以直接点，用统计页当前的归类 / 细分状态开刷。**刷题进度不保存**（不覆盖题库的「继续上一轮」）。取题与统计页、出卷用同一套 `tagLabeler`，所以三处点同一个标签得到同一批题；一题带多个标签只算一次。
+
+**题库内搜索**（2026-10-05）：题库页「搜索题目」（`/bank/:id/search`）。**完全在本机做，离线可用，不需要服务端接口。** 范围：题干、选项、解析、知识点标签；多个词用空格分开，**全部命中**（AND，可分散在不同字段）；不分大小写，全角 / 半角先折叠（H5 用 NFKC，Flutter 折叠全角 ASCII 与全角空格）；词按字面匹配，不当正则。输入后 200ms 防抖开搜；结果排序：题干命中在前，其次选项 / 标签，最后解析，同级保持题库原顺序；命中不在题干时多显示一行片段（选项 / 知识点 / 解析附近的上下文）；命中的词高亮（H5 用片段数组渲染，不用 `v-html`，因为题干来自模型）。最多渲染 100 条，超出提示「还有 X 条，请缩小范围」；点一条 ＝ 从这条开始刷**整个**搜索结果，「练习这 N 道」＝ 随机刷全部结果；已下线的题不出现。没用 SQLite FTS：中文分词是 FTS5 默认分词器的弱项，客户端题库只有几百到几千题，子串匹配足够快，且两端（IndexedDB 没有全文索引）能用同一套规则。
+
+**错题本分题库**（2026-10-05）：错题本与收藏页（共用一个列表组件）顶部有题库筛选：「全部」＋每个有题的题库（带数量）；「全部」视图下每行小字标出所属题库；选了某个题库后列表与「随机练习」都只含它，刷题标题带上题库名（「错题本 · 软件设计师」）。默认「全部」；题库页的「本题库错题本（N）」入口（N 为 0 时置灰）进入时直接定位到该题库（H5 `/wrong?bank=<id>`，Flutter 打开页面时带 `initialBankId`）。上次选的筛选只在当前会话内记住（H5 `sessionStorage`，Flutter 页面常驻到 App 退出），不跨会话，避免下次打开时以为「错题本空了」；选中的题库没有题了就回到「全部」。本机还留着、但题库已不在的题归入「已删除的题库」，不丢数据。`Repo.wrongBook(bankId?)` / `favorites(bankId?)` 的参数可选，不传即全部（模拟考试「查漏补缺」读错题 id 的调用方不受影响）。
 
 ---
 
@@ -453,7 +467,7 @@ CREATE TABLE question (                 -- 题目
   content_hash TEXT NOT NULL,           -- 去重
   gen_model TEXT,
   gen_prompt_version TEXT,
-  flag_count INTEGER NOT NULL DEFAULT 0,-- App 端"题目有误"反馈次数
+  flag_count INTEGER NOT NULL DEFAULT 0,-- App 端"题目有误"的未处理反馈数（处理后清零，见 §7.5）
   sync_seq INTEGER,                     -- 发布/变更时分配，单调递增
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
@@ -462,13 +476,23 @@ CREATE INDEX idx_question_sync ON question(sync_seq);
 CREATE INDEX idx_question_bank_status ON question(bank_id, status);
 CREATE VIRTUAL TABLE question_fts USING fts5(stem, explanation, content='question');
 
-CREATE TABLE attempt (                  -- 作答记录，只追加
+CREATE TABLE question_flag (            -- App 端每一次"题目有误"反馈（迁移 00008）
+  id TEXT PRIMARY KEY,                  -- ULID
+  question_id TEXT NOT NULL REFERENCES question(id),
+  reason TEXT NOT NULL DEFAULT 'other', -- wrong_answer | ambiguous | typo | other
+  created_at INTEGER NOT NULL,
+  resolved_at INTEGER                   -- 管理员处理后填写；NULL ＝ 未处理
+);
+CREATE INDEX idx_flag_question ON question_flag(question_id, resolved_at);
+
+CREATE TABLE attempt (                  -- 作答记录，只追加（review_ms 除外）
   id TEXT PRIMARY KEY,                  -- 客户端生成的 ULID，用于幂等
   question_id TEXT NOT NULL REFERENCES question(id),
   device_id TEXT NOT NULL,
   answer TEXT NOT NULL,                 -- JSON
   is_correct INTEGER NOT NULL,
-  duration_ms INTEGER,
+  duration_ms INTEGER,                  -- 刷题时间：题目出现到提交
+  review_ms INTEGER,                    -- 看解析时间：提交之后停留，只增不减
   answered_at INTEGER NOT NULL,         -- 客户端时间
   received_at INTEGER NOT NULL
 );
@@ -553,7 +577,16 @@ POST /api/v1/sync/exams                             body: [同上，最多 10 �
 
 ### 7.5 用户反馈
 
-`POST /api/v1/questions/{id}/flag`：累计 `flag_count`，达到阈值（如 2）自动置为 `needs_review` 并下线，等待重审。
+`POST /api/v1/questions/{id}/flag`：每次反馈写一行 `question_flag`（原因 + 时间）并让 `flag_count + 1`；**未处理的反馈**累计到阈值（2 次）就自动置为 `needs_review`、备注写 `flagged by app users`，并推进 `sync_seq` 让所有设备下线这道题。只对已发布的题生效，已下线的题再反馈是空操作。
+
+- **原因（可选）**：请求体 `{"reason": "wrong_answer"}`，取值 `wrong_answer`（答案不对）/ `ambiguous`（题干有歧义）/ `typo`（选项或文字有误）/ `other`（其他）。不带请求体的老客户端照常工作（记为 `other`），未知取值也按 `other` 处理；老服务端不认识 `reason`，忽略它仍返回成功。两端刷题页的「题目有误，反馈」先弹出四选一的原因，再提交；客户端的待上传反馈（H5 `flags` 存储、Flutter `pending_flags` 表）各带一个 `reason` 字段（Flutter 数据库 v4 → v5，旧的待传反馈没有原因，按不带原因上传）。
+- **`flag_count` 的含义**是**未处理**的反馈数，处理后清零，不再是只增不减的总数。
+- **管理端处理**（`ReviewView`）：
+  - 状态筛选新增「被反馈」（`GET /admin/questions?flagged=1`，列出 `flag_count > 0` 的题，**不论状态**；旁边带数字角标，来自 `GET /admin/banks` 每个题库 `question_counts.flagged`）；列表行上被反馈的题有红色「反馈 N」；详情顶部提示「N 位用户反馈了这道题：答案不对 ×2、题干有歧义 ×1」并逐条列出原因与时间，升级前遗留的计数没有明细，显示「共 N 次反馈（其中 M 次无详细记录）」。
+  - 新增「处理完毕（保留）」（`D` 键，`POST /admin/questions/{id}/dismiss-flags`）：把这道题的未处理反馈标记为已处理、`flag_count` 清零；若题目因反馈被自动下线（`needs_review` 且备注为 `flagged by app users`）则**重新发布**；若题目是已发布状态则**推进 `sync_seq`**，让在本机隐藏了它的设备把它找回来；其它原因造成的 `needs_review`（比如自动校验没过）、以及已驳回的题**不改状态**，只清反馈。
+  - 「通过」和「驳回」也同时处理掉这道题的反馈；对一道已发布但还有反馈的题点「通过」等同「处理完毕」。**编辑不自动清反馈**：改动不一定解决了被反馈的问题，需要明确点「处理完毕」。
+- **修掉的 bug**：以前对被反馈下线的题点「通过」重新发布后 `flag_count` 不清零，之后再有人反馈计数马上又到 2，题目立刻再次下线。现在通过会清反馈，重新上线后再被反馈一次只计 1。
+- **升级**：迁移 00008 只新增 `question_flag` 一张表，不改旧表；已有的 `flag_count` 保留（视为未处理）。
 
 ### 7.6 AI 解读（2026-10-03，仅 Flutter 端）
 
@@ -589,11 +622,11 @@ GET/POST /api/v1/sync/notes   → 服务端 ai_note 表（每题一条，覆盖�
 | Admin：题库 | `GET/POST /admin/banks` | 列表（含各状态题数）、新建 |
 | Admin：文档 | `GET/POST /admin/documents`、`GET /admin/documents/{id}`、`POST /admin/documents/{id}/retry` | 上传（multipart：`bank_id` + `file`）、详情（含切块列表）、重试失败任务 |
 | Admin：任务 | `GET /admin/jobs`、`POST /admin/jobs/{id}/retry`、`GET /admin/events`（SSE） | SSE 用 `?access_token=` 传 Token（EventSource 不能设请求头），日志不记录查询串 |
-| Admin：审核 | `GET /admin/questions`、`GET/PATCH /admin/questions/{id}`、`POST …/approve`、`POST …/reject`、`POST /admin/questions/bulk` | 详情带原文块与标题路径，供审核页高亮 `source_quote` |
+| Admin：审核 | `GET /admin/questions`（`?flagged=1` 列出有未处理反馈的题）、`GET/PATCH /admin/questions/{id}`、`POST …/approve`、`POST …/reject`、`POST …/dismiss-flags`、`POST /admin/questions/bulk` | 详情带原文块与标题路径，供审核页高亮 `source_quote`；带 `flags`（反馈原因与时间，最新在前） |
 | Admin：成本 | `GET /admin/usage?days=30` | 按天、按模型汇总调用次数和 token |
 | Admin：AI 解读 | `GET/PUT /admin/ai`、`POST /admin/ai/test` | LLM 配置与访问令牌（不回显 Key）；测试已保存的配置 |
 | App：同步 | `/api/v1/sync/*` | §7 |
-| App：题库 | `/api/v1/banks`、`/api/v1/questions/{id}/flag` | |
+| App：题库 | `/api/v1/banks`、`/api/v1/questions/{id}/flag` | 反馈可带可选的 `reason`，§7.5 |
 | App：AI 解读 | `GET /api/v1/ai/config`（需访问令牌）、`/api/v1/sync/notes` | §7.6 |
 | 运维 | `/healthz` | |
 
@@ -716,6 +749,20 @@ QuizMind/
 | 13 | 刷题时想让 AI 讲解 | 见 §7.6：Flutter 刷题页答题后「AI 解读」，客户端直连 OpenAI 兼容接口、流式显示、本机保存并可同步到服务端；LLM 配置和访问令牌在管理页设置，客户端同步取回，也可手动填本机配置。H5 暂不做 | 已完成（服务端 + Flutter） |
 
 **升级注意**：服务端迁移 00004 / 00005 在启动时自动执行；`attempt` 增加一列并补号，建议升级前先备份：`sqlite3 "$HOME/Library/Application Support/QuizMind/app.db" "VACUUM INTO '…/app.db.bak-before-exam-sync'"`。Flutter 端数据库升到 v2（新增 `exams`、`exam_drafts` 表），原先存在 SharedPreferences 里的考试成绩在首次启动时自动搬进数据库并补传。
+
+### 12.4 第二轮改进（2026-10-05）
+
+五项相互独立的改进，只有「反馈处理」改了服务端协议。方案与取舍见 [`iteration-2026-10-05.md`](iteration-2026-10-05.md)，功能说明在 §3.5 和 §7.5。**全部已实现并带测试**。
+
+| # | 改进 | 范围 | 协议 / 数据库 | 状态 |
+|---|---|---|---|---|
+| 1 | 每日目标和提醒（只做站内提醒） | H5、Flutter | 无（目标存本机） | 已完成 |
+| 2 | 按知识点刷题 | H5、Flutter | 无 | 已完成 |
+| 3 | 题库内搜索（本机、离线可用） | H5、Flutter | 无 | 已完成 |
+| 4 | 反馈处理：原因、被反馈筛选、处理完毕；修复「通过」不清反馈的 bug | 服务端、管理后台、H5、Flutter | 新表 `question_flag`（迁移 00008）；反馈带可选 `reason`；管理端 `?flagged=1`、`dismiss-flags`；Flutter 数据库 v5 | 已完成 |
+| 5 | 错题本与收藏分题库 | H5、Flutter | 无 | 已完成 |
+
+**升级注意**：迁移 00008 在服务端启动时自动执行，只新增一张表；升级前照例备份数据库。Flutter 数据库自动升到 v5（`pending_flags` 加一列 `reason`）。H5 的 IndexedDB 不需要升级（`flags` 记录多一个可选字段）。系统级定时通知（Flutter）、跨题库全局搜索、反馈的自由文字说明、目标 / 提醒的跨设备同步、间隔重复复习队列，本轮明确不做。
 
 ---
 

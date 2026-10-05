@@ -1,10 +1,12 @@
 import { newUlid } from '@/core/ulid'
 import type { Db } from './db'
 import { afterAnswer, CLEAR_STREAK, inWrongBook, isCorrect, readProgress } from './progress'
-import { buildReport, type BankReport } from './stats'
-import type { Bank, ExamDraft, ExamRecord, LocalAttempt, LocalExam, LocalQuestion, LocalState, SessionData } from './types'
+import { attemptTimes, buildReport, dayStart, dayStartBefore, type BankReport } from './stats'
+import type { Bank, ExamDraft, ExamRecord, FlagReason, LocalAttempt, LocalExam, LocalQuestion, LocalState, SessionData } from './types'
 
 export interface AnswerOutcome {
+  /** The attempt this answer was logged as; absent for outcomes restored from a saved quiz. */
+  attemptId?: string
   correct: boolean
   enteredWrongBook: boolean
   state: LocalState
@@ -21,6 +23,14 @@ export interface ExamAnswer {
   question: LocalQuestion
   selected: number[]
   durationMs: number
+}
+
+/** What was done on one local calendar day, across every bank. */
+export interface DayProgress {
+  /** Answers given. */
+  questions: number
+  /** Study time in ms: answering plus reading explanations, each capped like on the stats page. */
+  ms: number
 }
 
 export interface BankStats {
@@ -63,21 +73,21 @@ export class Repo {
     return this.db.get('states', questionId)
   }
 
-  /** Wrong book, most recently touched first. */
-  wrongBook() {
-    return this.byState(inWrongBook)
+  /** Wrong book, most recently touched first; of one bank when [bankId] is given. */
+  wrongBook(bankId?: string) {
+    return this.byState(inWrongBook, bankId)
   }
 
-  favorites() {
-    return this.byState((s) => !!s?.favorite)
+  favorites(bankId?: string) {
+    return this.byState((s) => !!s?.favorite, bankId)
   }
 
-  private async byState(keep: (s: LocalState) => boolean): Promise<LocalQuestion[]> {
+  private async byState(keep: (s: LocalState) => boolean, bankId?: string): Promise<LocalQuestion[]> {
     const states = (await this.db.getAll('states')).filter(keep).sort((a, b) => b.updated_at - a.updated_at)
     const out: LocalQuestion[] = []
     for (const s of states) {
       const q = await this.db.get('questions', s.question_id)
-      if (q && !q.hidden) out.push(q)
+      if (q && !q.hidden && (!bankId || q.bank_id === bankId)) out.push(q)
     }
     return out
   }
@@ -95,6 +105,33 @@ export class Repo {
     const qs = await this.bankQuestions(bankId)
     const last = await this.lastResults(new Set(qs.map((q) => q.id)))
     return { total: qs.length, answered: last.size, correct: [...last.values()].filter(Boolean).length }
+  }
+
+  /** Every answer given to a visible question of the bank, oldest first. */
+  async bankAttempts(bankId: string): Promise<LocalAttempt[]> {
+    const ids = new Set((await this.bankQuestions(bankId)).map((q) => q.id))
+    const attempts = (await this.db.getAll('attempts')).filter((a: LocalAttempt) => ids.has(a.question_id))
+    return attempts.sort((a, b) => a.answered_at - b.answered_at)
+  }
+
+  /**
+   * Today's answers and study time over all banks, in the learner's local day. It counts what the
+   * stats pages count (answers from every device, minus those to questions since withdrawn), so the
+   * home page and a bank's stats agree.
+   */
+  async todayProgress(now: number = this.now()): Promise<DayProgress> {
+    const from = dayStart(now)
+    const to = dayStartBefore(now, -1)
+    const visible = new Set<string>()
+    for (const q of await this.db.getAll('questions')) if (!q.hidden) visible.add(q.id)
+    const out: DayProgress = { questions: 0, ms: 0 }
+    for (const a of await this.db.getAll('attempts')) {
+      if (a.answered_at < from || a.answered_at >= to || !visible.has(a.question_id)) continue
+      const t = attemptTimes(a)
+      out.questions++
+      out.ms += t.practiceMs + t.reviewMs
+    }
+    return out
   }
 
   /** Practice statistics for a bank, from the attempt log. */
@@ -208,8 +245,9 @@ export class Repo {
     // Views hand us Vue reactive proxies, which IndexedDB cannot structured-clone; store plain copies.
     selected = [...selected]
     const correct = isCorrect(selected, question.answer)
+    const attemptId = newUlid(now)
     await tx.attempts.add({
-      id: newUlid(now),
+      id: attemptId,
       question_id: question.id,
       device_id: this.deviceId,
       answer: selected,
@@ -230,7 +268,19 @@ export class Repo {
       dirty: 1,
     }
     await tx.states.put(state)
-    return { correct, enteredWrongBook: !wasIn && inWrongBook(state), state }
+    return { attemptId, correct, enteredWrongBook: !wasIn && inWrongBook(state), state }
+  }
+
+  /**
+   * Adds [ms] of reading time to an answered question and queues the attempt for upload
+   * again (the server keeps the larger review time). An unknown attempt is ignored.
+   */
+  async addReviewTime(attemptId: string, ms: number) {
+    if (!(ms > 0)) return
+    const tx = this.db.transaction('attempts', 'readwrite')
+    const a = await tx.store.get(attemptId)
+    if (a) await tx.store.put({ ...a, review_ms: (a.review_ms ?? 0) + Math.round(ms), synced: 0 })
+    await tx.done
   }
 
   private async touchState(questionId: string, patch: (s: LocalState) => void) {
@@ -295,9 +345,9 @@ export class Repo {
   }
 
   /** Queues a "looks wrong" report and hides the question here right away; the server confirms later. */
-  async flagQuestion(questionId: string) {
+  async flagQuestion(questionId: string, reason: FlagReason = 'other') {
     const tx = this.db.transaction(['flags', 'questions'], 'readwrite')
-    await tx.objectStore('flags').put({ question_id: questionId, created_at: this.now() })
+    await tx.objectStore('flags').put({ question_id: questionId, created_at: this.now(), reason })
     const q = await tx.objectStore('questions').get(questionId)
     if (q) await tx.objectStore('questions').put({ ...q, hidden: true })
     await tx.done

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { Collection, Document, List, Monitor, TrendCharts, Checked, MagicStick } from '@element-plus/icons-vue'
+import { Collection, Document, List, Monitor, TrendCharts, Checked, MagicStick, EditPen } from '@element-plus/icons-vue'
 import { useAuth } from '@/stores/auth'
 import { useEvents } from '@/stores/events'
 
@@ -11,6 +11,10 @@ const auth = useAuth()
 const events = useEvents()
 
 const showShell = computed(() => !route.meta.public)
+
+// The mobile quiz app (h5/) is served by the same Go binary under /m/; in dev
+// it runs on its own Vite server.
+const quizUrl = import.meta.env.DEV ? `http://${location.hostname}:5174/m/` : '/m/'
 
 // Open the live-progress stream once we are signed in; close it on sign-out.
 // Only redirect after the initial auth check has finished, otherwise a page
@@ -45,6 +49,7 @@ function logout() {
         <el-menu-item index="/usage"><el-icon><TrendCharts /></el-icon>用量</el-menu-item>
         <el-menu-item index="/ai"><el-icon><MagicStick /></el-icon>AI 解读</el-menu-item>
       </el-menu>
+      <a class="quiz-link" :href="quizUrl" target="_blank" rel="noopener"><el-icon><EditPen /></el-icon>去刷题</a>
       <div class="aside-foot">
         <el-tooltip :content="events.connected ? '实时进度已连接' : '实时进度未连接，页面不会自动刷新'" placement="right">
           <span class="live" :class="{ on: events.connected }"><el-icon><Monitor /></el-icon>{{ events.connected ? '实时' : '离线' }}</span>
@@ -60,6 +65,8 @@ function logout() {
 .aside { display: flex; flex-direction: column; border-right: 1px solid var(--el-border-color); }
 .brand { font-weight: 700; font-size: 18px; padding: 16px 20px; }
 .menu { border-right: none; flex: 1; }
+.quiz-link { display: flex; align-items: center; gap: 6px; margin: 0 12px 4px; padding: 8px 8px; border-radius: 6px; font-size: 14px; color: var(--el-color-primary); text-decoration: none; }
+.quiz-link:hover { background: var(--el-color-primary-light-9); }
 .aside-foot { padding: 10px 16px; display: flex; justify-content: space-between; align-items: center; }
 .live { font-size: 12px; color: var(--el-text-color-secondary); display: inline-flex; align-items: center; gap: 4px; }
 .live.on { color: var(--el-color-success); }

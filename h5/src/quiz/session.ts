@@ -1,5 +1,6 @@
 import type { AnswerOutcome, Repo } from '@/data/repo'
-import type { LocalQuestion, SessionData } from '@/data/types'
+import type { FlagReason, LocalQuestion, SessionData } from '@/data/types'
+import { Stopwatch } from './stopwatch'
 
 export type QuizOrder = 'random' | 'sequential'
 
@@ -68,7 +69,10 @@ export class QuizSession {
   index: number
   finished = false
   busy = false
-  private startedAt = Date.now()
+  /** Counts the time on the current question; hidden pages do not count. */
+  private watch: Stopwatch
+  /** Time spent on each question before it was answered, over earlier visits. */
+  private waited: number[]
   private chosen: number[][]
   private outcomes: (AnswerOutcome | null)[]
   private orders: number[][]
@@ -85,9 +89,11 @@ export class QuizSession {
     private readonly repo: Repo,
     startAt = 0,
     rng?: () => number,
-    opts: { seed?: number; restored?: Map<string, RestoredAnswer> } = {},
+    opts: { seed?: number; restored?: Map<string, RestoredAnswer>; clock?: () => number; visible?: boolean } = {},
   ) {
     if (questions.length === 0) throw new Error('a quiz needs at least one question')
+    this.watch = new Stopwatch(opts.clock, opts.visible)
+    this.waited = questions.map(() => 0)
     this.seed = opts.seed ?? Math.floor(Math.random() * 2 ** 30)
     this.index = Math.min(Math.max(startAt, 0), questions.length - 1)
     this.chosen = questions.map(() => [])
@@ -171,28 +177,50 @@ export class QuizSession {
     this.busy = true
     const at = this.index
     try {
-      const elapsed = Math.max(Date.now() - this.startedAt, 0)
+      const elapsed = this.waited[at] + this.watch.lap()
+      this.waited[at] = 0
       this.outcomes[at] = await this.repo.recordAnswer(this.current, this.selected, elapsed)
     } finally {
       this.busy = false
     }
   }
 
+  /**
+   * Books the time since the last call to the question on screen: an answered one gains
+   * reading time (explanation), an unanswered one carries it into its answer time.
+   * Called whenever the learner leaves a question or the page, so little is lost if the
+   * app is closed.
+   */
+  flush(): Promise<void> {
+    const ms = this.watch.lap()
+    const at = this.index
+    const attemptId = this.outcomes[at]?.attemptId
+    if (this.outcomes[at] === null) this.waited[at] += ms
+    return attemptId ? this.repo.addReviewTime(attemptId, ms) : Promise.resolve()
+  }
+
+  /** The page was hidden or shown again; hidden time is not counted. */
+  setVisible(visible: boolean) {
+    this.watch.setVisible(visible)
+  }
+
   next() {
+    void this.flush()
     if (this.isLast) {
       if (this.answeredCount > 0) this.finished = true
     } else {
       this.index++
-      this.startedAt = Date.now()
     }
   }
 
   previous() {
-    if (this.canGoBack) this.index--
+    if (!this.canGoBack) return
+    void this.flush()
+    this.index--
   }
 
   /** Reports the current question as wrong (hides it locally; uploaded on the next sync). */
-  flagCurrent() {
-    return this.repo.flagQuestion(this.current.id)
+  flagCurrent(reason?: FlagReason) {
+    return this.repo.flagQuestion(this.current.id, reason)
   }
 }

@@ -90,13 +90,14 @@ export const api = {
     get<Job[]>('/admin/jobs', params),
   retryJob: (id: string) => post<void>(`/admin/jobs/${id}/retry`),
 
-  questions: (params: { status?: string; bank_id?: string; document_id?: string; limit?: number; offset?: number }) =>
+  questions: (params: { status?: string; bank_id?: string; document_id?: string; flagged?: 1; limit?: number; offset?: number }) =>
     get<QuestionPage>('/admin/questions', params),
   question: (id: string) => get<QuestionDetail>(`/admin/questions/${id}`),
   editQuestion: (id: string, edit: QuestionEdit) =>
     http.patch<QuestionDetail>(`/admin/questions/${id}`, edit).then((r) => r.data),
   approve: (id: string) => post<Question>(`/admin/questions/${id}/approve`),
   reject: (id: string, note: string) => post<Question>(`/admin/questions/${id}/reject`, { note }),
+  dismissFlags: (id: string) => post<Question>(`/admin/questions/${id}/dismiss-flags`),
   bulk: (action: 'approve' | 'reject', ids: string[], note = '') =>
     post<BulkResult>('/admin/questions/bulk', { action, ids, note }),
 

@@ -1096,6 +1096,17 @@ class $AttemptsTable extends Attempts with TableInfo<$AttemptsTable, Attempt> {
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _reviewMsMeta = const VerificationMeta(
+    'reviewMs',
+  );
+  @override
+  late final GeneratedColumn<int> reviewMs = GeneratedColumn<int>(
+    'review_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _answeredAtMeta = const VerificationMeta(
     'answeredAt',
   );
@@ -1128,6 +1139,7 @@ class $AttemptsTable extends Attempts with TableInfo<$AttemptsTable, Attempt> {
     answerJson,
     isCorrect,
     durationMs,
+    reviewMs,
     answeredAt,
     synced,
   ];
@@ -1186,6 +1198,12 @@ class $AttemptsTable extends Attempts with TableInfo<$AttemptsTable, Attempt> {
         durationMs.isAcceptableOrUnknown(data['duration_ms']!, _durationMsMeta),
       );
     }
+    if (data.containsKey('review_ms')) {
+      context.handle(
+        _reviewMsMeta,
+        reviewMs.isAcceptableOrUnknown(data['review_ms']!, _reviewMsMeta),
+      );
+    }
     if (data.containsKey('answered_at')) {
       context.handle(
         _answeredAtMeta,
@@ -1233,6 +1251,10 @@ class $AttemptsTable extends Attempts with TableInfo<$AttemptsTable, Attempt> {
         DriftSqlType.int,
         data['${effectivePrefix}duration_ms'],
       ),
+      reviewMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}review_ms'],
+      ),
       answeredAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}answered_at'],
@@ -1257,6 +1279,10 @@ class Attempt extends DataClass implements Insertable<Attempt> {
   final String answerJson;
   final bool isCorrect;
   final int? durationMs;
+
+  /// Time spent on the question after answering it (explanation, AI). Grows while
+  /// the learner stays on it, so an uploaded attempt can be queued again.
+  final int? reviewMs;
   final int answeredAt;
   final bool synced;
   const Attempt({
@@ -1266,6 +1292,7 @@ class Attempt extends DataClass implements Insertable<Attempt> {
     required this.answerJson,
     required this.isCorrect,
     this.durationMs,
+    this.reviewMs,
     required this.answeredAt,
     required this.synced,
   });
@@ -1279,6 +1306,9 @@ class Attempt extends DataClass implements Insertable<Attempt> {
     map['is_correct'] = Variable<bool>(isCorrect);
     if (!nullToAbsent || durationMs != null) {
       map['duration_ms'] = Variable<int>(durationMs);
+    }
+    if (!nullToAbsent || reviewMs != null) {
+      map['review_ms'] = Variable<int>(reviewMs);
     }
     map['answered_at'] = Variable<int>(answeredAt);
     map['synced'] = Variable<bool>(synced);
@@ -1295,6 +1325,9 @@ class Attempt extends DataClass implements Insertable<Attempt> {
       durationMs: durationMs == null && nullToAbsent
           ? const Value.absent()
           : Value(durationMs),
+      reviewMs: reviewMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reviewMs),
       answeredAt: Value(answeredAt),
       synced: Value(synced),
     );
@@ -1312,6 +1345,7 @@ class Attempt extends DataClass implements Insertable<Attempt> {
       answerJson: serializer.fromJson<String>(json['answerJson']),
       isCorrect: serializer.fromJson<bool>(json['isCorrect']),
       durationMs: serializer.fromJson<int?>(json['durationMs']),
+      reviewMs: serializer.fromJson<int?>(json['reviewMs']),
       answeredAt: serializer.fromJson<int>(json['answeredAt']),
       synced: serializer.fromJson<bool>(json['synced']),
     );
@@ -1326,6 +1360,7 @@ class Attempt extends DataClass implements Insertable<Attempt> {
       'answerJson': serializer.toJson<String>(answerJson),
       'isCorrect': serializer.toJson<bool>(isCorrect),
       'durationMs': serializer.toJson<int?>(durationMs),
+      'reviewMs': serializer.toJson<int?>(reviewMs),
       'answeredAt': serializer.toJson<int>(answeredAt),
       'synced': serializer.toJson<bool>(synced),
     };
@@ -1338,6 +1373,7 @@ class Attempt extends DataClass implements Insertable<Attempt> {
     String? answerJson,
     bool? isCorrect,
     Value<int?> durationMs = const Value.absent(),
+    Value<int?> reviewMs = const Value.absent(),
     int? answeredAt,
     bool? synced,
   }) => Attempt(
@@ -1347,6 +1383,7 @@ class Attempt extends DataClass implements Insertable<Attempt> {
     answerJson: answerJson ?? this.answerJson,
     isCorrect: isCorrect ?? this.isCorrect,
     durationMs: durationMs.present ? durationMs.value : this.durationMs,
+    reviewMs: reviewMs.present ? reviewMs.value : this.reviewMs,
     answeredAt: answeredAt ?? this.answeredAt,
     synced: synced ?? this.synced,
   );
@@ -1364,6 +1401,7 @@ class Attempt extends DataClass implements Insertable<Attempt> {
       durationMs: data.durationMs.present
           ? data.durationMs.value
           : this.durationMs,
+      reviewMs: data.reviewMs.present ? data.reviewMs.value : this.reviewMs,
       answeredAt: data.answeredAt.present
           ? data.answeredAt.value
           : this.answeredAt,
@@ -1380,6 +1418,7 @@ class Attempt extends DataClass implements Insertable<Attempt> {
           ..write('answerJson: $answerJson, ')
           ..write('isCorrect: $isCorrect, ')
           ..write('durationMs: $durationMs, ')
+          ..write('reviewMs: $reviewMs, ')
           ..write('answeredAt: $answeredAt, ')
           ..write('synced: $synced')
           ..write(')'))
@@ -1394,6 +1433,7 @@ class Attempt extends DataClass implements Insertable<Attempt> {
     answerJson,
     isCorrect,
     durationMs,
+    reviewMs,
     answeredAt,
     synced,
   );
@@ -1407,6 +1447,7 @@ class Attempt extends DataClass implements Insertable<Attempt> {
           other.answerJson == this.answerJson &&
           other.isCorrect == this.isCorrect &&
           other.durationMs == this.durationMs &&
+          other.reviewMs == this.reviewMs &&
           other.answeredAt == this.answeredAt &&
           other.synced == this.synced);
 }
@@ -1418,6 +1459,7 @@ class AttemptsCompanion extends UpdateCompanion<Attempt> {
   final Value<String> answerJson;
   final Value<bool> isCorrect;
   final Value<int?> durationMs;
+  final Value<int?> reviewMs;
   final Value<int> answeredAt;
   final Value<bool> synced;
   final Value<int> rowid;
@@ -1428,6 +1470,7 @@ class AttemptsCompanion extends UpdateCompanion<Attempt> {
     this.answerJson = const Value.absent(),
     this.isCorrect = const Value.absent(),
     this.durationMs = const Value.absent(),
+    this.reviewMs = const Value.absent(),
     this.answeredAt = const Value.absent(),
     this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1439,6 +1482,7 @@ class AttemptsCompanion extends UpdateCompanion<Attempt> {
     required String answerJson,
     required bool isCorrect,
     this.durationMs = const Value.absent(),
+    this.reviewMs = const Value.absent(),
     required int answeredAt,
     this.synced = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1455,6 +1499,7 @@ class AttemptsCompanion extends UpdateCompanion<Attempt> {
     Expression<String>? answerJson,
     Expression<bool>? isCorrect,
     Expression<int>? durationMs,
+    Expression<int>? reviewMs,
     Expression<int>? answeredAt,
     Expression<bool>? synced,
     Expression<int>? rowid,
@@ -1466,6 +1511,7 @@ class AttemptsCompanion extends UpdateCompanion<Attempt> {
       if (answerJson != null) 'answer_json': answerJson,
       if (isCorrect != null) 'is_correct': isCorrect,
       if (durationMs != null) 'duration_ms': durationMs,
+      if (reviewMs != null) 'review_ms': reviewMs,
       if (answeredAt != null) 'answered_at': answeredAt,
       if (synced != null) 'synced': synced,
       if (rowid != null) 'rowid': rowid,
@@ -1479,6 +1525,7 @@ class AttemptsCompanion extends UpdateCompanion<Attempt> {
     Value<String>? answerJson,
     Value<bool>? isCorrect,
     Value<int?>? durationMs,
+    Value<int?>? reviewMs,
     Value<int>? answeredAt,
     Value<bool>? synced,
     Value<int>? rowid,
@@ -1490,6 +1537,7 @@ class AttemptsCompanion extends UpdateCompanion<Attempt> {
       answerJson: answerJson ?? this.answerJson,
       isCorrect: isCorrect ?? this.isCorrect,
       durationMs: durationMs ?? this.durationMs,
+      reviewMs: reviewMs ?? this.reviewMs,
       answeredAt: answeredAt ?? this.answeredAt,
       synced: synced ?? this.synced,
       rowid: rowid ?? this.rowid,
@@ -1517,6 +1565,9 @@ class AttemptsCompanion extends UpdateCompanion<Attempt> {
     if (durationMs.present) {
       map['duration_ms'] = Variable<int>(durationMs.value);
     }
+    if (reviewMs.present) {
+      map['review_ms'] = Variable<int>(reviewMs.value);
+    }
     if (answeredAt.present) {
       map['answered_at'] = Variable<int>(answeredAt.value);
     }
@@ -1538,6 +1589,7 @@ class AttemptsCompanion extends UpdateCompanion<Attempt> {
           ..write('answerJson: $answerJson, ')
           ..write('isCorrect: $isCorrect, ')
           ..write('durationMs: $durationMs, ')
+          ..write('reviewMs: $reviewMs, ')
           ..write('answeredAt: $answeredAt, ')
           ..write('synced: $synced, ')
           ..write('rowid: $rowid')
@@ -2045,8 +2097,17 @@ class $PendingFlagsTable extends PendingFlags
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _reasonMeta = const VerificationMeta('reason');
   @override
-  List<GeneratedColumn> get $columns => [questionId, createdAt];
+  late final GeneratedColumn<String> reason = GeneratedColumn<String>(
+    'reason',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [questionId, createdAt, reason];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -2075,6 +2136,12 @@ class $PendingFlagsTable extends PendingFlags
     } else if (isInserting) {
       context.missing(_createdAtMeta);
     }
+    if (data.containsKey('reason')) {
+      context.handle(
+        _reasonMeta,
+        reason.isAcceptableOrUnknown(data['reason']!, _reasonMeta),
+      );
+    }
     return context;
   }
 
@@ -2092,6 +2159,10 @@ class $PendingFlagsTable extends PendingFlags
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
       )!,
+      reason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason'],
+      ),
     );
   }
 
@@ -2104,12 +2175,22 @@ class $PendingFlagsTable extends PendingFlags
 class PendingFlag extends DataClass implements Insertable<PendingFlag> {
   final String questionId;
   final int createdAt;
-  const PendingFlag({required this.questionId, required this.createdAt});
+
+  /// A FlagReason wire value; null for reports queued before reasons existed.
+  final String? reason;
+  const PendingFlag({
+    required this.questionId,
+    required this.createdAt,
+    this.reason,
+  });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['question_id'] = Variable<String>(questionId);
     map['created_at'] = Variable<int>(createdAt);
+    if (!nullToAbsent || reason != null) {
+      map['reason'] = Variable<String>(reason);
+    }
     return map;
   }
 
@@ -2117,6 +2198,9 @@ class PendingFlag extends DataClass implements Insertable<PendingFlag> {
     return PendingFlagsCompanion(
       questionId: Value(questionId),
       createdAt: Value(createdAt),
+      reason: reason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reason),
     );
   }
 
@@ -2128,6 +2212,7 @@ class PendingFlag extends DataClass implements Insertable<PendingFlag> {
     return PendingFlag(
       questionId: serializer.fromJson<String>(json['questionId']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
+      reason: serializer.fromJson<String?>(json['reason']),
     );
   }
   @override
@@ -2136,12 +2221,18 @@ class PendingFlag extends DataClass implements Insertable<PendingFlag> {
     return <String, dynamic>{
       'questionId': serializer.toJson<String>(questionId),
       'createdAt': serializer.toJson<int>(createdAt),
+      'reason': serializer.toJson<String?>(reason),
     };
   }
 
-  PendingFlag copyWith({String? questionId, int? createdAt}) => PendingFlag(
+  PendingFlag copyWith({
+    String? questionId,
+    int? createdAt,
+    Value<String?> reason = const Value.absent(),
+  }) => PendingFlag(
     questionId: questionId ?? this.questionId,
     createdAt: createdAt ?? this.createdAt,
+    reason: reason.present ? reason.value : this.reason,
   );
   PendingFlag copyWithCompanion(PendingFlagsCompanion data) {
     return PendingFlag(
@@ -2149,6 +2240,7 @@ class PendingFlag extends DataClass implements Insertable<PendingFlag> {
           ? data.questionId.value
           : this.questionId,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      reason: data.reason.present ? data.reason.value : this.reason,
     );
   }
 
@@ -2156,44 +2248,51 @@ class PendingFlag extends DataClass implements Insertable<PendingFlag> {
   String toString() {
     return (StringBuffer('PendingFlag(')
           ..write('questionId: $questionId, ')
-          ..write('createdAt: $createdAt')
+          ..write('createdAt: $createdAt, ')
+          ..write('reason: $reason')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(questionId, createdAt);
+  int get hashCode => Object.hash(questionId, createdAt, reason);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is PendingFlag &&
           other.questionId == this.questionId &&
-          other.createdAt == this.createdAt);
+          other.createdAt == this.createdAt &&
+          other.reason == this.reason);
 }
 
 class PendingFlagsCompanion extends UpdateCompanion<PendingFlag> {
   final Value<String> questionId;
   final Value<int> createdAt;
+  final Value<String?> reason;
   final Value<int> rowid;
   const PendingFlagsCompanion({
     this.questionId = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.reason = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PendingFlagsCompanion.insert({
     required String questionId,
     required int createdAt,
+    this.reason = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : questionId = Value(questionId),
        createdAt = Value(createdAt);
   static Insertable<PendingFlag> custom({
     Expression<String>? questionId,
     Expression<int>? createdAt,
+    Expression<String>? reason,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (questionId != null) 'question_id': questionId,
       if (createdAt != null) 'created_at': createdAt,
+      if (reason != null) 'reason': reason,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2201,11 +2300,13 @@ class PendingFlagsCompanion extends UpdateCompanion<PendingFlag> {
   PendingFlagsCompanion copyWith({
     Value<String>? questionId,
     Value<int>? createdAt,
+    Value<String?>? reason,
     Value<int>? rowid,
   }) {
     return PendingFlagsCompanion(
       questionId: questionId ?? this.questionId,
       createdAt: createdAt ?? this.createdAt,
+      reason: reason ?? this.reason,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2219,6 +2320,9 @@ class PendingFlagsCompanion extends UpdateCompanion<PendingFlag> {
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
     }
+    if (reason.present) {
+      map['reason'] = Variable<String>(reason.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2230,6 +2334,7 @@ class PendingFlagsCompanion extends UpdateCompanion<PendingFlag> {
     return (StringBuffer('PendingFlagsCompanion(')
           ..write('questionId: $questionId, ')
           ..write('createdAt: $createdAt, ')
+          ..write('reason: $reason, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4534,6 +4639,7 @@ typedef $$AttemptsTableCreateCompanionBuilder = AttemptsCompanion Function({
   required String answerJson,
   required bool isCorrect,
   Value<int?> durationMs,
+  Value<int?> reviewMs,
   required int answeredAt,
   Value<bool> synced,
   Value<int> rowid,
@@ -4545,6 +4651,7 @@ typedef $$AttemptsTableUpdateCompanionBuilder = AttemptsCompanion Function({
   Value<String> answerJson,
   Value<bool> isCorrect,
   Value<int?> durationMs,
+  Value<int?> reviewMs,
   Value<int> answeredAt,
   Value<bool> synced,
   Value<int> rowid,
@@ -4586,6 +4693,11 @@ class $$AttemptsTableFilterComposer
 
   ColumnFilters<int> get durationMs => $composableBuilder(
     column: $table.durationMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reviewMs => $composableBuilder(
+    column: $table.reviewMs,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4639,6 +4751,11 @@ class $$AttemptsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get reviewMs => $composableBuilder(
+    column: $table.reviewMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get answeredAt => $composableBuilder(
     column: $table.answeredAt,
     builder: (column) => ColumnOrderings(column),
@@ -4683,6 +4800,9 @@ class $$AttemptsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<int> get reviewMs =>
+      $composableBuilder(column: $table.reviewMs, builder: (column) => column);
+
   GeneratedColumn<int> get answeredAt => $composableBuilder(
     column: $table.answeredAt,
     builder: (column) => column,
@@ -4726,6 +4846,7 @@ class $$AttemptsTableTableManager
                 Value<String> answerJson = const Value.absent(),
                 Value<bool> isCorrect = const Value.absent(),
                 Value<int?> durationMs = const Value.absent(),
+                Value<int?> reviewMs = const Value.absent(),
                 Value<int> answeredAt = const Value.absent(),
                 Value<bool> synced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -4736,6 +4857,7 @@ class $$AttemptsTableTableManager
                 answerJson: answerJson,
                 isCorrect: isCorrect,
                 durationMs: durationMs,
+                reviewMs: reviewMs,
                 answeredAt: answeredAt,
                 synced: synced,
                 rowid: rowid,
@@ -4748,6 +4870,7 @@ class $$AttemptsTableTableManager
                 required String answerJson,
                 required bool isCorrect,
                 Value<int?> durationMs = const Value.absent(),
+                Value<int?> reviewMs = const Value.absent(),
                 required int answeredAt,
                 Value<bool> synced = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -4758,6 +4881,7 @@ class $$AttemptsTableTableManager
                 answerJson: answerJson,
                 isCorrect: isCorrect,
                 durationMs: durationMs,
+                reviewMs: reviewMs,
                 answeredAt: answeredAt,
                 synced: synced,
                 rowid: rowid,
@@ -5050,12 +5174,14 @@ typedef $$PendingFlagsTableCreateCompanionBuilder =
     PendingFlagsCompanion Function({
       required String questionId,
       required int createdAt,
+      Value<String?> reason,
       Value<int> rowid,
     });
 typedef $$PendingFlagsTableUpdateCompanionBuilder =
     PendingFlagsCompanion Function({
       Value<String> questionId,
       Value<int> createdAt,
+      Value<String?> reason,
       Value<int> rowid,
     });
 
@@ -5075,6 +5201,11 @@ class $$PendingFlagsTableFilterComposer
 
   ColumnFilters<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reason => $composableBuilder(
+    column: $table.reason,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5097,6 +5228,11 @@ class $$PendingFlagsTableOrderingComposer
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get reason => $composableBuilder(
+    column: $table.reason,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$PendingFlagsTableAnnotationComposer
@@ -5115,6 +5251,9 @@ class $$PendingFlagsTableAnnotationComposer
 
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<String> get reason =>
+      $composableBuilder(column: $table.reason, builder: (column) => column);
 }
 
 class $$PendingFlagsTableTableManager
@@ -5150,20 +5289,24 @@ class $$PendingFlagsTableTableManager
               ({
                 Value<String> questionId = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
+                Value<String?> reason = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PendingFlagsCompanion(
                 questionId: questionId,
                 createdAt: createdAt,
+                reason: reason,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 required String questionId,
                 required int createdAt,
+                Value<String?> reason = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => PendingFlagsCompanion.insert(
                 questionId: questionId,
                 createdAt: createdAt,
+                reason: reason,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

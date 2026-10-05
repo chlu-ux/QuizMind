@@ -8,13 +8,15 @@ import QuestionCard from '@/components/QuestionCard.vue'
 import SourceExcerpt from '@/components/SourceExcerpt.vue'
 import StatusTag from '@/components/StatusTag.vue'
 import EditQuestionDialog from '@/components/EditQuestionDialog.vue'
-import { QUESTION_STATUS_LABEL, TYPE_LABEL } from '@/utils/format'
+import { FLAG_REASON_LABEL, QUESTION_STATUS_LABEL, TYPE_LABEL, formatTime } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
 
 const PAGE = 50
-const statuses = ['needs_review', 'published', 'rejected', 'stale', 'retired', '']
+// 'flagged' is not a status: it lists the questions with unresolved reports, whatever their status.
+const FLAGGED = 'flagged'
+const statuses = ['needs_review', FLAGGED, 'published', 'rejected', 'stale', 'retired', '']
 
 const status = ref<string>((route.query.status as string) ?? 'needs_review')
 const bankId = ref<string>((route.query.bank_id as string) ?? '')
@@ -30,6 +32,7 @@ const selectedId = ref<string>('')
 const detail = ref<QuestionDetail | null>(null)
 const checked = ref<Set<string>>(new Set())
 const editing = ref(false)
+const flaggedCount = ref(0)
 
 const docOptions = computed(() => (bankId.value ? documents.value.filter((d) => d.bank_id === bankId.value) : documents.value))
 const selectedIndex = computed(() => items.value.findIndex((q) => q.id === selectedId.value))
@@ -37,12 +40,43 @@ const allChecked = computed(() => items.value.length > 0 && items.value.every((q
 const canApprove = computed(() => !!detail.value && ['needs_review', 'validated', 'rejected', 'draft'].includes(detail.value.status))
 const canReject = computed(() => !!detail.value && ['needs_review', 'validated', 'published', 'draft'].includes(detail.value.status))
 const canEdit = computed(() => !!detail.value && !['stale', 'retired'].includes(detail.value.status))
+const canDismiss = computed(() => !!detail.value && detail.value.flag_count > 0)
+
+const openFlags = computed(() => (detail.value?.flags ?? []).filter((f) => f.resolved_at === null))
+/** "答案不对 ×2、题干有歧义 ×1" */
+const flagSummary = computed(() => {
+  const n: Record<string, number> = {}
+  for (const f of openFlags.value) n[f.reason] = (n[f.reason] ?? 0) + 1
+  return Object.entries(n).map(([r, c]) => `${FLAG_REASON_LABEL[r] ?? r} ×${c}`).join('、')
+})
+const flagsWithoutDetail = computed(() => Math.max(0, (detail.value?.flag_count ?? 0) - openFlags.value.length))
+
+function statusLabel(s: string): string {
+  if (s === FLAGGED) return flaggedCount.value ? `被反馈（${flaggedCount.value}）` : '被反馈'
+  return s ? QUESTION_STATUS_LABEL[s] : '全部状态'
+}
+
+/** Does the question still belong in the list under the current status filter? */
+function matchesFilter(q: Question): boolean {
+  if (status.value === FLAGGED) return q.flag_count > 0
+  return !status.value || q.status === status.value
+}
+
+async function loadFlaggedCount() {
+  try {
+    const bs = await api.banks()
+    flaggedCount.value = bs.reduce((n, b) => n + (b.question_counts.flagged ?? 0), 0)
+  } catch {
+    /* the badge is a convenience */
+  }
+}
 
 async function load(keepSelection = true) {
   loading.value = true
   try {
     const res = await api.questions({
-      status: status.value || undefined,
+      status: status.value && status.value !== FLAGGED ? status.value : undefined,
+      flagged: status.value === FLAGGED ? 1 : undefined,
       bank_id: bankId.value || undefined,
       document_id: documentId.value || undefined,
       limit: PAGE,
@@ -98,7 +132,7 @@ function syncQuery() {
 function afterDecision(updated: Question) {
   const idx = items.value.findIndex((q) => q.id === updated.id)
   if (idx < 0) return
-  if (status.value && updated.status !== status.value) {
+  if (!matchesFilter(updated)) {
     items.value.splice(idx, 1)
     total.value = Math.max(0, total.value - 1)
     checked.value.delete(updated.id)
@@ -116,6 +150,7 @@ async function approve() {
   try {
     afterDecision(await api.approve(detail.value.id))
     ElMessage.success('已通过并发布')
+    loadFlaggedCount()
   } catch (e) {
     ElMessage.error(errorMessage(e))
   }
@@ -131,8 +166,21 @@ async function reject() {
     })
     afterDecision(await api.reject(detail.value.id, value ?? ''))
     ElMessage.success('已驳回')
+    loadFlaggedCount()
   } catch (e) {
     if (e !== 'cancel' && e !== 'close') ElMessage.error(errorMessage(e))
+  }
+}
+
+async function dismissFlags() {
+  if (!detail.value || !canDismiss.value) return
+  try {
+    const wasOffline = detail.value.status === 'needs_review' && detail.value.review_note === 'flagged by app users'
+    afterDecision(await api.dismissFlags(detail.value.id))
+    ElMessage.success(wasOffline ? '已处理，题目重新上线' : '已处理，反馈已清零')
+    loadFlaggedCount()
+  } catch (e) {
+    ElMessage.error(errorMessage(e))
   }
 }
 
@@ -149,6 +197,7 @@ async function bulk(action: 'approve' | 'reject') {
     else ElMessage.success(`已处理 ${res.done} 道题`)
     checked.value = new Set()
     await load(false)
+    loadFlaggedCount()
   } catch (e) {
     if (e !== 'cancel' && e !== 'close') ElMessage.error(errorMessage(e))
   }
@@ -199,6 +248,8 @@ function onKey(e: KeyboardEvent) {
     case 'r':
       e.preventDefault()
       return void reject()
+    case 'd':
+      return void dismissFlags()
     case 'e':
       if (canEdit.value) {
         e.preventDefault()
@@ -212,6 +263,7 @@ onMounted(async () => {
   const [b, d] = await Promise.all([api.banks(), api.documents()]).catch(() => [[], []] as [Bank[], DocumentRow[]])
   banks.value = b
   documents.value = d
+  flaggedCount.value = b.reduce((n, x) => n + (x.question_counts.flagged ?? 0), 0)
   await load(false)
 })
 onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
@@ -220,8 +272,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 <template>
   <div class="review">
     <div class="filters">
-      <el-select v-model="status" style="width: 130px">
-        <el-option v-for="s in statuses" :key="s" :label="s ? QUESTION_STATUS_LABEL[s] : '全部状态'" :value="s" />
+      <el-select v-model="status" style="width: 150px">
+        <el-option v-for="s in statuses" :key="s" :label="statusLabel(s)" :value="s" />
       </el-select>
       <el-select v-model="bankId" clearable placeholder="全部题库" style="width: 180px">
         <el-option v-for="b in banks" :key="b.id" :label="b.title" :value="b.id" />
@@ -231,7 +283,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
       </el-select>
       <span class="muted">共 {{ total }} 道</span>
       <span class="grow" />
-      <span class="muted keys">快捷键：<kbd>J</kbd>/<kbd>K</kbd> 切换 · <kbd>A</kbd> 通过 · <kbd>R</kbd> 驳回 · <kbd>E</kbd> 编辑</span>
+      <span class="muted keys">快捷键：<kbd>J</kbd>/<kbd>K</kbd> 切换 · <kbd>A</kbd> 通过 · <kbd>R</kbd> 驳回 · <kbd>E</kbd> 编辑 · <kbd>D</kbd> 处理完毕</span>
     </div>
 
     <div class="split">
@@ -257,6 +309,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
               <el-tag size="small" effect="plain">{{ TYPE_LABEL[q.type] ?? q.type }}</el-tag>
               <StatusTag kind="question" :status="q.status" />
               <span v-if="q.review_note.startsWith('auto:')" class="auto">自动</span>
+              <span v-if="q.flag_count > 0" class="flagged">反馈 {{ q.flag_count }}</span>
             </div>
           </div>
         </div>
@@ -279,9 +332,25 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
             <el-button type="success" :disabled="!canApprove" @click="approve">通过 <kbd>A</kbd></el-button>
             <el-button type="danger" plain :disabled="!canReject" @click="reject">驳回 <kbd>R</kbd></el-button>
             <el-button :disabled="!canEdit" @click="editing = true">编辑 <kbd>E</kbd></el-button>
+            <el-button v-if="canDismiss" type="primary" plain @click="dismissFlags">处理完毕（保留）<kbd>D</kbd></el-button>
             <span class="grow" />
             <StatusTag kind="question" :status="detail.status" />
           </div>
+
+          <el-alert
+            v-if="detail.flag_count > 0"
+            type="error"
+            :closable="false"
+            show-icon
+            class="flag-alert"
+            :title="`${detail.flag_count} 位用户反馈了这道题${flagSummary ? '：' + flagSummary : ''}`"
+          >
+            <div v-if="flagsWithoutDetail" class="flag-line">共 {{ detail.flag_count }} 次反馈（其中 {{ flagsWithoutDetail }} 次无详细记录）</div>
+            <div v-for="(f, i) in openFlags" :key="i" class="flag-line">
+              {{ FLAG_REASON_LABEL[f.reason] ?? f.reason }} · {{ formatTime(f.created_at) }}
+            </div>
+            <div class="flag-line muted">“处理完毕”会清掉这些反馈；被反馈下线的题会重新上线。</div>
+          </el-alert>
 
           <el-alert
             v-if="detail.review_note"
@@ -328,6 +397,9 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
 .row-stem { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.5; }
 .row-meta { display: flex; gap: 6px; align-items: center; margin-top: 6px; }
 .auto { font-size: 11px; color: var(--el-color-warning); }
+.flagged { font-size: 11px; color: var(--el-color-danger); border: 1px solid var(--el-color-danger-light-5); border-radius: 3px; padding: 0 4px; }
+.flag-alert { margin-bottom: 12px; }
+.flag-line { font-size: 12px; line-height: 1.7; }
 .pager { padding: 10px; justify-content: center; }
 .detail { padding: 16px 24px; overflow: auto; }
 .actions { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }

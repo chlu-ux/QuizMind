@@ -16,16 +16,23 @@ LEFT JOIN chunk c ON c.id = q.chunk_id
 WHERE (?1 IS NULL OR q.status = ?1)
   AND (?2 IS NULL OR q.bank_id = ?2)
   AND (?3 IS NULL OR c.document_id = ?3)
+  AND (?4 = 0 OR q.flag_count > 0)
 `
 
 type CountQuestionsParams struct {
 	Status     interface{} `json:"status"`
 	BankID     interface{} `json:"bank_id"`
 	DocumentID interface{} `json:"document_id"`
+	Flagged    interface{} `json:"flagged"`
 }
 
 func (q *Queries) CountQuestions(ctx context.Context, arg CountQuestionsParams) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countQuestions, arg.Status, arg.BankID, arg.DocumentID)
+	row := q.db.QueryRowContext(ctx, countQuestions,
+		arg.Status,
+		arg.BankID,
+		arg.DocumentID,
+		arg.Flagged,
+	)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -262,14 +269,16 @@ LEFT JOIN chunk c ON c.id = q.chunk_id
 WHERE (?1 IS NULL OR q.status = ?1)
   AND (?2 IS NULL OR q.bank_id = ?2)
   AND (?3 IS NULL OR c.document_id = ?3)
+  AND (?4 = 0 OR q.flag_count > 0)
 ORDER BY q.created_at DESC, q.id DESC
-LIMIT ?5 OFFSET ?4
+LIMIT ?6 OFFSET ?5
 `
 
 type ListQuestionsParams struct {
 	Status     interface{} `json:"status"`
 	BankID     interface{} `json:"bank_id"`
 	DocumentID interface{} `json:"document_id"`
+	Flagged    interface{} `json:"flagged"`
 	PageOffset int64       `json:"page_offset"`
 	PageLimit  int64       `json:"page_limit"`
 }
@@ -279,6 +288,7 @@ func (q *Queries) ListQuestions(ctx context.Context, arg ListQuestionsParams) ([
 		arg.Status,
 		arg.BankID,
 		arg.DocumentID,
+		arg.Flagged,
 		arg.PageOffset,
 		arg.PageLimit,
 	)

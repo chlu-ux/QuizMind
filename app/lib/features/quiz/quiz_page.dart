@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../data/database.dart';
+import '../../data/models.dart';
 import '../../data/progress.dart';
 import '../../data/repository.dart';
 import '../../data/session_store.dart';
@@ -64,7 +65,7 @@ class QuizPage extends ConsumerStatefulWidget {
   ConsumerState<QuizPage> createState() => _QuizPageState();
 }
 
-class _QuizPageState extends ConsumerState<QuizPage> {
+class _QuizPageState extends ConsumerState<QuizPage> with WidgetsBindingObserver {
   late final QuizSession session;
   late final SyncController _sync;
   late final SessionStore _store;
@@ -73,6 +74,7 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _sync = ref.read(syncProvider.notifier);
     _store = ref.read(sessionStoreProvider);
     final resume = widget.resume;
@@ -124,11 +126,25 @@ class _QuizPageState extends ConsumerState<QuizPage> {
     unawaited(_store.saveProgress(scope, index: session.index, answers: session.answerSnapshot));
   }
 
+  /// Background time is not study time; what was read so far is booked in case the app never comes back.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      session.setVisible(true);
+    } else {
+      unawaited(session.flush());
+      session.setVisible(false);
+    }
+  }
+
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    // Book the reading time of the question on screen, then push what was answered
+    // while the learner is likely still online.
+    final booked = session.flush();
     session.dispose();
-    // Push what was answered while the learner is likely still online.
-    Future.microtask(_sync.run);
+    unawaited(booked.whenComplete(_sync.run));
     super.dispose();
   }
 
@@ -198,7 +214,23 @@ class _QuizPageState extends ConsumerState<QuizPage> {
   Future<void> _afterFlag() async {
     final messenger = ScaffoldMessenger.of(context);
     final nav = Navigator.of(context);
-    await session.flagCurrent();
+    final reason = await showModalBottomSheet<FlagReason>(
+      context: context,
+      showDragHandle: true,
+      builder: (ctx) => SafeArea(
+        // Scrolls rather than overflows on a short window (a phone held sideways).
+        child: ListView(shrinkWrap: true, children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Text('这道题哪里有问题？', style: Theme.of(ctx).textTheme.titleMedium),
+          ),
+          for (final r in FlagReason.values) ListTile(title: Text(r.label), onTap: () => Navigator.pop(ctx, r)),
+          ListTile(title: const Text('取消'), textColor: Theme.of(ctx).hintColor, onTap: () => Navigator.pop(ctx)),
+        ]),
+      ),
+    );
+    if (reason == null || !mounted) return;
+    await session.flagCurrent(reason: reason);
     messenger.showSnackBar(const SnackBar(content: Text('已反馈，下次同步时提交给服务器')));
     if (session.isLast && session.answeredCount == 0) {
       nav.pop(); // nothing left to show

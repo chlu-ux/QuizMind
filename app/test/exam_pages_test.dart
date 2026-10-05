@@ -388,7 +388,12 @@ void main() {
     await tester.tap(find.text('30 天'));
     await tester.pump();
     expect(find.text('最近 30 天'), findsOneWidget);
-    expect(find.text('共 2 次作答'), findsOneWidget);
+    expect(find.textContaining('共 2 次作答'), findsOneWidget);
+    expect(find.text('刷题时间'), findsOneWidget);
+    expect(find.text('学习时间'), findsOneWidget);
+    await tester.tap(find.text('时长'));
+    await tester.pump();
+    expect(find.text('看解析'), findsOneWidget);
 
     expect(find.text('考试成绩'), findsOneWidget);
     expect(find.byKey(const ValueKey('exam-trend')), findsOneWidget);

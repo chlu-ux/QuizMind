@@ -88,16 +88,23 @@ export class SyncService {
 
   private async pushAttempts(): Promise<number> {
     let total = 0
+    // An attempt that gains reading time mid-upload stays queued; it goes out with the next sync, not in a loop here.
+    const sent = new Set<string>()
     for (;;) {
-      const rows = (await this.db.getAllFromIndex('attempts', 'synced', 0)).sort(
-        (a, b) => a.answered_at - b.answered_at,
-      )
+      const rows = (await this.db.getAllFromIndex('attempts', 'synced', 0))
+        .filter((a) => !sent.has(a.id))
+        .sort((a, b) => a.answered_at - b.answered_at)
       const batch = rows.slice(0, BATCH)
       if (batch.length === 0) return total
       const dtos: AttemptDto[] = batch.map(({ synced: _s, ...dto }) => dto)
       await this.api.uploadAttempts(dtos)
+      for (const r of batch) sent.add(r.id)
+      // Leave the row queued if reading time was added while the upload was in flight.
       const tx = this.db.transaction('attempts', 'readwrite')
-      for (const r of batch) await tx.store.put({ ...r, synced: 1 })
+      for (const r of batch) {
+        const cur = await tx.store.get(r.id)
+        if (cur && (cur.review_ms ?? 0) === (r.review_ms ?? 0)) await tx.store.put({ ...cur, synced: 1 })
+      }
       await tx.done
       total += batch.length
     }
@@ -106,7 +113,7 @@ export class SyncService {
   private async pushFlags() {
     for (const f of await this.db.getAll('flags')) {
       try {
-        await this.api.flagQuestion(f.question_id)
+        await this.api.flagQuestion(f.question_id, f.reason)
       } catch (e) {
         // A question the server no longer knows cannot be flagged; drop the report.
         if (!(e instanceof ApiError) || e.status !== 404) throw e
@@ -185,7 +192,10 @@ export class SyncService {
     }
   }
 
-  /** Answers of every device, so statistics cover everything. Attempts are an append-only log: only unknown ids are added. */
+  /**
+   * Answers of every device, so statistics cover everything. Attempts are an append-only log:
+   * only unknown ids are added. The one thing a known attempt can still gain is review time.
+   */
   private async pullAttempts(): Promise<number> {
     let pulled = 0
     let cursor = (await this.db.get('meta', ATTEMPT_CURSOR)) ?? 0
@@ -194,7 +204,11 @@ export class SyncService {
         const page = await this.api.syncAttempts(cursor, BATCH)
         const tx = this.db.transaction(['attempts', 'meta'], 'readwrite')
         for (const a of page.items) {
-          if (await tx.objectStore('attempts').get(a.id)) continue
+          const have = await tx.objectStore('attempts').get(a.id)
+          if (have) {
+            if ((a.review_ms ?? 0) > (have.review_ms ?? 0)) await tx.objectStore('attempts').put({ ...have, review_ms: a.review_ms })
+            continue
+          }
           await tx.objectStore('attempts').put({ ...a, synced: 1 })
           pulled++
         }

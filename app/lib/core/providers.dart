@@ -10,6 +10,7 @@ import '../data/database.dart';
 import '../data/exam_store.dart';
 import '../data/repository.dart';
 import '../data/session_store.dart';
+import '../data/stats.dart';
 import '../data/sync_service.dart';
 import 'settings.dart';
 
@@ -84,7 +85,16 @@ final apiProvider = Provider<QuizApi>((ref) {
 
 final banksProvider = StreamProvider<List<Bank>>((ref) => ref.watch(repositoryProvider).watchBanks());
 final wrongBookProvider = StreamProvider<List<Question>>((ref) => ref.watch(repositoryProvider).watchWrongBook());
+
+/// The wrong book of one bank (for the "本题库错题本" entry on a bank page).
+final bankWrongBookProvider =
+    StreamProvider.family<List<Question>, String>((ref, bankId) => ref.watch(repositoryProvider).watchWrongBook(bankId: bankId));
 final favoritesProvider = StreamProvider<List<Question>>((ref) => ref.watch(repositoryProvider).watchFavorites());
+
+/// What was done on the local day starting at [day] (a midnight), over all banks, kept up to date.
+final dayProgressProvider = StreamProvider.autoDispose.family<DayProgress, DateTime>(
+  (ref, day) => ref.watch(repositoryProvider).watchDayProgress(day),
+);
 final pendingUploadsProvider = StreamProvider<int>((ref) => ref.watch(repositoryProvider).watchPendingUploads());
 
 class SyncStatus {

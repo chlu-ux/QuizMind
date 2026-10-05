@@ -34,7 +34,9 @@ abstract class QuizApi {
   /// as "not supported" and carry on without progress sync.
   Future<SessionsPage> syncSessions({required int since, int limit = 100});
   Future<void> uploadSessions(List<SessionDto> sessions);
-  Future<void> flagQuestion(String id);
+
+  /// Reports a question. The reason is optional on the server: one from before reasons existed ignores it.
+  Future<void> flagQuestion(String id, {String? reason});
 
   /// AI explanations. Servers older than the feature answer 404.
   Future<NotesPage> syncNotes({required int since, int limit = 100});
@@ -138,8 +140,10 @@ class HttpQuizApi implements QuizApi {
       _call(() => _dio.post('/api/v1/sync/sessions', data: sessions.map((s) => s.toJson()).toList()), (_) {});
 
   @override
-  Future<void> flagQuestion(String id) =>
-      _call(() => _dio.post('/api/v1/questions/${Uri.encodeComponent(id)}/flag'), (_) {});
+  Future<void> flagQuestion(String id, {String? reason}) => _call(
+        () => _dio.post('/api/v1/questions/${Uri.encodeComponent(id)}/flag', data: reason == null ? null : {'reason': reason}),
+        (_) {},
+      );
 
   @override
   Future<NotesPage> syncNotes({required int since, int limit = 100}) => _call(

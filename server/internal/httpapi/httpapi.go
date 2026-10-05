@@ -59,6 +59,7 @@ func New(svc *service.Service, hub *events.Hub, token string, static fs.FS, log 
 		r.Patch("/questions/{id}", a.editQuestion)
 		r.Post("/questions/{id}/approve", a.approveQuestion)
 		r.Post("/questions/{id}/reject", a.rejectQuestion)
+		r.Post("/questions/{id}/dismiss-flags", a.dismissFlags)
 
 		r.Get("/usage", a.usage)
 

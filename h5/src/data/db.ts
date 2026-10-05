@@ -1,12 +1,12 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb'
-import type { Bank, ExamDraft, LocalAttempt, LocalExam, LocalQuestion, LocalSession, LocalState } from './types'
+import type { Bank, ExamDraft, LocalAttempt, LocalExam, LocalFlag, LocalQuestion, LocalSession, LocalState } from './types'
 
 interface Schema extends DBSchema {
   banks: { key: string; value: Bank }
   questions: { key: string; value: LocalQuestion; indexes: { bank: string } }
   attempts: { key: string; value: LocalAttempt; indexes: { synced: number; question: string } }
   states: { key: string; value: LocalState; indexes: { dirty: number } }
-  flags: { key: string; value: { question_id: string; created_at: number } }
+  flags: { key: string; value: LocalFlag }
   sessions: { key: string; value: LocalSession; indexes: { dirty: number } }
   exams: { key: string; value: LocalExam; indexes: { bank: string; synced: number } }
   examDrafts: { key: string; value: ExamDraft }
