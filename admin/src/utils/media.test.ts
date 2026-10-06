@@ -40,12 +40,14 @@ describe('AI diagrams', () => {
     expect(isPlainSvg(`<svg>${'x'.repeat(60_000)}</svg>`)).toBe(false)
   })
 
-  it('fences an SVG the model wrote without a fence, or fenced as xml', () => {
-    expect(fenceSvg(`前\n${svg}\n后`)).toBe(`前\n\n\n\`\`\`svg\n${svg}\n\`\`\`\n\n\n后`)
-    expect(fenceSvg(`\`\`\`xml\n${svg}\n\`\`\``)).toBe(`\`\`\`svg\n${svg}\n\`\`\``)
+  it('fences an SVG the model wrote without a fence, fenced as xml, or never closed', () => {
+    const fence = (text: string) => fenceSvg(text).replace(/\n{3,}/g, '\n\n')
     const fenced = `\`\`\`svg\n${svg}\n\`\`\``
-    expect(fenceSvg(fenced)).toBe(fenced)
+    expect(fence(`前\n${svg}\n后`)).toBe(`前\n\n${fenced}\n\n后`)
+    expect(fence(`\`\`\`xml\n${svg}\n\`\`\``)).toBe(`\n\n${fenced}\n\n`)
+    expect(fence(`\`\`\`svg\n${svg}\n\`\`\``)).toBe(`\n\n${fenced}\n\n`)
+    expect(fence(`前\n\`\`\`svg\n${svg}\n\n**后**`)).toBe(`前\n\n${fenced}\n\n**后**`)
     const other = `\`\`\`js\nconst s = '${svg}'\n\`\`\``
-    expect(fenceSvg(other)).toBe(other)
+    expect(fence(other)).toBe(other)
   })
 })

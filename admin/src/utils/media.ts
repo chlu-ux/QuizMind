@@ -47,18 +47,17 @@ export function svgDataUri(svg: string): string {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.trim())}`
 }
 
-// A fenced block of any kind, or an SVG element written without a fence (models do both).
-const FENCE_OR_SVG = /```[ \t]*(\w*)[ \t]*\r?\n([\s\S]*?)\r?\n?```|<svg[\s>][\s\S]*?<\/svg>/g
+// An `<svg>` element, with the fence around it if it has one (models leave the fence off, or open it
+// and forget to close it), or else any other fenced block, which is matched only to be skipped.
+const SVG_OR_FENCE =
+  /(?:```[ \t]*(?:svg|xml|html)?[ \t]*\r?\n\s*)?(<svg[\s>][\s\S]*?<\/svg>)(?:\s*```[ \t]*(?=\r?\n|$))?|```[^\n]*\n[\s\S]*?```/g
 
 /**
- * Markdown in which every finished SVG diagram sits in a ```svg block. The model is asked to fence its
- * drawing, but sometimes leaves the `<svg>` bare or fences it as xml/html; all of them are diagrams.
- * Other code blocks are left alone, so SVG source shown as an example in them stays code.
+ * Markdown in which every finished SVG diagram sits in a properly closed ```svg block. The model is
+ * asked to fence its drawing, but sometimes leaves the `<svg>` bare, fences it as xml/html or never
+ * closes the fence; all of them are diagrams. Other code blocks are left alone, so SVG source shown as
+ * an example in them stays code.
  */
 export function fenceSvg(markdown: string): string {
-  return markdown.replace(FENCE_OR_SVG, (m, lang: string | undefined, body: string | undefined) => {
-    if (lang === undefined) return `\n\n\`\`\`svg\n${m}\n\`\`\`\n\n`
-    const isSvgBody = body!.trim().startsWith('<svg')
-    return lang === 'svg' || (/^(xml|html)$/i.test(lang) && isSvgBody) ? `\`\`\`svg\n${body}\n\`\`\`` : m
-  })
+  return markdown.replace(SVG_OR_FENCE, (m, svg: string | undefined) => (svg ? `\n\n\`\`\`svg\n${svg}\n\`\`\`\n\n` : m))
 }

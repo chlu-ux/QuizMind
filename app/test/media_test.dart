@@ -153,6 +153,8 @@ void main() {
     test('an svg without a fence, or fenced as xml, is cut out too', () {
       expect(splitSvg('前\n$svg\n后'), [('前\n', false), (svg, true), ('\n后', false)]);
       expect(splitSvg('```xml\n$svg\n```'), [(svg, true)]);
+      expect(splitSvg('前\n```svg\n$svg\n\n**后**'), [('前\n', false), (svg, true), ('\n\n**后**', false)],
+          reason: 'the model opened the fence and never closed it');
       const code = '```js\nconst s = "<svg></svg>"\n```';
       expect(splitSvg(code), [(code, false)], reason: 'svg shown as an example in another block stays code');
     });

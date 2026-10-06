@@ -9,10 +9,12 @@ import '../../core/providers.dart';
 import '../../data/media_store.dart';
 import '../../data/media_text.dart';
 
-/// A fenced block (group 1 = language, 2 = body) or an `<svg>` element written without a fence (group 3);
-/// models do both. A block that is still being written has no closing fence or `</svg>` yet and stays
-/// ordinary text until it is complete.
-final _svgPiece = RegExp(r'```[ \t]*(\w*)[ \t]*\r?\n([\s\S]*?)\r?\n?```|(<svg[\s>][\s\S]*?</svg>)');
+/// An `<svg>` element (group 1), with the fence around it if it has one: models leave the fence off, or
+/// open it and forget to close it. Or else any other fenced block, matched only to be skipped. A diagram
+/// that is still being written has no `</svg>` yet and stays ordinary text until it is complete.
+final _svgPiece = RegExp(
+  r'(?:```[ \t]*(?:svg|xml|html)?[ \t]*\r?\n\s*)?(<svg[\s>][\s\S]*?</svg>)(?:\s*```[ \t]*(?=\r?\n|$))?|```[^\n]*\n[\s\S]*?```',
+);
 
 /// Where to cut [text] to draw its complete SVG diagrams as pictures: alternating Markdown and SVG
 /// source (the SVG pieces are the ones for which the second value is true). Other code blocks are left
@@ -21,15 +23,10 @@ List<(String, bool)> splitSvg(String text) {
   final out = <(String, bool)>[];
   var last = 0;
   for (final m in _svgPiece.allMatches(text)) {
-    final bare = m[3];
-    final lang = m[1]?.toLowerCase();
-    final body = m[2];
-    final isSvg = bare != null ||
-        lang == 'svg' ||
-        ((lang == 'xml' || lang == 'html') && body!.trimLeft().startsWith('<svg'));
-    if (!isSvg) continue;
+    final svg = m[1];
+    if (svg == null) continue;
     if (m.start > last) out.add((text.substring(last, m.start), false));
-    out.add((bare ?? body!, true));
+    out.add((svg, true));
     last = m.end;
   }
   if (last < text.length) out.add((text.substring(last), false));
