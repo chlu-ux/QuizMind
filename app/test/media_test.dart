@@ -150,6 +150,13 @@ void main() {
           reason: 'still streaming: no closing fence yet');
     });
 
+    test('an svg without a fence, or fenced as xml, is cut out too', () {
+      expect(splitSvg('前\n$svg\n后'), [('前\n', false), (svg, true), ('\n后', false)]);
+      expect(splitSvg('```xml\n$svg\n```'), [(svg, true)]);
+      const code = '```js\nconst s = "<svg></svg>"\n```';
+      expect(splitSvg(code), [(code, false)], reason: 'svg shown as an example in another block stays code');
+    });
+
     testWidgets('a plain svg is drawn, anything risky or broken is shown as code', (tester) async {
       Future<void> show(String source) async {
         await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(child: SvgFigure(source)))));

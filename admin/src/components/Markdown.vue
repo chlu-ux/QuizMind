@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import DOMPurify from 'dompurify'
 import { Marked } from 'marked'
-import { isPlainSvg, svgDataUri, withMediaUrls } from '@/utils/media'
+import { fenceSvg, isPlainSvg, svgDataUri, withMediaUrls } from '@/utils/media'
 
 const props = defineProps<{ source: string }>()
 
@@ -19,7 +19,7 @@ const marked = new Marked({
   },
 })
 
-const html = computed(() => DOMPurify.sanitize(marked.parse(withMediaUrls(props.source)) as string))
+const html = computed(() => DOMPurify.sanitize(marked.parse(fenceSvg(withMediaUrls(props.source))) as string))
 </script>
 
 <template>

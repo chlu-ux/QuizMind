@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isPlainSvg, mediaUrl, plainText, segments, svgDataUri, withMediaUrls } from './media'
+import { fenceSvg, isPlainSvg, mediaUrl, plainText, segments, svgDataUri, withMediaUrls } from './media'
 
 const ID = '0123456789abcdef01234567'
 
@@ -38,5 +38,14 @@ describe('AI diagrams', () => {
     expect(isPlainSvg('<svg><image href="https://x.test/a.png"/></svg>')).toBe(false)
     expect(isPlainSvg('<div>hi</div>')).toBe(false)
     expect(isPlainSvg(`<svg>${'x'.repeat(60_000)}</svg>`)).toBe(false)
+  })
+
+  it('fences an SVG the model wrote without a fence, or fenced as xml', () => {
+    expect(fenceSvg(`前\n${svg}\n后`)).toBe(`前\n\n\n\`\`\`svg\n${svg}\n\`\`\`\n\n\n后`)
+    expect(fenceSvg(`\`\`\`xml\n${svg}\n\`\`\``)).toBe(`\`\`\`svg\n${svg}\n\`\`\``)
+    const fenced = `\`\`\`svg\n${svg}\n\`\`\``
+    expect(fenceSvg(fenced)).toBe(fenced)
+    const other = `\`\`\`js\nconst s = '${svg}'\n\`\`\``
+    expect(fenceSvg(other)).toBe(other)
   })
 })

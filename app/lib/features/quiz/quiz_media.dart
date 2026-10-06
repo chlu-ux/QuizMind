@@ -9,18 +9,27 @@ import '../../core/providers.dart';
 import '../../data/media_store.dart';
 import '../../data/media_text.dart';
 
-/// A finished ```svg block in a model's answer. A block that is still being written has no closing
-/// fence yet and stays an ordinary code block until it is complete.
-final _svgBlock = RegExp(r'```svg[ \t]*\r?\n([\s\S]*?)\r?\n?```');
+/// A fenced block (group 1 = language, 2 = body) or an `<svg>` element written without a fence (group 3);
+/// models do both. A block that is still being written has no closing fence or `</svg>` yet and stays
+/// ordinary text until it is complete.
+final _svgPiece = RegExp(r'```[ \t]*(\w*)[ \t]*\r?\n([\s\S]*?)\r?\n?```|(<svg[\s>][\s\S]*?</svg>)');
 
-/// Where to cut [text] to draw its complete ```svg blocks as pictures: alternating Markdown and SVG
-/// source (the SVG pieces are the ones for which the second value is true).
+/// Where to cut [text] to draw its complete SVG diagrams as pictures: alternating Markdown and SVG
+/// source (the SVG pieces are the ones for which the second value is true). Other code blocks are left
+/// alone, so SVG source shown as an example in them stays code.
 List<(String, bool)> splitSvg(String text) {
   final out = <(String, bool)>[];
   var last = 0;
-  for (final m in _svgBlock.allMatches(text)) {
+  for (final m in _svgPiece.allMatches(text)) {
+    final bare = m[3];
+    final lang = m[1]?.toLowerCase();
+    final body = m[2];
+    final isSvg = bare != null ||
+        lang == 'svg' ||
+        ((lang == 'xml' || lang == 'html') && body!.trimLeft().startsWith('<svg'));
+    if (!isSvg) continue;
     if (m.start > last) out.add((text.substring(last, m.start), false));
-    out.add((m[1]!, true));
+    out.add((bare ?? body!, true));
     last = m.end;
   }
   if (last < text.length) out.add((text.substring(last), false));
