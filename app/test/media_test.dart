@@ -82,6 +82,38 @@ void main() {
     });
   });
 
+  group('SVG pictures', () {
+    const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="20" viewBox="0 0 40 20"><rect width="40" height="20" fill="#fff"/></svg>';
+
+    test('isSvg tells a drawing from a bitmap or other XML', () {
+      expect(isSvg(utf8.encode(svg)), isTrue);
+      expect(isSvg(utf8.encode('<?xml version="1.0"?>\n<!-- c -->\n$svg')), isTrue);
+      expect(isSvg(_png), isFalse);
+      expect(isSvg(utf8.encode('<html><svg/></html>')), isFalse);
+      expect(imageMime(utf8.encode(svg)), 'image/svg+xml');
+    });
+
+    testWidgets('a stored SVG is drawn by the SVG renderer, a bitmap by the image decoder', (tester) async {
+      server.pictures[_b] = Uint8List.fromList(utf8.encode(svg));
+      final media = store();
+      await tester.runAsync(() async {
+        await media.fetch(_a);
+        await media.fetch(_b);
+      });
+      final db = memoryDb();
+      await pumpWith(
+        tester,
+        db,
+        const Scaffold(body: Column(children: [QuizImage(id: _a), QuizImage(id: _b)])),
+        overrides: [mediaStoreProvider.overrideWithValue(media)],
+      );
+      await settleImages(tester);
+      expect(find.byType(Image), findsOneWidget);
+      expect(find.byType(SvgPicture), findsOneWidget);
+      await tearDownUi(tester, db);
+    });
+  });
+
   group('MediaStore', () {
     test('downloads once and then serves the saved file', () async {
       final s = store();

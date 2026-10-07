@@ -1071,19 +1071,49 @@ func TestMedia(t *testing.T) {
 	resp.Body.Close()
 	assert.Equal(t, m.ID, again.ID)
 
-	// The type is judged by content: a script renamed to .png is refused, and so is SVG.
-	for _, bad := range []string{"alert(1)", `<svg xmlns="http://www.w3.org/2000/svg"></svg>`} {
+	// The type is judged by content: a script renamed to .png is refused, and so is an SVG that could run code.
+	for _, bad := range []string{
+		"alert(1)",
+		`<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>`,
+		`<svg xmlns="http://www.w3.org/2000/svg" onload="alert(1)"></svg>`,
+		`<svg xmlns="http://www.w3.org/2000/svg"><foreignObject/></svg>`,
+		`<svg xmlns="http://www.w3.org/2000/svg"><image href="http://x.test/a.png"/></svg>`,
+		`<svg xmlns="http://www.w3.org/2000/svg"><use href="http://x.test/a.svg#b"/></svg>`,
+		`<svg xmlns="http://www.w3.org/2000/svg"><rect fill="url(http://x.test/a)"/></svg>`,
+		`<!DOCTYPE svg [<!ENTITY a "b">]><svg xmlns="http://www.w3.org/2000/svg"></svg>`,
+		`<svg><rect/></svg>`, // no namespace: browsers would not draw it
+	} {
 		resp = s.uploadMedia(t, "x.png", []byte(bad), true)
 		resp.Body.Close()
 		assert.Equal(t, 400, resp.StatusCode, bad)
 	}
+
+	// A plain SVG diagram is accepted, whatever the file is called, and served as a dead drawing.
+	svg := `<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" width="120px" viewBox="0 0 120 80"><rect x="1" y="1" width="50" height="30" fill="url(#g)"/><text x="5" y="20">类</text></svg>`
+	resp = s.uploadMedia(t, "class.svg", []byte(svg), true)
+	require.Equal(t, 201, resp.StatusCode)
+	var sv struct {
+		ID, Mime      string
+		Width, Height int
+	}
+	require.NoError(t, json.NewDecoder(resp.Body).Decode(&sv))
+	resp.Body.Close()
+	assert.Equal(t, "image/svg+xml", sv.Mime)
+	assert.Equal(t, [2]int{120, 80}, [2]int{sv.Width, sv.Height}, "width from the attribute, height from the viewBox")
+	resp = s.req(t, "GET", "/api/v1/media/"+sv.ID, nil, "", false)
+	body, _ := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	require.Equal(t, 200, resp.StatusCode)
+	assert.Equal(t, svg, string(body))
+	assert.Equal(t, "image/svg+xml", resp.Header.Get("Content-Type"))
+	assert.Contains(t, resp.Header.Get("Content-Security-Policy"), "sandbox")
 	resp = s.uploadMedia(t, "x.png", append([]byte("\x89PNG\r\n\x1a\n"), "junk"...), true)
 	resp.Body.Close()
 	assert.Equal(t, 400, resp.StatusCode, "a truncated PNG is not an image")
 
 	// Phones fetch it without a token.
 	resp = s.req(t, "GET", "/api/v1/media/"+m.ID, nil, "", false)
-	body, _ := io.ReadAll(resp.Body)
+	body, _ = io.ReadAll(resp.Body)
 	resp.Body.Close()
 	require.Equal(t, 200, resp.StatusCode)
 	assert.Equal(t, pic.Bytes(), body)

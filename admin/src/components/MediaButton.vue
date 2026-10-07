@@ -31,5 +31,5 @@ defineExpose({ send })
 
 <template>
   <el-button size="small" :loading="busy" @click="input?.click()">插入图片</el-button>
-  <input ref="input" type="file" accept="image/png,image/jpeg,image/gif,image/webp" hidden @change="chosen" />
+  <input ref="input" type="file" accept="image/svg+xml,image/png,image/jpeg,image/gif,image/webp" hidden @change="chosen" />
 </template>

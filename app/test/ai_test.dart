@@ -209,6 +209,21 @@ void main() {
       expect(without.images, isEmpty);
       expect(without.toJson(), {'role': 'user', 'content': without.content}, reason: 'plain text for a plain request');
     });
+
+    test('quotes an SVG diagram as source instead of attaching it', () async {
+      final db = memoryDb();
+      addTearDown(db.close);
+      const id = '0123456789abcdef01234567';
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10"/></svg>';
+      final q = await storedQuestion(db, stem: '如图所示的类图，哪项正确？\n\n![类图](media:$id)');
+
+      final m = buildExplainMessages(q, const [], diagrams: {id: svg}).last;
+      expect(m.content, contains('如图所示的类图，哪项正确？\n\n[图1]'));
+      expect(m.content, contains('矢量图的 SVG 源码附在下面'));
+      expect(m.content, contains('[图1] 的 SVG 源码：\n```svg\n$svg\n```'));
+      expect(m.content, isNot(contains('没有提供给你')));
+      expect(m.images, isEmpty, reason: 'models take SVG as text, not as an image part');
+    });
   });
 
   group('AiConfigStore', () {

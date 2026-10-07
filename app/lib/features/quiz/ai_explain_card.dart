@@ -93,11 +93,11 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
       _error = null;
       _notice = withImages ? null : '当前模型不支持看图，这次只依据文字讲解';
     });
-    final images = withImages ? await _loadImages(q) : const <String, String>{};
+    final (images, diagrams) = await _loadImages(q, withImages: withImages);
     if (!mounted || cancel.isCancelled) return;
     _sub = ref
         .read(aiChatProvider)
-        .stream(config, buildExplainMessages(q, selected, images: images), cancel: cancel)
+        .stream(config, buildExplainMessages(q, selected, images: images, diagrams: diagrams), cancel: cancel)
         .listen(
       (piece) {
         buffer.write(piece);
@@ -131,22 +131,28 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
     );
   }
 
-  /// The question's pictures as `data:` URIs, by picture id. One that cannot be had is left out.
-  Future<Map<String, String>> _loadImages(Question q) async {
+  /// The question's pictures: bitmaps as `data:` URIs by picture id (none when [withImages] is off), and
+  /// SVG diagrams as source text by picture id. One that cannot be had is left out.
+  Future<(Map<String, String>, Map<String, String>)> _loadImages(Question q, {required bool withImages}) async {
     final store = ref.read(mediaStoreProvider);
-    final out = <String, String>{};
+    final images = <String, String>{};
+    final diagrams = <String, String>{};
     var total = 0;
     for (final id in mediaIds([q.stem, ...q.options, q.explanation])) {
       try {
         final bytes = await (await store.fetch(id)).readAsBytes();
-        total += bytes.length;
-        if (total > _maxImageBytes) break;
-        out[id] = 'data:${imageMime(bytes)};base64,${base64Encode(bytes)}';
+        if (isSvg(bytes)) {
+          diagrams[id] = utf8.decode(bytes, allowMalformed: true);
+        } else if (withImages) {
+          total += bytes.length;
+          if (total > _maxImageBytes) continue;
+          images[id] = 'data:${imageMime(bytes)};base64,${base64Encode(bytes)}';
+        }
       } on MediaException {
         continue;
       }
     }
-    return out;
+    return (images, diagrams);
   }
 
   void _cancelRequest() {

@@ -2,8 +2,15 @@ import 'dart:io';
 
 import 'package:dio/dio.dart';
 
+/// Whether [b] is an SVG document: an optional BOM, XML declaration and comments, then `<svg`.
+bool isSvg(List<int> b) {
+  final head = String.fromCharCodes(b.length > 2048 ? b.sublist(0, 2048) : b);
+  return RegExp(r'^\s*(?:\uFEFF)?\s*(?:<\?xml[^>]*\?>\s*)?(?:<!--[\s\S]*?-->\s*)*<svg[\s>]').hasMatch(head);
+}
+
 /// The MIME type of a picture, from its first bytes (PNG when nothing else matches).
 String imageMime(List<int> b) {
+  if (isSvg(b)) return 'image/svg+xml';
   if (b.length > 2 && b[0] == 0xFF && b[1] == 0xD8) return 'image/jpeg';
   if (b.length > 3 && b[0] == 0x47 && b[1] == 0x49 && b[2] == 0x46) return 'image/gif';
   if (b.length > 11 && String.fromCharCodes(b.sublist(0, 4)) == 'RIFF' && String.fromCharCodes(b.sublist(8, 12)) == 'WEBP') {

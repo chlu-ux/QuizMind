@@ -20,7 +20,8 @@ import (
 	"github.com/chlu-ux/quizmind/server/internal/store"
 )
 
-// MaxMediaBytes caps one uploaded picture. Diagrams are small; this is generous.
+// MaxMediaBytes caps one uploaded raster picture. Diagrams are small; this is generous. SVG has its own,
+// lower cap (MaxSVGBytes).
 const MaxMediaBytes = 5 << 20
 
 // mediaIDLen is how many hex digits of the content hash make up a media id. The
@@ -32,8 +33,11 @@ const MediaRefPrefix = "media:"
 
 var mediaRef = regexp.MustCompile(`media:([0-9a-f]{24})`)
 
-// allowedMedia lists what an upload may be. SVG is left out on purpose: it can carry
-// script, and the phone app cannot draw it through its image widget anyway.
+// SVGMime is the type of a stored SVG diagram.
+const SVGMime = "image/svg+xml"
+
+// allowedMedia lists the raster types an upload may be. SVG is accepted too, but only after checkSVG
+// has proved it is a static drawing (no script, no external references).
 var allowedMedia = map[string]bool{"image/png": true, "image/jpeg": true, "image/gif": true, "image/webp": true}
 
 type MediaView struct {
@@ -58,15 +62,24 @@ func (s *Service) PutMedia(ctx context.Context, data []byte) (MediaView, error) 
 	if len(data) > MaxMediaBytes {
 		return MediaView{}, invalid("image larger than %d bytes", MaxMediaBytes)
 	}
-	mime := http.DetectContentType(data)
-	if !allowedMedia[mime] {
-		return MediaView{}, invalid("only PNG, JPEG, GIF or WebP images are accepted")
-	}
+	var mime string
 	var w, h int64
-	if cfg, _, err := image.DecodeConfig(bytes.NewReader(data)); err == nil {
-		w, h = int64(cfg.Width), int64(cfg.Height)
-	} else if mime != "image/webp" { // WebP has no decoder in the standard library
-		return MediaView{}, invalid("not a valid image")
+	if looksLikeSVG(data) {
+		var err error
+		if w, h, err = checkSVG(data); err != nil {
+			return MediaView{}, err
+		}
+		mime = SVGMime
+	} else {
+		mime = http.DetectContentType(data)
+		if !allowedMedia[mime] {
+			return MediaView{}, invalid("only SVG, PNG, JPEG, GIF or WebP images are accepted")
+		}
+		if cfg, _, err := image.DecodeConfig(bytes.NewReader(data)); err == nil {
+			w, h = int64(cfg.Width), int64(cfg.Height)
+		} else if mime != "image/webp" { // WebP has no decoder in the standard library
+			return MediaView{}, invalid("not a valid image")
+		}
 	}
 	sum := sha256.Sum256(data)
 	id := hex.EncodeToString(sum[:])[:mediaIDLen]

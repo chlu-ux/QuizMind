@@ -491,6 +491,9 @@ func (a *API) getMedia(w http.ResponseWriter, r *http.Request) {
 	h := w.Header()
 	h.Set("Content-Type", m.Mime)
 	h.Set("X-Content-Type-Options", "nosniff")
+	// Opened directly, an SVG is a document of its own: this keeps it a dead drawing even if the
+	// upload checks ever miss something. <img> and the phone apps are unaffected.
+	h.Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
 	// The id is the content hash, so a given URL never changes.
 	h.Set("Cache-Control", "public, max-age=31536000, immutable")
 	h.Set("Content-Length", strconv.Itoa(len(m.Data)))

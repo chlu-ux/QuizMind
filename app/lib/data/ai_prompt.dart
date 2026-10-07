@@ -63,8 +63,15 @@ const _system = '''你是一位耐心的备考辅导老师，正在帮学员讲�
 /// letters: the learner sees them shuffled, so a letter would not match.
 ///
 /// Pictures in the question appear as [图N]. [images] maps a picture's id to a `data:` URI; those
-/// found there are attached to the message, the rest are said to be missing.
-List<ChatMessage> buildExplainMessages(Question q, List<int> selected, {Map<String, String> images = const {}}) {
+/// found there are attached to the message, the rest are said to be missing. [diagrams] maps the id of an
+/// SVG picture to its source: models read SVG as text far better than they accept it as an image, so it
+/// is quoted in the message instead of being attached.
+List<ChatMessage> buildExplainMessages(
+  Question q,
+  List<int> selected, {
+  Map<String, String> images = const {},
+  Map<String, String> diagrams = const {},
+}) {
   final pictures = mediaIds([q.stem, ...q.options, q.explanation]).toList();
   String text(String s) => numberPictures(s, pictures);
   final options = [for (final o in q.options) text(o)];
@@ -80,12 +87,25 @@ List<ChatMessage> buildExplainMessages(Question q, List<int> selected, {Map<Stri
     b.writeln('- $o');
   }
   final attached = [for (final id in pictures) ?images[id]];
+  final drawn = [for (final id in pictures) if (diagrams.containsKey(id)) id];
   if (pictures.isNotEmpty) {
-    b
-      ..writeln()
-      ..writeln(attached.length == pictures.length
-          ? '题目含 ${pictures.length} 张图片（按 [图1]… 的顺序），已附在消息里。'
-          : '题目含图片 [图1]…[图${pictures.length}]，但图片内容没有提供给你。');
+    b.writeln();
+    if (attached.length + drawn.length == pictures.length) {
+      b.writeln('题目含 ${pictures.length} 张图片（按 [图1]… 的顺序），${[
+        if (attached.isNotEmpty) '位图已附在消息里',
+        if (drawn.isNotEmpty) '矢量图的 SVG 源码附在下面',
+      ].join('，')}。');
+    } else {
+      b.writeln('题目含图片 [图1]…[图${pictures.length}]，但有的图片内容没有提供给你。');
+    }
+    for (final id in drawn) {
+      b
+        ..writeln()
+        ..writeln('[图${pictures.indexOf(id) + 1}] 的 SVG 源码：')
+        ..writeln('```svg')
+        ..writeln(diagrams[id]!.trim())
+        ..writeln('```');
+    }
   }
   b
     ..writeln()

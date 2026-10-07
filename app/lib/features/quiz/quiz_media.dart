@@ -228,11 +228,7 @@ class _QuizImageState extends ConsumerState<QuizImage> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
               ),
-              child: Image.file(
-                file,
-                fit: BoxFit.contain,
-                errorBuilder: (_, _, _) => const Icon(Icons.broken_image_outlined),
-              ),
+              child: _PictureFile(file),
             ),
           ),
         );
@@ -252,6 +248,45 @@ class _QuizImageState extends ConsumerState<QuizImage> {
   );
 }
 
+/// A stored picture: an SVG diagram is drawn by the SVG renderer, anything else by the image decoder.
+/// Which one is told by the content, as on the server (a picture's id is a hash, not a file name).
+class _PictureFile extends StatefulWidget {
+  const _PictureFile(this.file, {this.fit = BoxFit.contain});
+
+  final File file;
+  final BoxFit fit;
+
+  @override
+  State<_PictureFile> createState() => _PictureFileState();
+}
+
+class _PictureFileState extends State<_PictureFile> {
+  late Future<bool> _svg = _sniff();
+
+  Future<bool> _sniff() async => isSvg(await widget.file.openRead(0, 2048).expand((c) => c).toList());
+
+  @override
+  void didUpdateWidget(_PictureFile old) {
+    super.didUpdateWidget(old);
+    if (old.file.path != widget.file.path) _svg = _sniff();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const broken = Icon(Icons.broken_image_outlined);
+    return FutureBuilder<bool>(
+      future: _svg,
+      builder: (context, snap) {
+        if (!snap.hasData) return const SizedBox(height: 40);
+        if (snap.data!) {
+          return SvgPicture.file(widget.file, fit: widget.fit, errorBuilder: (_, _, _) => broken);
+        }
+        return Image.file(widget.file, fit: widget.fit, errorBuilder: (_, _, _) => broken);
+      },
+    );
+  }
+}
+
 class _FullImage extends StatelessWidget {
   const _FullImage({required this.file, required this.alt});
 
@@ -266,7 +301,7 @@ class _FullImage extends StatelessWidget {
       body: Center(
         child: InteractiveViewer(
           maxScale: 8,
-          child: Container(color: Colors.white, child: Image.file(file)),
+          child: Container(color: Colors.white, child: _PictureFile(file, fit: BoxFit.fitWidth)),
         ),
       ),
     );
