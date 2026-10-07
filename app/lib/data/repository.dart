@@ -208,6 +208,45 @@ class Repository {
     return out;
   }
 
+  // ---- study text ----
+
+  /// The sections of a bank's study text in reading order (chapters as added, sections in document order).
+  Future<List<Lesson>> lessons(String bankId) => (db.select(db.lessons)
+        ..where((l) => l.bankId.equals(bankId))
+        ..orderBy([(l) => OrderingTerm.asc(l.documentOrder), (l) => OrderingTerm.asc(l.documentId), (l) => OrderingTerm.asc(l.seq)]))
+      .get();
+
+  Future<Lesson?> lesson(String id) => (db.select(db.lessons)..where((l) => l.id.equals(id))).getSingleOrNull();
+
+  /// The ids of the sections of [bankId] marked as read. Marks of sections the server no longer has are ignored.
+  Future<Set<String>> lessonReadIds(String bankId) async {
+    final q = db.select(db.lessonReads).join([
+      innerJoin(db.lessons, db.lessons.id.equalsExp(db.lessonReads.lessonId)),
+    ])
+      ..where(db.lessons.bankId.equals(bankId));
+    return {for (final r in await q.get()) r.read(db.lessonReads.lessonId)!};
+  }
+
+  /// How many sections the bank has and how many were read; (0, 0) when it has no study text.
+  Future<({int total, int read})> lessonSummary(String bankId) async {
+    final n = db.lessons.id.count();
+    final total = (await (db.selectOnly(db.lessons)
+              ..addColumns([n])
+              ..where(db.lessons.bankId.equals(bankId)))
+            .map((r) => r.read(n) ?? 0)
+            .getSingle());
+    return (total: total, read: total == 0 ? 0 : (await lessonReadIds(bankId)).length);
+  }
+
+  /// Marks a section read; reading it again keeps the first date.
+  Future<void> markLessonRead(Lesson lesson) => db.into(db.lessonReads).insert(
+        LessonReadsCompanion.insert(lessonId: lesson.id, bankId: lesson.bankId, readAt: _now()),
+        mode: InsertMode.insertOrIgnore,
+      );
+
+  Future<void> unmarkLessonRead(String lessonId) =>
+      (db.delete(db.lessonReads)..where((r) => r.lessonId.equals(lessonId))).go();
+
   // ---- exams ----
 
   ExamRecord _toRecord(ExamRow r) => ExamRecord(

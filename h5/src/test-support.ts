@@ -7,6 +7,8 @@ import type {
   ExamRecord,
   ExamsPage,
   FlagReason,
+  Lesson,
+  LessonsPage,
   Question,
   SessionDto,
   SessionsPage,
@@ -55,6 +57,12 @@ export class FakeApi implements QuizApi {
   private sessionSeq = 0
   /** Behave like a server from before progress sync existed (404). */
   sessionsUnsupported = false
+
+  /** The study text, as the server would hand it out; bump [lessonsVersion] after changing it. */
+  lessonList: Lesson[] = []
+  lessonsVersion = 1
+  lessonsUnsupported = false
+  lessonFetches = 0
 
   private check() {
     if (this.failWith) throw this.failWith
@@ -133,6 +141,13 @@ export class FakeApi implements QuizApi {
       if (have && have.dto.updated_at >= dto.updated_at) continue // last writer wins
       this.sessions.set(dto.scope, { dto, seq: ++this.sessionSeq })
     }
+  }
+  async lessons(version: number): Promise<LessonsPage> {
+    this.check()
+    if (this.lessonsUnsupported) throw new ApiError('not found', 404)
+    this.lessonFetches++
+    if (version === this.lessonsVersion) return { version, unchanged: true, items: [] }
+    return { version: this.lessonsVersion, unchanged: false, items: this.lessonList }
   }
   async flagQuestion(id: string, reason?: FlagReason) {
     this.check()

@@ -47,7 +47,7 @@ describe('database upgrade', () => {
   it('creates a fresh database at the latest version', async () => {
     const db = await openDb(`fresh-${Math.random()}`)
     expect([...db.objectStoreNames].sort()).toEqual(
-      ['attempts', 'banks', 'examDrafts', 'exams', 'flags', 'meta', 'questions', 'sessions', 'states'],
+      ['attempts', 'banks', 'examDrafts', 'exams', 'flags', 'lessonReads', 'lessons', 'meta', 'questions', 'sessions', 'states'],
     )
     db.close()
   })

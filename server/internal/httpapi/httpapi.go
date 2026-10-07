@@ -77,6 +77,7 @@ func New(svc *service.Service, hub *events.Hub, token string, static fs.FS, log 
 		// Pictures used by questions. Unauthenticated like the rest of practising; the ids are
 		// content hashes, and the answer to a question is never inside a picture's URL.
 		r.Get("/media/{id}", a.getMedia)
+		r.Get("/lessons", a.lessons)
 		r.Get("/sync/questions", a.syncQuestions)
 		r.Get("/sync/states", a.syncStatesDown)
 		r.Get("/sync/attempts", a.syncAttemptsDown)

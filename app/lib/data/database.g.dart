@@ -464,6 +464,18 @@ class $QuestionsTable extends Questions
     requiredDuringInsert: false,
     defaultValue: const Constant(0),
   );
+  static const VerificationMeta _chunkIdMeta = const VerificationMeta(
+    'chunkId',
+  );
+  @override
+  late final GeneratedColumn<String> chunkId = GeneratedColumn<String>(
+    'chunk_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _syncSeqMeta = const VerificationMeta(
     'syncSeq',
   );
@@ -503,6 +515,7 @@ class $QuestionsTable extends Questions
     documentId,
     documentTitle,
     documentOrder,
+    chunkId,
     syncSeq,
     hidden,
   ];
@@ -620,6 +633,12 @@ class $QuestionsTable extends Questions
         ),
       );
     }
+    if (data.containsKey('chunk_id')) {
+      context.handle(
+        _chunkIdMeta,
+        chunkId.isAcceptableOrUnknown(data['chunk_id']!, _chunkIdMeta),
+      );
+    }
     if (data.containsKey('sync_seq')) {
       context.handle(
         _syncSeqMeta,
@@ -695,6 +714,10 @@ class $QuestionsTable extends Questions
         DriftSqlType.int,
         data['${effectivePrefix}document_order'],
       )!,
+      chunkId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}chunk_id'],
+      )!,
       syncSeq: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}sync_seq'],
@@ -729,6 +752,10 @@ class Question extends DataClass implements Insertable<Question> {
   final String documentId;
   final String documentTitle;
   final int documentOrder;
+
+  /// The lesson (section of the study text) the question was generated from; empty for questions
+  /// synced before the server sent it.
+  final String chunkId;
   final int syncSeq;
   final bool hidden;
   const Question({
@@ -745,6 +772,7 @@ class Question extends DataClass implements Insertable<Question> {
     required this.documentId,
     required this.documentTitle,
     required this.documentOrder,
+    required this.chunkId,
     required this.syncSeq,
     required this.hidden,
   });
@@ -764,6 +792,7 @@ class Question extends DataClass implements Insertable<Question> {
     map['document_id'] = Variable<String>(documentId);
     map['document_title'] = Variable<String>(documentTitle);
     map['document_order'] = Variable<int>(documentOrder);
+    map['chunk_id'] = Variable<String>(chunkId);
     map['sync_seq'] = Variable<int>(syncSeq);
     map['hidden'] = Variable<bool>(hidden);
     return map;
@@ -784,6 +813,7 @@ class Question extends DataClass implements Insertable<Question> {
       documentId: Value(documentId),
       documentTitle: Value(documentTitle),
       documentOrder: Value(documentOrder),
+      chunkId: Value(chunkId),
       syncSeq: Value(syncSeq),
       hidden: Value(hidden),
     );
@@ -808,6 +838,7 @@ class Question extends DataClass implements Insertable<Question> {
       documentId: serializer.fromJson<String>(json['documentId']),
       documentTitle: serializer.fromJson<String>(json['documentTitle']),
       documentOrder: serializer.fromJson<int>(json['documentOrder']),
+      chunkId: serializer.fromJson<String>(json['chunkId']),
       syncSeq: serializer.fromJson<int>(json['syncSeq']),
       hidden: serializer.fromJson<bool>(json['hidden']),
     );
@@ -829,6 +860,7 @@ class Question extends DataClass implements Insertable<Question> {
       'documentId': serializer.toJson<String>(documentId),
       'documentTitle': serializer.toJson<String>(documentTitle),
       'documentOrder': serializer.toJson<int>(documentOrder),
+      'chunkId': serializer.toJson<String>(chunkId),
       'syncSeq': serializer.toJson<int>(syncSeq),
       'hidden': serializer.toJson<bool>(hidden),
     };
@@ -848,6 +880,7 @@ class Question extends DataClass implements Insertable<Question> {
     String? documentId,
     String? documentTitle,
     int? documentOrder,
+    String? chunkId,
     int? syncSeq,
     bool? hidden,
   }) => Question(
@@ -864,6 +897,7 @@ class Question extends DataClass implements Insertable<Question> {
     documentId: documentId ?? this.documentId,
     documentTitle: documentTitle ?? this.documentTitle,
     documentOrder: documentOrder ?? this.documentOrder,
+    chunkId: chunkId ?? this.chunkId,
     syncSeq: syncSeq ?? this.syncSeq,
     hidden: hidden ?? this.hidden,
   );
@@ -898,6 +932,7 @@ class Question extends DataClass implements Insertable<Question> {
       documentOrder: data.documentOrder.present
           ? data.documentOrder.value
           : this.documentOrder,
+      chunkId: data.chunkId.present ? data.chunkId.value : this.chunkId,
       syncSeq: data.syncSeq.present ? data.syncSeq.value : this.syncSeq,
       hidden: data.hidden.present ? data.hidden.value : this.hidden,
     );
@@ -919,6 +954,7 @@ class Question extends DataClass implements Insertable<Question> {
           ..write('documentId: $documentId, ')
           ..write('documentTitle: $documentTitle, ')
           ..write('documentOrder: $documentOrder, ')
+          ..write('chunkId: $chunkId, ')
           ..write('syncSeq: $syncSeq, ')
           ..write('hidden: $hidden')
           ..write(')'))
@@ -940,6 +976,7 @@ class Question extends DataClass implements Insertable<Question> {
     documentId,
     documentTitle,
     documentOrder,
+    chunkId,
     syncSeq,
     hidden,
   );
@@ -960,6 +997,7 @@ class Question extends DataClass implements Insertable<Question> {
           other.documentId == this.documentId &&
           other.documentTitle == this.documentTitle &&
           other.documentOrder == this.documentOrder &&
+          other.chunkId == this.chunkId &&
           other.syncSeq == this.syncSeq &&
           other.hidden == this.hidden);
 }
@@ -978,6 +1016,7 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
   final Value<String> documentId;
   final Value<String> documentTitle;
   final Value<int> documentOrder;
+  final Value<String> chunkId;
   final Value<int> syncSeq;
   final Value<bool> hidden;
   final Value<int> rowid;
@@ -995,6 +1034,7 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
     this.documentId = const Value.absent(),
     this.documentTitle = const Value.absent(),
     this.documentOrder = const Value.absent(),
+    this.chunkId = const Value.absent(),
     this.syncSeq = const Value.absent(),
     this.hidden = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1013,6 +1053,7 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
     this.documentId = const Value.absent(),
     this.documentTitle = const Value.absent(),
     this.documentOrder = const Value.absent(),
+    this.chunkId = const Value.absent(),
     required int syncSeq,
     this.hidden = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1037,6 +1078,7 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
     Expression<String>? documentId,
     Expression<String>? documentTitle,
     Expression<int>? documentOrder,
+    Expression<String>? chunkId,
     Expression<int>? syncSeq,
     Expression<bool>? hidden,
     Expression<int>? rowid,
@@ -1055,6 +1097,7 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
       if (documentId != null) 'document_id': documentId,
       if (documentTitle != null) 'document_title': documentTitle,
       if (documentOrder != null) 'document_order': documentOrder,
+      if (chunkId != null) 'chunk_id': chunkId,
       if (syncSeq != null) 'sync_seq': syncSeq,
       if (hidden != null) 'hidden': hidden,
       if (rowid != null) 'rowid': rowid,
@@ -1075,6 +1118,7 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
     Value<String>? documentId,
     Value<String>? documentTitle,
     Value<int>? documentOrder,
+    Value<String>? chunkId,
     Value<int>? syncSeq,
     Value<bool>? hidden,
     Value<int>? rowid,
@@ -1093,6 +1137,7 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
       documentId: documentId ?? this.documentId,
       documentTitle: documentTitle ?? this.documentTitle,
       documentOrder: documentOrder ?? this.documentOrder,
+      chunkId: chunkId ?? this.chunkId,
       syncSeq: syncSeq ?? this.syncSeq,
       hidden: hidden ?? this.hidden,
       rowid: rowid ?? this.rowid,
@@ -1141,6 +1186,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
     if (documentOrder.present) {
       map['document_order'] = Variable<int>(documentOrder.value);
     }
+    if (chunkId.present) {
+      map['chunk_id'] = Variable<String>(chunkId.value);
+    }
     if (syncSeq.present) {
       map['sync_seq'] = Variable<int>(syncSeq.value);
     }
@@ -1169,6 +1217,7 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
           ..write('documentId: $documentId, ')
           ..write('documentTitle: $documentTitle, ')
           ..write('documentOrder: $documentOrder, ')
+          ..write('chunkId: $chunkId, ')
           ..write('syncSeq: $syncSeq, ')
           ..write('hidden: $hidden, ')
           ..write('rowid: $rowid')
@@ -4227,6 +4276,790 @@ class AiNotesCompanion extends UpdateCompanion<AiNote> {
   }
 }
 
+class $LessonsTable extends Lessons with TableInfo<$LessonsTable, Lesson> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LessonsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bankIdMeta = const VerificationMeta('bankId');
+  @override
+  late final GeneratedColumn<String> bankId = GeneratedColumn<String>(
+    'bank_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _documentIdMeta = const VerificationMeta(
+    'documentId',
+  );
+  @override
+  late final GeneratedColumn<String> documentId = GeneratedColumn<String>(
+    'document_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _documentTitleMeta = const VerificationMeta(
+    'documentTitle',
+  );
+  @override
+  late final GeneratedColumn<String> documentTitle = GeneratedColumn<String>(
+    'document_title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _documentOrderMeta = const VerificationMeta(
+    'documentOrder',
+  );
+  @override
+  late final GeneratedColumn<int> documentOrder = GeneratedColumn<int>(
+    'document_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _seqMeta = const VerificationMeta('seq');
+  @override
+  late final GeneratedColumn<int> seq = GeneratedColumn<int>(
+    'seq',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _headingPathMeta = const VerificationMeta(
+    'headingPath',
+  );
+  @override
+  late final GeneratedColumn<String> headingPath = GeneratedColumn<String>(
+    'heading_path',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    bankId,
+    documentId,
+    documentTitle,
+    documentOrder,
+    seq,
+    headingPath,
+    body,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'lessons';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<Lesson> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('bank_id')) {
+      context.handle(
+        _bankIdMeta,
+        bankId.isAcceptableOrUnknown(data['bank_id']!, _bankIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bankIdMeta);
+    }
+    if (data.containsKey('document_id')) {
+      context.handle(
+        _documentIdMeta,
+        documentId.isAcceptableOrUnknown(data['document_id']!, _documentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_documentIdMeta);
+    }
+    if (data.containsKey('document_title')) {
+      context.handle(
+        _documentTitleMeta,
+        documentTitle.isAcceptableOrUnknown(
+          data['document_title']!,
+          _documentTitleMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_documentTitleMeta);
+    }
+    if (data.containsKey('document_order')) {
+      context.handle(
+        _documentOrderMeta,
+        documentOrder.isAcceptableOrUnknown(
+          data['document_order']!,
+          _documentOrderMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_documentOrderMeta);
+    }
+    if (data.containsKey('seq')) {
+      context.handle(
+        _seqMeta,
+        seq.isAcceptableOrUnknown(data['seq']!, _seqMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_seqMeta);
+    }
+    if (data.containsKey('heading_path')) {
+      context.handle(
+        _headingPathMeta,
+        headingPath.isAcceptableOrUnknown(
+          data['heading_path']!,
+          _headingPathMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_headingPathMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Lesson map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Lesson(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      bankId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank_id'],
+      )!,
+      documentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}document_id'],
+      )!,
+      documentTitle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}document_title'],
+      )!,
+      documentOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}document_order'],
+      )!,
+      seq: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}seq'],
+      )!,
+      headingPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}heading_path'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+    );
+  }
+
+  @override
+  $LessonsTable createAlias(String alias) {
+    return $LessonsTable(attachedDatabase, alias);
+  }
+}
+
+class Lesson extends DataClass implements Insertable<Lesson> {
+  final String id;
+  final String bankId;
+  final String documentId;
+  final String documentTitle;
+  final int documentOrder;
+  final int seq;
+  final String headingPath;
+  final String body;
+  const Lesson({
+    required this.id,
+    required this.bankId,
+    required this.documentId,
+    required this.documentTitle,
+    required this.documentOrder,
+    required this.seq,
+    required this.headingPath,
+    required this.body,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['bank_id'] = Variable<String>(bankId);
+    map['document_id'] = Variable<String>(documentId);
+    map['document_title'] = Variable<String>(documentTitle);
+    map['document_order'] = Variable<int>(documentOrder);
+    map['seq'] = Variable<int>(seq);
+    map['heading_path'] = Variable<String>(headingPath);
+    map['body'] = Variable<String>(body);
+    return map;
+  }
+
+  LessonsCompanion toCompanion(bool nullToAbsent) {
+    return LessonsCompanion(
+      id: Value(id),
+      bankId: Value(bankId),
+      documentId: Value(documentId),
+      documentTitle: Value(documentTitle),
+      documentOrder: Value(documentOrder),
+      seq: Value(seq),
+      headingPath: Value(headingPath),
+      body: Value(body),
+    );
+  }
+
+  factory Lesson.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Lesson(
+      id: serializer.fromJson<String>(json['id']),
+      bankId: serializer.fromJson<String>(json['bankId']),
+      documentId: serializer.fromJson<String>(json['documentId']),
+      documentTitle: serializer.fromJson<String>(json['documentTitle']),
+      documentOrder: serializer.fromJson<int>(json['documentOrder']),
+      seq: serializer.fromJson<int>(json['seq']),
+      headingPath: serializer.fromJson<String>(json['headingPath']),
+      body: serializer.fromJson<String>(json['body']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'bankId': serializer.toJson<String>(bankId),
+      'documentId': serializer.toJson<String>(documentId),
+      'documentTitle': serializer.toJson<String>(documentTitle),
+      'documentOrder': serializer.toJson<int>(documentOrder),
+      'seq': serializer.toJson<int>(seq),
+      'headingPath': serializer.toJson<String>(headingPath),
+      'body': serializer.toJson<String>(body),
+    };
+  }
+
+  Lesson copyWith({
+    String? id,
+    String? bankId,
+    String? documentId,
+    String? documentTitle,
+    int? documentOrder,
+    int? seq,
+    String? headingPath,
+    String? body,
+  }) => Lesson(
+    id: id ?? this.id,
+    bankId: bankId ?? this.bankId,
+    documentId: documentId ?? this.documentId,
+    documentTitle: documentTitle ?? this.documentTitle,
+    documentOrder: documentOrder ?? this.documentOrder,
+    seq: seq ?? this.seq,
+    headingPath: headingPath ?? this.headingPath,
+    body: body ?? this.body,
+  );
+  Lesson copyWithCompanion(LessonsCompanion data) {
+    return Lesson(
+      id: data.id.present ? data.id.value : this.id,
+      bankId: data.bankId.present ? data.bankId.value : this.bankId,
+      documentId: data.documentId.present
+          ? data.documentId.value
+          : this.documentId,
+      documentTitle: data.documentTitle.present
+          ? data.documentTitle.value
+          : this.documentTitle,
+      documentOrder: data.documentOrder.present
+          ? data.documentOrder.value
+          : this.documentOrder,
+      seq: data.seq.present ? data.seq.value : this.seq,
+      headingPath: data.headingPath.present
+          ? data.headingPath.value
+          : this.headingPath,
+      body: data.body.present ? data.body.value : this.body,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Lesson(')
+          ..write('id: $id, ')
+          ..write('bankId: $bankId, ')
+          ..write('documentId: $documentId, ')
+          ..write('documentTitle: $documentTitle, ')
+          ..write('documentOrder: $documentOrder, ')
+          ..write('seq: $seq, ')
+          ..write('headingPath: $headingPath, ')
+          ..write('body: $body')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    bankId,
+    documentId,
+    documentTitle,
+    documentOrder,
+    seq,
+    headingPath,
+    body,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Lesson &&
+          other.id == this.id &&
+          other.bankId == this.bankId &&
+          other.documentId == this.documentId &&
+          other.documentTitle == this.documentTitle &&
+          other.documentOrder == this.documentOrder &&
+          other.seq == this.seq &&
+          other.headingPath == this.headingPath &&
+          other.body == this.body);
+}
+
+class LessonsCompanion extends UpdateCompanion<Lesson> {
+  final Value<String> id;
+  final Value<String> bankId;
+  final Value<String> documentId;
+  final Value<String> documentTitle;
+  final Value<int> documentOrder;
+  final Value<int> seq;
+  final Value<String> headingPath;
+  final Value<String> body;
+  final Value<int> rowid;
+  const LessonsCompanion({
+    this.id = const Value.absent(),
+    this.bankId = const Value.absent(),
+    this.documentId = const Value.absent(),
+    this.documentTitle = const Value.absent(),
+    this.documentOrder = const Value.absent(),
+    this.seq = const Value.absent(),
+    this.headingPath = const Value.absent(),
+    this.body = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LessonsCompanion.insert({
+    required String id,
+    required String bankId,
+    required String documentId,
+    required String documentTitle,
+    required int documentOrder,
+    required int seq,
+    required String headingPath,
+    required String body,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       bankId = Value(bankId),
+       documentId = Value(documentId),
+       documentTitle = Value(documentTitle),
+       documentOrder = Value(documentOrder),
+       seq = Value(seq),
+       headingPath = Value(headingPath),
+       body = Value(body);
+  static Insertable<Lesson> custom({
+    Expression<String>? id,
+    Expression<String>? bankId,
+    Expression<String>? documentId,
+    Expression<String>? documentTitle,
+    Expression<int>? documentOrder,
+    Expression<int>? seq,
+    Expression<String>? headingPath,
+    Expression<String>? body,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (bankId != null) 'bank_id': bankId,
+      if (documentId != null) 'document_id': documentId,
+      if (documentTitle != null) 'document_title': documentTitle,
+      if (documentOrder != null) 'document_order': documentOrder,
+      if (seq != null) 'seq': seq,
+      if (headingPath != null) 'heading_path': headingPath,
+      if (body != null) 'body': body,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LessonsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? bankId,
+    Value<String>? documentId,
+    Value<String>? documentTitle,
+    Value<int>? documentOrder,
+    Value<int>? seq,
+    Value<String>? headingPath,
+    Value<String>? body,
+    Value<int>? rowid,
+  }) {
+    return LessonsCompanion(
+      id: id ?? this.id,
+      bankId: bankId ?? this.bankId,
+      documentId: documentId ?? this.documentId,
+      documentTitle: documentTitle ?? this.documentTitle,
+      documentOrder: documentOrder ?? this.documentOrder,
+      seq: seq ?? this.seq,
+      headingPath: headingPath ?? this.headingPath,
+      body: body ?? this.body,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (bankId.present) {
+      map['bank_id'] = Variable<String>(bankId.value);
+    }
+    if (documentId.present) {
+      map['document_id'] = Variable<String>(documentId.value);
+    }
+    if (documentTitle.present) {
+      map['document_title'] = Variable<String>(documentTitle.value);
+    }
+    if (documentOrder.present) {
+      map['document_order'] = Variable<int>(documentOrder.value);
+    }
+    if (seq.present) {
+      map['seq'] = Variable<int>(seq.value);
+    }
+    if (headingPath.present) {
+      map['heading_path'] = Variable<String>(headingPath.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LessonsCompanion(')
+          ..write('id: $id, ')
+          ..write('bankId: $bankId, ')
+          ..write('documentId: $documentId, ')
+          ..write('documentTitle: $documentTitle, ')
+          ..write('documentOrder: $documentOrder, ')
+          ..write('seq: $seq, ')
+          ..write('headingPath: $headingPath, ')
+          ..write('body: $body, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LessonReadsTable extends LessonReads
+    with TableInfo<$LessonReadsTable, LessonRead> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LessonReadsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _lessonIdMeta = const VerificationMeta(
+    'lessonId',
+  );
+  @override
+  late final GeneratedColumn<String> lessonId = GeneratedColumn<String>(
+    'lesson_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bankIdMeta = const VerificationMeta('bankId');
+  @override
+  late final GeneratedColumn<String> bankId = GeneratedColumn<String>(
+    'bank_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _readAtMeta = const VerificationMeta('readAt');
+  @override
+  late final GeneratedColumn<int> readAt = GeneratedColumn<int>(
+    'read_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [lessonId, bankId, readAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'lesson_reads';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LessonRead> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('lesson_id')) {
+      context.handle(
+        _lessonIdMeta,
+        lessonId.isAcceptableOrUnknown(data['lesson_id']!, _lessonIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_lessonIdMeta);
+    }
+    if (data.containsKey('bank_id')) {
+      context.handle(
+        _bankIdMeta,
+        bankId.isAcceptableOrUnknown(data['bank_id']!, _bankIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bankIdMeta);
+    }
+    if (data.containsKey('read_at')) {
+      context.handle(
+        _readAtMeta,
+        readAt.isAcceptableOrUnknown(data['read_at']!, _readAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_readAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {lessonId};
+  @override
+  LessonRead map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LessonRead(
+      lessonId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lesson_id'],
+      )!,
+      bankId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank_id'],
+      )!,
+      readAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}read_at'],
+      )!,
+    );
+  }
+
+  @override
+  $LessonReadsTable createAlias(String alias) {
+    return $LessonReadsTable(attachedDatabase, alias);
+  }
+}
+
+class LessonRead extends DataClass implements Insertable<LessonRead> {
+  final String lessonId;
+  final String bankId;
+  final int readAt;
+  const LessonRead({
+    required this.lessonId,
+    required this.bankId,
+    required this.readAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['lesson_id'] = Variable<String>(lessonId);
+    map['bank_id'] = Variable<String>(bankId);
+    map['read_at'] = Variable<int>(readAt);
+    return map;
+  }
+
+  LessonReadsCompanion toCompanion(bool nullToAbsent) {
+    return LessonReadsCompanion(
+      lessonId: Value(lessonId),
+      bankId: Value(bankId),
+      readAt: Value(readAt),
+    );
+  }
+
+  factory LessonRead.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LessonRead(
+      lessonId: serializer.fromJson<String>(json['lessonId']),
+      bankId: serializer.fromJson<String>(json['bankId']),
+      readAt: serializer.fromJson<int>(json['readAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'lessonId': serializer.toJson<String>(lessonId),
+      'bankId': serializer.toJson<String>(bankId),
+      'readAt': serializer.toJson<int>(readAt),
+    };
+  }
+
+  LessonRead copyWith({String? lessonId, String? bankId, int? readAt}) =>
+      LessonRead(
+        lessonId: lessonId ?? this.lessonId,
+        bankId: bankId ?? this.bankId,
+        readAt: readAt ?? this.readAt,
+      );
+  LessonRead copyWithCompanion(LessonReadsCompanion data) {
+    return LessonRead(
+      lessonId: data.lessonId.present ? data.lessonId.value : this.lessonId,
+      bankId: data.bankId.present ? data.bankId.value : this.bankId,
+      readAt: data.readAt.present ? data.readAt.value : this.readAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LessonRead(')
+          ..write('lessonId: $lessonId, ')
+          ..write('bankId: $bankId, ')
+          ..write('readAt: $readAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(lessonId, bankId, readAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LessonRead &&
+          other.lessonId == this.lessonId &&
+          other.bankId == this.bankId &&
+          other.readAt == this.readAt);
+}
+
+class LessonReadsCompanion extends UpdateCompanion<LessonRead> {
+  final Value<String> lessonId;
+  final Value<String> bankId;
+  final Value<int> readAt;
+  final Value<int> rowid;
+  const LessonReadsCompanion({
+    this.lessonId = const Value.absent(),
+    this.bankId = const Value.absent(),
+    this.readAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LessonReadsCompanion.insert({
+    required String lessonId,
+    required String bankId,
+    required int readAt,
+    this.rowid = const Value.absent(),
+  }) : lessonId = Value(lessonId),
+       bankId = Value(bankId),
+       readAt = Value(readAt);
+  static Insertable<LessonRead> custom({
+    Expression<String>? lessonId,
+    Expression<String>? bankId,
+    Expression<int>? readAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (lessonId != null) 'lesson_id': lessonId,
+      if (bankId != null) 'bank_id': bankId,
+      if (readAt != null) 'read_at': readAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LessonReadsCompanion copyWith({
+    Value<String>? lessonId,
+    Value<String>? bankId,
+    Value<int>? readAt,
+    Value<int>? rowid,
+  }) {
+    return LessonReadsCompanion(
+      lessonId: lessonId ?? this.lessonId,
+      bankId: bankId ?? this.bankId,
+      readAt: readAt ?? this.readAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (lessonId.present) {
+      map['lesson_id'] = Variable<String>(lessonId.value);
+    }
+    if (bankId.present) {
+      map['bank_id'] = Variable<String>(bankId.value);
+    }
+    if (readAt.present) {
+      map['read_at'] = Variable<int>(readAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LessonReadsCompanion(')
+          ..write('lessonId: $lessonId, ')
+          ..write('bankId: $bankId, ')
+          ..write('readAt: $readAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -4239,6 +5072,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ExamsTable exams = $ExamsTable(this);
   late final $ExamDraftsTable examDrafts = $ExamDraftsTable(this);
   late final $AiNotesTable aiNotes = $AiNotesTable(this);
+  late final $LessonsTable lessons = $LessonsTable(this);
+  late final $LessonReadsTable lessonReads = $LessonReadsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4253,6 +5088,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     exams,
     examDrafts,
     aiNotes,
+    lessons,
+    lessonReads,
   ];
 }
 
@@ -4455,6 +5292,7 @@ typedef $$QuestionsTableCreateCompanionBuilder = QuestionsCompanion Function({
   Value<String> documentId,
   Value<String> documentTitle,
   Value<int> documentOrder,
+  Value<String> chunkId,
   required int syncSeq,
   Value<bool> hidden,
   Value<int> rowid,
@@ -4473,6 +5311,7 @@ typedef $$QuestionsTableUpdateCompanionBuilder = QuestionsCompanion Function({
   Value<String> documentId,
   Value<String> documentTitle,
   Value<int> documentOrder,
+  Value<String> chunkId,
   Value<int> syncSeq,
   Value<bool> hidden,
   Value<int> rowid,
@@ -4549,6 +5388,11 @@ class $$QuestionsTableFilterComposer
 
   ColumnFilters<int> get documentOrder => $composableBuilder(
     column: $table.documentOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get chunkId => $composableBuilder(
+    column: $table.chunkId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -4637,6 +5481,11 @@ class $$QuestionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get chunkId => $composableBuilder(
+    column: $table.chunkId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get syncSeq => $composableBuilder(
     column: $table.syncSeq,
     builder: (column) => ColumnOrderings(column),
@@ -4712,6 +5561,9 @@ class $$QuestionsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get chunkId =>
+      $composableBuilder(column: $table.chunkId, builder: (column) => column);
+
   GeneratedColumn<int> get syncSeq =>
       $composableBuilder(column: $table.syncSeq, builder: (column) => column);
 
@@ -4760,6 +5612,7 @@ class $$QuestionsTableTableManager
                 Value<String> documentId = const Value.absent(),
                 Value<String> documentTitle = const Value.absent(),
                 Value<int> documentOrder = const Value.absent(),
+                Value<String> chunkId = const Value.absent(),
                 Value<int> syncSeq = const Value.absent(),
                 Value<bool> hidden = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -4777,6 +5630,7 @@ class $$QuestionsTableTableManager
                 documentId: documentId,
                 documentTitle: documentTitle,
                 documentOrder: documentOrder,
+                chunkId: chunkId,
                 syncSeq: syncSeq,
                 hidden: hidden,
                 rowid: rowid,
@@ -4796,6 +5650,7 @@ class $$QuestionsTableTableManager
                 Value<String> documentId = const Value.absent(),
                 Value<String> documentTitle = const Value.absent(),
                 Value<int> documentOrder = const Value.absent(),
+                Value<String> chunkId = const Value.absent(),
                 required int syncSeq,
                 Value<bool> hidden = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -4813,6 +5668,7 @@ class $$QuestionsTableTableManager
                 documentId: documentId,
                 documentTitle: documentTitle,
                 documentOrder: documentOrder,
+                chunkId: chunkId,
                 syncSeq: syncSeq,
                 hidden: hidden,
                 rowid: rowid,
@@ -6486,6 +7342,443 @@ typedef $$AiNotesTableProcessedTableManager =
       AiNote,
       PrefetchHooks Function()
     >;
+typedef $$LessonsTableCreateCompanionBuilder = LessonsCompanion Function({
+  required String id,
+  required String bankId,
+  required String documentId,
+  required String documentTitle,
+  required int documentOrder,
+  required int seq,
+  required String headingPath,
+  required String body,
+  Value<int> rowid,
+});
+typedef $$LessonsTableUpdateCompanionBuilder = LessonsCompanion Function({
+  Value<String> id,
+  Value<String> bankId,
+  Value<String> documentId,
+  Value<String> documentTitle,
+  Value<int> documentOrder,
+  Value<int> seq,
+  Value<String> headingPath,
+  Value<String> body,
+  Value<int> rowid,
+});
+
+class $$LessonsTableFilterComposer
+    extends Composer<_$AppDatabase, $LessonsTable> {
+  $$LessonsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bankId => $composableBuilder(
+    column: $table.bankId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get documentId => $composableBuilder(
+    column: $table.documentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get documentTitle => $composableBuilder(
+    column: $table.documentTitle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get documentOrder => $composableBuilder(
+    column: $table.documentOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get seq => $composableBuilder(
+    column: $table.seq,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get headingPath => $composableBuilder(
+    column: $table.headingPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LessonsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LessonsTable> {
+  $$LessonsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bankId => $composableBuilder(
+    column: $table.bankId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get documentId => $composableBuilder(
+    column: $table.documentId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get documentTitle => $composableBuilder(
+    column: $table.documentTitle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get documentOrder => $composableBuilder(
+    column: $table.documentOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get seq => $composableBuilder(
+    column: $table.seq,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get headingPath => $composableBuilder(
+    column: $table.headingPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LessonsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LessonsTable> {
+  $$LessonsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get bankId =>
+      $composableBuilder(column: $table.bankId, builder: (column) => column);
+
+  GeneratedColumn<String> get documentId => $composableBuilder(
+    column: $table.documentId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get documentTitle => $composableBuilder(
+    column: $table.documentTitle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get documentOrder => $composableBuilder(
+    column: $table.documentOrder,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get seq =>
+      $composableBuilder(column: $table.seq, builder: (column) => column);
+
+  GeneratedColumn<String> get headingPath => $composableBuilder(
+    column: $table.headingPath,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+}
+
+class $$LessonsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LessonsTable,
+          Lesson,
+          $$LessonsTableFilterComposer,
+          $$LessonsTableOrderingComposer,
+          $$LessonsTableAnnotationComposer,
+          $$LessonsTableCreateCompanionBuilder,
+          $$LessonsTableUpdateCompanionBuilder,
+          (Lesson, BaseReferences<_$AppDatabase, $LessonsTable, Lesson>),
+          Lesson,
+          PrefetchHooks Function()
+        > {
+  $$LessonsTableTableManager(_$AppDatabase db, $LessonsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LessonsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LessonsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LessonsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> bankId = const Value.absent(),
+                Value<String> documentId = const Value.absent(),
+                Value<String> documentTitle = const Value.absent(),
+                Value<int> documentOrder = const Value.absent(),
+                Value<int> seq = const Value.absent(),
+                Value<String> headingPath = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LessonsCompanion(
+                id: id,
+                bankId: bankId,
+                documentId: documentId,
+                documentTitle: documentTitle,
+                documentOrder: documentOrder,
+                seq: seq,
+                headingPath: headingPath,
+                body: body,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String bankId,
+                required String documentId,
+                required String documentTitle,
+                required int documentOrder,
+                required int seq,
+                required String headingPath,
+                required String body,
+                Value<int> rowid = const Value.absent(),
+              }) => LessonsCompanion.insert(
+                id: id,
+                bankId: bankId,
+                documentId: documentId,
+                documentTitle: documentTitle,
+                documentOrder: documentOrder,
+                seq: seq,
+                headingPath: headingPath,
+                body: body,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$LessonsTable, Lesson>(table),
+                  BaseReferences<_$AppDatabase, $LessonsTable, Lesson>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LessonsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LessonsTable,
+      Lesson,
+      $$LessonsTableFilterComposer,
+      $$LessonsTableOrderingComposer,
+      $$LessonsTableAnnotationComposer,
+      $$LessonsTableCreateCompanionBuilder,
+      $$LessonsTableUpdateCompanionBuilder,
+      (Lesson, BaseReferences<_$AppDatabase, $LessonsTable, Lesson>),
+      Lesson,
+      PrefetchHooks Function()
+    >;
+typedef $$LessonReadsTableCreateCompanionBuilder =
+    LessonReadsCompanion Function({
+      required String lessonId,
+      required String bankId,
+      required int readAt,
+      Value<int> rowid,
+    });
+typedef $$LessonReadsTableUpdateCompanionBuilder =
+    LessonReadsCompanion Function({
+      Value<String> lessonId,
+      Value<String> bankId,
+      Value<int> readAt,
+      Value<int> rowid,
+    });
+
+class $$LessonReadsTableFilterComposer
+    extends Composer<_$AppDatabase, $LessonReadsTable> {
+  $$LessonReadsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get lessonId => $composableBuilder(
+    column: $table.lessonId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bankId => $composableBuilder(
+    column: $table.bankId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get readAt => $composableBuilder(
+    column: $table.readAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$LessonReadsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LessonReadsTable> {
+  $$LessonReadsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get lessonId => $composableBuilder(
+    column: $table.lessonId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bankId => $composableBuilder(
+    column: $table.bankId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get readAt => $composableBuilder(
+    column: $table.readAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$LessonReadsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LessonReadsTable> {
+  $$LessonReadsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get lessonId =>
+      $composableBuilder(column: $table.lessonId, builder: (column) => column);
+
+  GeneratedColumn<String> get bankId =>
+      $composableBuilder(column: $table.bankId, builder: (column) => column);
+
+  GeneratedColumn<int> get readAt =>
+      $composableBuilder(column: $table.readAt, builder: (column) => column);
+}
+
+class $$LessonReadsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LessonReadsTable,
+          LessonRead,
+          $$LessonReadsTableFilterComposer,
+          $$LessonReadsTableOrderingComposer,
+          $$LessonReadsTableAnnotationComposer,
+          $$LessonReadsTableCreateCompanionBuilder,
+          $$LessonReadsTableUpdateCompanionBuilder,
+          (
+            LessonRead,
+            BaseReferences<_$AppDatabase, $LessonReadsTable, LessonRead>,
+          ),
+          LessonRead,
+          PrefetchHooks Function()
+        > {
+  $$LessonReadsTableTableManager(_$AppDatabase db, $LessonReadsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LessonReadsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LessonReadsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LessonReadsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> lessonId = const Value.absent(),
+                Value<String> bankId = const Value.absent(),
+                Value<int> readAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LessonReadsCompanion(
+                lessonId: lessonId,
+                bankId: bankId,
+                readAt: readAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String lessonId,
+                required String bankId,
+                required int readAt,
+                Value<int> rowid = const Value.absent(),
+              }) => LessonReadsCompanion.insert(
+                lessonId: lessonId,
+                bankId: bankId,
+                readAt: readAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$LessonReadsTable, LessonRead>(table),
+                  BaseReferences<_$AppDatabase, $LessonReadsTable, LessonRead>(
+                    db,
+                    table,
+                    e,
+                  ),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$LessonReadsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LessonReadsTable,
+      LessonRead,
+      $$LessonReadsTableFilterComposer,
+      $$LessonReadsTableOrderingComposer,
+      $$LessonReadsTableAnnotationComposer,
+      $$LessonReadsTableCreateCompanionBuilder,
+      $$LessonReadsTableUpdateCompanionBuilder,
+      (
+        LessonRead,
+        BaseReferences<_$AppDatabase, $LessonReadsTable, LessonRead>,
+      ),
+      LessonRead,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -6508,4 +7801,8 @@ class $AppDatabaseManager {
       $$ExamDraftsTableTableManager(_db, _db.examDrafts);
   $$AiNotesTableTableManager get aiNotes =>
       $$AiNotesTableTableManager(_db, _db.aiNotes);
+  $$LessonsTableTableManager get lessons =>
+      $$LessonsTableTableManager(_db, _db.lessons);
+  $$LessonReadsTableTableManager get lessonReads =>
+      $$LessonReadsTableTableManager(_db, _db.lessonReads);
 }

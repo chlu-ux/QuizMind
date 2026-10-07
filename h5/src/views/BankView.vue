@@ -16,6 +16,8 @@ const stats = ref<BankStats | null>(null)
 const saved = ref<SessionData | null>(null)
 const examInProgress = ref(false)
 const wrongCount = ref(0)
+// How much of the bank's study text exists and has been read; total 0 = there is none.
+const lessonSummary = ref({ total: 0, read: 0 })
 const loaded = ref(false)
 // Where 按顺序刷题 left off (0-based place in the bank's order), if anywhere.
 const seqIndex = ref<number | null>(null)
@@ -27,6 +29,7 @@ async function load() {
   saved.value = await repo.savedSession(props.id)
   examInProgress.value = !!(await repo.examDraft(props.id))
   wrongCount.value = (await repo.wrongBook(props.id)).length
+  lessonSummary.value = await repo.lessonSummary(props.id)
   const seqId = sequentialPosition(props.id)
   const at = seqId ? (await repo.bankQuestions(props.id)).findIndex((q) => q.id === seqId) : -1
   seqIndex.value = at > 0 ? at : null
@@ -86,6 +89,9 @@ async function resume() {
         <div class="bar"><div class="fill" :style="{ width: progress + '%' }" /></div>
       </div>
       <div class="stack">
+        <button v-if="lessonSummary.total" class="btn block" @click="router.push(`/bank/${props.id}/learn`)">
+          📖 先学后练 · 讲义 {{ lessonSummary.read }} / {{ lessonSummary.total }} 节已读
+        </button>
         <template v-if="saved">
           <button class="btn primary block" @click="resume">
             ▶ 继续上一轮 · 第 {{ saved.index + 1 }} / {{ saved.ids.length }} 题（本轮已答 {{ Object.keys(saved.answers).length }}）

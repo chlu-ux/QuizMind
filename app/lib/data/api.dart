@@ -35,6 +35,10 @@ abstract class QuizApi {
   Future<SessionsPage> syncSessions({required int since, int limit = 100});
   Future<void> uploadSessions(List<SessionDto> sessions);
 
+  /// The study text of every bank. [version] is the one the app holds: when it is current the answer has
+  /// `unchanged` set and no sections. Servers older than lessons answer 404.
+  Future<LessonsPage> lessons({required int version});
+
   /// Reports a question. The reason is optional on the server: one from before reasons existed ignores it.
   Future<void> flagQuestion(String id, {String? reason});
 
@@ -138,6 +142,12 @@ class HttpQuizApi implements QuizApi {
   @override
   Future<void> uploadSessions(List<SessionDto> sessions) =>
       _call(() => _dio.post('/api/v1/sync/sessions', data: sessions.map((s) => s.toJson()).toList()), (_) {});
+
+  @override
+  Future<LessonsPage> lessons({required int version}) => _call(
+        () => _dio.get('/api/v1/lessons', queryParameters: {'version': version}),
+        (d) => LessonsPage.fromJson(d as Map<String, dynamic>),
+      );
 
   @override
   Future<void> flagQuestion(String id, {String? reason}) => _call(

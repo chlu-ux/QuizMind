@@ -141,7 +141,7 @@ func TestMigration_BackfillsAttemptSyncSeq(t *testing.T) {
 		`DROP INDEX idx_attempt_sync`,
 		`ALTER TABLE attempt DROP COLUMN sync_seq`,
 		`ALTER TABLE attempt DROP COLUMN review_ms`,
-		`DELETE FROM goose_db_version WHERE version_id IN (4, 5, 6, 7, 8, 9, 10)`,
+		`DELETE FROM goose_db_version WHERE version_id IN (4, 5, 6, 7, 8, 9, 10, 11)`,
 		`UPDATE sync_counter SET value = 10 WHERE id = 1`,
 		`INSERT INTO attempt (id, question_id, device_id, answer, is_correct, answered_at, received_at) VALUES
 		   ('B', 'q', 'd', '[0]', 1, 1, 200), ('A', 'q', 'd', '[0]', 1, 1, 100), ('C', 'q', 'd', '[0]', 0, 1, 200)`,
@@ -170,15 +170,16 @@ func TestMigration_BackfillsAttemptSyncSeq(t *testing.T) {
 	assert.Equal(t, 13, counter, "new rows continue after the backfill")
 }
 
-// Questions gain a document (module) in the sync payload, which devices only see by pulling them
-// again: the migration moves every synced question's sync_seq past the counter, keeping its old order.
+// Questions gain a document (module) in the sync payload (00009) and later their chunk (00011), which
+// devices only see by pulling them again: each migration moves every synced question's sync_seq past
+// the counter, keeping its old order. Both run here, so the numbers are shifted twice.
 func TestMigration_RenumbersQuestionsForModuleSync(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "app.db")
 	d, err := db.Open(path)
 	require.NoError(t, err)
 	for _, stmt := range []string{
 		`DROP TABLE media`,
-		`DELETE FROM goose_db_version WHERE version_id IN (9, 10)`,
+		`DELETE FROM goose_db_version WHERE version_id IN (9, 10, 11)`,
 		`UPDATE sync_counter SET value = 100 WHERE id = 1`,
 		`INSERT INTO bank (id, title, created_at) VALUES ('b', 't', 1)`,
 		`INSERT INTO question (id, bank_id, type, stem, answer, source_quote, status, content_hash, sync_seq, created_at, updated_at) VALUES
@@ -205,11 +206,12 @@ func TestMigration_RenumbersQuestionsForModuleSync(t *testing.T) {
 		got[id] = seq
 	}
 	require.NoError(t, rows.Err())
-	assert.Equal(t, int64(103), got["q1"].Int64)
-	assert.Equal(t, int64(107), got["q2"].Int64, "the old order is kept")
-	assert.Equal(t, int64(109), got["q3"].Int64, "withdrawn questions are re-announced too")
+	// 00009 adds the counter (100): 103, 107, 109 and the counter becomes 109; 00011 adds 109 again.
+	assert.Equal(t, int64(212), got["q1"].Int64)
+	assert.Equal(t, int64(216), got["q2"].Int64, "the old order is kept")
+	assert.Equal(t, int64(218), got["q3"].Int64, "withdrawn questions are re-announced too")
 	assert.False(t, got["q4"].Valid, "a question that was never synced stays unsynced")
 	var counter int
 	require.NoError(t, d.Read.QueryRow(`SELECT value FROM sync_counter WHERE id = 1`).Scan(&counter))
-	assert.Equal(t, 109, counter, "new rows continue after the renumbered ones")
+	assert.Equal(t, 218, counter, "new rows continue after the renumbered ones")
 }

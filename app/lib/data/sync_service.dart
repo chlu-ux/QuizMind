@@ -21,6 +21,7 @@ class SyncReport {
     this.examsUploaded = 0,
     this.examsPulled = 0,
     this.sessionsPulled = 0,
+    this.lessonsPulled = 0,
     this.notesUploaded = 0,
     this.notesPulled = 0,
     this.picturesDownloaded = 0,
@@ -41,6 +42,9 @@ class SyncReport {
 
   /// Saved quizzes taken from another device.
   final int sessionsPulled;
+
+  /// Sections of the study text downloaded; 0 when it had not changed.
+  final int lessonsPulled;
 
   /// AI explanations sent to / taken from the server.
   final int notesUploaded;
@@ -63,6 +67,7 @@ class SyncReport {
       if (attemptsPulled > 0) '同步了其他设备的 $attemptsPulled 条作答',
       if (examsPulled > 0) '同步了 $examsPulled 场考试',
       if (sessionsPulled > 0) '同步了 $sessionsPulled 个题库的刷题进度',
+      if (lessonsPulled > 0) '更新了讲义（$lessonsPulled 节）',
       if (notesUploaded > 0) '上传 $notesUploaded 条 AI 解读',
       if (notesPulled > 0) '同步了 $notesPulled 条 AI 解读',
       if (picturesDownloaded > 0) '下载了 $picturesDownloaded 张题目配图',
@@ -98,6 +103,7 @@ class SyncService {
   static const attemptCursor = 'attempt_seq';
   static const examCursor = 'exam_seq';
   static const noteCursor = 'note_seq';
+  static const lessonsVersion = 'lessons_version';
   static const lastSyncAt = 'last_sync_at';
   static const _batch = 500;
 
@@ -126,6 +132,7 @@ class SyncService {
     final sessionsDown = await _pullSessions();
     final attemptsDown = await _pullAttempts();
     final examsDown = await _pullExams();
+    final lessonsDown = await _pullLessons();
     final notesDown = await _pullNotes();
     final ai = await _fetchAiConfig();
     await _replaceBanks(banks);
@@ -141,6 +148,7 @@ class SyncService {
       examsUploaded: examsUp,
       examsPulled: examsDown,
       sessionsPulled: sessionsDown,
+      lessonsPulled: lessonsDown,
       notesUploaded: notesUp,
       notesPulled: notesDown,
       picturesDownloaded: pictures,
@@ -158,8 +166,10 @@ class SyncService {
       final rows = await (db.select(db.questions)
             ..where((q) => q.hidden.equals(false) & (q.stem.like('%(media:%') | q.optionsJson.like('%(media:%') | q.explanation.like('%(media:%'))))
           .get();
+      final lessons = await (db.select(db.lessons)..where((l) => l.body.like('%(media:%'))).get();
       final ids = mediaIds([
         for (final q in rows) ...[q.stem, q.optionsJson, q.explanation],
+        for (final l in lessons) l.body,
       ]);
       return await store.prefetch(ids);
     } catch (_) {
@@ -412,6 +422,37 @@ class SyncService {
     }
   }
 
+  /// The study text is small and rarely changes, so it is fetched whole whenever the server's version
+  /// differs from ours and replaces what we had. Returns how many sections came down. A server from
+  /// before lessons (404) simply has nothing to read.
+  Future<int> _pullLessons() async {
+    try {
+      final page = await api.lessons(version: await _meta(lessonsVersion));
+      if (page.unchanged) return 0;
+      await db.transaction(() async {
+        await db.delete(db.lessons).go();
+        await db.batch((b) => b.insertAll(db.lessons, [
+              for (final l in page.items)
+                LessonsCompanion.insert(
+                  id: l.id,
+                  bankId: l.bankId,
+                  documentId: l.documentId,
+                  documentTitle: l.documentTitle,
+                  documentOrder: l.documentOrder,
+                  seq: l.seq,
+                  headingPath: l.headingPath,
+                  body: l.text,
+                ),
+            ]));
+        await _setMeta(lessonsVersion, page.version);
+      });
+      return page.items.length;
+    } on ApiException catch (e) {
+      if (!_unsupported(e)) rethrow;
+      return 0;
+    }
+  }
+
   /// Last-writer-wins on updated_at, so a newer local quiz survives the pull.
   /// Returns how many saved quizzes were taken from the server.
   Future<int> _pullSessions() async {
@@ -553,6 +594,7 @@ class SyncService {
                 documentId: Value(q.documentId),
                 documentTitle: Value(q.documentTitle),
                 documentOrder: Value(q.documentOrder),
+                chunkId: Value(q.chunkId),
                 syncSeq: q.syncSeq,
                 hidden: const Value(false),
               ));

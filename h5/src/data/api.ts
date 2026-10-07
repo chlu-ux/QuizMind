@@ -5,6 +5,7 @@ import type {
   ExamRecord,
   ExamsPage,
   FlagReason,
+  LessonsPage,
   QuestionsPage,
   SessionDto,
   SessionsPage,
@@ -37,6 +38,11 @@ export interface QuizApi {
   /** Saved quizzes. A server from before the feature answers 404, which callers treat as "not supported". */
   syncSessions(since: number, limit?: number): Promise<SessionsPage>
   uploadSessions(sessions: SessionDto[]): Promise<void>
+  /**
+   * The study text of every bank. [version] is the one the app already holds: when it is current
+   * the answer has `unchanged` set and no sections. A server from before lessons answers 404.
+   */
+  lessons(version: number): Promise<LessonsPage>
   /** The reason is optional on the server: one from before reasons existed ignores it. */
   flagQuestion(id: string, reason?: FlagReason): Promise<void>
 }
@@ -106,6 +112,9 @@ export class HttpApi implements QuizApi {
   }
   async uploadSessions(sessions: SessionDto[]) {
     await this.req('POST', '/api/v1/sync/sessions', sessions)
+  }
+  lessons(version: number) {
+    return this.req<LessonsPage>('GET', `/api/v1/lessons?version=${version}`)
   }
   async flagQuestion(id: string, reason?: FlagReason) {
     await this.req('POST', `/api/v1/questions/${encodeURIComponent(id)}/flag`, reason ? { reason } : undefined)

@@ -26,6 +26,7 @@ Question q(
       documentId: '',
       documentTitle: '',
       documentOrder: 0,
+      chunkId: '',
       syncSeq: 1,
       hidden: hidden,
     );

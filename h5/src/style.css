@@ -282,3 +282,30 @@ mark { background: color-mix(in srgb, #d69e2e 40%, transparent); color: inherit;
 .goal-input { width: 6em; }
 .time-input { width: auto; }
 .switch { width: 22px; height: 22px; accent-color: var(--primary); }
+
+/* study text */
+.lesson-body { display: flex; flex-direction: column; gap: 10px; line-height: 1.75; }
+.sentences { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.sentence { padding-left: 12px; border-left: 3px solid var(--primary-soft); }
+.sentence .md > :first-child { margin-top: 0; }
+.sentence .md > :last-child { margin-bottom: 0; }
+.sentence.tappable { cursor: pointer; }
+.sentence.covered { border-left-color: var(--primary); }
+.sentence.covered .md { filter: blur(7px); opacity: 0.55; user-select: none; }
+/* 背诵遮盖: lists and tables keep their cue (first column) and blur what is to be recalled */
+.lesson-body.covering .md li:not(.shown), .lesson-body.covering .md td:not(:first-child):not(.shown) { filter: blur(7px); opacity: 0.55; cursor: pointer; user-select: none; }
+.lesson-body .md table { border-collapse: collapse; display: block; overflow-x: auto; max-width: 100%; }
+.lesson-body .md th, .lesson-body .md td { border: 1px solid var(--line); padding: 4px 8px; vertical-align: top; }
+.lesson-body .md blockquote { margin: 0; padding: 2px 12px; border-left: 3px solid var(--primary); background: var(--primary-soft); }
+.lesson-row { gap: 10px; }
+.state { flex-shrink: 0; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--line); color: var(--muted); }
+.state.read { background: var(--primary-soft); color: var(--primary); }
+.state.practiced { background: var(--primary-soft); color: var(--primary); }
+.state.mastered { background: var(--ok-soft); color: var(--ok); }
+.chapter-head { display: flex; align-items: center; gap: 10px; width: 100%; font: inherit; text-align: left; cursor: pointer; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); }
+.chapter-head .arrow { transition: transform 0.15s; display: inline-block; }
+.chapter-head.open .arrow { transform: rotate(90deg); }
+.lesson-sheet { max-height: 80dvh; overflow-y: auto; }
+.lesson-actions { display: flex; flex-direction: column; gap: 10px; }
+.lesson-nav { display: flex; gap: 10px; }
+.lesson-nav .btn { flex: 1; }

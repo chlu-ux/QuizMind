@@ -59,6 +59,9 @@ type SyncQuestion struct {
 	// the question has no source chunk.
 	DocumentID    string `json:"document_id"`
 	DocumentTitle string `json:"document_title"`
+	// The section of that document the question was generated from: the id of a Lesson. Empty
+	// when the question has no source chunk.
+	ChunkID string `json:"chunk_id"`
 	// When the document was uploaded (ms): modules are listed in the order they were added.
 	DocumentCreatedAt int64 `json:"document_created_at"`
 	SyncSeq           int64 `json:"sync_seq"`
@@ -115,7 +118,7 @@ func (s *Service) SyncQuestions(ctx context.Context, since int64, limit int) (Sy
 		page.Items = append(page.Items, SyncQuestion{
 			ID: v.ID, BankID: v.BankID, Type: v.Type, Stem: v.Stem, Options: v.Options, Answer: v.Answer,
 			Explanation: v.Explanation, Difficulty: v.Difficulty, Tags: v.Tags, SourceQuote: v.SourceQuote,
-			DocumentID: docs[q.ChunkID.String].DocumentID, DocumentTitle: docs[q.ChunkID.String].DocumentTitle,
+			ChunkID: q.ChunkID.String, DocumentID: docs[q.ChunkID.String].DocumentID, DocumentTitle: docs[q.ChunkID.String].DocumentTitle,
 			DocumentCreatedAt: docs[q.ChunkID.String].DocumentCreatedAt,
 			SyncSeq:           q.SyncSeq.Int64, UpdatedAt: v.UpdatedAt,
 		})

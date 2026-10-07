@@ -13,6 +13,7 @@ import '../../data/progress.dart';
 import '../../data/repository.dart';
 import '../../data/session_store.dart';
 import 'ai_explain_card.dart';
+import 'lesson_widgets.dart';
 import 'quiz_media.dart';
 import 'quiz_session.dart';
 import 'resume.dart';
@@ -480,6 +481,7 @@ class _ResultCard extends StatelessWidget {
               child: Text('原文：${question.sourceQuote}', style: theme.textTheme.bodySmall),
             ),
           ],
+          LessonLink(chunkId: question.chunkId),
         ]),
       ),
     );

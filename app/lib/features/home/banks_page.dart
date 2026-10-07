@@ -6,6 +6,7 @@ import '../../core/settings.dart';
 import '../../data/database.dart';
 import '../../data/repository.dart';
 import '../exam/exam_setup_page.dart';
+import '../quiz/learn_page.dart';
 import '../quiz/quiz_page.dart';
 import '../quiz/quiz_session.dart';
 import '../stats/stats_page.dart';
@@ -120,6 +121,7 @@ class _BankDetailState extends ConsumerState<BankDetail> {
   bool _examInProgress = false;
   int? _seqIndex; // where "按顺序刷题" left off, if anywhere
   int? _unseen; // questions never answered, once the stats have loaded
+  ({int total, int read}) _lessons = (total: 0, read: 0); // the bank's study text; total 0 = it has none
 
   Bank get bank => widget.bank;
 
@@ -129,6 +131,12 @@ class _BankDetailState extends ConsumerState<BankDetail> {
     _stats = _loadStats();
     _loadExamDraft();
     _loadSequential();
+    _loadLessons();
+  }
+
+  Future<void> _loadLessons() async {
+    final summary = await ref.read(repositoryProvider).lessonSummary(bank.id);
+    if (mounted && summary != _lessons) setState(() => _lessons = summary);
   }
 
   Future<BankStats> _loadStats() async {
@@ -160,6 +168,7 @@ class _BankDetailState extends ConsumerState<BankDetail> {
       });
     _loadExamDraft();
     _loadSequential();
+    _loadLessons();
   }
 
   @override
@@ -217,6 +226,15 @@ class _BankDetailState extends ConsumerState<BankDetail> {
               },
             ),
             const SizedBox(height: 16),
+            if (_lessons.total > 0) ...[
+              _GridTile(
+                icon: Icons.auto_stories_outlined,
+                title: '先学后练',
+                subtitle: '讲义 ${_lessons.read} / ${_lessons.total} 节已读',
+                onTap: () => _open(LearnPage(bank: bank)),
+              ),
+              const SizedBox(height: 12),
+            ],
             // Sequential practice is the main action: it always carries on from where the learner last was.
             // Starting over is "从第 1 题重做" inside the quiz.
             _PrimaryAction(

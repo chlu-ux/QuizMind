@@ -2,7 +2,7 @@ import { newUlid } from '@/core/ulid'
 import type { Db } from './db'
 import { afterAnswer, CLEAR_STREAK, inWrongBook, isCorrect, readProgress } from './progress'
 import { attemptTimes, buildReport, dayStart, dayStartBefore, type BankReport } from './stats'
-import type { Bank, ExamDraft, ExamRecord, FlagReason, LocalAttempt, LocalExam, LocalQuestion, LocalState, SessionData } from './types'
+import type { Bank, ExamDraft, ExamRecord, FlagReason, Lesson, LocalAttempt, LocalExam, LocalQuestion, LocalState, SessionData } from './types'
 
 export interface AnswerOutcome {
   /** The attempt this answer was logged as; absent for outcomes restored from a saved quiz. */
@@ -313,6 +313,49 @@ export class Repo {
     await this.touchState(questionId, (s) => {
       s.fsrs = { ...readProgress(s.fsrs), streak: CLEAR_STREAK }
     })
+  }
+
+  // ---- study text ----
+
+  /** The sections of a bank's study text in reading order (chapters as added, sections in document order). */
+  async lessons(bankId: string): Promise<Lesson[]> {
+    const all = await this.db.getAllFromIndex('lessons', 'bank', bankId)
+    return all.sort(
+      (a, b) =>
+        a.document_created_at - b.document_created_at ||
+        a.document_id.localeCompare(b.document_id) ||
+        a.seq - b.seq,
+    )
+  }
+
+  lesson(id: string): Promise<Lesson | undefined> {
+    return this.db.get('lessons', id)
+  }
+
+  /** The sections of the bank marked as read. Marks of sections the server no longer has are ignored. */
+  async lessonReadIds(bankId: string): Promise<Set<string>> {
+    const have = new Set(await this.db.getAllKeysFromIndex('lessons', 'bank', bankId))
+    const reads = await this.db.getAllFromIndex('lessonReads', 'bank', bankId)
+    return new Set(reads.map((r) => r.lesson_id).filter((id) => have.has(id)))
+  }
+
+  /** How many sections the bank has and how many were read; (0, 0) when it has no study text. */
+  async lessonSummary(bankId: string): Promise<{ total: number; read: number }> {
+    const total = await this.db.countFromIndex('lessons', 'bank', bankId)
+    return { total, read: total ? (await this.lessonReadIds(bankId)).size : 0 }
+  }
+
+  /** Marks a section read; reading it again keeps the first date. */
+  async markLessonRead(lesson: Lesson) {
+    const tx = this.db.transaction('lessonReads', 'readwrite')
+    if (!(await tx.store.get(lesson.id))) {
+      await tx.store.put({ lesson_id: lesson.id, bank_id: lesson.bank_id, read_at: this.now() })
+    }
+    await tx.done
+  }
+
+  unmarkLessonRead(id: string) {
+    return this.db.delete('lessonReads', id)
   }
 
   // ---- saved quizzes ----

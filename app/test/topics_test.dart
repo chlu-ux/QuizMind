@@ -26,6 +26,7 @@ Question q(String id, List<String> tags) => Question(
       documentId: '',
       documentTitle: '',
       documentOrder: 0,
+      chunkId: '',
       syncSeq: 1,
       hidden: false,
     );

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import LessonBody from '@/components/LessonBody.vue'
 import Md from '@/components/Md.vue'
 import OptText from '@/components/OptText.vue'
 import { bump, getRepo, runSync, showToast } from '@/core/app'
@@ -8,13 +9,24 @@ import { pendingQuiz, startQuiz, type QuizLaunch } from '@/quiz/launch'
 import { plainText } from '@/quiz/media'
 import { setSequentialPosition } from '@/quiz/position'
 import { QuizSession } from '@/quiz/session'
-import { FLAG_REASONS, type FlagReason } from '@/data/types'
+import { lessonTitle } from '@/quiz/lessons'
+import { FLAG_REASONS, type FlagReason, type Lesson } from '@/data/types'
 
 const router = useRouter()
 const session = ref<QuizSession | null>(null)
 const favorite = ref(false)
 const menu = ref(false)
 const reasonSheet = ref(false)
+// The section of the study text behind the question on screen, shown in a sheet; [lessonIds] are the sections this device has.
+const lessonIds = ref(new Set<string>())
+const lessonSheet = ref<Lesson | null>(null)
+
+async function openLesson() {
+  const id = session.value?.current.chunk_id
+  const l = id ? await (await getRepo()).lesson(id) : undefined
+  if (l) lessonSheet.value = l
+  else showToast('没有找到这一节讲义，同步一次试试')
+}
 
 // Where this quiz is saved so it can be continued (a bank id); undefined for lists not worth resuming.
 let scope: string | undefined
@@ -45,6 +57,7 @@ onMounted(async () => {
   const launch = pendingQuiz.value
   if (!launch) return router.replace('/')
   await begin(launch, launch.startAt, launch.resume)
+  lessonIds.value = new Set(await (await getRepo()).db.getAllKeys('lessons'))
   window.addEventListener('keydown', onKey)
   document.addEventListener('visibilitychange', onVisibility)
 })
@@ -219,6 +232,7 @@ function retry() {
         <div v-if="s.outcome.enteredWrongBook" class="small">已加入错题本</div>
         <Md v-if="s.current.explanation" :source="s.current.explanation" />
         <blockquote v-if="s.current.source_quote">原文：{{ s.current.source_quote }}</blockquote>
+        <button v-if="s.current.chunk_id && lessonIds.has(s.current.chunk_id)" class="btn" @click="openLesson">📖 看这一节讲义</button>
       </section>
     </main>
 
@@ -227,6 +241,14 @@ function retry() {
         <h2>这道题哪里有问题？</h2>
         <button v-for="r in FLAG_REASONS" :key="r.value" class="btn block" @click="flag(r.value)">{{ r.label }}</button>
         <button class="btn block muted" @click="reasonSheet = false">取消</button>
+      </div>
+    </div>
+
+    <div v-if="lessonSheet" class="scrim" @click.self="lessonSheet = null">
+      <div class="reason-sheet lesson-sheet" role="dialog" aria-label="讲义">
+        <h2>{{ lessonTitle(lessonSheet) }}</h2>
+        <LessonBody :text="lessonSheet.text" />
+        <button class="btn block" @click="lessonSheet = null">关闭</button>
       </div>
     </div>
 

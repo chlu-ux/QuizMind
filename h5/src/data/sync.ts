@@ -14,6 +14,8 @@ export interface SyncReport {
   examsPulled: number
   /** Saved quizzes taken from another device. */
   sessionsPulled: number
+  /** Sections of the study text downloaded; 0 when the library had not changed. */
+  lessonsPulled: number
 }
 
 export function summarize(r: SyncReport): string {
@@ -24,6 +26,7 @@ export function summarize(r: SyncReport): string {
     r.attemptsPulled > 0 && `同步了其他设备的 ${r.attemptsPulled} 条作答`,
     r.examsPulled > 0 && `同步了 ${r.examsPulled} 场考试`,
     r.sessionsPulled > 0 && `同步了 ${r.sessionsPulled} 个题库的刷题进度`,
+    r.lessonsPulled > 0 && `更新了讲义（${r.lessonsPulled} 节）`,
   ].filter(Boolean)
   return parts.length ? parts.join('，') : '已是最新'
 }
@@ -33,6 +36,7 @@ const STATE_CURSOR = 'state_seq'
 const SESSION_CURSOR = 'session_seq'
 const ATTEMPT_CURSOR = 'attempt_seq'
 const EXAM_CURSOR = 'exam_seq'
+const LESSONS_VERSION = 'lessons_version'
 const LAST_SYNC = 'last_sync_at'
 const BATCH = 500
 const SESSION_BATCH = 50 // the server's per-request limit
@@ -67,6 +71,7 @@ export class SyncService {
     const sessionsPulled = await this.pullSessions()
     const attemptsPulled = await this.pullAttempts()
     const examsPulled = await this.pullExams()
+    const lessonsPulled = await this.pullLessons()
 
     const tx = this.db.transaction(['banks', 'meta'], 'readwrite')
     await tx.objectStore('banks').clear()
@@ -83,6 +88,7 @@ export class SyncService {
       examsUploaded,
       examsPulled,
       sessionsPulled,
+      lessonsPulled,
     }
   }
 
@@ -270,6 +276,28 @@ export class SyncService {
     } catch (e) {
       if (!SyncService.unsupported(e)) throw e
       return pulled
+    }
+  }
+
+  /**
+   * The study text is small and rarely changes, so it is fetched whole whenever the server's version
+   * differs from ours, and replaces what we had. Returns how many sections came down.
+   */
+  private async pullLessons(): Promise<number> {
+    try {
+      const have = (await this.db.get('meta', LESSONS_VERSION)) ?? 0
+      const page = await this.api.lessons(have)
+      if (page.unchanged) return 0
+      const tx = this.db.transaction(['lessons', 'meta'], 'readwrite')
+      await tx.objectStore('lessons').clear()
+      for (const l of page.items) await tx.objectStore('lessons').put(l)
+      await tx.objectStore('meta').put(page.version, LESSONS_VERSION)
+      await tx.done
+      return page.items.length
+    } catch (e) {
+      // A server from before lessons: there is simply nothing to read.
+      if (!SyncService.unsupported(e)) throw e
+      return 0
     }
   }
 

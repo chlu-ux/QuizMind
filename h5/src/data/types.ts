@@ -19,6 +19,8 @@ export interface Question {
   tags: string[]
   source_quote: string
   sync_seq: number
+  /** The lesson (section of the study text) the question was generated from; absent on rows pulled before lessons existed. */
+  chunk_id?: string
 }
 
 /** A question as stored locally; hidden = withdrawn by the server (history is kept). */
@@ -194,4 +196,33 @@ export interface ExamDraft {
   /** Question ids flagged "check again". */
   marked: string[]
   saved_at: number
+}
+
+/** One section of the study text of a bank (api/openapi.yaml, GET /lessons). A question's `chunk_id` is a lesson id. */
+export interface Lesson {
+  id: string
+  bank_id: string
+  /** The chapter the section is in, and when it was added (chapters are listed in that order). */
+  document_id: string
+  document_title: string
+  document_created_at: number
+  /** Position within the chapter. */
+  seq: number
+  /** e.g. "考点精讲 > 2.1 操作系统概述"; the last part is the section's own title. */
+  heading_path: string
+  text: string
+}
+
+/** The whole library, or just its version when the caller's copy is current (`unchanged`). */
+export interface LessonsPage {
+  version: number
+  unchanged: boolean
+  items: Lesson[]
+}
+
+/** A lesson the learner has marked as read. Kept on this device only. */
+export interface LessonRead {
+  lesson_id: string
+  bank_id: string
+  read_at: number
 }

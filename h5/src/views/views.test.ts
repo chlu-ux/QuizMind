@@ -5,7 +5,7 @@ import router from '@/router'
 import { getRepo } from '@/core/app'
 import { DEFAULT_GOALS, updateGoals } from '@/core/goals'
 import { newUlid } from '@/core/ulid'
-import type { ExamDraft, ExamRecord, LocalQuestion } from '@/data/types'
+import type { ExamDraft, ExamRecord, Lesson, LocalQuestion } from '@/data/types'
 import { pendingExam } from '@/quiz/examLaunch'
 import { pendingQuiz, startQuiz } from '@/quiz/launch'
 import ExamReviewView from './ExamReviewView.vue'
@@ -13,6 +13,8 @@ import ExamSetupView from './ExamSetupView.vue'
 import ExamView from './ExamView.vue'
 import BankView from './BankView.vue'
 import BanksView from './BanksView.vue'
+import LearnView from './LearnView.vue'
+import LessonView from './LessonView.vue'
 import ListView from './ListView.vue'
 import QuizView from './QuizView.vue'
 import SearchView from './SearchView.vue'
@@ -710,6 +712,187 @@ describe('daily goal', () => {
 
     await group('每天做题').findAll('button').find((b) => b.text() === '关闭')!.trigger('click')
     expect(JSON.parse(localStorage.getItem('quizmind.goals')!).questions).toBeNull()
+    w.unmount()
+  })
+})
+
+describe('study text', () => {
+  const lesson = (id: string, o: Partial<Lesson> = {}): Lesson => ({
+    id: `${bank}-${id}`, bank_id: bank, document_id: `${bank}-d1`, document_title: '讲义（操作系统）', document_created_at: 1, seq: 0,
+    heading_path: `讲义 > ${id} 标题`, text: `${id} 第一句。${id} 第二句。`, ...o,
+  })
+
+  /** Two chapters of two sections; questions q1,q2 belong to L1 and q3 to L3. */
+  async function seedLessons() {
+    const { repo, qs } = await seed(3)
+    for (const [i, q] of qs.entries()) await repo.db.put('questions', { ...q, chunk_id: `${bank}-${i < 2 ? 'L1' : 'L3'}` })
+    const ls = [
+      lesson('L1'),
+      lesson('L2', { seq: 1 }),
+      lesson('L3', { document_id: `${bank}-d2`, document_title: '讲义（数据库）', document_created_at: 2 }),
+      lesson('L4', { document_id: `${bank}-d2`, document_title: '讲义（数据库）', document_created_at: 2, seq: 1 }),
+    ]
+    for (const l of ls) await repo.db.put('lessons', l)
+    return { repo, qs, ls }
+  }
+
+  it('the bank page offers the study text only when the bank has some, with how much was read', async () => {
+    await seed(1)
+    const plain = await open(`/bank/${bank}`, BankView, { id: bank })
+    expect(plain.text()).not.toContain('先学后练')
+    plain.unmount()
+
+    const { repo, ls } = await seedLessons()
+    await repo.markLessonRead(ls[0])
+    const w = await open(`/bank/${bank}`, BankView, { id: bank })
+    expect(button(w, '先学后练').text()).toContain('1 / 4')
+    await button(w, '先学后练').trigger('click')
+    await flush()
+    expect(router.currentRoute.value.path).toBe(`/bank/${bank}/learn`)
+    w.unmount()
+  })
+
+  it('the contents page groups sections by chapter, opens the one to study next and goes on from there', async () => {
+    const { repo, ls } = await seedLessons()
+    await repo.markLessonRead(ls[0])
+    await repo.markLessonRead(ls[1])
+    const w = await open(`/bank/${bank}/learn`, LearnView, { id: bank })
+
+    expect(w.text()).toContain('已读 2 / 4 节')
+    expect(w.text()).toContain('操作系统')
+    expect(w.text()).toContain('数据库')
+    // L3 is the first never opened: its chapter is open, the finished one is not.
+    expect(w.text()).toContain('L3 标题')
+    expect(w.text()).not.toContain('L1 标题')
+    expect(button(w, '继续学习').text()).toContain('L3 标题')
+
+    await button(w, '操作系统').trigger('click')
+    await flush()
+    expect(w.text()).toContain('L1 标题')
+    expect(w.text()).toContain('2 题')
+    expect(w.text()).toContain('已读')
+
+    await button(w, 'L2 标题').trigger('click')
+    await flush()
+    expect(router.currentRoute.value.path).toBe(`/bank/${bank}/learn/${bank}-L2`)
+    w.unmount()
+  })
+
+  it('says so when the bank has no study text', async () => {
+    await seed(1)
+    const w = await open(`/bank/${bank}/learn`, LearnView, { id: bank })
+    expect(w.text()).toContain('还没有讲义')
+    w.unmount()
+  })
+
+  it('a section is read one sentence per line and can be covered for recall', async () => {
+    const { ls } = await seedLessons()
+    const w = await open(`/bank/${bank}/learn/${ls[0].id}`, LessonView, { id: bank, lessonId: ls[0].id })
+    expect(w.findAll('.sentence').map((s) => s.text())).toEqual(['L1 第一句。', 'L1 第二句。'])
+    expect(w.findAll('.sentence.covered')).toHaveLength(0)
+
+    await button(w, '背诵遮盖').trigger('click')
+    expect(w.findAll('.sentence.covered')).toHaveLength(2)
+    await w.findAll('.sentence')[0].trigger('click')
+    expect(w.findAll('.sentence.covered')).toHaveLength(1)
+    await w.findAll('.sentence')[0].trigger('click')
+    expect(w.findAll('.sentence.covered')).toHaveLength(2)
+    await button(w, '显示全部').trigger('click')
+    expect(w.findAll('.sentence.covered')).toHaveLength(0)
+    w.unmount()
+  })
+
+  it('covering also hides list items and every table cell but the first of a row, one tap at a time', async () => {
+    const { ls } = await seedLessons()
+    const text = '**要点**\n\n- 甲项\n- 乙项\n  - 乙一\n\n| 名称 | 含义 |\n|---|---|\n| 阿 | 解释阿 |\n| 波 | 解释波 |'
+    const repo = await getRepo()
+    await repo.db.put('lessons', { ...ls[0], text })
+    const w = await open(`/bank/${bank}/learn/${ls[0].id}`, LessonView, { id: bank, lessonId: ls[0].id })
+    const body = w.find('.lesson-body')
+    expect(body.classes()).not.toContain('covering')
+
+    await button(w, '背诵遮盖').trigger('click')
+    expect(body.classes()).toContain('covering')
+    const cells = w.findAll('td')
+    await cells[1].trigger('click') // 解释阿
+    expect(cells[1].classes()).toContain('shown')
+    expect(cells[3].classes()).not.toContain('shown')
+    await cells[0].trigger('click') // the cue column is never covered, so a tap does nothing
+    expect(cells[0].classes()).not.toContain('shown')
+
+    const items = w.findAll('li')
+    await items[2].trigger('click') // 乙一, inside the still-covered 乙项: uncovers the outer item first
+    expect(items[1].classes()).toContain('shown')
+    expect(items[2].classes()).not.toContain('shown')
+    await items[2].trigger('click')
+    expect(items[2].classes()).toContain('shown')
+
+    await button(w, '显示全部').trigger('click')
+    await flush()
+    expect(w.findAll('.shown')).toHaveLength(0)
+    w.unmount()
+  })
+
+  it('"学完了" marks the section read and starts a quiz on exactly its questions', async () => {
+    const { repo, qs, ls } = await seedLessons()
+    const w = await open(`/bank/${bank}/learn/${ls[0].id}`, LessonView, { id: bank, lessonId: ls[0].id })
+    expect(w.text()).toContain('本节 2 题')
+
+    await button(w, '做这一节的 2 道题').trigger('click')
+    await flush()
+    expect(router.currentRoute.value.path).toBe('/quiz')
+    expect(pendingQuiz.value?.questions.map((q) => q.id).sort()).toEqual([qs[0].id, qs[1].id])
+    expect(pendingQuiz.value?.title).toContain('L1 标题')
+    expect((await repo.lessonReadIds(bank)).has(ls[0].id)).toBe(true)
+    w.unmount()
+  })
+
+  it('a section without questions goes straight on to the next, and neighbours cross chapters', async () => {
+    const { repo, ls } = await seedLessons()
+    const w = await open(`/bank/${bank}/learn/${ls[1].id}`, LessonView, { id: bank, lessonId: ls[1].id })
+    expect(w.text()).not.toContain('道题')
+    expect(button(w, '上一节').attributes('disabled')).toBeUndefined()
+
+    await button(w, '学完了，下一节').trigger('click')
+    await flush()
+    expect(router.currentRoute.value.path).toBe(`/bank/${bank}/learn/${ls[2].id}`) // first section of the next chapter
+    expect((await repo.lessonReadIds(bank)).has(ls[1].id)).toBe(true)
+    w.unmount()
+
+    const first = await open(`/bank/${bank}/learn/${ls[0].id}`, LessonView, { id: bank, lessonId: ls[0].id })
+    expect(button(first, '上一节').attributes('disabled')).toBeDefined()
+    await button(first, '标记为已读').trigger('click')
+    await flush()
+    expect(first.text()).toContain('已读（点此取消）')
+    await button(first, '已读（点此取消）').trigger('click')
+    await flush()
+    expect((await repo.lessonReadIds(bank)).has(ls[0].id)).toBe(false)
+    first.unmount()
+  })
+
+  it('says so for a section that is not there', async () => {
+    await seedLessons()
+    const w = await open(`/bank/${bank}/learn/nope`, LessonView, { id: bank, lessonId: 'nope' })
+    expect(w.text()).toContain('这一节不存在')
+    w.unmount()
+  })
+
+  it('a question offers its section while practising, in a sheet over the quiz', async () => {
+    const { repo, ls } = await seedLessons()
+    await startQuiz('练习', [(await repo.bankQuestions(bank))[0]]) // the copy that knows its section
+    const w = await open('/quiz', QuizView)
+    expect(w.text()).not.toContain('看这一节讲义') // only once the question is answered
+
+    await w.findAll('.option')[1].trigger('click')
+    await button(w, '提交').trigger('click')
+    await flush()
+    await button(w, '看这一节讲义').trigger('click')
+    await flush()
+    expect(w.find('[aria-label="讲义"]').text()).toContain('L1 第一句。')
+    expect(w.find('[aria-label="讲义"]').text()).toContain('L1 标题')
+    await button(w, '关闭').trigger('click')
+    expect(w.find('[aria-label="讲义"]').exists()).toBe(false)
+    expect(await repo.lesson(ls[0].id)).toBeTruthy()
     w.unmount()
   })
 })

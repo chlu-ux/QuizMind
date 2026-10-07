@@ -32,6 +32,10 @@ class Questions extends Table {
   TextColumn get documentId => text().withDefault(const Constant(''))();
   TextColumn get documentTitle => text().withDefault(const Constant(''))();
   IntColumn get documentOrder => integer().withDefault(const Constant(0))();
+
+  /// The lesson (section of the study text) the question was generated from; empty for questions
+  /// synced before the server sent it.
+  TextColumn get chunkId => text().withDefault(const Constant(''))();
   IntColumn get syncSeq => integer()();
   BoolColumn get hidden => boolean().withDefault(const Constant(false))();
 
@@ -147,13 +151,40 @@ class AiNotes extends Table {
   Set<Column> get primaryKey => {questionId};
 }
 
-@DriftDatabase(tables: [Banks, Questions, Attempts, QuestionStates, PendingFlags, SyncMeta, Exams, ExamDrafts, AiNotes])
+/// One section of the study text of a bank, mirrored whole from the server (the library is replaced
+/// whenever its version changes). A question's [Questions.chunkId] is a lesson id. [documentOrder] is
+/// when the chapter (document) was uploaded; [seq] the place within it.
+class Lessons extends Table {
+  TextColumn get id => text()();
+  TextColumn get bankId => text()();
+  TextColumn get documentId => text()();
+  TextColumn get documentTitle => text()();
+  IntColumn get documentOrder => integer()();
+  IntColumn get seq => integer()();
+  TextColumn get headingPath => text()();
+  TextColumn get body => text()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A lesson the learner marked as read. Kept on this device only.
+class LessonReads extends Table {
+  TextColumn get lessonId => text()();
+  TextColumn get bankId => text()();
+  IntColumn get readAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {lessonId};
+}
+
+@DriftDatabase(tables: [Banks, Questions, Attempts, QuestionStates, PendingFlags, SyncMeta, Exams, ExamDrafts, AiNotes, Lessons, LessonReads])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'quizmind'));
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -176,6 +207,11 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(questions, questions.documentId);
             await m.addColumn(questions, questions.documentTitle);
             await m.addColumn(questions, questions.documentOrder);
+          }
+          if (from < 7) {
+            await m.addColumn(questions, questions.chunkId);
+            await m.createTable(lessons);
+            await m.createTable(lessonReads);
           }
         },
       );

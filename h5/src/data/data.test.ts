@@ -5,6 +5,7 @@ import type { Db } from './db'
 import { inWrongBook, isCorrect, readProgress } from './progress'
 import { Repo } from './repo'
 import { SyncService } from './sync'
+import type { Lesson } from './types'
 import { FakeApi, freshDb, question } from '@/test-support'
 
 describe('pure helpers', () => {
@@ -381,5 +382,85 @@ describe('repo + sync', () => {
       expect([r.attemptsPulled, r.examsPulled, r.examsUploaded]).toEqual([0, 0, 0])
       expect((await db.get('exams', 'E'))!.synced).toBe(0) // still queued for when the server can take it
     })
+  })
+})
+
+describe('lessons', () => {
+  let db: Db
+  let api: FakeApi
+  let repo: Repo
+  let sync: SyncService
+
+  const lesson = (id: string, o: Partial<Lesson> = {}): Lesson => ({
+    id, bank_id: 'b1', document_id: 'd1', document_title: '讲义', document_created_at: 1, seq: 0,
+    heading_path: `讲义 > ${id}`, text: `正文 ${id}`, ...o,
+  })
+
+  beforeEach(async () => {
+    db = await freshDb()
+    api = new FakeApi()
+    repo = new Repo(db, 'dev1', () => 1000)
+    sync = new SyncService(db, api)
+  })
+
+  it('downloads the study text, then skips the download while the version holds', async () => {
+    api.lessonList = [lesson('L1'), lesson('L2', { seq: 1 }), lesson('X', { bank_id: 'b2' })]
+    const first = await sync.run()
+    expect(first.lessonsPulled).toBe(3)
+    expect((await repo.lessons('b1')).map((l) => l.id)).toEqual(['L1', 'L2'])
+    expect((await repo.lessons('b2')).map((l) => l.id)).toEqual(['X'])
+    expect((await repo.lesson('L1'))?.text).toBe('正文 L1')
+
+    const again = await sync.run()
+    expect(again.lessonsPulled).toBe(0)
+    expect(api.lessonFetches).toBe(2)
+    expect((await repo.lessons('b1')).map((l) => l.id)).toEqual(['L1', 'L2'])
+  })
+
+  it('replaces the text when the server version moves, and drops sections that are gone', async () => {
+    api.lessonList = [lesson('L1'), lesson('L2', { seq: 1 })]
+    await sync.run()
+    api.lessonList = [lesson('L1', { text: '改过了' })]
+    api.lessonsVersion = 2
+    expect((await sync.run()).lessonsPulled).toBe(1)
+    expect((await repo.lessons('b1')).map((l) => [l.id, l.text])).toEqual([['L1', '改过了']])
+  })
+
+  it('an older server without lessons does not fail the sync', async () => {
+    api.lessonsUnsupported = true
+    await expect(sync.run()).resolves.toMatchObject({ lessonsPulled: 0 })
+    expect(await repo.lessons('b1')).toEqual([])
+  })
+
+  it('orders sections by chapter then position, and keeps read marks per bank', async () => {
+    api.lessonList = [
+      lesson('B2', { document_id: 'd2', document_created_at: 20, seq: 0 }),
+      lesson('A2', { seq: 1 }),
+      lesson('A1', { seq: 0 }),
+    ]
+    await sync.run()
+    expect((await repo.lessons('b1')).map((l) => l.id)).toEqual(['A1', 'A2', 'B2'])
+
+    expect(await repo.lessonSummary('b1')).toEqual({ total: 3, read: 0 })
+    await repo.markLessonRead((await repo.lesson('A1'))!)
+    await repo.markLessonRead((await repo.lesson('A1'))!)
+    await repo.markLessonRead((await repo.lesson('B2'))!)
+    expect(await repo.lessonSummary('b1')).toEqual({ total: 3, read: 2 })
+    expect([...(await repo.lessonReadIds('b1'))].sort()).toEqual(['A1', 'B2'])
+    await repo.unmarkLessonRead('A1')
+    expect(await repo.lessonSummary('b1')).toEqual({ total: 3, read: 1 })
+    expect(await repo.lessonSummary('nope')).toEqual({ total: 0, read: 0 })
+
+    // a section the server dropped no longer counts as read
+    api.lessonList = [lesson('A1', { seq: 0 })]
+    api.lessonsVersion = 2
+    await sync.run()
+    expect(await repo.lessonSummary('b1')).toEqual({ total: 1, read: 0 })
+  })
+
+  it('keeps the section a question came from', async () => {
+    api.published = [question('q1', { chunk_id: 'L1', sync_seq: 1 })]
+    await sync.run()
+    expect((await repo.bankQuestions('b1'))[0].chunk_id).toBe('L1')
   })
 })

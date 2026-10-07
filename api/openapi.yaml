@@ -45,6 +45,23 @@ paths:
             image/gif: {}
             image/webp: {}
         "404": { description: unknown picture }
+  /api/v1/lessons:
+    get:
+      summary: The study text of every bank
+      description: |
+        Every readable section of every document (a chapter of a bank), in reading order. A
+        question's `chunk_id` is the `id` of the section it was generated from, so the app can offer
+        "read the section, then practise its questions". The library is small and changes rarely, so
+        it is fetched whole: pass the `version` the app already holds and, if it is still current, the
+        answer has `unchanged: true` and no items.
+      parameters:
+        - { name: version, in: query, schema: { type: integer, default: 0 }, description: "the version the caller has; 0 = none" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LessonsPage" }
   /api/v1/sync/questions:
     get:
       summary: Incremental question download
@@ -278,8 +295,28 @@ components:
         document_id: { type: string, description: "the document (module / chapter) the question was generated from; empty if unknown. Older servers omit it" }
         document_title: { type: string, description: "title of that document" }
         document_created_at: { type: integer, description: "when that document was uploaded (ms); modules are listed in this order. 0 if unknown" }
+        chunk_id: { type: string, description: "the section of that document the question was generated from: the id of a Lesson; empty if unknown. Older servers omit it" }
         sync_seq: { type: integer }
         updated_at: { type: integer }
+    Lesson:
+      type: object
+      required: [id, bank_id, document_id, document_title, document_created_at, seq, heading_path, text]
+      properties:
+        id: { type: string, description: "the section's id; a Question's chunk_id" }
+        bank_id: { type: string }
+        document_id: { type: string, description: "the chapter: the document the section is in" }
+        document_title: { type: string }
+        document_created_at: { type: integer, description: "when the document was uploaded (ms); chapters are listed in this order" }
+        seq: { type: integer, description: "position within the document" }
+        heading_path: { type: string, description: "e.g. \"考点精讲 > 2.1 操作系统概述\"; the last part is the section's own title" }
+        text: { type: string, description: "Markdown; pictures are `media:<id>` references like in questions" }
+    LessonsPage:
+      type: object
+      required: [version, unchanged, items]
+      properties:
+        version: { type: integer, description: "changes whenever any section is added, edited, moved or removed; a positive integer below 2^48" }
+        unchanged: { type: boolean, description: "true when the caller already has this version; items is then empty" }
+        items: { type: array, items: { $ref: "#/components/schemas/Lesson" } }
     QuestionsPage:
       type: object
       required: [items, deleted, next_seq, has_more]

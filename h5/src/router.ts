@@ -6,6 +6,8 @@ const router = createRouter({
   routes: [
     { path: '/', component: () => import('./views/BanksView.vue'), meta: { tabs: true } },
     { path: '/bank/:id', component: () => import('./views/BankView.vue'), props: true },
+    { path: '/bank/:id/learn', component: () => import('./views/LearnView.vue'), props: true },
+    { path: '/bank/:id/learn/:lessonId', component: () => import('./views/LessonView.vue'), props: true },
     { path: '/bank/:id/topics', component: () => import('./views/TopicsView.vue'), props: true },
     { path: '/bank/:id/search', component: () => import('./views/SearchView.vue'), props: true },
     { path: '/bank/:id/stats', component: () => import('./views/StatsView.vue'), props: true },

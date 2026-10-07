@@ -203,6 +203,21 @@ class FakeApi implements QuizApi {
     return c;
   }
 
+  /// The study text the server holds; [lessonsVersion] changes whenever a test changes it.
+  List<LessonDto> lessonList = [];
+  int lessonsVersion = 1;
+  bool lessonsUnsupported = false;
+  final List<int> lessonVersionsAsked = [];
+
+  @override
+  Future<LessonsPage> lessons({required int version}) async {
+    _maybeFail();
+    if (lessonsUnsupported) throw ApiException('not found', status: 404);
+    lessonVersionsAsked.add(version);
+    final same = version == lessonsVersion;
+    return LessonsPage(version: lessonsVersion, unchanged: same, items: same ? [] : lessonList);
+  }
+
   @override
   Future<void> flagQuestion(String id, {String? reason}) async {
     _maybeFail();
@@ -225,6 +240,7 @@ Future<List<Question>> seedQs(
   List<String> Function(int i)? tags,
   String Function(int i)? explanation,
   ({String id, String title, int order})? Function(int i)? module,
+  String Function(int i)? chunk,
   int firstSeq = 1,
 }) async {
   final ids = <String>[];
@@ -243,6 +259,7 @@ Future<List<Question>> seedQs(
           documentId: Value(module?.call(i)?.id ?? ''),
           documentTitle: Value(module?.call(i)?.title ?? ''),
           documentOrder: Value(module?.call(i)?.order ?? 0),
+          chunkId: Value(chunk?.call(i) ?? ''),
           syncSeq: firstSeq + i - 1,
         ));
   }
@@ -296,3 +313,26 @@ Future<void> tearDownUi(WidgetTester tester, AppDatabase db) async {
   await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 200)));
   await tester.runAsync(db.close);
 }
+
+/// Puts a section of the study text into the database. Its heading path is "讲义 > [title]".
+Future<void> addLesson(
+  AppDatabase db,
+  String id, {
+  String bank = 'b1',
+  String title = '',
+  String body = '正文。',
+  String doc = 'd1',
+  String docTitle = '讲义',
+  int docOrder = 1,
+  int seq = 0,
+}) =>
+    db.into(db.lessons).insertOnConflictUpdate(LessonsCompanion.insert(
+          id: id,
+          bankId: bank,
+          documentId: doc,
+          documentTitle: docTitle,
+          documentOrder: docOrder,
+          seq: seq,
+          headingPath: '$docTitle > ${title.isEmpty ? id : title}',
+          body: body,
+        ));

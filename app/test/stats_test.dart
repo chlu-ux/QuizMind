@@ -17,6 +17,7 @@ Question q(String id, {String type = 'single', int difficulty = 2, List<String> 
       documentId: '',
       documentTitle: '',
       documentOrder: 0,
+      chunkId: '',
       syncSeq: 1,
       hidden: false,
     );

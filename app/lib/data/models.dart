@@ -46,6 +46,7 @@ class QuestionDto {
     this.documentId = '',
     this.documentTitle = '',
     this.documentOrder = 0,
+    this.chunkId = '',
     required this.syncSeq,
   });
 
@@ -64,6 +65,9 @@ class QuestionDto {
   final String documentId;
   final String documentTitle;
   final int documentOrder;
+
+  /// The lesson (section of the study text) the question came from; empty when unknown.
+  final String chunkId;
   final int syncSeq;
 
   factory QuestionDto.fromJson(Map<String, dynamic> j) => QuestionDto(
@@ -80,6 +84,7 @@ class QuestionDto {
         documentId: (j['document_id'] as String?) ?? '',
         documentTitle: (j['document_title'] as String?) ?? '',
         documentOrder: (j['document_created_at'] as num?)?.toInt() ?? 0,
+        chunkId: (j['chunk_id'] as String?) ?? '',
         syncSeq: (j['sync_seq'] as num).toInt(),
       );
 }
@@ -455,5 +460,60 @@ class NotesPage {
         items: (j['items'] as List).map((e) => NoteDto.fromJson(e as Map<String, dynamic>)).toList(),
         nextSeq: (j['next_seq'] as num).toInt(),
         hasMore: j['has_more'] as bool,
+      );
+}
+
+/// One section of the study text (api/openapi.yaml, GET /lessons). A question's `chunk_id` is a lesson id.
+class LessonDto {
+  LessonDto({
+    required this.id,
+    required this.bankId,
+    required this.documentId,
+    required this.documentTitle,
+    required this.documentOrder,
+    required this.seq,
+    required this.headingPath,
+    required this.text,
+  });
+
+  final String id;
+  final String bankId;
+
+  /// The chapter the section is in, and when it was uploaded (chapters are listed in that order).
+  final String documentId;
+  final String documentTitle;
+  final int documentOrder;
+
+  /// Place within the chapter.
+  final int seq;
+
+  /// e.g. "考点精讲 > 2.1 操作系统概述"; the last part is the section's own title.
+  final String headingPath;
+  final String text;
+
+  factory LessonDto.fromJson(Map<String, dynamic> j) => LessonDto(
+        id: j['id'] as String,
+        bankId: j['bank_id'] as String,
+        documentId: j['document_id'] as String,
+        documentTitle: (j['document_title'] as String?) ?? '',
+        documentOrder: (j['document_created_at'] as num?)?.toInt() ?? 0,
+        seq: (j['seq'] as num?)?.toInt() ?? 0,
+        headingPath: (j['heading_path'] as String?) ?? '',
+        text: (j['text'] as String?) ?? '',
+      );
+}
+
+/// The whole study text, or just its version when the caller's copy is current ([unchanged]).
+class LessonsPage {
+  LessonsPage({required this.version, required this.unchanged, required this.items});
+
+  final int version;
+  final bool unchanged;
+  final List<LessonDto> items;
+
+  factory LessonsPage.fromJson(Map<String, dynamic> j) => LessonsPage(
+        version: (j['version'] as num).toInt(),
+        unchanged: (j['unchanged'] as bool?) ?? false,
+        items: ((j['items'] as List?) ?? const []).map((e) => LessonDto.fromJson(e as Map<String, dynamic>)).toList(),
       );
 }
