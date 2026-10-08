@@ -50,6 +50,10 @@ abstract class QuizApi {
   /// admin UI. 401 = wrong token; 404 = the server has the feature switched off (or
   /// predates it).
   Future<AiConfig> aiConfig({required String token});
+
+  /// Tells the server what AI explanations cost (token counts), with the same access token. Servers older
+  /// than the feature answer 404; 400 means a record was refused.
+  Future<void> uploadAiUsage(List<AiUsage> usage, {required String token});
 }
 
 class HttpQuizApi implements QuizApi {
@@ -169,5 +173,15 @@ class HttpQuizApi implements QuizApi {
   Future<AiConfig> aiConfig({required String token}) => _call(
         () => _dio.get('/api/v1/ai/config', options: Options(headers: {'Authorization': 'Bearer $token'})),
         (d) => AiConfig.fromJson(d as Map<String, dynamic>),
+      );
+
+  @override
+  Future<void> uploadAiUsage(List<AiUsage> usage, {required String token}) => _call(
+        () => _dio.post(
+          '/api/v1/ai/usage',
+          data: usage.map((u) => u.toJson()).toList(),
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        ),
+        (_) {},
       );
 }

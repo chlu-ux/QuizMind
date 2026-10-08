@@ -112,6 +112,10 @@ type LlmCallLog struct {
 	Ok           int64  `json:"ok"`
 	Error        string `json:"error"`
 	CreatedAt    int64  `json:"created_at"`
+	Source       string `json:"source"`
+	DeviceID     string `json:"device_id"`
+	RefID        string `json:"ref_id"`
+	Estimated    int64  `json:"estimated"`
 }
 
 type LlmModel struct {

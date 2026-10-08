@@ -353,34 +353,6 @@ func (s *Service) ListJobs(ctx context.Context, status, documentID string, limit
 	return out, nil
 }
 
-type UsageRow struct {
-	Day          string `json:"day"`
-	Model        string `json:"model"`
-	Calls        int64  `json:"calls"`
-	InputTokens  int64  `json:"input_tokens"`
-	OutputTokens int64  `json:"output_tokens"`
-	CachedTokens int64  `json:"cached_tokens"`
-	Failures     int64  `json:"failures"`
-}
-
-func (s *Service) Usage(ctx context.Context, days int) ([]UsageRow, error) {
-	if days <= 0 || days > 365 {
-		days = 30
-	}
-	since := nowMs() - int64(days)*24*3600*1000
-	rows, err := s.reader().UsageByDay(ctx, since)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]UsageRow, 0, len(rows))
-	for _, r := range rows {
-		day, _ := r.Day.(string)
-		out = append(out, UsageRow{Day: day, Model: r.Model, Calls: r.Calls, InputTokens: r.InputTokens,
-			OutputTokens: r.OutputTokens, CachedTokens: r.CachedTokens, Failures: r.Failures})
-	}
-	return out, nil
-}
-
 func (s *Service) publishDoc(id, status string) {
 	if s.Hub != nil {
 		s.Hub.Publish(events.Event{Type: "document", ID: id, DocumentID: id, Status: status})

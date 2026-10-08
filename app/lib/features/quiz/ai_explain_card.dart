@@ -7,8 +7,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
+import '../../core/settings.dart';
+import '../../core/ulid.dart';
 import '../../data/ai_chat.dart';
 import '../../data/ai_prompt.dart';
+import '../../data/ai_usage.dart';
+import '../../data/api.dart';
 import '../../data/database.dart';
 import '../../data/media_store.dart';
 import '../../data/media_text.dart';
@@ -34,8 +38,59 @@ class AiExplainCard extends ConsumerStatefulWidget {
   ConsumerState<AiExplainCard> createState() => _AiExplainCardState();
 }
 
+/// One request to the model, kept so that what it cost can be reported however it ends.
+class _Call {
+  _Call({
+    required this.questionId,
+    required this.model,
+    required this.deviceId,
+    required this.prompt,
+    required this.reporter,
+    required this.api,
+  }) : startedAt = DateTime.now().millisecondsSinceEpoch;
+
+  final String questionId;
+  final String model;
+  final String deviceId;
+  final String prompt;
+  final AiUsageReporter reporter;
+  final QuizApi api;
+  final int startedAt;
+  final watch = Stopwatch()..start();
+
+  /// What the endpoint said the call used, if it said.
+  AiTokenUsage? reported;
+  bool finished = false;
+
+  /// Reports the call once. Without counts from the endpoint they are guessed from the text lengths, but a
+  /// call that failed before producing anything cost nothing.
+  void finish({required bool ok, String error = '', required String answer}) {
+    if (finished) return;
+    finished = true;
+    final r = reported;
+    final guess = r == null && answer.isNotEmpty;
+    final usage = AiUsage(
+      id: newUlid(),
+      questionId: questionId,
+      deviceId: deviceId,
+      model: model,
+      inputTokens: r?.inputTokens ?? (guess ? estimateTokens(prompt) : 0),
+      outputTokens: r?.outputTokens ?? (guess ? estimateTokens(answer) : 0),
+      cachedTokens: r?.cachedTokens ?? 0,
+      latencyMs: watch.elapsedMilliseconds,
+      ok: ok,
+      error: error,
+      estimated: guess,
+      createdAt: startedAt,
+    );
+    // Best effort: it is queued on the device and goes out with the next sync if this upload fails.
+    unawaited(reporter.record(usage).then((_) => reporter.flush(api)).catchError((Object _) => 0));
+  }
+}
+
 class _AiExplainCardState extends ConsumerState<AiExplainCard> {
   StreamSubscription<String>? _sub;
+  _Call? _call;
   CancelToken? _cancel;
   String? _partial; // non-null while a request is running
   String? _error;
@@ -52,6 +107,8 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
   @override
   void dispose() {
     _stop();
+    // Leaving the page mid-answer still spent tokens.
+    _call?.finish(ok: false, error: '已取消', answer: _partial ?? '');
     super.dispose();
   }
 
@@ -95,9 +152,18 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
     });
     final (images, diagrams) = await _loadImages(q, withImages: withImages);
     if (!mounted || cancel.isCancelled) return;
+    final messages = buildExplainMessages(q, selected, images: images, diagrams: diagrams);
+    final call = _call = _Call(
+      questionId: q.id,
+      model: config.model,
+      deviceId: ref.read(settingsProvider).deviceId,
+      prompt: messages.map((m) => m.content).join('\n'),
+      reporter: ref.read(aiUsageReporterProvider),
+      api: ref.read(apiProvider),
+    );
     _sub = ref
         .read(aiChatProvider)
-        .stream(config, buildExplainMessages(q, selected, images: images, diagrams: diagrams), cancel: cancel)
+        .stream(config, messages, cancel: cancel, onUsage: (u) => call.reported = u)
         .listen(
       (piece) {
         buffer.write(piece);
@@ -106,9 +172,12 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
       onError: (Object e) {
         if (!mounted) return;
         if (images.isNotEmpty && e is AiException && _visionRefused.contains(e.status)) {
+          // Refused before anything was generated, and asked again without pictures: not worth a report.
+          call.finished = true;
           unawaited(_run(config, withImages: false));
           return;
         }
+        call.finish(ok: false, error: e is AiException ? e.message : '$e', answer: buffer.toString());
         setState(() {
           _partial = null;
           _error = e is AiException ? e.message : '解读失败：$e';
@@ -116,6 +185,7 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
       },
       onDone: () async {
         final text = buffer.toString().trim();
+        call.finish(ok: true, answer: text);
         if (text.isNotEmpty) {
           await repo.saveNote(
             questionId: q.id,
@@ -157,6 +227,7 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
 
   void _cancelRequest() {
     _stop();
+    _call?.finish(ok: false, error: '已取消', answer: _partial ?? '');
     setState(() => _partial = null);
   }
 

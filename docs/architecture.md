@@ -301,7 +301,9 @@ structured_mode: json_schema | tools | json_object | prompt
 
 ### 4.5 可观测
 
-每次调用写入 `llm_call_log`：角色、供应商、模型、输入/输出/缓存 token、耗时、是否成功、错误。后台提供按文档和按天汇总的成本视图，避免个人账单失控。
+每次调用写入 `llm_call_log`：角色、供应商、模型、输入/输出/缓存 token、耗时、是否成功、错误。后台「用量」页提供按天、来源、角色、模型汇总的视图（含今日 / 本月 token），以及逐次调用的明细（点开能看到调用对应的题目或任务），避免个人账单失控。
+
+日志里有两种来源（`source` 列）：`server` 是服务端自己发起的调用（出题、复核、助手），`client` 是 App 自己调用「AI 解读」模型后上报的用量（§7.6）。**每日 token 预算只统计 `server`**：App 的用量是已经花掉的，服务端拦不住，算进去只会让手机上多读几次解读就把出题任务挤到"预算用完"。`device_id`、`ref_id`（被解读的题目）和 `estimated`（App 按字数估的，不是接口返回的真实值）只对 `client` 行有值。日期按服务端本地时间划分。
 
 ### 4.6 提示词管理
 
@@ -622,6 +624,10 @@ GET/POST /api/v1/sync/notes   → 服务端 ai_note 表（每题一条，覆盖�
 ```
 
 - **配置在服务端、同步到客户端**：连接信息来自「AI 解读」角色绑定的模型及其供应商（SQLite），在管理页编辑；管理页不回显 API Key（只显示 `sk-…a1b2`），保存时留空表示不改。每个模型有「测试」按钮，由服务端发一次最小请求。`app_setting` 的 `ai` 只存启用开关和访问令牌。
+- **用量上报**（2026-10-08）：解读由 App 直接调用模型，服务端看不到花了多少 token，所以 App 把每次调用的用量报上来，在后台用量页和出题用量一起查询。
+  - **取数**：请求带 `stream_options: {include_usage: true}`，流的最后一块里有 `usage`（输入 = `prompt_tokens` 去掉缓存命中的部分，输出 = `completion_tokens`，缓存取 `prompt_tokens_details.cached_tokens` 或 DeepSeek 的 `prompt_cache_hit_tokens`）。端点不认这个参数（400 / 422）时去掉它重问一次并记住这个地址；端点不返回用量时按字数估算（中文约 0.8 token / 字，其他约 0.28），标成 `estimated`。成功、失败、用户中途停止都会上报（停止前已生成的内容也花了钱）；失败且没有任何输出的调用记 0。
+  - **排队与重试**：每条用量有 App 生成的 ULID，先存进本机（shared_preferences，最多 500 条，满了丢最旧的），解读结束后马上尝试上传，失败就等下次同步。没有访问令牌（没连过服务端）就不记录。服务端按 id 去重，重传不会重复计数。服务端回 400（记录被拒）就丢掉这批，401 / 404 / 网络错误则保留。
+  - **服务端**：`POST /api/v1/ai/usage`（需访问令牌，同 `/ai/config`；功能关闭后仍接受，排着队的上报不丢），一次最多 100 条，写入 `llm_call_log`（`role = explain`、`source = client`），校验 token 数、耗时、时间范围，错误信息截断到 500 字。
 - **访问令牌**：`/api/v1/ai/config` 会交出 API Key，所以不像其他 `/api/v1/*` 那样免鉴权，要带管理页里设置的访问令牌（一个简单的字符串，≥4 位，和管理后台的 `QUIZMIND_TOKEN` 是两回事）。未设置令牌则没有客户端能取；功能关闭时返回 404，客户端据此删掉本机副本；令牌错返回 401（同步不失败，只提示）。客户端在设置页输入令牌，同步时自动取配置。
 - **没连过服务端**：客户端设置页可以手动填一份本机配置（Base URL / Key / 模型）。**本机配置优先于服务器配置**，清除后回到服务器配置。
 - **解读文本**：每题一条，`question_id` 为主键，重新解读覆盖旧文本；同步按 `updated_at` 后写覆盖先写（和 `question_state` 一致），行上带服务端 `sync_seq` 供其他设备增量拉取。字段：`content`（Markdown）、`model`、`prompt_version`（客户端提示词版本，现为 `explain.v3`）、`selected`（提问时所选选项）。内容 ≤ 64 KB，未知题目的笔记被忽略。流式生成过程中中止或出错不保存半截文本。
@@ -676,14 +682,14 @@ GET /api/v1/lessons?version=<n>
 | Admin：任务 | `GET /admin/jobs`、`POST /admin/jobs/{id}/retry`、`GET /admin/events`（SSE） | SSE 用 `?access_token=` 传 Token（EventSource 不能设请求头），日志不记录查询串 |
 | Admin：审核 | `GET /admin/questions`（`?flagged=1` 列出有未处理反馈的题）、`GET/PATCH /admin/questions/{id}`、`POST …/approve`、`POST …/reject`、`POST …/dismiss-flags`、`POST /admin/questions/bulk` | 详情带原文块与标题路径，供审核页高亮 `source_quote`；带 `flags`（反馈原因与时间，最新在前） |
 | Admin：配图 | `POST /admin/media` | 上传一张图（multipart：`file`），返回 `id` 和 Markdown 引用 `media:<id>`，§7.7 |
-| Admin：成本 | `GET /admin/usage?days=30` | 按天、按模型汇总调用次数和 token |
+| Admin：成本 | `GET /admin/usage?days=30`、`GET /admin/usage/calls?days=&source=&role=&failed=1&limit=&offset=` | 按天、来源、角色、模型汇总调用次数和 token；逐次调用明细（带被解读的题目） |
 | Admin：AI 解读 | `GET/PUT /admin/ai` | 是否启用与访问令牌；显示当前绑定的模型 |
 | Admin：模型 | `GET /admin/llm`、`POST/PUT/DELETE /admin/llm/providers[/{id}]`、`POST/PUT/DELETE /admin/llm/models[/{id}]`、`POST /admin/llm/models/{id}/test`、`PUT /admin/llm/roles`、`PUT /admin/llm/limits` | 供应商、模型、角色绑定、调用限额（不回显 Key），保存即生效；§4.4 |
 | App：同步 | `/api/v1/sync/*` | §7 |
 | App：题库 | `/api/v1/banks`、`/api/v1/questions/{id}/flag` | 反馈可带可选的 `reason`，§7.5 |
 | App：讲义 | `GET /api/v1/lessons?version=<n>` | 所有小节的原文，带版本号，没变就不重传，§7.8 |
 | App：配图 | `GET /api/v1/media/{id}` | 题目里的图，免鉴权、永久可缓存，§7.7 |
-| App：AI 解读 | `GET /api/v1/ai/config`（需访问令牌）、`/api/v1/sync/notes` | §7.6 |
+| App：AI 解读 | `GET /api/v1/ai/config`（需访问令牌）、`POST /api/v1/ai/usage`（需访问令牌）、`/api/v1/sync/notes` | §7.6 |
 | 运维 | `/healthz` | |
 
 文档只通过 Admin 网页手动上传：`POST /admin/documents`（`multipart/form-data`，接收 `.md` / `.markdown` 文件，限制大小如 2MB，校验为合法 UTF-8）。同一文档重新上传时，按 `source_path`（文件名）匹配已有文档，走 §5.2 的增量更新。暂不提供 CLI 批量导入。

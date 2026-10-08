@@ -16,6 +16,7 @@ import 'package:quizmind_app/core/settings.dart';
 import 'package:quizmind_app/data/ai_chat.dart';
 import 'package:quizmind_app/data/ai_config_store.dart';
 import 'package:quizmind_app/data/ai_prompt.dart';
+import 'package:quizmind_app/data/ai_usage.dart';
 import 'package:quizmind_app/data/api.dart';
 import 'package:quizmind_app/data/database.dart';
 import 'package:quizmind_app/data/media_store.dart';
@@ -73,9 +74,12 @@ Future<Question> storedQuestion(AppDatabase db, {String id = 'q1', String? stem}
 
 /// Replays canned pieces and records what it was asked.
 class FakeChat implements AiChat {
-  FakeChat(this.pieces, {this.error, this.gate, this.refuseImages = false});
+  FakeChat(this.pieces, {this.error, this.gate, this.refuseImages = false, this.usage});
 
   final List<String> pieces;
+
+  /// What the endpoint reports about the call, just before the last piece (null = it reports nothing).
+  final AiTokenUsage? usage;
   final AiException? error;
 
   /// When set, the stream waits for it before the last piece, to test stopping mid-way.
@@ -88,7 +92,12 @@ class FakeChat implements AiChat {
   final allMessages = <List<ChatMessage>>[];
 
   @override
-  Stream<String> stream(AiConfig config, List<ChatMessage> messages, {CancelToken? cancel}) async* {
+  Stream<String> stream(
+    AiConfig config,
+    List<ChatMessage> messages, {
+    CancelToken? cancel,
+    void Function(AiTokenUsage usage)? onUsage,
+  }) async* {
     calls++;
     lastConfig = config;
     lastMessages = messages;
@@ -96,6 +105,7 @@ class FakeChat implements AiChat {
     if (refuseImages && messages.any((m) => m.images.isNotEmpty)) throw AiException('请求被拒绝（400）', status: 400);
     for (var i = 0; i < pieces.length; i++) {
       if (gate != null && i == pieces.length - 1) await gate!.future;
+      if (usage != null && i == pieces.length - 1) onUsage?.call(usage!);
       yield pieces[i];
     }
     if (error != null) throw error!;
@@ -434,6 +444,89 @@ void main() {
       expect([saved.model, saved.promptVersion, saved.selectedJson], ['m1', aiPromptVersion, '[2]']);
       expect(saved.dirty, isTrue, reason: 'queued for upload');
       await teardown(tester);
+    });
+
+    group('reporting what the call cost', () {
+      // The server's access token is what makes reporting possible at all.
+      final withToken = {...withConfig, 'ai.token': 'tok'};
+
+      Future<List<AiUsage>> queued() async {
+        final sp = await SharedPreferences.getInstance();
+        return AiUsageStore(sp).pending();
+      }
+
+      Future<FakeApi> ask(WidgetTester tester, FakeChat chat, {Map<String, Object>? prefs}) async {
+        final api = FakeApi();
+        api.usageStatus = 503; // keep it queued so the test can look at it
+        await pump(tester, chat, prefs: prefs ?? withToken, overrides: [apiProvider.overrideWithValue(api)]);
+        await tester.tap(find.text('让 AI 讲解这道题'));
+        await tester.pump();
+        await settle(tester);
+        return api;
+      }
+
+      testWidgets('uses the counts the endpoint reports', (tester) async {
+        await ask(tester, FakeChat(['选乙。'], usage: const AiTokenUsage(inputTokens: 900, outputTokens: 120, cachedTokens: 300)));
+        final u = (await tester.runAsync(queued))!.single;
+        expect([u.inputTokens, u.outputTokens, u.cachedTokens], [900, 120, 300]);
+        expect([u.ok, u.estimated, u.model, u.questionId], [true, false, 'm1', 'q1']);
+        expect(u.id, hasLength(26));
+        expect(u.deviceId, isNotEmpty);
+        await teardown(tester);
+      });
+
+      testWidgets('guesses from the text and says so when the endpoint reports nothing', (tester) async {
+        await ask(tester, FakeChat(['选乙，因为' * 20]));
+        final u = (await tester.runAsync(queued))!.single;
+        expect(u.estimated, isTrue);
+        expect(u.inputTokens, greaterThan(100), reason: 'the prompt is long');
+        expect(u.outputTokens, greaterThan(50));
+        expect(u.ok, isTrue);
+        await teardown(tester);
+      });
+
+      testWidgets('a failed call is reported with its reason, and costs nothing when nothing came back', (tester) async {
+        await ask(tester, FakeChat(const [], error: AiException('API Key 无效或没有权限（401）')));
+        final u = (await tester.runAsync(queued))!.single;
+        expect([u.ok, u.error, u.inputTokens, u.outputTokens, u.estimated], [false, contains('API Key'), 0, 0, false]);
+        await teardown(tester);
+      });
+
+      testWidgets('stopping midway is reported as cancelled', (tester) async {
+        final gate = Completer<void>();
+        await pump(tester, FakeChat(['写到一半', '没写完'], gate: gate), prefs: withToken, overrides: [apiProvider.overrideWithValue(FakeApi()..usageStatus = 503)]);
+        await tester.tap(find.text('让 AI 讲解这道题'));
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 10));
+        await tester.tap(find.text('停止'));
+        await tester.pump();
+        gate.complete();
+        await settle(tester);
+
+        final u = (await tester.runAsync(queued))!.single;
+        expect([u.ok, u.error, u.estimated], [false, '已取消', true]);
+        expect(u.outputTokens, greaterThan(0), reason: 'what had been written was already paid for');
+        await teardown(tester);
+      });
+
+      testWidgets('is sent to the server straight away, and not queued twice', (tester) async {
+        final api = FakeApi();
+        await pump(tester, FakeChat(['好'], usage: const AiTokenUsage(inputTokens: 5, outputTokens: 6)),
+            prefs: withToken, overrides: [apiProvider.overrideWithValue(api)]);
+        await tester.tap(find.text('让 AI 讲解这道题'));
+        await tester.pump();
+        await settle(tester);
+        expect(api.uploadedUsage.single.outputTokens, 6);
+        expect(await tester.runAsync(queued), isEmpty);
+        await teardown(tester);
+      });
+
+      testWidgets('nothing is reported without the server access token', (tester) async {
+        final api = await ask(tester, FakeChat(['好']), prefs: withConfig);
+        expect(api.uploadedUsage, isEmpty);
+        expect(await tester.runAsync(queued), isEmpty);
+        await teardown(tester);
+      });
     });
 
     group('a question with a picture', () {

@@ -19,12 +19,40 @@ class AiException implements Exception {
   String toString() => message;
 }
 
+/// The token counts a chat completion reported about itself.
+class AiTokenUsage {
+  const AiTokenUsage({required this.inputTokens, required this.outputTokens, this.cachedTokens = 0});
+
+  /// Prompt tokens that were not served from the provider's cache.
+  final int inputTokens;
+  final int outputTokens;
+  final int cachedTokens;
+
+  /// Reads an OpenAI-style `usage` object (also DeepSeek's `prompt_cache_hit_tokens`). Null when it
+  /// carries no counts, which is how some endpoints fill the field on every chunk but the last.
+  static AiTokenUsage? fromJson(Map<dynamic, dynamic> j) {
+    int n(Object? v) => v is num ? v.toInt() : 0;
+    final prompt = n(j['prompt_tokens']);
+    final output = n(j['completion_tokens']);
+    final details = j['prompt_tokens_details'];
+    final cached = details is Map && details['cached_tokens'] is num ? n(details['cached_tokens']) : n(j['prompt_cache_hit_tokens']);
+    if (prompt + output <= 0) return null;
+    return AiTokenUsage(inputTokens: (prompt - cached).clamp(0, prompt), outputTokens: output, cachedTokens: cached);
+  }
+}
+
 /// Streams a model's answer as text pieces. An interface so the UI can be tested
 /// without a network.
 abstract class AiChat {
   /// Emits the answer piece by piece. Cancelling the subscription (or [cancel])
-  /// aborts the request.
-  Stream<String> stream(AiConfig config, List<ChatMessage> messages, {CancelToken? cancel});
+  /// aborts the request. [onUsage] is told the token counts if the endpoint reports them, usually
+  /// just before the last piece; the last report is the one that counts.
+  Stream<String> stream(
+    AiConfig config,
+    List<ChatMessage> messages, {
+    CancelToken? cancel,
+    void Function(AiTokenUsage usage)? onUsage,
+  });
 }
 
 /// Calls an OpenAI-compatible `{baseUrl}/chat/completions` with `stream: true`.
@@ -39,31 +67,56 @@ class HttpAiChat implements AiChat {
 
   final Dio _dio;
 
+  /// Endpoints that refused `stream_options` (which asks for the token counts); not asked again.
+  final _noUsageOption = <String>{};
+
   @override
-  Stream<String> stream(AiConfig config, List<ChatMessage> messages, {CancelToken? cancel}) async* {
-    final Response<ResponseBody> res;
-    try {
-      res = await _dio.post<ResponseBody>(
-        '${config.baseUrl.replaceAll(RegExp(r'/+$'), '')}/chat/completions',
-        data: {
-          'model': config.model,
-          'messages': [for (final m in messages) m.toJson()],
-          'stream': true,
-          'max_tokens': config.maxTokens,
-          'temperature': config.temperature,
-        },
-        options: Options(
-          responseType: ResponseType.stream,
-          headers: {'Authorization': 'Bearer ${config.apiKey}', 'Accept': 'text/event-stream'},
-        ),
-        cancelToken: cancel,
-      );
-    } on DioException catch (e) {
-      throw await _translate(e);
+  Stream<String> stream(
+    AiConfig config,
+    List<ChatMessage> messages, {
+    CancelToken? cancel,
+    void Function(AiTokenUsage usage)? onUsage,
+  }) async* {
+    final base = config.baseUrl.replaceAll(RegExp(r'/+$'), '');
+    var askForUsage = !_noUsageOption.contains(base);
+    var droppedOption = false;
+    Response<ResponseBody>? opened;
+    while (true) {
+      try {
+        opened = await _dio.post<ResponseBody>(
+          '$base/chat/completions',
+          data: {
+            'model': config.model,
+            'messages': [for (final m in messages) m.toJson()],
+            'stream': true,
+            'max_tokens': config.maxTokens,
+            'temperature': config.temperature,
+            if (askForUsage) 'stream_options': {'include_usage': true},
+          },
+          options: Options(
+            responseType: ResponseType.stream,
+            headers: {'Authorization': 'Bearer ${config.apiKey}', 'Accept': 'text/event-stream'},
+          ),
+          cancelToken: cancel,
+        );
+        break;
+      } on DioException catch (e) {
+        final status = e.response?.statusCode;
+        // A 400 / 422 may be this endpoint not knowing stream_options: ask once more without it. If that
+        // is not the reason, the second answer is the real error.
+        if (askForUsage && (status == 400 || status == 422)) {
+          askForUsage = false;
+          droppedOption = true;
+          continue;
+        }
+        throw await _translate(e);
+      }
     }
+    final res = opened;
+    if (droppedOption) _noUsageOption.add(base);
     var any = false;
     try {
-      await for (final piece in parseSseDeltas(res.data!.stream)) {
+      await for (final piece in parseSseDeltas(res.data!.stream, onUsage: onUsage)) {
         any = true;
         yield piece;
       }
@@ -113,8 +166,9 @@ class HttpAiChat implements AiChat {
 
 /// Text pieces of a server-sent-events body from a chat completion: the
 /// `choices[0].delta.content` of every `data:` line, until `[DONE]`. Lines that
-/// are not JSON, and deltas without text (role markers, reasoning, usage), are skipped.
-Stream<String> parseSseDeltas(Stream<List<int>> body) async* {
+/// are not JSON, and deltas without text (role markers, reasoning), are skipped. A `usage` object, which
+/// comes in a chunk of its own or with the last delta, goes to [onUsage].
+Stream<String> parseSseDeltas(Stream<List<int>> body, {void Function(AiTokenUsage usage)? onUsage}) async* {
   await for (final raw in utf8.decoder.bind(body).transform(const LineSplitter())) {
     final line = raw.trim();
     if (!line.startsWith('data:')) continue;
@@ -122,6 +176,11 @@ Stream<String> parseSseDeltas(Stream<List<int>> body) async* {
     if (payload == '[DONE]') return;
     try {
       final j = jsonDecode(payload);
+      final usage = j is Map ? j['usage'] : null;
+      if (usage is Map && onUsage != null) {
+        final counted = AiTokenUsage.fromJson(usage);
+        if (counted != null) onUsage(counted);
+      }
       final choices = j is Map ? j['choices'] : null;
       if (choices is! List || choices.isEmpty) continue;
       final delta = (choices.first as Map)['delta'];

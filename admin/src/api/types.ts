@@ -126,14 +126,48 @@ export interface Job {
   updated_at: number
 }
 
+export type UsageSource = 'server' | 'client'
+
 export interface UsageRow {
   day: string
+  /** Who made the calls: the server itself, or an app (AI explanations). */
+  source: UsageSource
+  role: LlmRole
   model: string
   calls: number
   input_tokens: number
   output_tokens: number
   cached_tokens: number
   failures: number
+  /** Calls whose token counts an app had to guess. */
+  estimated_calls: number
+}
+
+/** One logged model call, with the question it explained when there is one. */
+export interface UsageCall {
+  id: string
+  source: UsageSource
+  role: LlmRole
+  provider: string
+  model: string
+  input_tokens: number
+  output_tokens: number
+  cached_tokens: number
+  latency_ms: number
+  ok: boolean
+  error: string
+  estimated: boolean
+  created_at: number
+  device_id: string
+  job_id: string
+  question_id: string
+  question_stem: string
+  bank_title: string
+}
+
+export interface UsageCallPage {
+  items: UsageCall[]
+  total: number
 }
 
 export interface BulkResult {

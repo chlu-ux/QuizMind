@@ -143,6 +143,23 @@ func (s *Service) SaveAIConfig(ctx context.Context, in AIConfigUpdate) (AIConfig
 	return s.AdminAIConfig(ctx)
 }
 
+func tokenMatches(c AIConfig, token string) bool {
+	return c.AppToken != "" && subtle.ConstantTimeCompare([]byte(token), []byte(c.AppToken)) == 1
+}
+
+// checkAppToken verifies an app's access token. ErrUnauthorized means it is missing or wrong, or
+// that no token has been set (then nobody may present one).
+func (s *Service) checkAppToken(ctx context.Context, token string) error {
+	c, err := s.loadAIConfig(ctx)
+	if err != nil {
+		return err
+	}
+	if !tokenMatches(c, token) {
+		return ErrUnauthorized
+	}
+	return nil
+}
+
 // AppAIConfig is what an app receives: the whole configuration, key included.
 type AppAIConfig struct {
 	BaseURL     string  `json:"base_url"`
@@ -167,7 +184,7 @@ func (s *Service) AppAIConfig(ctx context.Context, token string) (AppAIConfig, e
 	if !c.Enabled || !ready {
 		return AppAIConfig{}, fmt.Errorf("%w: ai config", ErrNotFound)
 	}
-	if c.AppToken == "" || subtle.ConstantTimeCompare([]byte(token), []byte(c.AppToken)) != 1 {
+	if !tokenMatches(c, token) {
 		return AppAIConfig{}, ErrUnauthorized
 	}
 	return AppAIConfig{BaseURL: p.BaseUrl, APIKey: p.ApiKey, Model: m.Model, MaxTokens: int(m.MaxTokens), Temperature: m.Temperature}, nil

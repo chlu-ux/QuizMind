@@ -64,6 +64,7 @@ func New(svc *service.Service, hub *events.Hub, token string, static fs.FS, log 
 		r.Post("/media", a.uploadMedia)
 
 		r.Get("/usage", a.usage)
+		r.Get("/usage/calls", a.listCalls)
 
 		r.Get("/ai", a.getAIConfig)
 		r.Put("/ai", a.putAIConfig)
@@ -101,6 +102,8 @@ func New(svc *service.Service, hub *events.Hub, token string, static fs.FS, log 
 		r.Post("/questions/{id}/flag", a.flagQuestion)
 		// Unlike the rest, this one hands out the LLM API key, so it needs the app access token.
 		r.Get("/ai/config", a.appAIConfig)
+		// Also needs the access token: it records spend, so it must not be open to anyone.
+		r.Post("/ai/usage", a.uploadAIUsage)
 	})
 
 	r.NotFound(a.serveUI)

@@ -408,6 +408,74 @@ class AiConfig {
       {'base_url': baseUrl, 'api_key': apiKey, 'model': model, 'max_tokens': maxTokens, 'temperature': temperature};
 }
 
+/// What one AI-explanation call cost, as it is reported to the server (api/openapi.yaml, POST /ai/usage).
+/// The id is chosen here, so a report that is sent twice counts once.
+class AiUsage {
+  const AiUsage({
+    required this.id,
+    required this.model,
+    required this.createdAt,
+    this.questionId = '',
+    this.deviceId = '',
+    this.inputTokens = 0,
+    this.outputTokens = 0,
+    this.cachedTokens = 0,
+    this.latencyMs = 0,
+    this.ok = true,
+    this.error = '',
+    this.estimated = false,
+  });
+
+  final String id;
+  final String questionId;
+  final String deviceId;
+  final String model;
+
+  /// Prompt tokens that were not served from the provider's cache; cached ones are counted apart.
+  final int inputTokens;
+  final int outputTokens;
+  final int cachedTokens;
+  final int latencyMs;
+  final bool ok;
+  final String error;
+
+  /// The endpoint reported no token counts, so they are a guess from the text lengths.
+  final bool estimated;
+
+  /// When the call started, epoch ms.
+  final int createdAt;
+
+  factory AiUsage.fromJson(Map<String, dynamic> j) => AiUsage(
+        id: j['id'] as String,
+        questionId: (j['question_id'] as String?) ?? '',
+        deviceId: (j['device_id'] as String?) ?? '',
+        model: (j['model'] as String?) ?? '',
+        inputTokens: (j['input_tokens'] as num?)?.toInt() ?? 0,
+        outputTokens: (j['output_tokens'] as num?)?.toInt() ?? 0,
+        cachedTokens: (j['cached_tokens'] as num?)?.toInt() ?? 0,
+        latencyMs: (j['latency_ms'] as num?)?.toInt() ?? 0,
+        ok: (j['ok'] as bool?) ?? true,
+        error: (j['error'] as String?) ?? '',
+        estimated: (j['estimated'] as bool?) ?? false,
+        createdAt: (j['created_at'] as num).toInt(),
+      );
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'question_id': questionId,
+        'device_id': deviceId,
+        'model': model,
+        'input_tokens': inputTokens,
+        'output_tokens': outputTokens,
+        'cached_tokens': cachedTokens,
+        'latency_ms': latencyMs,
+        'ok': ok,
+        'error': error,
+        'estimated': estimated,
+        'created_at': createdAt,
+      };
+}
+
 /// An AI explanation as it travels to and from the server.
 class NoteDto {
   NoteDto({

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"image"
 	"image/png"
 	"io"
@@ -902,6 +903,148 @@ func TestLLMConfigAdmin(t *testing.T) {
 	assert.NotEmpty(t, test.Error)
 	assert.NotContains(t, test.Error, "sk-deepseek-1")
 	s.do(t, "POST", "/admin/llm/models/nope/test", "", 404, nil)
+}
+
+// enableExplain sets up an OpenAI-protocol model for the explain role and switches the feature on.
+func enableExplain(t *testing.T, s *server) {
+	t.Helper()
+	var provider, model struct{ ID string }
+	s.do(t, "POST", "/admin/llm/providers", `{"name":"P","protocol":"openai","base_url":"http://127.0.0.1:1/v1","api_key":"k"}`, 201, &provider)
+	s.do(t, "POST", "/admin/llm/models", `{"provider_id":"`+provider.ID+`","model":"m"}`, 201, &model)
+	s.do(t, "PUT", "/admin/llm/roles", `{"explain":"`+model.ID+`"}`, 200, nil)
+	s.do(t, "PUT", "/admin/ai", `{"enabled":true,"app_token":"1234"}`, 200, nil)
+}
+
+// appPost posts to the quiz API with an access token (empty = none).
+func (s *server) appPost(t *testing.T, path, token, body string, want int, out any) {
+	t.Helper()
+	r, _ := http.NewRequest("POST", s.ts.URL+path, strings.NewReader(body))
+	r.Header.Set("Content-Type", "application/json")
+	if token != "" {
+		r.Header.Set("Authorization", "Bearer "+token)
+	}
+	resp, err := http.DefaultClient.Do(r)
+	require.NoError(t, err)
+	defer resp.Body.Close()
+	raw, _ := io.ReadAll(resp.Body)
+	require.Equal(t, want, resp.StatusCode, string(raw))
+	if out != nil {
+		require.NoError(t, json.Unmarshal(raw, out))
+	}
+}
+
+func TestAIUsageReporting(t *testing.T) {
+	s := newServer(t)
+	qid := s.publishOne(t)
+	enableExplain(t, s)
+	now := time.Now().UnixMilli()
+	rec := func(id string, extra string) string {
+		return fmt.Sprintf(`{"id":%q,"question_id":%q,"device_id":"phone","model":"deepseek-chat","input_tokens":900,`+
+			`"output_tokens":300,"cached_tokens":100,"latency_ms":2500,"ok":true,"created_at":%d%s}`, id, qid, now, extra)
+	}
+
+	// The report records spend, so it needs the access token like the configuration does.
+	s.appPost(t, "/api/v1/ai/usage", "", "["+rec("u1", "")+"]", 401, nil)
+	s.appPost(t, "/api/v1/ai/usage", "wrong", "["+rec("u1", "")+"]", 401, nil)
+
+	for name, body := range map[string]string{
+		"no id":           `[{"id":"","model":"m","created_at":` + fmt.Sprint(now) + `}]`,
+		"negative tokens": `[{"id":"x","model":"m","input_tokens":-1,"created_at":` + fmt.Sprint(now) + `}]`,
+		"no time":         `[{"id":"x","model":"m"}]`,
+		"future":          `[{"id":"x","model":"m","created_at":` + fmt.Sprint(now+3*24*3600*1000) + `}]`,
+		"huge":            `[{"id":"x","model":"m","output_tokens":99999999999,"created_at":` + fmt.Sprint(now) + `}]`,
+		"too many":        "[" + strings.TrimSuffix(strings.Repeat(`{"id":"x"},`, 101), ",") + "]",
+	} {
+		t.Run(name, func(t *testing.T) { s.appPost(t, "/api/v1/ai/usage", "1234", body, 400, nil) })
+	}
+
+	var res struct{ Accepted, Ignored int }
+	body := "[" + rec("u1", "") + "," + rec("u2", `,"estimated":true`) + "," +
+		strings.Replace(rec("u3", ""), `"ok":true`, `"ok":false,"error":"`+strings.Repeat("错", 800)+`"`, 1) + "]"
+	s.appPost(t, "/api/v1/ai/usage", "1234", body, 200, &res)
+	assert.Equal(t, 3, res.Accepted)
+
+	// Sending the same report again changes nothing.
+	s.appPost(t, "/api/v1/ai/usage", "1234", body, 200, &res)
+	assert.Equal(t, 0, res.Accepted)
+	assert.Equal(t, 3, res.Ignored)
+
+	var usage []struct {
+		Day, Source, Role, Model string
+		Calls, Failures          int64
+		EstimatedCalls           int64 `json:"estimated_calls"`
+		InputTokens              int64 `json:"input_tokens"`
+		CachedTokens             int64 `json:"cached_tokens"`
+	}
+	s.do(t, "GET", "/admin/usage", "", 200, &usage)
+	var client, server *struct {
+		Day, Source, Role, Model string
+		Calls, Failures          int64
+		EstimatedCalls           int64 `json:"estimated_calls"`
+		InputTokens              int64 `json:"input_tokens"`
+		CachedTokens             int64 `json:"cached_tokens"`
+	}
+	for i := range usage {
+		switch usage[i].Source {
+		case "client":
+			client = &usage[i]
+		case "server":
+			server = &usage[i]
+		}
+	}
+	require.NotNil(t, client)
+	assert.Equal(t, "explain", client.Role)
+	assert.Equal(t, "deepseek-chat", client.Model)
+	assert.EqualValues(t, 3, client.Calls)
+	assert.EqualValues(t, 1, client.Failures)
+	assert.EqualValues(t, 1, client.EstimatedCalls)
+	assert.EqualValues(t, 2700, client.InputTokens)
+	assert.EqualValues(t, 300, client.CachedTokens)
+	assert.Equal(t, time.Now().Format("2006-01-02"), client.Day, "days are in the server's local time")
+	if server != nil {
+		assert.Equal(t, "generator", server.Role)
+	}
+
+	type call struct {
+		ID           string `json:"id"`
+		Source       string
+		Role         string
+		OK           bool   `json:"ok"`
+		Error        string `json:"error"`
+		DeviceID     string `json:"device_id"`
+		QuestionID   string `json:"question_id"`
+		QuestionStem string `json:"question_stem"`
+		BankTitle    string `json:"bank_title"`
+		Estimated    bool
+	}
+	var calls struct {
+		Items []call
+		Total int64
+	}
+	s.do(t, "GET", "/admin/usage/calls?source=client", "", 200, &calls)
+	assert.EqualValues(t, 3, calls.Total)
+	require.Len(t, calls.Items, 3)
+	assert.Equal(t, "phone", calls.Items[0].DeviceID)
+	assert.Equal(t, qid, calls.Items[0].QuestionID)
+	assert.NotEmpty(t, calls.Items[0].QuestionStem, "the call shows which question it explained")
+	assert.Equal(t, "题库", calls.Items[0].BankTitle)
+
+	s.do(t, "GET", "/admin/usage/calls?source=client&failed=1", "", 200, &calls)
+	require.Len(t, calls.Items, 1)
+	assert.Equal(t, "u3", calls.Items[0].ID)
+	assert.Len(t, []rune(calls.Items[0].Error), 500, "a long error is cut")
+	s.do(t, "GET", "/admin/usage/calls?role=generator", "", 200, &calls)
+	for _, c := range calls.Items {
+		assert.Equal(t, "server", c.Source)
+	}
+	s.do(t, "GET", "/admin/usage/calls?limit=1&offset=1&source=client", "", 200, &calls)
+	assert.Len(t, calls.Items, 1)
+	assert.EqualValues(t, 3, calls.Total)
+
+	// Still accepted after the feature is switched off: a queued report is not lost.
+	s.do(t, "PUT", "/admin/ai", `{"enabled":false,"app_token":"1234"}`, 200, nil)
+	s.appPost(t, "/api/v1/ai/usage", "1234", "["+rec("u4", "")+"]", 200, &res)
+	assert.Equal(t, 1, res.Accepted)
 }
 
 func TestSyncNotes(t *testing.T) {

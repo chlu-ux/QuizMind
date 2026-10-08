@@ -5,6 +5,7 @@ import 'package:path_provider/path_provider.dart';
 
 import '../data/ai_chat.dart';
 import '../data/ai_config_store.dart';
+import '../data/ai_usage.dart';
 import '../data/api.dart';
 import '../data/models.dart';
 import '../data/database.dart';
@@ -76,6 +77,10 @@ class AiSettingsNotifier extends Notifier<AiSettings> {
   }
 }
 
+final aiUsageReporterProvider = Provider<AiUsageReporter>(
+  (ref) => AiUsageReporter(AiUsageStore(ref.watch(sharedPrefsProvider)), ref.watch(aiConfigStoreProvider)),
+);
+
 /// How explanations are fetched from the model; overridden in tests.
 final aiChatProvider = Provider<AiChat>((ref) => HttpAiChat());
 
@@ -136,6 +141,7 @@ class SyncController extends Notifier<SyncStatus> {
         ref.read(apiProvider),
         sessions: ref.read(sessionStoreProvider),
         aiConfig: ref.read(aiConfigStoreProvider),
+        aiUsage: ref.read(aiUsageReporterProvider),
         media: ref.read(mediaStoreProvider),
         deviceId: ref.read(settingsProvider).deviceId,
       );

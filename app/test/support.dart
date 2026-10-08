@@ -203,6 +203,22 @@ class FakeApi implements QuizApi {
     return c;
   }
 
+  /// What the apps reported about AI explanations, batch by batch. [usageStatus] makes the endpoint
+  /// answer with that status instead (404 = an older server, 400 = refused, 401 = wrong token).
+  final List<AiUsage> uploadedUsage = [];
+  final List<List<AiUsage>> usageBatches = [];
+  int? usageStatus;
+
+  @override
+  Future<void> uploadAiUsage(List<AiUsage> usage, {required String token}) async {
+    _maybeFail();
+    final status = usageStatus;
+    if (status != null) throw ApiException('refused', status: status);
+    if (token != aiToken) throw ApiException('missing or invalid access token', status: 401);
+    usageBatches.add(usage);
+    uploadedUsage.addAll(usage);
+  }
+
   /// The study text the server holds; [lessonsVersion] changes whenever a test changes it.
   List<LessonDto> lessonList = [];
   int lessonsVersion = 1;

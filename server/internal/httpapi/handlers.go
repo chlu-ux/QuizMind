@@ -529,6 +529,33 @@ func (a *API) putLLMLimits(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, v)
 }
 
+func (a *API) listCalls(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	page, err := a.svc.ListCalls(r.Context(), service.CallFilter{
+		Days: intParam(r, "days", 30), Source: q.Get("source"), Role: q.Get("role"), FailedOnly: q.Get("failed") == "1",
+		Limit: intParam(r, "limit", 20), Offset: intParam(r, "offset", 0),
+	})
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, page)
+}
+
+// uploadAIUsage takes the token counts of AI explanations the app requested from the model itself.
+func (a *API) uploadAIUsage(w http.ResponseWriter, r *http.Request) {
+	var in []service.UsageIn
+	if !decode(w, r, &in) {
+		return
+	}
+	res, err := a.svc.UploadAIUsage(r.Context(), strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "), in)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, res)
+}
+
 func (a *API) appAIConfig(w http.ResponseWriter, r *http.Request) {
 	cfg, err := a.svc.AppAIConfig(r.Context(), strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer "))
 	if err != nil {

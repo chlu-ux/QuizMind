@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import 'ai_config_store.dart';
+import 'ai_usage.dart';
 import 'api.dart';
 import 'database.dart';
 import 'media_store.dart';
@@ -24,6 +25,7 @@ class SyncReport {
     this.lessonsPulled = 0,
     this.notesUploaded = 0,
     this.notesPulled = 0,
+    this.aiUsageUploaded = 0,
     this.picturesDownloaded = 0,
     this.aiConfigUpdated = false,
     this.aiWarning,
@@ -49,6 +51,9 @@ class SyncReport {
   /// AI explanations sent to / taken from the server.
   final int notesUploaded;
   final int notesPulled;
+
+  /// Reports of what AI explanations cost, sent to the server (not mentioned in the summary: routine).
+  final int aiUsageUploaded;
 
   /// Pictures used by questions that were saved on this device for offline use.
   final int picturesDownloaded;
@@ -81,7 +86,7 @@ class SyncReport {
 /// Uploads the outbox, then pulls server changes. Uploading first means a
 /// device never loses local progress to a stale pull.
 class SyncService {
-  SyncService(this.db, this.api, {this.sessions, this.aiConfig, this.media, this.deviceId = '', DateTime Function()? clock})
+  SyncService(this.db, this.api, {this.sessions, this.aiConfig, this.aiUsage, this.media, this.deviceId = '', DateTime Function()? clock})
       : _clock = clock ?? DateTime.now;
 
   final AppDatabase db;
@@ -92,6 +97,9 @@ class SyncService {
 
   /// Where the AI explanation settings live; null skips fetching the configuration.
   final AiConfigStore? aiConfig;
+
+  /// Where the cost of AI explanations waits to be reported; null skips that.
+  final AiUsageReporter? aiUsage;
 
   /// Where the pictures of questions are saved; null leaves them to be loaded when shown.
   final MediaStore? media;
@@ -125,6 +133,7 @@ class SyncService {
     await _pushSessions();
     final examsUp = await _pushExams();
     final notesUp = await _pushNotes();
+    final usageUp = await aiUsage?.flush(api) ?? 0;
     final banks = await api.banks();
     final q = await _pullQuestions();
     final statesDown = await _pullStates();
@@ -151,6 +160,7 @@ class SyncService {
       lessonsPulled: lessonsDown,
       notesUploaded: notesUp,
       notesPulled: notesDown,
+      aiUsageUploaded: usageUp,
       picturesDownloaded: pictures,
       aiConfigUpdated: ai.updated,
       aiWarning: ai.warning,

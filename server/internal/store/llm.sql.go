@@ -9,11 +9,87 @@ import (
 	"context"
 )
 
+const countLLMCalls = `-- name: CountLLMCalls :one
+SELECT COUNT(*) FROM llm_call_log c
+WHERE c.created_at >= ?1
+  AND (?2 IS NULL OR c.source = ?2)
+  AND (?3 IS NULL OR c.role = ?3)
+  AND (?4 IS NULL OR c.ok = 0)
+`
+
+type CountLLMCallsParams struct {
+	Since      int64       `json:"since"`
+	Source     interface{} `json:"source"`
+	Role       interface{} `json:"role"`
+	FailedOnly interface{} `json:"failed_only"`
+}
+
+func (q *Queries) CountLLMCalls(ctx context.Context, arg CountLLMCallsParams) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countLLMCalls,
+		arg.Since,
+		arg.Source,
+		arg.Role,
+		arg.FailedOnly,
+	)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const insertClientLLMCall = `-- name: InsertClientLLMCall :execrows
+INSERT INTO llm_call_log (
+  id, job_id, role, provider, model, input_tokens, output_tokens, cached_tokens,
+  latency_ms, ok, error, created_at, source, device_id, ref_id, estimated
+) VALUES (?, '', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'client', ?, ?, ?)
+ON CONFLICT(id) DO NOTHING
+`
+
+type InsertClientLLMCallParams struct {
+	ID           string `json:"id"`
+	Role         string `json:"role"`
+	Provider     string `json:"provider"`
+	Model        string `json:"model"`
+	InputTokens  int64  `json:"input_tokens"`
+	OutputTokens int64  `json:"output_tokens"`
+	CachedTokens int64  `json:"cached_tokens"`
+	LatencyMs    int64  `json:"latency_ms"`
+	Ok           int64  `json:"ok"`
+	Error        string `json:"error"`
+	CreatedAt    int64  `json:"created_at"`
+	DeviceID     string `json:"device_id"`
+	RefID        string `json:"ref_id"`
+	Estimated    int64  `json:"estimated"`
+}
+
+// A call an app reports. The app chooses the id, so sending the same report twice counts once.
+func (q *Queries) InsertClientLLMCall(ctx context.Context, arg InsertClientLLMCallParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, insertClientLLMCall,
+		arg.ID,
+		arg.Role,
+		arg.Provider,
+		arg.Model,
+		arg.InputTokens,
+		arg.OutputTokens,
+		arg.CachedTokens,
+		arg.LatencyMs,
+		arg.Ok,
+		arg.Error,
+		arg.CreatedAt,
+		arg.DeviceID,
+		arg.RefID,
+		arg.Estimated,
+	)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
+}
+
 const insertLLMCall = `-- name: InsertLLMCall :exec
 INSERT INTO llm_call_log (
   id, job_id, role, provider, model, input_tokens, output_tokens, cached_tokens,
-  latency_ms, ok, error, created_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  latency_ms, ok, error, created_at, source, device_id, ref_id, estimated
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type InsertLLMCallParams struct {
@@ -29,6 +105,10 @@ type InsertLLMCallParams struct {
 	Ok           int64  `json:"ok"`
 	Error        string `json:"error"`
 	CreatedAt    int64  `json:"created_at"`
+	Source       string `json:"source"`
+	DeviceID     string `json:"device_id"`
+	RefID        string `json:"ref_id"`
+	Estimated    int64  `json:"estimated"`
 }
 
 func (q *Queries) InsertLLMCall(ctx context.Context, arg InsertLLMCallParams) error {
@@ -45,15 +125,114 @@ func (q *Queries) InsertLLMCall(ctx context.Context, arg InsertLLMCallParams) er
 		arg.Ok,
 		arg.Error,
 		arg.CreatedAt,
+		arg.Source,
+		arg.DeviceID,
+		arg.RefID,
+		arg.Estimated,
 	)
 	return err
 }
 
-const sumTokensSince = `-- name: SumTokensSince :one
-SELECT CAST(COALESCE(SUM(input_tokens + output_tokens), 0) AS INTEGER) AS total
-FROM llm_call_log WHERE created_at >= ?
+const listLLMCalls = `-- name: ListLLMCalls :many
+SELECT c.id, c.source, c.role, c.provider, c.model, c.input_tokens, c.output_tokens, c.cached_tokens,
+       c.latency_ms, c.ok, c.error, c.created_at, c.device_id, c.ref_id, c.estimated, c.job_id,
+       COALESCE(q.stem, '') AS question_stem, COALESCE(b.title, '') AS bank_title
+FROM llm_call_log c
+LEFT JOIN question q ON q.id = c.ref_id AND c.ref_id <> ''
+LEFT JOIN bank b ON b.id = q.bank_id
+WHERE c.created_at >= ?1
+  AND (?2 IS NULL OR c.source = ?2)
+  AND (?3 IS NULL OR c.role = ?3)
+  AND (?4 IS NULL OR c.ok = 0)
+ORDER BY c.created_at DESC, c.id DESC
+LIMIT ?6 OFFSET ?5
 `
 
+type ListLLMCallsParams struct {
+	Since      int64       `json:"since"`
+	Source     interface{} `json:"source"`
+	Role       interface{} `json:"role"`
+	FailedOnly interface{} `json:"failed_only"`
+	PageOffset int64       `json:"page_offset"`
+	PageLimit  int64       `json:"page_limit"`
+}
+
+type ListLLMCallsRow struct {
+	ID           string `json:"id"`
+	Source       string `json:"source"`
+	Role         string `json:"role"`
+	Provider     string `json:"provider"`
+	Model        string `json:"model"`
+	InputTokens  int64  `json:"input_tokens"`
+	OutputTokens int64  `json:"output_tokens"`
+	CachedTokens int64  `json:"cached_tokens"`
+	LatencyMs    int64  `json:"latency_ms"`
+	Ok           int64  `json:"ok"`
+	Error        string `json:"error"`
+	CreatedAt    int64  `json:"created_at"`
+	DeviceID     string `json:"device_id"`
+	RefID        string `json:"ref_id"`
+	Estimated    int64  `json:"estimated"`
+	JobID        string `json:"job_id"`
+	QuestionStem string `json:"question_stem"`
+	BankTitle    string `json:"bank_title"`
+}
+
+func (q *Queries) ListLLMCalls(ctx context.Context, arg ListLLMCallsParams) ([]ListLLMCallsRow, error) {
+	rows, err := q.db.QueryContext(ctx, listLLMCalls,
+		arg.Since,
+		arg.Source,
+		arg.Role,
+		arg.FailedOnly,
+		arg.PageOffset,
+		arg.PageLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListLLMCallsRow{}
+	for rows.Next() {
+		var i ListLLMCallsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Source,
+			&i.Role,
+			&i.Provider,
+			&i.Model,
+			&i.InputTokens,
+			&i.OutputTokens,
+			&i.CachedTokens,
+			&i.LatencyMs,
+			&i.Ok,
+			&i.Error,
+			&i.CreatedAt,
+			&i.DeviceID,
+			&i.RefID,
+			&i.Estimated,
+			&i.JobID,
+			&i.QuestionStem,
+			&i.BankTitle,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const sumTokensSince = `-- name: SumTokensSince :one
+SELECT CAST(COALESCE(SUM(input_tokens + output_tokens), 0) AS INTEGER) AS total
+FROM llm_call_log WHERE created_at >= ? AND source = 'server'
+`
+
+// The daily budget limits what the server itself spends; calls the apps made are already spent.
 func (q *Queries) SumTokensSince(ctx context.Context, createdAt int64) (int64, error) {
 	row := q.db.QueryRowContext(ctx, sumTokensSince, createdAt)
 	var total int64
@@ -62,27 +241,33 @@ func (q *Queries) SumTokensSince(ctx context.Context, createdAt int64) (int64, e
 }
 
 const usageByDay = `-- name: UsageByDay :many
-SELECT date(created_at / 1000, 'unixepoch') AS day,
+SELECT date(created_at / 1000, 'unixepoch', 'localtime') AS day,
+       source,
+       role,
        model,
        COUNT(*)                                              AS calls,
        CAST(COALESCE(SUM(input_tokens), 0) AS INTEGER)       AS input_tokens,
        CAST(COALESCE(SUM(output_tokens), 0) AS INTEGER)      AS output_tokens,
        CAST(COALESCE(SUM(cached_tokens), 0) AS INTEGER)      AS cached_tokens,
-       CAST(COALESCE(SUM(1 - ok), 0) AS INTEGER)             AS failures
+       CAST(COALESCE(SUM(1 - ok), 0) AS INTEGER)             AS failures,
+       CAST(COALESCE(SUM(estimated), 0) AS INTEGER)          AS estimated_calls
 FROM llm_call_log
 WHERE created_at >= ?
-GROUP BY day, model
-ORDER BY day DESC, model
+GROUP BY day, source, role, model
+ORDER BY day DESC, source, role, model
 `
 
 type UsageByDayRow struct {
-	Day          interface{} `json:"day"`
-	Model        string      `json:"model"`
-	Calls        int64       `json:"calls"`
-	InputTokens  int64       `json:"input_tokens"`
-	OutputTokens int64       `json:"output_tokens"`
-	CachedTokens int64       `json:"cached_tokens"`
-	Failures     int64       `json:"failures"`
+	Day            interface{} `json:"day"`
+	Source         string      `json:"source"`
+	Role           string      `json:"role"`
+	Model          string      `json:"model"`
+	Calls          int64       `json:"calls"`
+	InputTokens    int64       `json:"input_tokens"`
+	OutputTokens   int64       `json:"output_tokens"`
+	CachedTokens   int64       `json:"cached_tokens"`
+	Failures       int64       `json:"failures"`
+	EstimatedCalls int64       `json:"estimated_calls"`
 }
 
 func (q *Queries) UsageByDay(ctx context.Context, createdAt int64) ([]UsageByDayRow, error) {
@@ -96,12 +281,15 @@ func (q *Queries) UsageByDay(ctx context.Context, createdAt int64) ([]UsageByDay
 		var i UsageByDayRow
 		if err := rows.Scan(
 			&i.Day,
+			&i.Source,
+			&i.Role,
 			&i.Model,
 			&i.Calls,
 			&i.InputTokens,
 			&i.OutputTokens,
 			&i.CachedTokens,
 			&i.Failures,
+			&i.EstimatedCalls,
 		); err != nil {
 			return nil, err
 		}

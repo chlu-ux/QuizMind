@@ -93,7 +93,7 @@ func (r LLMRecorder) Record(ctx context.Context, rec llm.CallRecord) error {
 	return store.New(r.DB.Write).InsertLLMCall(ctx, store.InsertLLMCallParams{
 		ID: newID(), JobID: rec.JobID, Role: string(rec.Role), Provider: rec.Provider, Model: rec.Model,
 		InputTokens: rec.Usage.InputTokens, OutputTokens: rec.Usage.OutputTokens, CachedTokens: rec.Usage.CachedTokens,
-		LatencyMs: rec.LatencyMs, Ok: ok, Error: msg, CreatedAt: rec.OccurredAt.UnixMilli(),
+		LatencyMs: rec.LatencyMs, Ok: ok, Error: msg, CreatedAt: rec.OccurredAt.UnixMilli(), Source: SourceServer,
 	})
 }
 

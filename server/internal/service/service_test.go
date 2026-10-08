@@ -339,15 +339,25 @@ func TestListQuestions_SearchAndBankStats(t *testing.T) {
 	all, err := e.svc.ListQuestions(ctx, service.QuestionFilter{BankID: e.bank})
 	require.NoError(t, err)
 	require.NotEmpty(t, all.Items)
+	// Editing re-checks the source quote, so edit one of the questions that has a genuine quote
+	// (the script also produces one with a fabricated quote, which is rejected).
+	var target service.QuestionView
+	for _, it := range all.Items {
+		if it.Status != "rejected" {
+			target = it
+			break
+		}
+	}
+	require.NotEmpty(t, target.ID)
 
 	stem := "Needle 关键词：下面哪项正确？"
-	_, err = e.svc.EditQuestion(ctx, all.Items[0].ID, service.QuestionEdit{Stem: &stem})
+	_, err = e.svc.EditQuestion(ctx, target.ID, service.QuestionEdit{Stem: &stem})
 	require.NoError(t, err)
 
 	hit, err := e.svc.ListQuestions(ctx, service.QuestionFilter{BankID: e.bank, Search: " needle "})
 	require.NoError(t, err)
 	assert.EqualValues(t, 1, hit.Total, "case-insensitive, surrounding spaces ignored")
-	assert.Equal(t, all.Items[0].ID, hit.Items[0].ID)
+	assert.Equal(t, target.ID, hit.Items[0].ID)
 
 	for _, wild := range []string{"%", "_"} {
 		none, err := e.svc.ListQuestions(ctx, service.QuestionFilter{BankID: e.bank, Search: wild})

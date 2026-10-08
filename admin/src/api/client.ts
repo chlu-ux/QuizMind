@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios'
 import type {
   AIConfig, AIConfigUpdate, AINotePage, Bank, BulkResult, DocumentContent, DocumentDetail, DocumentRow, ImportResult, Job, LlmConfig, LlmLimits, LlmModel,
-  LlmModelInput, LlmProvider, LlmProviderInput, LlmRole, MediaView, ModelTestResult, QuestionDetail, QuestionEdit, QuestionPage, Question, UsageRow,
+  LlmModelInput, LlmProvider, LlmProviderInput, LlmRole, MediaView, ModelTestResult, QuestionDetail, QuestionEdit, QuestionPage, Question, UsageCallPage, UsageRow,
 } from './types'
 
 const TOKEN_KEY = 'quizmind.token'
@@ -110,6 +110,8 @@ export const api = {
     post<BulkResult>('/admin/questions/bulk', { action, ids, note }),
 
   usage: (days: number) => get<UsageRow[]>('/admin/usage', { days }),
+  usageCalls: (params: { days: number; source?: string; role?: string; failed?: 1; limit?: number; offset?: number }) =>
+    get<UsageCallPage>('/admin/usage/calls', params),
 
   aiConfig: () => get<AIConfig>('/admin/ai'),
   saveAIConfig: (c: AIConfigUpdate) => put<AIConfig>('/admin/ai', c),
