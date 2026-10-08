@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="190" viewBox="0 0 720 190" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>活动图与状态图中的控制节点</title>
+  <rect width="720" height="190" fill="#ffffff"/>
+  <polygon points="70.0,50.0 96.0,70.0 70.0,90.0 44.0,70.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <circle cx="70" cy="140" r="12" fill="#fde68a" stroke="#b45309" stroke-width="1.5"/>
+  <text x="70" y="145.04" font-size="14" text-anchor="middle" fill="#1f2937" font-weight="bold">1</text>
+  <circle cx="215" cy="70" r="11" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <circle cx="215" cy="140" r="12" fill="#fde68a" stroke="#b45309" stroke-width="1.5"/>
+  <text x="215" y="145.04" font-size="14" text-anchor="middle" fill="#1f2937" font-weight="bold">2</text>
+  <rect x="320" y="66" width="80" height="8" rx="0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <circle cx="360" cy="140" r="12" fill="#fde68a" stroke="#b45309" stroke-width="1.5"/>
+  <text x="360" y="145.04" font-size="14" text-anchor="middle" fill="#1f2937" font-weight="bold">3</text>
+  <circle cx="505" cy="70" r="13" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <circle cx="505" cy="70" r="7" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <circle cx="505" cy="140" r="12" fill="#fde68a" stroke="#b45309" stroke-width="1.5"/>
+  <text x="505" y="145.04" font-size="14" text-anchor="middle" fill="#1f2937" font-weight="bold">4</text>
+  <circle cx="650" cy="70" r="13" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <line x1="642.0" y1="62.0" x2="658.0" y2="78.0" stroke="#374151" stroke-width="2"/>
+  <line x1="658.0" y1="62.0" x2="642.0" y2="78.0" stroke="#374151" stroke-width="2"/>
+  <circle cx="650" cy="140" r="12" fill="#fde68a" stroke="#b45309" stroke-width="1.5"/>
+  <text x="650" y="145.04" font-size="14" text-anchor="middle" fill="#1f2937" font-weight="bold">5</text>
+</svg>

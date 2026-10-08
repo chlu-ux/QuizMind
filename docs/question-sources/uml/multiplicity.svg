@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="190" viewBox="0 0 760 190" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>多重度</title>
+  <rect width="760" height="190" fill="#ffffff"/>
+  <rect x="20" y="60" width="120" height="50" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="80" y="90.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">顾客</text>
+  <rect x="320" y="60" width="120" height="50" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="380" y="90.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">订单</text>
+  <rect x="620" y="60" width="120" height="50" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="680" y="90.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">订单项</text>
+  <polyline points="140.0,85.0 320.0,85.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <text x="148" y="76" font-size="12" text-anchor="start" fill="#1f2937">1</text>
+  <text x="312" y="76" font-size="12" text-anchor="end" fill="#1f2937">0..*</text>
+  <text x="230" y="106" font-size="12" text-anchor="middle" fill="#6b7280">下单</text>
+  <polygon points="440.0,85.0 451.0,78.0 462.0,85.0 451.0,92.0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="462.0,85.0 620.0,85.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <text x="466" y="76" font-size="12" text-anchor="start" fill="#1f2937">1</text>
+  <text x="612" y="76" font-size="12" text-anchor="end" fill="#1f2937">1..*</text>
+  <rect x="320" y="140" width="120" height="40" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="380" y="165.04" font-size="14" text-anchor="middle" fill="#1f2937" font-weight="bold">优惠券</text>
+  <polyline points="380.0,110.0 380.0,140.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <text x="390" y="130" font-size="12" text-anchor="start" fill="#1f2937">0..1</text>
+</svg>

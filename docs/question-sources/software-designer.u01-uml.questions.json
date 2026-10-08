@@ -1,0 +1,2520 @@
+{
+ "软件设计师（中级）UML 图专项讲义 > U1 UML 的 14 种图与分类": [
+  {
+   "type": "single",
+   "stem": "下图是 UML 的 14 种图的分类，其中属于结构图的是哪一种？\n\n![示意图](uml/uml-taxonomy.svg)",
+   "options": [
+    "活动图",
+    "部署图",
+    "顺序图",
+    "用例图"
+   ],
+   "answer_index": 1,
+   "explanation": "部署图与类图、对象图、构件图、组合结构图、包图、轮廓图同属结构图；活动图、顺序图、用例图都是行为图。",
+   "difficulty": 1,
+   "tags": [
+    "UML",
+    "图的分类"
+   ],
+   "source_quote": "结构图描述系统的静态结构，包括类图、对象图、构件图、组合结构图、包图、部署图和轮廓图共 7 种"
+  },
+  {
+   "type": "single",
+   "stem": "UML 2.x 一共定义了多少种图？",
+   "options": [
+    "9 种",
+    "12 种",
+    "16 种",
+    "14 种"
+   ],
+   "answer_index": 3,
+   "explanation": "UML 2.x 共 14 种图，分为 7 种结构图和 7 种行为图。",
+   "difficulty": 1,
+   "tags": [
+    "UML",
+    "图的分类"
+   ],
+   "source_quote": "UML 2.x 共有 14 种图，分为结构图和行为图两大类"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一种图不属于交互图？",
+   "options": [
+    "状态机图",
+    "顺序图",
+    "通信图",
+    "时序图"
+   ],
+   "answer_index": 0,
+   "explanation": "交互图包括顺序图、通信图、交互概览图和时序图；状态机图是与交互图并列的行为图。",
+   "difficulty": 2,
+   "tags": [
+    "UML",
+    "图的分类"
+   ],
+   "source_quote": "交互图又包括顺序图、通信图、交互概览图和时序图"
+  },
+  {
+   "type": "judge",
+   "stem": "用例图属于结构图。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "用例图描述系统的功能需求，属于行为图。",
+   "difficulty": 1,
+   "tags": [
+    "UML",
+    "图的分类"
+   ],
+   "source_quote": "行为图描述系统的动态行为，包括用例图、活动图、状态机图和交互图共 4 类"
+  },
+  {
+   "type": "judge",
+   "stem": "顺序图和通信图的语义等价，可以相互转换。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "二者表达的是同一类信息，只是侧重点不同：顺序图强调时间顺序，通信图强调对象间的结构关系。",
+   "difficulty": 2,
+   "tags": [
+    "UML",
+    "图的分类"
+   ],
+   "source_quote": "二者语义等价，可以相互转换"
+  },
+  {
+   "type": "single",
+   "stem": "与顺序图相比，通信图更强调什么？",
+   "options": [
+    "消息的时间顺序",
+    "对象状态的转换",
+    "对象之间的结构关系",
+    "构件在硬件上的分布"
+   ],
+   "answer_index": 2,
+   "explanation": "顺序图强调消息的时间顺序，通信图强调对象之间的结构关系。",
+   "difficulty": 2,
+   "tags": [
+    "UML",
+    "图的分类"
+   ],
+   "source_quote": "顺序图强调消息的时间顺序，通信图强调对象之间的结构关系"
+  },
+  {
+   "type": "single",
+   "stem": "按下图的分类，行为图一共包含多少种具体的图（交互图按其下的 4 种分别计数）？\n\n![示意图](uml/uml-taxonomy.svg)",
+   "options": [
+    "4 种",
+    "6 种",
+    "7 种",
+    "8 种"
+   ],
+   "answer_index": 2,
+   "explanation": "行为图包括用例图、活动图、状态机图 3 种，加上交互图下的顺序图、通信图、交互概览图、时序图 4 种，共 7 种。",
+   "difficulty": 3,
+   "tags": [
+    "UML",
+    "图的分类"
+   ],
+   "source_quote": "因此 14 种图是 7 种结构图，加上用例图、活动图、状态机图 3 种行为图，再加上 4 种交互图"
+  },
+  {
+   "type": "single",
+   "stem": "下列四种图中，既不是结构图也不是交互图的是哪一种？",
+   "options": [
+    "活动图",
+    "包图",
+    "顺序图",
+    "时序图"
+   ],
+   "answer_index": 0,
+   "explanation": "包图是结构图，顺序图和时序图是交互图，只有活动图属于行为图而不属于交互图。",
+   "difficulty": 3,
+   "tags": [
+    "UML",
+    "图的分类"
+   ],
+   "source_quote": "行为图描述系统的动态行为，包括用例图、活动图、状态机图和交互图共 4 类"
+  },
+  {
+   "type": "judge",
+   "stem": "对象图和组合结构图都属于结构图。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "结构图共 7 种：类图、对象图、构件图、组合结构图、包图、部署图、轮廓图。",
+   "difficulty": 2,
+   "tags": [
+    "UML",
+    "图的分类"
+   ],
+   "source_quote": "结构图描述系统的静态结构，包括类图、对象图、构件图、组合结构图、包图、部署图和轮廓图共 7 种"
+  }
+ ],
+ "软件设计师（中级）UML 图专项讲义 > U2 UML 的 4+1 视图": [
+  {
+   "type": "single",
+   "stem": "下图是 UML 的 4+1 视图，位于中心的用例视图起什么作用？\n\n![示意图](uml/views-4plus1.svg)",
+   "options": [
+    "只描述软件的物理部署",
+    "只描述系统的并发与同步",
+    "只描述类的静态结构",
+    "是核心，驱动其他四个视图"
+   ],
+   "answer_index": 3,
+   "explanation": "用例视图描述系统的功能需求，是 4+1 视图的核心，驱动逻辑、进程、实现、部署四个视图。",
+   "difficulty": 1,
+   "tags": [
+    "UML",
+    "4+1 视图"
+   ],
+   "source_quote": "用例视图是核心，驱动其他四个视图，描述系统的功能需求"
+  },
+  {
+   "type": "single",
+   "stem": "构件图用来描述 4+1 视图中的哪个视图？",
+   "options": [
+    "逻辑视图",
+    "实现视图",
+    "进程视图",
+    "用例视图"
+   ],
+   "answer_index": 1,
+   "explanation": "实现视图描述软件的物理组织，用构件图表示。",
+   "difficulty": 1,
+   "tags": [
+    "UML",
+    "4+1 视图"
+   ],
+   "source_quote": "实现视图描述软件的物理组织，用构件图表示"
+  },
+  {
+   "type": "single",
+   "stem": "软件在硬件上的分布，在 4+1 视图中属于哪个视图？",
+   "options": [
+    "部署视图",
+    "逻辑视图",
+    "实现视图",
+    "用例视图"
+   ],
+   "answer_index": 0,
+   "explanation": "部署视图描述软件在硬件上的分布，用部署图表示。",
+   "difficulty": 1,
+   "tags": [
+    "UML",
+    "4+1 视图"
+   ],
+   "source_quote": "部署视图描述软件在硬件上的分布，用部署图表示"
+  },
+  {
+   "type": "judge",
+   "stem": "进程视图描述的是系统的并发与同步。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "进程视图关注运行时的进程、并发与同步。",
+   "difficulty": 1,
+   "tags": [
+    "UML",
+    "4+1 视图"
+   ],
+   "source_quote": "进程视图描述系统的并发与同步"
+  },
+  {
+   "type": "single",
+   "stem": "逻辑视图描述的是系统的什么？",
+   "options": [
+    "软件的物理组织",
+    "软件在硬件上的分布",
+    "静态结构与行为",
+    "系统的并发与同步"
+   ],
+   "answer_index": 2,
+   "explanation": "逻辑视图描述系统的静态结构与行为，常用类图、对象图和状态图表示。",
+   "difficulty": 2,
+   "tags": [
+    "UML",
+    "4+1 视图"
+   ],
+   "source_quote": "逻辑视图描述系统的静态结构与行为，常用类图、对象图和状态图表示"
+  },
+  {
+   "type": "single",
+   "stem": "根据下图，下列哪一种图不属于逻辑视图常用的图？\n\n![示意图](uml/views-4plus1.svg)",
+   "options": [
+    "类图",
+    "对象图",
+    "状态图",
+    "构件图"
+   ],
+   "answer_index": 3,
+   "explanation": "逻辑视图常用类图、对象图和状态图表示，构件图属于实现视图。",
+   "difficulty": 2,
+   "tags": [
+    "UML",
+    "4+1 视图"
+   ],
+   "source_quote": "逻辑视图描述系统的静态结构与行为，常用类图、对象图和状态图表示"
+  },
+  {
+   "type": "judge",
+   "stem": "UML 的 4+1 视图由逻辑视图、进程视图、实现视图、部署视图和用例视图组成。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "4 个视图围绕 1 个核心的用例视图，合称 4+1 视图。",
+   "difficulty": 1,
+   "tags": [
+    "UML",
+    "4+1 视图"
+   ],
+   "source_quote": "UML 的 4+1 视图包括逻辑视图、进程视图、实现视图、部署视图和用例视图"
+  }
+ ],
+ "软件设计师（中级）UML 图专项讲义 > U3 类的表示：三层结构与可见性": [
+  {
+   "type": "single",
+   "stem": "下图中，学生类的属性 score 前面的 # 表示什么可见性？\n\n![示意图](uml/class-notation.svg)",
+   "options": [
+    "公有",
+    "受保护",
+    "私有",
+    "包内可见"
+   ],
+   "answer_index": 1,
+   "explanation": "井号表示受保护（protected）。",
+   "difficulty": 1,
+   "tags": [
+    "类图",
+    "类的表示"
+   ],
+   "source_quote": "加号表示公有，减号表示私有，井号表示受保护，波浪号表示包内可见"
+  },
+  {
+   "type": "single",
+   "stem": "图中学生类的属性 level 前面的波浪号 ~ 表示什么？\n\n![示意图](uml/class-notation.svg)",
+   "options": [
+    "公有",
+    "包内可见",
+    "私有",
+    "受保护"
+   ],
+   "answer_index": 1,
+   "explanation": "波浪号表示包内可见（package）。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "类的表示"
+   ],
+   "source_quote": "加号表示公有，减号表示私有，井号表示受保护，波浪号表示包内可见"
+  },
+  {
+   "type": "single",
+   "stem": "图中学生类的属性 id 前面的减号表示什么？\n\n![示意图](uml/class-notation.svg)",
+   "options": [
+    "公有",
+    "受保护",
+    "包内可见",
+    "私有"
+   ],
+   "answer_index": 3,
+   "explanation": "减号表示私有（private），只能在类内部访问。",
+   "difficulty": 1,
+   "tags": [
+    "类图",
+    "类的表示"
+   ],
+   "source_quote": "加号表示公有，减号表示私有，井号表示受保护，波浪号表示包内可见"
+  },
+  {
+   "type": "single",
+   "stem": "图中 Shape 的类名是斜体，这说明它是什么？\n\n![示意图](uml/class-notation.svg)",
+   "options": [
+    "抽象类",
+    "接口",
+    "最终类",
+    "普通的具体类"
+   ],
+   "answer_index": 0,
+   "explanation": "抽象类的类名用斜体表示，抽象方法也用斜体表示。",
+   "difficulty": 1,
+   "tags": [
+    "类图",
+    "类的表示"
+   ],
+   "source_quote": "抽象类的类名用斜体表示，抽象方法也用斜体表示"
+  },
+  {
+   "type": "single",
+   "stem": "图中 Drawable 名称上方的 «interface» 叫什么？\n\n![示意图](uml/class-notation.svg)",
+   "options": [
+    "约束",
+    "标记值",
+    "构造型",
+    "注释"
+   ],
+   "answer_index": 2,
+   "explanation": "用双尖括号括起来的名称是构造型，用来说明元素的种类，这里说明 Drawable 是接口。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "类的表示"
+   ],
+   "source_quote": "在名称上方标注构造型 «interface»，只有名称和操作，没有属性"
+  },
+  {
+   "type": "single",
+   "stem": "图中学生类最下面一层放的是什么？\n\n![示意图](uml/class-notation.svg)",
+   "options": [
+    "类名",
+    "属性",
+    "方法（操作）",
+    "构造型"
+   ],
+   "answer_index": 2,
+   "explanation": "类的三层从上到下是类名、属性和方法。",
+   "difficulty": 1,
+   "tags": [
+    "类图",
+    "类的表示"
+   ],
+   "source_quote": "类用矩形分三层表示，从上到下依次是类名、属性和方法"
+  },
+  {
+   "type": "judge",
+   "stem": "图中 Drawable 是接口，所以它的矩形里只有名称和操作，没有属性层。\n\n![示意图](uml/class-notation.svg)",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "接口只声明行为，不含属性，因此图中只画名称和操作。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "类的表示"
+   ],
+   "source_quote": "在名称上方标注构造型 «interface»，只有名称和操作，没有属性"
+  },
+  {
+   "type": "judge",
+   "stem": "图中 Shape 类的方法 draw() 用斜体显示，表示它是抽象方法。\n\n![示意图](uml/class-notation.svg)",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "抽象方法也用斜体表示，只有声明、没有实现，由子类实现。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "类的表示"
+   ],
+   "source_quote": "抽象类的类名用斜体表示，抽象方法也用斜体表示"
+  },
+  {
+   "type": "single",
+   "stem": "下列关于类图可见性符号的对应关系，哪一项是错误的？",
+   "options": [
+    "波浪号表示受保护",
+    "加号表示公有",
+    "减号表示私有",
+    "井号表示受保护"
+   ],
+   "answer_index": 0,
+   "explanation": "波浪号表示包内可见，受保护用井号。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "类的表示"
+   ],
+   "source_quote": "加号表示公有，减号表示私有，井号表示受保护，波浪号表示包内可见"
+  },
+  {
+   "type": "single",
+   "stem": "图中学生类的方法 - calc(): int 表示什么？\n\n![示意图](uml/class-notation.svg)",
+   "options": [
+    "公有方法 calc，参数类型是 int",
+    "受保护方法 calc，返回类型是 int",
+    "私有属性 calc，类型是 int",
+    "私有方法 calc，返回类型是 int"
+   ],
+   "answer_index": 3,
+   "explanation": "方法的写法是“可见性 名称(参数): 返回类型”，减号表示私有，冒号后的 int 是返回类型。",
+   "difficulty": 3,
+   "tags": [
+    "类图",
+    "类的表示"
+   ],
+   "source_quote": "方法的写法是“可见性 名称(参数): 返回类型”"
+  }
+ ],
+ "软件设计师（中级）UML 图专项讲义 > U4 类图中的六种关系符号": [
+  {
+   "type": "single",
+   "stem": "下图中 A 与 B 之间表示的是哪种关系？\n\n![关系图](uml/rel-aggregation.svg)",
+   "options": [
+    "组合",
+    "聚合",
+    "单向关联",
+    "泛化"
+   ],
+   "answer_index": 1,
+   "explanation": "实线加空心菱形是聚合，菱形在整体（A）一端。",
+   "difficulty": 1,
+   "tags": [
+    "类图",
+    "类间关系"
+   ],
+   "source_quote": "聚合用实线，在整体一端画空心菱形"
+  },
+  {
+   "type": "single",
+   "stem": "观察下图，A 和 B 之间的连线属于哪种类间关系？\n\n![关系图](uml/rel-composition.svg)",
+   "options": [
+    "组合",
+    "聚合",
+    "依赖",
+    "实现"
+   ],
+   "answer_index": 0,
+   "explanation": "实线加实心菱形是组合，菱形在整体（A）一端。",
+   "difficulty": 1,
+   "tags": [
+    "类图",
+    "类间关系"
+   ],
+   "source_quote": "组合用实线，在整体一端画实心菱形"
+  },
+  {
+   "type": "single",
+   "stem": "下图中从 A 指向 B 的带空心三角的实线表示什么？\n\n![关系图](uml/rel-generalization.svg)",
+   "options": [
+    "实现：A 实现了接口 B",
+    "聚合：A 由 B 聚合而成",
+    "泛化：A 是 B 的子类",
+    "依赖：A 依赖 B"
+   ],
+   "answer_index": 2,
+   "explanation": "泛化用实线加空心三角箭头，箭头指向父类，所以 A 是子类、B 是父类。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "类间关系"
+   ],
+   "source_quote": "泛化用实线加空心三角箭头，箭头指向父类"
+  },
+  {
+   "type": "single",
+   "stem": "下图中虚线加空心三角箭头表示 A 与 B 之间的什么关系？\n\n![关系图](uml/rel-realization.svg)",
+   "options": [
+    "泛化：A 继承 B",
+    "依赖：A 依赖 B",
+    "关联：A 持有 B",
+    "实现：A 实现接口 B"
+   ],
+   "answer_index": 3,
+   "explanation": "实现用虚线加空心三角箭头，箭头指向接口。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "类间关系"
+   ],
+   "source_quote": "实现用虚线加空心三角箭头，箭头指向接口"
+  },
+  {
+   "type": "single",
+   "stem": "图中 A 到 B 的虚线开口箭头表示哪种关系？\n\n![关系图](uml/rel-dependency.svg)",
+   "options": [
+    "关联",
+    "依赖",
+    "实现",
+    "组合"
+   ],
+   "answer_index": 1,
+   "explanation": "依赖用虚线加开口箭头，箭头指向被依赖的类；虚线加空心三角才是实现。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "类间关系"
+   ],
+   "source_quote": "依赖用虚线加开口箭头，箭头指向被依赖的类"
+  },
+  {
+   "type": "single",
+   "stem": "图中 A 与 B 之间带开口箭头的实线表示什么？\n\n![关系图](uml/rel-directed.svg)",
+   "options": [
+    "依赖，A 临时使用 B",
+    "单向关联，A 能访问 B",
+    "聚合，B 是 A 的一部分",
+    "泛化，B 是 A 的父类"
+   ],
+   "answer_index": 1,
+   "explanation": "关联用实线，单向关联在被访问的一端加开口箭头。",
+   "difficulty": 3,
+   "tags": [
+    "类图",
+    "类间关系"
+   ],
+   "source_quote": "关联用实线，单向关联在被访问的一端加开口箭头"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一幅图表示 A 与 B 之间是组合关系？",
+   "options": [
+    "![B](uml/rel-aggregation.svg)",
+    "![C](uml/rel-generalization.svg)",
+    "![D](uml/rel-dependency.svg)",
+    "![A](uml/rel-composition.svg)"
+   ],
+   "answer_index": 3,
+   "explanation": "组合是实线加实心菱形（菱形在整体一端）；聚合是空心菱形，泛化是空心三角，依赖是虚线开口箭头。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "类间关系"
+   ],
+   "source_quote": "组合用实线，在整体一端画实心菱形"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一幅图表示 A 实现了接口 B？",
+   "options": [
+    "![A](uml/rel-realization.svg)",
+    "![B](uml/rel-generalization.svg)",
+    "![C](uml/rel-dependency.svg)",
+    "![D](uml/rel-directed.svg)"
+   ],
+   "answer_index": 0,
+   "explanation": "实现是虚线加空心三角箭头；实线加空心三角是泛化，虚线加开口箭头是依赖。",
+   "difficulty": 3,
+   "tags": [
+    "类图",
+    "类间关系"
+   ],
+   "source_quote": "实现用虚线加空心三角箭头，箭头指向接口"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一幅图表示 A 依赖 B？",
+   "options": [
+    "![B](uml/rel-realization.svg)",
+    "![C](uml/rel-association.svg)",
+    "![A](uml/rel-dependency.svg)",
+    "![D](uml/rel-aggregation.svg)"
+   ],
+   "answer_index": 2,
+   "explanation": "依赖是虚线加开口箭头；虚线加空心三角是实现；实线分别是关联和聚合。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "类间关系"
+   ],
+   "source_quote": "依赖用虚线加开口箭头，箭头指向被依赖的类"
+  },
+  {
+   "type": "judge",
+   "stem": "判断类间关系时，实线带空心三角的是实现，虚线带空心三角的是泛化。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "恰好相反：实线带空心三角是泛化，虚线带空心三角是实现。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "类间关系"
+   ],
+   "source_quote": "实线带空心三角的是泛化，虚线带空心三角的是实现，虚线带开口箭头的是依赖"
+  }
+ ],
+ "软件设计师（中级）UML 图专项讲义 > U5 关系辨析：依赖、关联、聚合与组合": [
+  {
+   "type": "single",
+   "stem": "下图中汽车与发动机之间应该用哪种关系表示？\n\n![示意图](uml/class-code.svg)",
+   "options": [
+    "聚合",
+    "关联",
+    "组合",
+    "依赖"
+   ],
+   "answer_index": 2,
+   "explanation": "发动机随汽车创建、随汽车销毁，部分不能脱离整体，是组合。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "关系辨析"
+   ],
+   "source_quote": "整体消亡时部分随之消亡，例如汽车与发动机"
+  },
+  {
+   "type": "single",
+   "stem": "图中司机与地图之间的虚线箭头表示什么关系？\n\n![示意图](uml/class-code.svg)",
+   "options": [
+    "依赖",
+    "关联",
+    "聚合",
+    "泛化"
+   ],
+   "answer_index": 0,
+   "explanation": "司机只在方法参数里临时用到地图，不保存引用，是临时的使用关系，即依赖。",
+   "difficulty": 1,
+   "tags": [
+    "类图",
+    "关系辨析"
+   ],
+   "source_quote": "依赖是临时的使用关系"
+  },
+  {
+   "type": "single",
+   "stem": "在依赖、关联、聚合、组合四种关系中，联系最弱的是哪一种？",
+   "options": [
+    "关联",
+    "聚合",
+    "组合",
+    "依赖"
+   ],
+   "answer_index": 3,
+   "explanation": "关系从弱到强大致为依赖、关联、聚合、组合、泛化。",
+   "difficulty": 1,
+   "tags": [
+    "类图",
+    "关系辨析"
+   ],
+   "source_quote": "关系从弱到强大致为依赖、关联、聚合、组合、泛化"
+  },
+  {
+   "type": "single",
+   "stem": "院系与教师之间通常用哪种关系表示？",
+   "options": [
+    "组合",
+    "聚合",
+    "依赖",
+    "泛化"
+   ],
+   "answer_index": 1,
+   "explanation": "教师可以脱离某个院系独立存在，所以是聚合而不是组合。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "关系辨析"
+   ],
+   "source_quote": "部分可以脱离整体独立存在，例如院系与教师"
+  },
+  {
+   "type": "single",
+   "stem": "聚合与组合的菱形应画在关联线的哪一端？",
+   "options": [
+    "整体一端",
+    "部分一端",
+    "两端各画一个",
+    "线的中间"
+   ],
+   "answer_index": 0,
+   "explanation": "菱形代表“整体”，画在整体一端。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "关系辨析"
+   ],
+   "source_quote": "聚合和组合的菱形都画在整体一端，而不是部分一端"
+  },
+  {
+   "type": "judge",
+   "stem": "聚合关系中，部分可以脱离整体独立存在。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "这正是聚合与组合的区别：组合的部分不能脱离整体。",
+   "difficulty": 1,
+   "tags": [
+    "类图",
+    "关系辨析"
+   ],
+   "source_quote": "聚合表示整体与部分的关系，部分可以脱离整体独立存在"
+  },
+  {
+   "type": "judge",
+   "stem": "在组合关系中，整体消亡后部分仍然可以继续独立存在。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "组合是更强的聚合，整体消亡时部分随之消亡。",
+   "difficulty": 1,
+   "tags": [
+    "类图",
+    "关系辨析"
+   ],
+   "source_quote": "整体消亡时部分随之消亡，例如汽车与发动机"
+  },
+  {
+   "type": "single",
+   "stem": "类 Order 的构造方法里执行 items = new ArrayList<Item>() 并自行创建 Item 对象，Item 随订单一起销毁。Order 与 Item 通常是什么关系？",
+   "options": [
+    "聚合",
+    "依赖",
+    "组合",
+    "实现"
+   ],
+   "answer_index": 2,
+   "explanation": "部分对象由整体在内部创建，且随整体销毁，是组合。",
+   "difficulty": 3,
+   "tags": [
+    "类图",
+    "关系辨析"
+   ],
+   "source_quote": "在代码上，部分对象由外部传入的通常是聚合，由整体在内部创建的通常是组合"
+  },
+  {
+   "type": "single",
+   "stem": "类 Team 有构造方法 Team(Player p)，把外部传入的 Player 对象保存为成员变量。Team 与 Player 通常是什么关系？",
+   "options": [
+    "组合",
+    "泛化",
+    "依赖",
+    "聚合"
+   ],
+   "answer_index": 3,
+   "explanation": "部分对象由外部传入、可以独立存在，通常是聚合。",
+   "difficulty": 3,
+   "tags": [
+    "类图",
+    "关系辨析"
+   ],
+   "source_quote": "在代码上，部分对象由外部传入的通常是聚合，由整体在内部创建的通常是组合"
+  },
+  {
+   "type": "single",
+   "stem": "关联与依赖的主要区别是什么？",
+   "options": [
+    "关联用虚线表示，依赖用实线表示",
+    "关联是类长期持有对方的引用，依赖只是临时使用",
+    "关联表示继承，依赖表示组合",
+    "关联只能出现在接口之间"
+   ],
+   "answer_index": 1,
+   "explanation": "关联是长期的结构关系（持有引用），依赖是临时的使用关系（参数、局部变量等）。",
+   "difficulty": 3,
+   "tags": [
+    "类图",
+    "关系辨析"
+   ],
+   "source_quote": "关联是类持有另一个类的引用，是长期的结构关系"
+  }
+ ],
+ "软件设计师（中级）UML 图专项讲义 > U6 多重度": [
+  {
+   "type": "single",
+   "stem": "下图中订单项一端标注的多重度 1..* 表示什么？\n\n![示意图](uml/multiplicity.svg)",
+   "options": [
+    "一个订单项可以属于多个订单",
+    "一个订单至少包含一个订单项",
+    "一个订单可以没有订单项",
+    "一个订单恰好包含一个订单项"
+   ],
+   "answer_index": 1,
+   "explanation": "1..* 表示至少一个，标在订单项一端，说明一个订单对应一个或多个订单项。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "多重度"
+   ],
+   "source_quote": "1..* 表示至少一个，* 等价于 0..*"
+  },
+  {
+   "type": "single",
+   "stem": "根据下图，一位顾客最多可以拥有多少个订单？\n\n![示意图](uml/multiplicity.svg)",
+   "options": [
+    "1 个",
+    "0 个",
+    "最多 1 个，也可以没有",
+    "没有上限"
+   ],
+   "answer_index": 3,
+   "explanation": "订单一端是 0..*，表示零个或多个，没有上限。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "多重度"
+   ],
+   "source_quote": "0..* 表示零个或多个"
+  },
+  {
+   "type": "single",
+   "stem": "根据下图，一个订单最多属于几位顾客？\n\n![示意图](uml/multiplicity.svg)",
+   "options": [
+    "1 位",
+    "0 位",
+    "不限数量",
+    "至少 2 位"
+   ],
+   "answer_index": 0,
+   "explanation": "顾客一端标 1，表示一个订单只属于一位顾客。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "多重度"
+   ],
+   "source_quote": "顾客一端标 1，表示一个订单只属于一位顾客"
+  },
+  {
+   "type": "single",
+   "stem": "图中订单与优惠券之间的多重度 0..1 表示什么？\n\n![示意图](uml/multiplicity.svg)",
+   "options": [
+    "一个订单必须用一张优惠券",
+    "一个订单可以用任意多张优惠券",
+    "一个订单可以不用优惠券，最多用一张",
+    "一张优惠券只能被一个订单使用"
+   ],
+   "answer_index": 2,
+   "explanation": "0..1 表示零个或一个。",
+   "difficulty": 3,
+   "tags": [
+    "类图",
+    "多重度"
+   ],
+   "source_quote": "0..1 表示零个或一个"
+  },
+  {
+   "type": "single",
+   "stem": "多重度 * 等价于下列哪一种写法？",
+   "options": [
+    "1..*（一个或多个）",
+    "0..1（零个或一个）",
+    "0..*（零个或多个）",
+    "1（恰好一个）"
+   ],
+   "answer_index": 2,
+   "explanation": "* 等价于 0..*，表示零个或多个。",
+   "difficulty": 1,
+   "tags": [
+    "类图",
+    "多重度"
+   ],
+   "source_quote": "1..* 表示至少一个，* 等价于 0..*"
+  },
+  {
+   "type": "single",
+   "stem": "多重度 2..5 表示什么？",
+   "options": [
+    "2 到 5 个",
+    "恰好 2 个或 5 个",
+    "至少 2 个，没有上限",
+    "不超过 5 个，可以为 0"
+   ],
+   "answer_index": 0,
+   "explanation": "m..n 表示 m 到 n 个。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "多重度"
+   ],
+   "source_quote": "m..n 表示 m 到 n 个"
+  },
+  {
+   "type": "single",
+   "stem": "下列多重度中，要求至少有一个对象参与关联的是哪一个？",
+   "options": [
+    "多重度 0..*",
+    "多重度 0..1",
+    "多重度 *",
+    "多重度 1..*"
+   ],
+   "answer_index": 3,
+   "explanation": "1..* 表示至少一个；0..*、* 和 0..1 都允许为零。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "多重度"
+   ],
+   "source_quote": "1..* 表示至少一个，* 等价于 0..*"
+  },
+  {
+   "type": "judge",
+   "stem": "多重度标在关联线的哪一端，就描述那一端的类有多少个对象与另一端的一个对象相关联。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "读多重度时要从另一端的一个对象出发，数这一端的对象个数。",
+   "difficulty": 3,
+   "tags": [
+    "类图",
+    "多重度"
+   ],
+   "source_quote": "多重度标在哪一端，就描述那一端的类有多少个对象与另一端的一个对象相关联"
+  },
+  {
+   "type": "single",
+   "stem": "图中顾客与订单之间的多重度 1 和 0..* 合起来表示什么？\n\n![示意图](uml/multiplicity.svg)",
+   "options": [
+    "一位顾客恰好有一个订单",
+    "一位顾客可以有零个或多个订单，一个订单只属于一位顾客",
+    "一个订单可以属于多位顾客",
+    "一位顾客至少有一个订单"
+   ],
+   "answer_index": 1,
+   "explanation": "订单一端标 0..*（零个或多个），顾客一端标 1（恰好一位），这是典型的一对多关联。",
+   "difficulty": 3,
+   "tags": [
+    "类图",
+    "多重度"
+   ],
+   "source_quote": "例如在顾客与订单的关联中，订单一端标 0..*，表示一位顾客可以有零个或多个订单；顾客一端标 1，表示一个订单只属于一位顾客"
+  },
+  {
+   "type": "judge",
+   "stem": "根据下图，一个订单允许不包含任何订单项。\n\n![示意图](uml/multiplicity.svg)",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "订单项一端是 1..*，至少一个，所以订单不能没有订单项。",
+   "difficulty": 3,
+   "tags": [
+    "类图",
+    "多重度"
+   ],
+   "source_quote": "1..* 表示至少一个，* 等价于 0..*"
+  }
+ ],
+ "软件设计师（中级）UML 图专项讲义 > U7 泛化、实现与综合读图": [
+  {
+   "type": "single",
+   "stem": "下图中狗与动物之间的实线加空心三角箭头表示什么关系？\n\n![示意图](uml/class-zoo.svg)",
+   "options": [
+    "泛化，狗是动物的子类",
+    "实现，狗实现了动物",
+    "聚合，狗是动物的一部分",
+    "依赖，狗临时使用动物"
+   ],
+   "answer_index": 0,
+   "explanation": "泛化表示“是一种”关系，箭头由子类指向父类。",
+   "difficulty": 1,
+   "tags": [
+    "类图",
+    "读图"
+   ],
+   "source_quote": "泛化表示“是一种”关系，子类继承父类的属性和方法，箭头由子类指向父类"
+  },
+  {
+   "type": "single",
+   "stem": "下图中狗到 Pet 的虚线加空心三角箭头表示什么？\n\n![示意图](uml/class-zoo.svg)",
+   "options": [
+    "狗继承了类 Pet",
+    "狗依赖于 Pet",
+    "狗实现了接口 Pet",
+    "Pet 是狗的组成部分"
+   ],
+   "answer_index": 2,
+   "explanation": "实现表示类实现接口声明的操作，箭头由实现类指向接口。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "读图"
+   ],
+   "source_quote": "实现表示类实现接口声明的操作，箭头由实现类指向接口"
+  },
+  {
+   "type": "single",
+   "stem": "根据下图，下列说法正确的是哪一项？\n\n![示意图](uml/class-zoo.svg)",
+   "options": [
+    "猫实现了接口 Pet",
+    "动物实现了接口 Pet",
+    "Pet 是动物的子类",
+    "狗既继承了动物，又实现了接口 Pet"
+   ],
+   "answer_index": 3,
+   "explanation": "图中只有狗到 Pet 有虚线空心三角；一个类可以同时继承一个父类并实现接口。",
+   "difficulty": 3,
+   "tags": [
+    "类图",
+    "读图"
+   ],
+   "source_quote": "一个类可以同时继承一个父类并实现多个接口"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，学校与院系之间是什么关系？\n\n![示意图](uml/class-school.svg)",
+   "options": [
+    "聚合",
+    "组合",
+    "单向关联",
+    "泛化"
+   ],
+   "answer_index": 1,
+   "explanation": "学校一端是实心菱形，学校与院系是组合关系。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "读图"
+   ],
+   "source_quote": "在学校类图中，学校与院系是组合关系，院系与教师是聚合关系"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，院系与教师之间是什么关系？\n\n![示意图](uml/class-school.svg)",
+   "options": [
+    "组合",
+    "聚合",
+    "依赖",
+    "实现"
+   ],
+   "answer_index": 1,
+   "explanation": "院系一端是空心菱形，院系与教师是聚合关系。",
+   "difficulty": 2,
+   "tags": [
+    "类图",
+    "读图"
+   ],
+   "source_quote": "在学校类图中，学校与院系是组合关系，院系与教师是聚合关系"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，教师和学生共同的父类是哪一个？\n\n![示意图](uml/class-school.svg)",
+   "options": [
+    "院系",
+    "课程",
+    "学校",
+    "人员"
+   ],
+   "answer_index": 3,
+   "explanation": "教师和学生都有带空心三角的实线指向人员，人员是父类。",
+   "difficulty": 1,
+   "tags": [
+    "类图",
+    "读图"
+   ],
+   "source_quote": "教师和学生都是人员的子类"
+  },
+  {
+   "type": "single",
+   "stem": "下图中教师与课程、学生与课程之间是什么关系？\n\n![示意图](uml/class-school.svg)",
+   "options": [
+    "多对多的关联",
+    "一对多的组合",
+    "多对一的聚合",
+    "一对一的泛化"
+   ],
+   "answer_index": 0,
+   "explanation": "两条关联线两端都标有多个（1..* 或 *），是多对多关联。",
+   "difficulty": 3,
+   "tags": [
+    "类图",
+    "读图"
+   ],
+   "source_quote": "教师与课程、学生与课程之间都是多对多的关联"
+  },
+  {
+   "type": "single",
+   "stem": "下列关于下图的说法，哪一项是错误的？\n\n![示意图](uml/class-school.svg)",
+   "options": [
+    "学校撤销时，它的院系也随之消亡",
+    "人员是抽象类",
+    "教师是学生的父类",
+    "一个院系包含一名或多名教师"
+   ],
+   "answer_index": 2,
+   "explanation": "教师和学生是平级的两个子类，二者之间没有继承关系；人员才是它们的父类。",
+   "difficulty": 3,
+   "tags": [
+    "类图",
+    "读图"
+   ],
+   "source_quote": "教师和学生都是人员的子类"
+  },
+  {
+   "type": "judge",
+   "stem": "泛化关系的箭头由父类指向子类。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "泛化的箭头由子类指向父类。",
+   "difficulty": 1,
+   "tags": [
+    "类图",
+    "读图"
+   ],
+   "source_quote": "子类继承父类的属性和方法，箭头由子类指向父类"
+  },
+  {
+   "type": "single",
+   "stem": "阅读综合类图时，较合理的顺序是什么？",
+   "options": [
+    "先看多重度，再看泛化，最后看组合与聚合",
+    "先看关联，再看实现，最后看泛化",
+    "先找泛化与实现，再找组合与聚合，最后看关联和多重度",
+    "按类名的字母顺序逐个阅读"
+   ],
+   "answer_index": 2,
+   "explanation": "先找出继承与实现的骨架，再看整体与部分，最后补充一般关联和多重度。",
+   "difficulty": 3,
+   "tags": [
+    "类图",
+    "读图"
+   ],
+   "source_quote": "读综合类图时先找出泛化与实现，再找组合与聚合，最后看关联和多重度"
+  }
+ ],
+ "软件设计师（中级）UML 图专项讲义 > U8 用例图的构成": [
+  {
+   "type": "single",
+   "stem": "下图中，“读者”与“借书”之间的实线表示什么关系？\n\n![示意图](uml/usecase.svg)",
+   "options": [
+    "关联",
+    "包含",
+    "扩展",
+    "泛化"
+   ],
+   "answer_index": 0,
+   "explanation": "参与者与用例之间是关联关系，用实线连接。",
+   "difficulty": 1,
+   "tags": [
+    "用例图",
+    "构成"
+   ],
+   "source_quote": "参与者与用例之间是关联关系，用实线连接"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，“VIP 读者”与“读者”之间的带空心三角的实线表示什么关系？\n\n![示意图](uml/usecase.svg)",
+   "options": [
+    "包含",
+    "扩展",
+    "关联",
+    "泛化"
+   ],
+   "answer_index": 3,
+   "explanation": "参与者之间可以有泛化关系，箭头指向父参与者。",
+   "difficulty": 2,
+   "tags": [
+    "用例图",
+    "构成"
+   ],
+   "source_quote": "参与者之间可以有泛化关系，子参与者继承父参与者的全部行为，箭头指向父参与者"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，包围各个用例的大矩形框表示什么？\n\n![示意图](uml/usecase.svg)",
+   "options": [
+    "参与者",
+    "系统边界",
+    "包",
+    "泳道"
+   ],
+   "answer_index": 1,
+   "explanation": "系统边界用矩形框表示，用例在框内，参与者在框外。",
+   "difficulty": 1,
+   "tags": [
+    "用例图",
+    "构成"
+   ],
+   "source_quote": "系统边界用矩形框表示，用例放在框内，参与者放在框外"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，“管理员”画在矩形框外面，是因为参与者是什么？\n\n![示意图](uml/usecase.svg)",
+   "options": [
+    "系统外部与系统交互的人、设备或外部系统",
+    "系统内部的一个功能模块",
+    "系统的一个用例",
+    "系统中的一个类"
+   ],
+   "answer_index": 0,
+   "explanation": "参与者在系统之外，所以画在系统边界外。",
+   "difficulty": 2,
+   "tags": [
+    "用例图",
+    "构成"
+   ],
+   "source_quote": "参与者是系统外部与系统交互的人、设备或外部系统"
+  },
+  {
+   "type": "single",
+   "stem": "在下图中，“VIP 读者”能不能执行“借书”用例？\n\n![示意图](uml/usecase.svg)",
+   "options": [
+    "不能，因为 VIP 读者与借书之间没有直接连线",
+    "不能，只有管理员能借书",
+    "能，因为 VIP 读者继承了读者的全部行为",
+    "能，但必须先扩展借书用例"
+   ],
+   "answer_index": 2,
+   "explanation": "子参与者继承父参与者的全部行为，读者能做的 VIP 读者都能做。",
+   "difficulty": 3,
+   "tags": [
+    "用例图",
+    "构成"
+   ],
+   "source_quote": "子参与者继承父参与者的全部行为，箭头指向父参与者"
+  },
+  {
+   "type": "single",
+   "stem": "下图中的“借书”“还书”等椭圆表示什么？\n\n![示意图](uml/usecase.svg)",
+   "options": [
+    "参与者，即系统外部的使用者",
+    "状态，即对象生命周期中的一个阶段",
+    "构件，即系统的物理模块",
+    "用例，即系统提供的一个完整功能"
+   ],
+   "answer_index": 3,
+   "explanation": "用例是系统提供的一个完整功能单元，用椭圆表示。",
+   "difficulty": 1,
+   "tags": [
+    "用例图",
+    "构成"
+   ],
+   "source_quote": "用例是系统提供的一个完整功能，用椭圆表示"
+  },
+  {
+   "type": "judge",
+   "stem": "用例图中的参与者只能是人，不能是外部系统或设备。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "参与者可以是人，也可以是外部系统或设备。",
+   "difficulty": 1,
+   "tags": [
+    "用例图",
+    "构成"
+   ],
+   "source_quote": "参与者是系统外部与系统交互的人、设备或外部系统"
+  },
+  {
+   "type": "judge",
+   "stem": "用例图的主要用途是描述系统的功能需求。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "用例图描述系统有哪些功能、谁来使用，是需求分析阶段最常用的图。",
+   "difficulty": 1,
+   "tags": [
+    "用例图",
+    "构成"
+   ],
+   "source_quote": "用例图描述系统的功能需求，由参与者、用例、系统边界和它们之间的关系组成"
+  },
+  {
+   "type": "single",
+   "stem": "下图中“管理员”与“查询图书”之间有连线，说明了什么？\n\n![示意图](uml/usecase.svg)",
+   "options": [
+    "查询图书是管理员的子类",
+    "管理员也可以使用查询图书功能",
+    "管理员包含查询图书",
+    "查询图书扩展了管理员"
+   ],
+   "answer_index": 1,
+   "explanation": "参与者与用例之间的实线是关联，表示该参与者使用这个用例。",
+   "difficulty": 2,
+   "tags": [
+    "用例图",
+    "构成"
+   ],
+   "source_quote": "参与者与用例之间是关联关系，用实线连接"
+  },
+  {
+   "type": "single",
+   "stem": "在用例图中，参与者通常用什么图形表示？",
+   "options": [
+    "椭圆",
+    "小人图形",
+    "矩形",
+    "菱形"
+   ],
+   "answer_index": 1,
+   "explanation": "参与者用小人表示，用例用椭圆表示，系统边界用矩形表示。",
+   "difficulty": 1,
+   "tags": [
+    "用例图",
+    "构成"
+   ],
+   "source_quote": "参与者是系统外部与系统交互的人、设备或外部系统，用小人图形表示"
+  }
+ ],
+ "软件设计师（中级）UML 图专项讲义 > U9 用例之间的关系": [
+  {
+   "type": "single",
+   "stem": "下图中，用例 P 与用例 Q 之间是什么关系？\n\n![用例关系图](uml/uc-include.svg)",
+   "options": [
+    "扩展，Q 是扩展用例",
+    "泛化，Q 是 P 的父用例",
+    "关联，P 与 Q 是参与者",
+    "包含，Q 是被包含用例"
+   ],
+   "answer_index": 3,
+   "explanation": "带 «include» 的虚线箭头是包含关系，箭头由基用例指向被包含用例。",
+   "difficulty": 1,
+   "tags": [
+    "用例图",
+    "用例关系"
+   ],
+   "source_quote": "箭头由基用例指向被包含用例"
+  },
+  {
+   "type": "single",
+   "stem": "下图是扩展关系，其中哪个是基用例？\n\n![用例关系图](uml/uc-extend.svg)",
+   "options": [
+    "用例 Q",
+    "用例 P",
+    "P 和 Q 都是",
+    "P 和 Q 都不是"
+   ],
+   "answer_index": 0,
+   "explanation": "扩展关系的箭头由扩展用例指向基用例，箭头指向 Q，所以 Q 是基用例，P 是扩展用例。",
+   "difficulty": 2,
+   "tags": [
+    "用例图",
+    "用例关系"
+   ],
+   "source_quote": "箭头由扩展用例指向基用例"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，“借书”与“登录”之间的 «include» 说明了什么？\n\n![示意图](uml/usecase.svg)",
+   "options": [
+    "借书时可能执行登录，视条件而定",
+    "登录是借书的子用例",
+    "借书时总会执行登录",
+    "借书是登录的扩展用例"
+   ],
+   "answer_index": 2,
+   "explanation": "包含关系表示基用例的执行总会包含被包含用例。",
+   "difficulty": 2,
+   "tags": [
+    "用例图",
+    "用例关系"
+   ],
+   "source_quote": "包含关系表示基用例的执行总会包含被包含用例"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，“缴纳罚款”与“还书”之间的 «extend» 说明了什么？\n\n![示意图](uml/usecase.svg)",
+   "options": [
+    "每次还书都必须缴纳罚款",
+    "还书是缴纳罚款的扩展用例",
+    "只有还书逾期时才需要缴纳罚款，它是可选的",
+    "缴纳罚款是还书的父用例"
+   ],
+   "answer_index": 2,
+   "explanation": "扩展关系表示在特定条件下基用例才会被扩展用例增强，是可选的。",
+   "difficulty": 3,
+   "tags": [
+    "用例图",
+    "用例关系"
+   ],
+   "source_quote": "扩展是可选的，例如还书逾期时才需要缴纳罚款"
+  },
+  {
+   "type": "single",
+   "stem": "下图中 «extend» 的箭头是怎样指的？\n\n![示意图](uml/usecase.svg)",
+   "options": [
+    "由缴纳罚款指向还书",
+    "由还书指向缴纳罚款",
+    "由缴纳罚款指向登录",
+    "由还书指向登录"
+   ],
+   "answer_index": 0,
+   "explanation": "扩展用例（缴纳罚款）指向基用例（还书）。",
+   "difficulty": 3,
+   "tags": [
+    "用例图",
+    "用例关系"
+   ],
+   "source_quote": "扩展关系表示在特定条件下基用例的行为才会被扩展用例增强，用带 «extend» 的虚线箭头表示"
+  },
+  {
+   "type": "single",
+   "stem": "下图中带空心三角箭头的实线表示用例之间的什么关系？\n\n![用例关系图](uml/uc-generalization.svg)",
+   "options": [
+    "包含",
+    "扩展",
+    "依赖",
+    "泛化"
+   ],
+   "answer_index": 3,
+   "explanation": "泛化关系用空心三角箭头的实线表示，箭头指向父用例。",
+   "difficulty": 1,
+   "tags": [
+    "用例图",
+    "用例关系"
+   ],
+   "source_quote": "泛化关系用空心三角箭头的实线表示，箭头指向父用例"
+  },
+  {
+   "type": "single",
+   "stem": "借书和还书都要先登录。为避免重复描述，通常应怎样处理“登录”？",
+   "options": [
+    "把登录作为借书的扩展用例",
+    "把登录抽取为被借书和还书包含的用例",
+    "把登录作为参与者",
+    "把登录作为借书的子用例"
+   ],
+   "answer_index": 1,
+   "explanation": "包含关系常用来抽取多个用例的公共行为。",
+   "difficulty": 3,
+   "tags": [
+    "用例图",
+    "用例关系"
+   ],
+   "source_quote": "常用来抽取公共行为，例如借书和还书都包含登录"
+  },
+  {
+   "type": "judge",
+   "stem": "扩展关系中的扩展用例是必须执行的。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "扩展是可选的，只有满足条件时才执行；必须执行的是被包含用例。",
+   "difficulty": 2,
+   "tags": [
+    "用例图",
+    "用例关系"
+   ],
+   "source_quote": "扩展是可选的，例如还书逾期时才需要缴纳罚款"
+  },
+  {
+   "type": "judge",
+   "stem": "包含关系的箭头由被包含用例指向基用例。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "包含关系的箭头由基用例指向被包含用例；扩展关系的箭头才是由扩展用例指向基用例。",
+   "difficulty": 2,
+   "tags": [
+    "用例图",
+    "用例关系"
+   ],
+   "source_quote": "箭头由基用例指向被包含用例"
+  },
+  {
+   "type": "single",
+   "stem": "下列哪一幅图表示“用例 P 扩展了用例 Q”？",
+   "options": [
+    "![A](uml/uc-extend.svg)",
+    "![B](uml/uc-extend-rev.svg)",
+    "![C](uml/uc-include.svg)",
+    "![D](uml/uc-generalization.svg)"
+   ],
+   "answer_index": 0,
+   "explanation": "扩展的箭头由扩展用例（P）指向基用例（Q）；箭头反过来表示 Q 扩展了 P。",
+   "difficulty": 3,
+   "tags": [
+    "用例图",
+    "用例关系"
+   ],
+   "source_quote": "记忆方法：包含的箭头指向被包含者，扩展的箭头指向基用例"
+  }
+ ],
+ "软件设计师（中级）UML 图专项讲义 > U10 顺序图": [
+  {
+   "type": "single",
+   "stem": "下图中，“返回令牌”这条虚线箭头是什么消息？\n\n![示意图](uml/seq-login.svg)",
+   "options": [
+    "同步消息",
+    "自消息",
+    "返回消息",
+    "创建消息"
+   ],
+   "answer_index": 2,
+   "explanation": "返回消息用虚线加开口箭头表示。",
+   "difficulty": 1,
+   "tags": [
+    "顺序图"
+   ],
+   "source_quote": "返回消息用虚线加开口箭头"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，认证服务发给自己的“4: 校验口令()”叫什么？\n\n![示意图](uml/seq-login.svg)",
+   "options": [
+    "返回消息",
+    "异步消息",
+    "销毁消息",
+    "自消息"
+   ],
+   "answer_index": 3,
+   "explanation": "对象向自己发送的消息叫自消息，用折回到自己生命线的箭头表示。",
+   "difficulty": 1,
+   "tags": [
+    "顺序图"
+   ],
+   "source_quote": "对象向自己发送的消息叫自消息，用折回到自己生命线的箭头表示"
+  },
+  {
+   "type": "single",
+   "stem": "下图中标有 alt 的方框表示什么？\n\n![示意图](uml/seq-login.svg)",
+   "options": [
+    "循环执行的片段",
+    "组合片段，多个分支中选一个执行",
+    "可选执行的片段",
+    "并行执行的片段"
+   ],
+   "answer_index": 1,
+   "explanation": "alt 表示多个分支中选一个执行，条件写在方括号里；opt 才是可选，loop 才是循环。",
+   "difficulty": 2,
+   "tags": [
+    "顺序图"
+   ],
+   "source_quote": "alt 表示多个分支中选一个执行"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，认证服务生命线上的细长矩形叫什么？\n\n![示意图](uml/seq-login.svg)",
+   "options": [
+    "生命线",
+    "激活条",
+    "组合片段",
+    "控制节点"
+   ],
+   "answer_index": 1,
+   "explanation": "激活条表示对象正在执行操作。",
+   "difficulty": 1,
+   "tags": [
+    "顺序图"
+   ],
+   "source_quote": "生命线上的细长矩形是激活条，表示对象正在执行操作"
+  },
+  {
+   "type": "single",
+   "stem": "按下图的消息顺序，认证服务在“返回令牌”之前已经完成了什么？\n\n![示意图](uml/seq-login.svg)",
+   "options": [
+    "向用户发送显示结果",
+    "销毁了用户库对象",
+    "向登录界面返回错误",
+    "向用户库查询用户并收到用户信息"
+   ],
+   "answer_index": 3,
+   "explanation": "顺序图自上而下表示时间先后：先查询用户、收到用户信息、校验口令，然后才有返回令牌。",
+   "difficulty": 3,
+   "tags": [
+    "顺序图"
+   ],
+   "source_quote": "顺序图强调对象之间消息传递的时间顺序"
+  },
+  {
+   "type": "single",
+   "stem": "下图中标号 ① 的消息是什么？\n\n![符号编号图](uml/seq-notation-q.svg)",
+   "options": [
+    "同步消息",
+    "返回消息",
+    "自消息",
+    "销毁消息"
+   ],
+   "answer_index": 0,
+   "explanation": "同步消息用实线加实心三角箭头表示。",
+   "difficulty": 1,
+   "tags": [
+    "顺序图"
+   ],
+   "source_quote": "同步消息用实线加实心三角箭头"
+  },
+  {
+   "type": "single",
+   "stem": "下图中标号 ③ 所指的是什么？\n\n![符号编号图](uml/seq-notation-q.svg)",
+   "options": [
+    "生命线",
+    "对象销毁标记",
+    "激活条",
+    "返回消息"
+   ],
+   "answer_index": 2,
+   "explanation": "生命线上的细长矩形是激活条。",
+   "difficulty": 1,
+   "tags": [
+    "顺序图"
+   ],
+   "source_quote": "生命线上的细长矩形是激活条，表示对象正在执行操作"
+  },
+  {
+   "type": "single",
+   "stem": "下图中标号 ④ 所指的垂直虚线叫什么？\n\n![符号编号图](uml/seq-notation-q.svg)",
+   "options": [
+    "激活条",
+    "控制流",
+    "生命线",
+    "链接"
+   ],
+   "answer_index": 2,
+   "explanation": "每个对象下方的垂直虚线叫生命线，时间自上而下流逝。",
+   "difficulty": 1,
+   "tags": [
+    "顺序图"
+   ],
+   "source_quote": "每个对象下方有一条垂直虚线叫生命线，时间自上而下流逝"
+  },
+  {
+   "type": "single",
+   "stem": "下图中标号 ⑤ 的“叉”表示什么？\n\n![符号编号图](uml/seq-notation-q.svg)",
+   "options": [
+    "对象被销毁",
+    "流程结束",
+    "消息发送失败",
+    "分支条件为假"
+   ],
+   "answer_index": 0,
+   "explanation": "对象被销毁时在生命线末端画一个叉。",
+   "difficulty": 2,
+   "tags": [
+    "顺序图"
+   ],
+   "source_quote": "对象被销毁时在生命线末端画一个叉"
+  },
+  {
+   "type": "judge",
+   "stem": "在顺序图中，同步消息用虚线加开口箭头表示。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "同步消息用实线加实心三角箭头；虚线加开口箭头是返回消息。",
+   "difficulty": 2,
+   "tags": [
+    "顺序图"
+   ],
+   "source_quote": "同步消息用实线加实心三角箭头，返回消息用虚线加开口箭头"
+  }
+ ],
+ "软件设计师（中级）UML 图专项讲义 > U11 通信图与对象图": [
+  {
+   "type": "single",
+   "stem": "下面这幅图属于哪一种 UML 图？\n\n![示意图](uml/comm-order.svg)",
+   "options": [
+    "顺序图",
+    "对象图",
+    "活动图",
+    "通信图"
+   ],
+   "answer_index": 3,
+   "explanation": "图中对象之间用实线链接，消息带有 1、1.1、2 这样的顺序号，是通信图。",
+   "difficulty": 2,
+   "tags": [
+    "通信图",
+    "对象图"
+   ],
+   "source_quote": "通信图强调参与交互的对象之间的结构关系，对象之间用实线表示链接，消息用靠近链接的带箭头短线表示"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，消息“1.1: 检查库存()”的顺序号 1.1 说明什么？\n\n![示意图](uml/comm-order.svg)",
+   "options": [
+    "它在消息 2 之后发送",
+    "它是消息 1 的嵌套调用",
+    "它是一个返回消息",
+    "它是对象自己发给自己的消息"
+   ],
+   "answer_index": 1,
+   "explanation": "顺序号体现消息的先后与嵌套，1.1 是 1 的嵌套调用。",
+   "difficulty": 3,
+   "tags": [
+    "通信图",
+    "对象图"
+   ],
+   "source_quote": "顺序号体现消息的先后与嵌套，1.1 是 1 的嵌套调用"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，对象之间的实线叫什么？\n\n![示意图](uml/comm-order.svg)",
+   "options": [
+    "链接",
+    "生命线",
+    "泳道",
+    "依赖"
+   ],
+   "answer_index": 0,
+   "explanation": "对象之间的连线叫链接。",
+   "difficulty": 1,
+   "tags": [
+    "通信图",
+    "对象图"
+   ],
+   "source_quote": "对象图是类图在某一时刻的实例快照，对象名带下划线，写法是“对象名 : 类名”，属性写成“属性 = 值”，对象之间的连线叫链接"
+  },
+  {
+   "type": "single",
+   "stem": "按下图中的顺序号，最后发送的消息是哪一条？\n\n![示意图](uml/comm-order.svg)",
+   "options": [
+    "1: 提交订单()",
+    "1.1: 检查库存()",
+    "2: 支付()",
+    "三条消息同时发送"
+   ],
+   "answer_index": 2,
+   "explanation": "顺序号越大越晚发送，2 在 1 和 1.1 之后。",
+   "difficulty": 2,
+   "tags": [
+    "通信图",
+    "对象图"
+   ],
+   "source_quote": "顺序号体现消息的先后与嵌套，1.1 是 1 的嵌套调用"
+  },
+  {
+   "type": "single",
+   "stem": "与顺序图相比，通信图没有下列哪两个元素？",
+   "options": [
+    "对象和消息",
+    "链接和顺序号",
+    "监护条件和动作",
+    "生命线和激活条"
+   ],
+   "answer_index": 3,
+   "explanation": "通信图用链接和顺序号表达，没有生命线和激活条。",
+   "difficulty": 2,
+   "tags": [
+    "通信图",
+    "对象图"
+   ],
+   "source_quote": "通信图与顺序图语义等价，可以相互转换，但通信图没有生命线和激活条"
+  },
+  {
+   "type": "single",
+   "stem": "下面这幅图是哪种 UML 图？\n\n![示意图](uml/object.svg)",
+   "options": [
+    "类图",
+    "对象图",
+    "通信图",
+    "包图"
+   ],
+   "answer_index": 1,
+   "explanation": "对象名带下划线、属性带具体取值，是类图在某一时刻的实例快照，即对象图。",
+   "difficulty": 1,
+   "tags": [
+    "通信图",
+    "对象图"
+   ],
+   "source_quote": "对象图是类图在某一时刻的实例快照"
+  },
+  {
+   "type": "single",
+   "stem": "下图中“张三 : 教师”这种带下划线的写法表示什么？\n\n![示意图](uml/object.svg)",
+   "options": [
+    "张三是教师类的子类",
+    "张三是教师类的一个对象",
+    "张三是教师类的一个属性",
+    "张三是教师类的一个方法"
+   ],
+   "answer_index": 1,
+   "explanation": "对象的写法是“对象名 : 类名”，并带下划线。",
+   "difficulty": 2,
+   "tags": [
+    "通信图",
+    "对象图"
+   ],
+   "source_quote": "对象名带下划线，写法是“对象名 : 类名”"
+  },
+  {
+   "type": "single",
+   "stem": "下图中的 title = \"教授\" 表示什么？\n\n![示意图](uml/object.svg)",
+   "options": [
+    "类的方法声明",
+    "类之间的泛化关系",
+    "对象的销毁标记",
+    "对象的属性取值"
+   ],
+   "answer_index": 3,
+   "explanation": "对象图中属性写成“属性 = 值”。",
+   "difficulty": 2,
+   "tags": [
+    "通信图",
+    "对象图"
+   ],
+   "source_quote": "对象名带下划线，写法是“对象名 : 类名”，属性写成“属性 = 值”"
+  },
+  {
+   "type": "judge",
+   "stem": "对象图是类图在某一时刻的实例快照。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "类图描述类型层面的静态结构，对象图描述某一时刻具体对象及其链接。",
+   "difficulty": 1,
+   "tags": [
+    "通信图",
+    "对象图"
+   ],
+   "source_quote": "对象图是类图在某一时刻的实例快照"
+  },
+  {
+   "type": "judge",
+   "stem": "通信图与顺序图的语义不等价，二者不能相互转换。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "二者语义等价，可以相互转换。",
+   "difficulty": 2,
+   "tags": [
+    "通信图",
+    "对象图"
+   ],
+   "source_quote": "通信图与顺序图语义等价，可以相互转换"
+  }
+ ],
+ "软件设计师（中级）UML 图专项讲义 > U12 状态图": [
+  {
+   "type": "single",
+   "stem": "下面这幅图属于哪一种 UML 图？\n\n![示意图](uml/state-order.svg)",
+   "options": [
+    "状态图（状态机图）",
+    "活动图",
+    "顺序图",
+    "用例图"
+   ],
+   "answer_index": 0,
+   "explanation": "图中有初始状态、圆角矩形的状态、终止状态，以及带事件、条件、动作的转换，是状态图。",
+   "difficulty": 1,
+   "tags": [
+    "状态图"
+   ],
+   "source_quote": "状态图也叫状态机图，描述单个对象在生命周期内的状态以及事件触发的状态转换"
+  },
+  {
+   "type": "single",
+   "stem": "下图左侧的实心小圆表示什么？\n\n![示意图](uml/state-order.svg)",
+   "options": [
+    "终止状态",
+    "判定节点",
+    "初始状态",
+    "分叉节点"
+   ],
+   "answer_index": 2,
+   "explanation": "初始状态用实心圆表示。",
+   "difficulty": 1,
+   "tags": [
+    "状态图"
+   ],
+   "source_quote": "初始状态用实心圆表示"
+  },
+  {
+   "type": "single",
+   "stem": "下图中“已取消”旁边外面带圆圈的实心圆表示什么？\n\n![示意图](uml/state-order.svg)",
+   "options": [
+    "初始状态",
+    "历史状态",
+    "终止状态",
+    "流终止节点"
+   ],
+   "answer_index": 2,
+   "explanation": "终止状态用外面带圆圈的实心圆表示。",
+   "difficulty": 2,
+   "tags": [
+    "状态图"
+   ],
+   "source_quote": "终止状态用外面带圆圈的实心圆表示"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，转换“超时 [超过 30 分钟]”的方括号部分叫什么？\n\n![示意图](uml/state-order.svg)",
+   "options": [
+    "监护条件",
+    "事件",
+    "动作",
+    "构造型"
+   ],
+   "answer_index": 0,
+   "explanation": "转换标注格式为“事件 [监护条件] / 动作”，方括号里是监护条件。",
+   "difficulty": 2,
+   "tags": [
+    "状态图"
+   ],
+   "source_quote": "转换上的标注格式为“事件 [监护条件] / 动作”，监护条件是方括号里的布尔表达式"
+  },
+  {
+   "type": "single",
+   "stem": "下图中转换“支付成功 / 通知仓库”里，斜杠后面的“通知仓库”是什么？\n\n![示意图](uml/state-order.svg)",
+   "options": [
+    "事件",
+    "监护条件",
+    "状态",
+    "动作"
+   ],
+   "answer_index": 3,
+   "explanation": "斜杠后面是转换发生时执行的动作。",
+   "difficulty": 2,
+   "tags": [
+    "状态图"
+   ],
+   "source_quote": "转换上的标注格式为“事件 [监护条件] / 动作”，监护条件是方括号里的布尔表达式"
+  },
+  {
+   "type": "single",
+   "stem": "在下图中，订单处于“已付款”状态时发生“发货”事件，会进入哪个状态？\n\n![示意图](uml/state-order.svg)",
+   "options": [
+    "待付款",
+    "已发货",
+    "已完成",
+    "已取消"
+   ],
+   "answer_index": 1,
+   "explanation": "已付款 --发货--> 已发货。",
+   "difficulty": 1,
+   "tags": [
+    "状态图"
+   ],
+   "source_quote": "状态图也叫状态机图，描述单个对象在生命周期内的状态以及事件触发的状态转换"
+  },
+  {
+   "type": "single",
+   "stem": "下图中的“已发货”状态，能否不经过“已完成”直接转换到“已取消”？\n\n![示意图](uml/state-order.svg)",
+   "options": [
+    "不能，图中没有这样的转换",
+    "能，任何状态都可以转到终止状态",
+    "能，只要发生超时事件",
+    "能，只要满足监护条件"
+   ],
+   "answer_index": 0,
+   "explanation": "状态图只允许图中画出的转换，已发货只能经“确认收货”转到已完成。",
+   "difficulty": 3,
+   "tags": [
+    "状态图"
+   ],
+   "source_quote": "转换用带箭头的实线表示"
+  },
+  {
+   "type": "single",
+   "stem": "下图中的状态用什么图形表示？\n\n![示意图](uml/state-order.svg)",
+   "options": [
+    "椭圆",
+    "菱形",
+    "圆角矩形",
+    "小人"
+   ],
+   "answer_index": 2,
+   "explanation": "状态用圆角矩形表示。",
+   "difficulty": 1,
+   "tags": [
+    "状态图"
+   ],
+   "source_quote": "终止状态用外面带圆圈的实心圆表示，状态用圆角矩形表示"
+  },
+  {
+   "type": "judge",
+   "stem": "状态图适合描述多个对象之间的协作。",
+   "options": [],
+   "answer_index": 1,
+   "explanation": "状态图适合描述单个对象的行为；多对象协作用顺序图或通信图。",
+   "difficulty": 2,
+   "tags": [
+    "状态图"
+   ],
+   "source_quote": "状态图适合描述一个对象的行为，不适合描述多个对象的协作"
+  },
+  {
+   "type": "judge",
+   "stem": "状态图中，监护条件为真时转换才会发生。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "监护条件是方括号里的布尔表达式，条件为真转换才会发生。",
+   "difficulty": 2,
+   "tags": [
+    "状态图"
+   ],
+   "source_quote": "监护条件是方括号里的布尔表达式，条件为真时转换才会发生"
+  }
+ ],
+ "软件设计师（中级）UML 图专项讲义 > U13 活动图": [
+  {
+   "type": "single",
+   "stem": "下图中标号 ① 的菱形是什么节点？\n\n![节点编号图](uml/nodes-q.svg)",
+   "options": [
+    "分叉节点",
+    "初始节点",
+    "流终止节点",
+    "判定节点"
+   ],
+   "answer_index": 3,
+   "explanation": "判定节点用菱形表示，出边上写监护条件。",
+   "difficulty": 1,
+   "tags": [
+    "活动图"
+   ],
+   "source_quote": "判定节点用菱形表示，出边上写监护条件"
+  },
+  {
+   "type": "single",
+   "stem": "下图中标号 ② 的实心圆是什么节点？\n\n![节点编号图](uml/nodes-q.svg)",
+   "options": [
+    "活动终止节点",
+    "初始节点",
+    "流终止节点",
+    "汇合节点"
+   ],
+   "answer_index": 1,
+   "explanation": "初始节点用实心圆表示。",
+   "difficulty": 1,
+   "tags": [
+    "活动图"
+   ],
+   "source_quote": "初始节点用实心圆表示"
+  },
+  {
+   "type": "single",
+   "stem": "下图中标号 ③ 的粗线表示什么？\n\n![节点编号图](uml/nodes-q.svg)",
+   "options": [
+    "判定",
+    "分叉或汇合",
+    "活动终止",
+    "泳道"
+   ],
+   "answer_index": 1,
+   "explanation": "分叉与汇合都用粗线表示。",
+   "difficulty": 1,
+   "tags": [
+    "活动图"
+   ],
+   "source_quote": "分叉与汇合都用粗线表示"
+  },
+  {
+   "type": "single",
+   "stem": "下图中标号 ④ 的外面带圆圈的实心圆是什么节点？\n\n![节点编号图](uml/nodes-q.svg)",
+   "options": [
+    "流终止节点",
+    "初始节点",
+    "判定节点",
+    "活动终止节点"
+   ],
+   "answer_index": 3,
+   "explanation": "活动终止节点是外面带圆圈的实心圆，整个活动到此结束。",
+   "difficulty": 2,
+   "tags": [
+    "活动图"
+   ],
+   "source_quote": "活动终止节点是外面带圆圈的实心圆，流终止节点是带叉的空心圆"
+  },
+  {
+   "type": "single",
+   "stem": "下图中标号 ⑤ 的带叉空心圆有什么作用？\n\n![节点编号图](uml/nodes-q.svg)",
+   "options": [
+    "只终止所在的那条流，其他流继续",
+    "终止整个活动",
+    "表示并行流程的开始",
+    "表示一个判定分支"
+   ],
+   "answer_index": 0,
+   "explanation": "流终止节点是带叉的空心圆，只终止所在的那条流。",
+   "difficulty": 3,
+   "tags": [
+    "活动图"
+   ],
+   "source_quote": "流终止节点是带叉的空心圆，只终止所在的那条流"
+  },
+  {
+   "type": "single",
+   "stem": "下图中“客户”“系统”两个竖向分区叫什么？\n\n![示意图](uml/activity-order.svg)",
+   "options": [
+    "包",
+    "系统边界",
+    "泳道",
+    "组合片段"
+   ],
+   "answer_index": 2,
+   "explanation": "泳道把活动按负责者分区。",
+   "difficulty": 1,
+   "tags": [
+    "活动图"
+   ],
+   "source_quote": "泳道把活动按负责者分区，每个泳道对应一个参与者或部门"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，“扣减库存”和“生成支付单”是什么关系？\n\n![示意图](uml/activity-order.svg)",
+   "options": [
+    "二选一执行",
+    "先后顺序执行",
+    "并行执行",
+    "循环执行"
+   ],
+   "answer_index": 2,
+   "explanation": "分叉把一条控制流拆成并行的多条。",
+   "difficulty": 2,
+   "tags": [
+    "活动图"
+   ],
+   "source_quote": "分叉把一条控制流拆成并行的多条"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，“检查库存”后面菱形出边上的 [有货]、[缺货] 叫什么？\n\n![示意图](uml/activity-order.svg)",
+   "options": [
+    "监护条件",
+    "事件",
+    "动作",
+    "构造型"
+   ],
+   "answer_index": 0,
+   "explanation": "判定节点出边上写监护条件。",
+   "difficulty": 2,
+   "tags": [
+    "活动图"
+   ],
+   "source_quote": "判定节点用菱形表示，出边上写监护条件"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，“支付”开始之前必须满足什么条件？\n\n![示意图](uml/activity-order.svg)",
+   "options": [
+    "只要“扣减库存”完成即可",
+    "只要“生成支付单”完成即可",
+    "“通知缺货”已完成",
+    "“扣减库存”和“生成支付单”都已完成"
+   ],
+   "answer_index": 3,
+   "explanation": "下面的粗线是汇合，汇合要等所有并行流都到达后才继续。",
+   "difficulty": 3,
+   "tags": [
+    "活动图"
+   ],
+   "source_quote": "汇合要等所有并行流都到达后才继续"
+  },
+  {
+   "type": "judge",
+   "stem": "活动图适合表示并行流程，分叉与汇合都用粗线表示。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "分叉把控制流拆成并行的多条，汇合等所有并行流都到达后才继续。",
+   "difficulty": 2,
+   "tags": [
+    "活动图"
+   ],
+   "source_quote": "活动图描述业务流程或操作的控制流，适合表示并行流程"
+  }
+ ],
+ "软件设计师（中级）UML 图专项讲义 > U14 构件图、部署图与包图": [
+  {
+   "type": "single",
+   "stem": "下图中“订单服务”左侧的圆圈表示什么？\n\n![示意图](uml/component.svg)",
+   "options": [
+    "订单服务需要的接口",
+    "订单服务提供的接口",
+    "订单服务的一个属性",
+    "订单服务的一个子构件"
+   ],
+   "answer_index": 1,
+   "explanation": "构件提供的接口用圆圈表示。",
+   "difficulty": 1,
+   "tags": [
+    "构件图",
+    "部署图",
+    "包图"
+   ],
+   "source_quote": "构件提供的接口用圆圈表示，需要的接口用半圆表示"
+  },
+  {
+   "type": "single",
+   "stem": "下图中“订单服务”右侧的半圆表示什么？\n\n![示意图](uml/component.svg)",
+   "options": [
+    "订单服务需要的接口",
+    "订单服务提供的接口",
+    "订单服务的部署位置",
+    "订单服务的一个依赖包"
+   ],
+   "answer_index": 0,
+   "explanation": "需要的接口用半圆表示，半圆套住圆圈表示使用对方提供的服务。",
+   "difficulty": 2,
+   "tags": [
+    "构件图",
+    "部署图",
+    "包图"
+   ],
+   "source_quote": "构件提供的接口用圆圈表示，需要的接口用半圆表示"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，“前端”与“订单服务”之间的圆圈和半圆说明了什么？\n\n![示意图](uml/component.svg)",
+   "options": [
+    "订单服务通过接口 IOrder 使用前端提供的服务",
+    "前端与订单服务部署在同一节点",
+    "前端通过接口 IOrder 使用订单服务提供的服务",
+    "前端是订单服务的父类"
+   ],
+   "answer_index": 2,
+   "explanation": "订单服务提供 IOrder（圆圈），前端需要 IOrder（半圆）。",
+   "difficulty": 3,
+   "tags": [
+    "构件图",
+    "部署图",
+    "包图"
+   ],
+   "source_quote": "半圆套住圆圈表示一个构件使用另一个构件的服务"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，构件是用什么图形表示的？\n\n![示意图](uml/component.svg)",
+   "options": [
+    "椭圆",
+    "立方体",
+    "带标签页的文件夹",
+    "带有两个小矩形的矩形"
+   ],
+   "answer_index": 3,
+   "explanation": "构件用带有两个小矩形的矩形表示。",
+   "difficulty": 1,
+   "tags": [
+    "构件图",
+    "部署图",
+    "包图"
+   ],
+   "source_quote": "构件图描述系统的物理构件及依赖关系，构件用带有两个小矩形的矩形表示"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，用立方体表示的是什么？\n\n![示意图](uml/deployment.svg)",
+   "options": [
+    "构件",
+    "节点",
+    "包",
+    "用例"
+   ],
+   "answer_index": 1,
+   "explanation": "部署图中节点用立方体表示。",
+   "difficulty": 1,
+   "tags": [
+    "构件图",
+    "部署图",
+    "包图"
+   ],
+   "source_quote": "节点用立方体表示，节点之间用实线表示通信路径，节点内放置制品"
+  },
+  {
+   "type": "single",
+   "stem": "下图中放在“Web 服务器”节点里的 shop.war 是什么？\n\n![示意图](uml/deployment.svg)",
+   "options": [
+    "节点",
+    "制品",
+    "构造型",
+    "接口"
+   ],
+   "answer_index": 1,
+   "explanation": "部署图的节点内放置制品。",
+   "difficulty": 2,
+   "tags": [
+    "构件图",
+    "部署图",
+    "包图"
+   ],
+   "source_quote": "节点用立方体表示，节点之间用实线表示通信路径，节点内放置制品"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，节点之间的实线表示什么？\n\n![示意图](uml/deployment.svg)",
+   "options": [
+    "依赖关系",
+    "泛化关系",
+    "消息顺序",
+    "通信路径"
+   ],
+   "answer_index": 3,
+   "explanation": "节点之间用实线表示通信路径，旁边的 «HTTPS»、«JDBC» 说明通信协议。",
+   "difficulty": 2,
+   "tags": [
+    "构件图",
+    "部署图",
+    "包图"
+   ],
+   "source_quote": "节点之间用实线表示通信路径"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，“表现层”指向“业务层”的虚线箭头表示什么？\n\n![示意图](uml/package.svg)",
+   "options": [
+    "表现层依赖业务层",
+    "业务层依赖表现层",
+    "表现层继承业务层",
+    "表现层实现业务层"
+   ],
+   "answer_index": 0,
+   "explanation": "包之间用虚线箭头表示依赖，箭头指向被依赖的包。",
+   "difficulty": 2,
+   "tags": [
+    "构件图",
+    "部署图",
+    "包图"
+   ],
+   "source_quote": "包之间用虚线箭头表示依赖关系，箭头指向被依赖的包"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，被其他三个包同时依赖的是哪个包？\n\n![示意图](uml/package.svg)",
+   "options": [
+    "表现层",
+    "业务层",
+    "公共工具",
+    "数据层"
+   ],
+   "answer_index": 2,
+   "explanation": "表现层、业务层、数据层的虚线箭头都指向公共工具。",
+   "difficulty": 3,
+   "tags": [
+    "构件图",
+    "部署图",
+    "包图"
+   ],
+   "source_quote": "包之间用虚线箭头表示依赖关系，箭头指向被依赖的包"
+  },
+  {
+   "type": "single",
+   "stem": "下图中，包用什么形状表示？\n\n![示意图](uml/package.svg)",
+   "options": [
+    "带两个小矩形的矩形",
+    "立方体",
+    "带标签页的文件夹",
+    "圆角矩形"
+   ],
+   "answer_index": 2,
+   "explanation": "包用带标签页的文件夹形状表示。",
+   "difficulty": 1,
+   "tags": [
+    "构件图",
+    "部署图",
+    "包图"
+   ],
+   "source_quote": "包用带标签页的文件夹形状表示"
+  }
+ ],
+ "软件设计师（中级）UML 图专项讲义 > U15 按需求选择合适的图": [
+  {
+   "type": "single",
+   "stem": "下面这幅图属于哪一种 UML 图？\n\n![示意图](uml/activity-order.svg)",
+   "options": [
+    "活动图",
+    "状态图",
+    "顺序图",
+    "通信图"
+   ],
+   "answer_index": 0,
+   "explanation": "图中有泳道、判定、分叉和汇合，是活动图。",
+   "difficulty": 1,
+   "tags": [
+    "UML",
+    "选图"
+   ],
+   "source_quote": "描述业务流程与并行活动用活动图"
+  },
+  {
+   "type": "single",
+   "stem": "这幅图属于哪一种 UML 图？\n\n![示意图](uml/seq-login.svg)",
+   "options": [
+    "通信图",
+    "活动图",
+    "状态图",
+    "顺序图"
+   ],
+   "answer_index": 3,
+   "explanation": "图中有生命线、激活条和按时间排列的消息，是顺序图。",
+   "difficulty": 1,
+   "tags": [
+    "UML",
+    "选图"
+   ],
+   "source_quote": "描述多个对象按时间顺序的交互用顺序图"
+  },
+  {
+   "type": "single",
+   "stem": "请判断下图是哪种 UML 图。\n\n![示意图](uml/usecase.svg)",
+   "options": [
+    "类图",
+    "用例图",
+    "对象图",
+    "包图"
+   ],
+   "answer_index": 1,
+   "explanation": "图中有小人形参与者、椭圆用例和系统边界，是用例图。",
+   "difficulty": 1,
+   "tags": [
+    "UML",
+    "选图"
+   ],
+   "source_quote": "描述系统有哪些功能以及谁来使用用例图"
+  },
+  {
+   "type": "single",
+   "stem": "下图属于下列哪一种 UML 图？\n\n![示意图](uml/deployment.svg)",
+   "options": [
+    "部署图",
+    "构件图",
+    "包图",
+    "类图"
+   ],
+   "answer_index": 0,
+   "explanation": "图中有立方体节点、节点间的通信路径和节点内的制品，是部署图。",
+   "difficulty": 2,
+   "tags": [
+    "UML",
+    "选图"
+   ],
+   "source_quote": "描述软件在硬件上的分布用部署图"
+  },
+  {
+   "type": "single",
+   "stem": "这是哪一种 UML 图？\n\n![示意图](uml/class-school.svg)",
+   "options": [
+    "对象图",
+    "构件图",
+    "类图",
+    "用例图"
+   ],
+   "answer_index": 2,
+   "explanation": "图中是类、类之间的关系和多重度，是类图。",
+   "difficulty": 1,
+   "tags": [
+    "UML",
+    "选图"
+   ],
+   "source_quote": "描述类及其静态关系用类图"
+  },
+  {
+   "type": "single",
+   "stem": "要表达多个对象按时间顺序进行的交互，应选用哪一种图？",
+   "options": [
+    "类图",
+    "部署图",
+    "包图",
+    "顺序图"
+   ],
+   "answer_index": 3,
+   "explanation": "顺序图强调消息传递的时间顺序。",
+   "difficulty": 1,
+   "tags": [
+    "UML",
+    "选图"
+   ],
+   "source_quote": "描述多个对象按时间顺序的交互用顺序图"
+  },
+  {
+   "type": "single",
+   "stem": "要描述单个对象在生命周期内的状态变化，应选用哪一种图？",
+   "options": [
+    "用例图",
+    "状态图",
+    "构件图",
+    "对象图"
+   ],
+   "answer_index": 1,
+   "explanation": "状态图适合描述单个对象的状态及转换。",
+   "difficulty": 1,
+   "tags": [
+    "UML",
+    "选图"
+   ],
+   "source_quote": "描述单个对象的状态变化用状态图"
+  },
+  {
+   "type": "single",
+   "stem": "要描述软件的各个构件在哪些硬件设备上运行，应选用哪一种图？",
+   "options": [
+    "构件图",
+    "部署图",
+    "活动图",
+    "状态图"
+   ],
+   "answer_index": 1,
+   "explanation": "部署图描述软件在硬件上的分布。构件图描述的是软件自身的物理组织。",
+   "difficulty": 2,
+   "tags": [
+    "UML",
+    "选图"
+   ],
+   "source_quote": "描述软件在硬件上的分布用部署图"
+  },
+  {
+   "type": "single",
+   "stem": "要说明系统有哪些功能以及谁来使用这些功能，应选用哪一种图？",
+   "options": [
+    "类图",
+    "顺序图",
+    "对象图",
+    "用例图"
+   ],
+   "answer_index": 3,
+   "explanation": "用例图描述功能需求和使用者。",
+   "difficulty": 1,
+   "tags": [
+    "UML",
+    "选图"
+   ],
+   "source_quote": "描述系统有哪些功能以及谁来使用用例图"
+  },
+  {
+   "type": "judge",
+   "stem": "选择 UML 图时，应先判断要表达的是静态结构还是动态行为，是单个对象还是多个对象的协作。",
+   "options": [],
+   "answer_index": 0,
+   "explanation": "这是选图的基本依据。",
+   "difficulty": 2,
+   "tags": [
+    "UML",
+    "选图"
+   ],
+   "source_quote": "选图的依据是要表达的是静态结构还是动态行为，是单个对象还是多个对象的协作"
+  }
+ ]
+}

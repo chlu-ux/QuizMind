@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="380" viewBox="0 0 720 380" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>UML 的 4+1 视图</title>
+  <rect width="720" height="380" fill="#ffffff"/>
+  <ellipse cx="360" cy="190" rx="92" ry="44" fill="#fde68a" stroke="#b45309" stroke-width="1.5"/>
+  <text x="360" y="195.76" font-size="16" text-anchor="middle" fill="#1f2937" font-weight="bold">用例视图</text>
+  <rect x="30" y="20" width="190" height="70" rx="8" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="125" y="49.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">逻辑视图</text>
+  <text x="125" y="74.68" font-size="13" text-anchor="middle" fill="#6b7280">类图、对象图、状态图</text>
+  <rect x="500" y="20" width="190" height="70" rx="8" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="595" y="49.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">进程视图</text>
+  <text x="595" y="74.68" font-size="13" text-anchor="middle" fill="#6b7280">并发与同步</text>
+  <rect x="30" y="290" width="190" height="70" rx="8" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="125" y="319.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">实现视图</text>
+  <text x="125" y="344.68" font-size="13" text-anchor="middle" fill="#6b7280">构件图</text>
+  <rect x="500" y="290" width="190" height="70" rx="8" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="595" y="319.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">部署视图</text>
+  <text x="595" y="344.68" font-size="13" text-anchor="middle" fill="#6b7280">部署图</text>
+  <polyline points="232.7,94.2 220.0,90.0 224.2,102.7" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="290.0,160.0 220.0,90.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="495.8,102.7 500.0,90.0 487.3,94.2" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="430.0,160.0 500.0,90.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="224.2,277.3 220.0,290.0 232.7,285.8" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="290.0,220.0 220.0,290.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="487.3,285.8 500.0,290.0 495.8,277.3" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="430.0,220.0 500.0,290.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+</svg>

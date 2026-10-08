@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="330" viewBox="0 0 720 330" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>包图</title>
+  <rect width="720" height="330" fill="#ffffff"/>
+  <rect x="40" y="40" width="70" height="16" rx="0" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <rect x="40" y="56" width="170" height="70" rx="0" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="125" y="96.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">表现层</text>
+  <rect x="270" y="40" width="70" height="16" rx="0" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <rect x="270" y="56" width="170" height="70" rx="0" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="355" y="96.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">业务层</text>
+  <rect x="500" y="40" width="70" height="16" rx="0" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <rect x="500" y="56" width="170" height="70" rx="0" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="585" y="96.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">数据层</text>
+  <rect x="270" y="220" width="70" height="16" rx="0" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <rect x="270" y="236" width="170" height="70" rx="0" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="355" y="276.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">公共工具</text>
+  <polyline points="258.0,97.0 270.0,91.0 258.0,85.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="210.0,91.0 270.0,91.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <polyline points="488.0,97.0 500.0,91.0 488.0,85.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="440.0,91.0 500.0,91.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <polyline points="258.0,261.0 270.0,255.0 258.0,249.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="125.0,126.0 125.0,255.0 270.0,255.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <polyline points="349.0,208.0 355.0,220.0 361.0,208.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="355.0,126.0 355.0,220.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <polyline points="452.0,249.0 440.0,255.0 452.0,261.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="585.0,126.0 585.0,255.0 440.0,255.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+</svg>

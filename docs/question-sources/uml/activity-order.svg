@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="570" viewBox="0 0 720 570" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>订单处理活动图</title>
+  <rect width="720" height="570" fill="#ffffff"/>
+  <rect x="20" y="20" width="280" height="530" rx="0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <rect x="300" y="20" width="400" height="530" rx="0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <rect x="20" y="20" width="280" height="30" rx="0" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <rect x="300" y="20" width="400" height="30" rx="0" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="160" y="40.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">客户</text>
+  <text x="500" y="40.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">系统</text>
+  <circle cx="160" cy="82" r="9" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polygon points="160.0,108.0 153.0,94.0 167.0,94.0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="160.0,91.0 160.0,96.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <rect x="105" y="108" width="110" height="44" rx="20" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="160" y="135.04" font-size="14" text-anchor="middle" fill="#1f2937">提交订单</text>
+  <polygon points="440.0,168.0 433.0,154.0 447.0,154.0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="215.0,130.0 440.0,130.0 440.0,156.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <rect x="385" y="168" width="110" height="44" rx="20" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="440" y="195.04" font-size="14" text-anchor="middle" fill="#1f2937">检查库存</text>
+  <polygon points="440.0,244.0 433.0,230.0 447.0,230.0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="440.0,212.0 440.0,232.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polygon points="440.0,244.0 462.0,266.0 440.0,288.0 418.0,266.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <text x="470" y="262" font-size="12" text-anchor="start" fill="#1f2937">[有货]</text>
+  <text x="410" y="262" font-size="12" text-anchor="end" fill="#1f2937">[缺货]</text>
+  <polygon points="350.0,318.0 343.0,304.0 357.0,304.0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="418.0,266.0 350.0,266.0 350.0,306.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <rect x="300" y="318" width="100" height="44" rx="20" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="350" y="345.04" font-size="14" text-anchor="middle" fill="#1f2937">通知缺货</text>
+  <polygon points="350.0,400.0 343.0,386.0 357.0,386.0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="350.0,362.0 350.0,388.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <circle cx="350" cy="410" r="10" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <circle cx="350" cy="410" r="5.5" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polygon points="580.0,312.0 573.0,298.0 587.0,298.0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="462.0,266.0 580.0,266.0 580.0,300.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <rect x="480" y="312" width="200" height="7" rx="0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polygon points="525.0,350.0 518.0,336.0 532.0,336.0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="525.0,319.0 525.0,338.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polygon points="640.0,350.0 633.0,336.0 647.0,336.0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="640.0,319.0 640.0,338.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <rect x="475" y="350" width="100" height="44" rx="20" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="525" y="377.04" font-size="14" text-anchor="middle" fill="#1f2937">扣减库存</text>
+  <rect x="590" y="350" width="100" height="44" rx="20" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="640" y="377.04" font-size="14" text-anchor="middle" fill="#1f2937">生成支付单</text>
+  <polygon points="525.0,430.0 518.0,416.0 532.0,416.0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="525.0,394.0 525.0,418.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polygon points="640.0,430.0 633.0,416.0 647.0,416.0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="640.0,394.0 640.0,418.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <rect x="480" y="430" width="200" height="7" rx="0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polygon points="215.0,480.0 229.0,473.0 229.0,487.0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="580.0,437.0 580.0,480.0 227.0,480.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <rect x="105" y="458" width="110" height="44" rx="20" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="160" y="485.04" font-size="14" text-anchor="middle" fill="#1f2937">支付</text>
+  <polygon points="440.0,525.0 426.0,532.0 426.0,518.0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="160.0,502.0 160.0,525.0 428.0,525.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <rect x="450" y="503" width="100" height="44" rx="20" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="500" y="530.04" font-size="14" text-anchor="middle" fill="#1f2937">发货</text>
+  <polygon points="610.0,525.0 596.0,532.0 596.0,518.0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="550.0,525.0 598.0,525.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <circle cx="622" cy="525" r="10" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <circle cx="622" cy="525" r="5.5" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+</svg>

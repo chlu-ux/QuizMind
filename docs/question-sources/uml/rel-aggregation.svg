@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="330" height="100" viewBox="0 0 330 100" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>聚合</title>
+  <rect width="330" height="100" fill="#ffffff"/>
+  <rect x="20" y="25" width="90" height="50" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="65" y="55.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">A</text>
+  <rect x="220" y="25" width="90" height="50" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="265" y="55.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">B</text>
+  <polygon points="110.0,50.0 121.0,43.0 132.0,50.0 121.0,57.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="132.0,50.0 220.0,50.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+</svg>

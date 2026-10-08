@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="300" viewBox="0 0 720 300" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>泛化与实现</title>
+  <rect width="720" height="300" fill="#ffffff"/>
+  <rect x="190" y="15" width="190" height="86" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="285" y="35.4" font-size="15" text-anchor="middle" fill="#1f2937" font-style="italic">动物</text>
+  <line x1="190.0" y1="45.0" x2="380.0" y2="45.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="198" y="63" font-size="13" text-anchor="start" fill="#1f2937"># name: String</text>
+  <line x1="190.0" y1="73.0" x2="380.0" y2="73.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="198" y="91" font-size="13" text-anchor="start" fill="#1f2937" font-style="italic">+ eat()</text>
+  <rect x="40" y="190" width="150" height="74" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="115" y="210.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">猫</text>
+  <line x1="40.0" y1="220.0" x2="190.0" y2="220.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="40.0" y1="236.0" x2="190.0" y2="236.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="48" y="254" font-size="13" text-anchor="start" fill="#1f2937">+ eat()</text>
+  <rect x="250" y="190" width="170" height="94" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="335" y="210.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">狗</text>
+  <line x1="250.0" y1="220.0" x2="420.0" y2="220.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="250.0" y1="236.0" x2="420.0" y2="236.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="258" y="254" font-size="13" text-anchor="start" fill="#1f2937">+ eat()</text>
+  <text x="258" y="274" font-size="13" text-anchor="start" fill="#1f2937">+ bark()</text>
+  <rect x="500" y="190" width="190" height="74" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="595" y="208.32" font-size="12" text-anchor="middle" fill="#6b7280">«interface»</text>
+  <text x="595" y="225.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Pet</text>
+  <line x1="500.0" y1="236.0" x2="690.0" y2="236.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="508" y="254" font-size="13" text-anchor="start" fill="#1f2937">+ play()</text>
+  <polygon points="285.0,108.0 292.0,122.0 278.0,122.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="115.0,190.0 115.0,150.0 285.0,150.0 285.0,122.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="335.0,190.0 335.0,150.0 285.0,150.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polygon points="500.0,250.0 486.0,257.0 486.0,243.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="420.0,250.0 486.0,250.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+</svg>

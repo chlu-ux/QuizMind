@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="210" viewBox="0 0 720 210" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>活动图与状态图中的控制节点</title>
+  <rect width="720" height="210" fill="#ffffff"/>
+  <circle cx="70" cy="70" r="11" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <text x="70" y="130" font-size="13" text-anchor="middle" fill="#1f2937">初始节点</text>
+  <circle cx="215" cy="70" r="13" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <circle cx="215" cy="70" r="7" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <text x="215" y="130" font-size="13" text-anchor="middle" fill="#1f2937">活动终止节点</text>
+  <circle cx="360" cy="70" r="13" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <line x1="352.0" y1="62.0" x2="368.0" y2="78.0" stroke="#374151" stroke-width="2"/>
+  <line x1="368.0" y1="62.0" x2="352.0" y2="78.0" stroke="#374151" stroke-width="2"/>
+  <text x="360" y="130" font-size="13" text-anchor="middle" fill="#1f2937">流终止节点</text>
+  <polygon points="505.0,50.0 531.0,70.0 505.0,90.0 479.0,70.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <text x="505" y="130" font-size="13" text-anchor="middle" fill="#1f2937">判定节点</text>
+  <rect x="610" y="66" width="80" height="8" rx="0" fill="#374151" stroke="#374151" stroke-width="1.5"/>
+  <text x="650" y="130" font-size="13" text-anchor="middle" fill="#1f2937">分叉 / 汇合</text>
+</svg>

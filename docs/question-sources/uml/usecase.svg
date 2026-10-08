@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="780" height="480" viewBox="0 0 780 480" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>图书管理系统用例图</title>
+  <rect width="780" height="480" fill="#ffffff"/>
+  <rect x="180" y="20" width="440" height="440" rx="6" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <text x="400" y="46" font-size="15" text-anchor="middle" fill="#1f2937">图书管理系统</text>
+  <circle cx="70" cy="129" r="9" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <line x1="70.0" y1="138.0" x2="70.0" y2="164.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="54.0" y1="148.0" x2="86.0" y2="148.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="70.0" y1="164.0" x2="56.0" y2="184.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="70.0" y1="164.0" x2="84.0" y2="184.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="70" y="205.04" font-size="14" text-anchor="middle" fill="#1f2937">读者</text>
+  <circle cx="70" cy="339" r="9" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <line x1="70.0" y1="348.0" x2="70.0" y2="374.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="54.0" y1="358.0" x2="86.0" y2="358.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="70.0" y1="374.0" x2="56.0" y2="394.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="70.0" y1="374.0" x2="84.0" y2="394.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="70" y="415.04" font-size="14" text-anchor="middle" fill="#1f2937">VIP 读者</text>
+  <circle cx="710" cy="199" r="9" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <line x1="710.0" y1="208.0" x2="710.0" y2="234.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="694.0" y1="218.0" x2="726.0" y2="218.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="710.0" y1="234.0" x2="696.0" y2="254.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="710.0" y1="234.0" x2="724.0" y2="254.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="710" y="275.04" font-size="14" text-anchor="middle" fill="#1f2937">管理员</text>
+  <polygon points="70.0,212.0 77.0,226.0 63.0,226.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="70.0,330.0 70.0,226.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <ellipse cx="400" cy="100" rx="62" ry="26" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="400" y="105.04" font-size="14" text-anchor="middle" fill="#1f2937">查询图书</text>
+  <ellipse cx="300" cy="190" rx="62" ry="26" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="300" y="195.04" font-size="14" text-anchor="middle" fill="#1f2937">借书</text>
+  <ellipse cx="300" cy="300" rx="62" ry="26" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="300" y="305.04" font-size="14" text-anchor="middle" fill="#1f2937">还书</text>
+  <ellipse cx="300" cy="410" rx="68" ry="26" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="300" y="415.04" font-size="14" text-anchor="middle" fill="#1f2937">缴纳罚款</text>
+  <ellipse cx="520" cy="190" rx="62" ry="26" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="520" y="195.04" font-size="14" text-anchor="middle" fill="#1f2937">登录</text>
+  <ellipse cx="520" cy="330" rx="68" ry="26" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="520" y="335.04" font-size="14" text-anchor="middle" fill="#1f2937">维护图书</text>
+  <polyline points="86.0,152.0 340.0,112.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="86.0,152.0 238.0,190.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="86.0,152.0 240.0,292.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="694.0,222.0 588.0,322.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="694.0,222.0 458.0,112.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="446.0,196.0 458.0,190.0 446.0,184.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="362.0,190.0 458.0,190.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="410" y="182" font-size="12" text-anchor="middle" fill="#1f2937">«include»</text>
+  <polyline points="476.2,224.1 485.0,214.0 471.6,213.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="335.0,276.0 485.0,214.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="440" y="262" font-size="12" text-anchor="start" fill="#1f2937">«include»</text>
+  <polyline points="306.0,338.0 300.0,326.0 294.0,338.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="300.0,384.0 300.0,326.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="312" y="360" font-size="12" text-anchor="start" fill="#1f2937">«extend»</text>
+  <text x="312" y="376" font-size="12" text-anchor="start" fill="#1f2937">[逾期]</text>
+</svg>

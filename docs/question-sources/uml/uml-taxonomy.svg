@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="470" viewBox="0 0 800 470" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>UML 的 14 种图</title>
+  <rect width="800" height="470" fill="#ffffff"/>
+  <rect x="20" y="215" width="90" height="40" rx="6" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="65" y="240.04" font-size="14" text-anchor="middle" fill="#1f2937" font-weight="bold">UML 图</text>
+  <rect x="160" y="105" width="90" height="40" rx="6" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="205" y="130.04" font-size="14" text-anchor="middle" fill="#1f2937" font-weight="bold">结构图</text>
+  <rect x="160" y="330" width="90" height="40" rx="6" fill="#eef4ff" stroke="#374151" stroke-width="1.5"/>
+  <text x="205" y="355.04" font-size="14" text-anchor="middle" fill="#1f2937" font-weight="bold">行为图</text>
+  <polyline points="110.0,235.0 135.0,235.0 135.0,125.0 160.0,125.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="110.0,235.0 135.0,235.0 135.0,350.0 160.0,350.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <rect x="310" y="15" width="120" height="28" rx="6" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="370" y="34.04" font-size="14" text-anchor="middle" fill="#1f2937">类图</text>
+  <line x1="250.0" y1="125.0" x2="285.0" y2="125.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="28.0" x2="285.0" y2="226.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="29.0" x2="310.0" y2="29.0" stroke="#374151" stroke-width="1.5"/>
+  <rect x="310" y="48" width="120" height="28" rx="6" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="370" y="67.04" font-size="14" text-anchor="middle" fill="#1f2937">对象图</text>
+  <line x1="250.0" y1="125.0" x2="285.0" y2="125.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="28.0" x2="285.0" y2="226.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="62.0" x2="310.0" y2="62.0" stroke="#374151" stroke-width="1.5"/>
+  <rect x="310" y="81" width="120" height="28" rx="6" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="370" y="100.04" font-size="14" text-anchor="middle" fill="#1f2937">构件图</text>
+  <line x1="250.0" y1="125.0" x2="285.0" y2="125.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="28.0" x2="285.0" y2="226.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="95.0" x2="310.0" y2="95.0" stroke="#374151" stroke-width="1.5"/>
+  <rect x="310" y="114" width="120" height="28" rx="6" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="370" y="133.04" font-size="14" text-anchor="middle" fill="#1f2937">组合结构图</text>
+  <line x1="250.0" y1="125.0" x2="285.0" y2="125.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="28.0" x2="285.0" y2="226.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="128.0" x2="310.0" y2="128.0" stroke="#374151" stroke-width="1.5"/>
+  <rect x="310" y="147" width="120" height="28" rx="6" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="370" y="166.04" font-size="14" text-anchor="middle" fill="#1f2937">包图</text>
+  <line x1="250.0" y1="125.0" x2="285.0" y2="125.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="28.0" x2="285.0" y2="226.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="161.0" x2="310.0" y2="161.0" stroke="#374151" stroke-width="1.5"/>
+  <rect x="310" y="180" width="120" height="28" rx="6" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="370" y="199.04" font-size="14" text-anchor="middle" fill="#1f2937">部署图</text>
+  <line x1="250.0" y1="125.0" x2="285.0" y2="125.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="28.0" x2="285.0" y2="226.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="194.0" x2="310.0" y2="194.0" stroke="#374151" stroke-width="1.5"/>
+  <rect x="310" y="213" width="120" height="28" rx="6" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="370" y="232.04" font-size="14" text-anchor="middle" fill="#1f2937">轮廓图</text>
+  <line x1="250.0" y1="125.0" x2="285.0" y2="125.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="28.0" x2="285.0" y2="226.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="227.0" x2="310.0" y2="227.0" stroke="#374151" stroke-width="1.5"/>
+  <rect x="310" y="268" width="120" height="30" rx="6" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="370" y="288.04" font-size="14" text-anchor="middle" fill="#1f2937">用例图</text>
+  <line x1="250.0" y1="350.0" x2="285.0" y2="350.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="283.0" x2="285.0" y2="418.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="283.0" x2="310.0" y2="283.0" stroke="#374151" stroke-width="1.5"/>
+  <rect x="310" y="313" width="120" height="30" rx="6" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="370" y="333.04" font-size="14" text-anchor="middle" fill="#1f2937">活动图</text>
+  <line x1="250.0" y1="350.0" x2="285.0" y2="350.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="283.0" x2="285.0" y2="418.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="328.0" x2="310.0" y2="328.0" stroke="#374151" stroke-width="1.5"/>
+  <rect x="310" y="358" width="120" height="30" rx="6" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="370" y="378.04" font-size="14" text-anchor="middle" fill="#1f2937">状态机图</text>
+  <line x1="250.0" y1="350.0" x2="285.0" y2="350.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="283.0" x2="285.0" y2="418.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="373.0" x2="310.0" y2="373.0" stroke="#374151" stroke-width="1.5"/>
+  <rect x="310" y="403" width="120" height="30" rx="6" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="370" y="423.04" font-size="14" text-anchor="middle" fill="#1f2937">交互图</text>
+  <line x1="250.0" y1="350.0" x2="285.0" y2="350.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="283.0" x2="285.0" y2="418.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="285.0" y1="418.0" x2="310.0" y2="418.0" stroke="#374151" stroke-width="1.5"/>
+  <rect x="520" y="300" width="130" height="30" rx="6" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="585" y="320.04" font-size="14" text-anchor="middle" fill="#1f2937">顺序图</text>
+  <line x1="430.0" y1="403.0" x2="470.0" y2="403.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="470.0" y1="315.0" x2="470.0" y2="435.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="470.0" y1="315.0" x2="520.0" y2="315.0" stroke="#374151" stroke-width="1.5"/>
+  <rect x="520" y="340" width="130" height="30" rx="6" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="585" y="360.04" font-size="14" text-anchor="middle" fill="#1f2937">通信图</text>
+  <line x1="430.0" y1="403.0" x2="470.0" y2="403.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="470.0" y1="315.0" x2="470.0" y2="435.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="470.0" y1="355.0" x2="520.0" y2="355.0" stroke="#374151" stroke-width="1.5"/>
+  <rect x="520" y="380" width="130" height="30" rx="6" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="585" y="400.04" font-size="14" text-anchor="middle" fill="#1f2937">交互概览图</text>
+  <line x1="430.0" y1="403.0" x2="470.0" y2="403.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="470.0" y1="315.0" x2="470.0" y2="435.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="470.0" y1="395.0" x2="520.0" y2="395.0" stroke="#374151" stroke-width="1.5"/>
+  <rect x="520" y="420" width="130" height="30" rx="6" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="585" y="440.04" font-size="14" text-anchor="middle" fill="#1f2937">时序图</text>
+  <line x1="430.0" y1="403.0" x2="470.0" y2="403.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="470.0" y1="315.0" x2="470.0" y2="435.0" stroke="#374151" stroke-width="1.5"/>
+  <line x1="470.0" y1="435.0" x2="520.0" y2="435.0" stroke="#374151" stroke-width="1.5"/>
+</svg>

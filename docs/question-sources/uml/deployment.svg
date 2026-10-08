@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="820" height="280" viewBox="0 0 820 280" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>部署图</title>
+  <rect width="820" height="280" fill="#ffffff"/>
+  <polygon points="20.0,56.0 36.0,40.0 226.0,40.0 210.0,56.0" fill="#f3f4f6" stroke="#374151" stroke-width="1.5"/>
+  <polygon points="210.0,56.0 226.0,40.0 226.0,210.0 210.0,226.0" fill="#e5e7eb" stroke="#374151" stroke-width="1.5"/>
+  <rect x="20" y="56" width="190" height="170" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="115" y="76.32" font-size="12" text-anchor="middle" fill="#6b7280">«device»</text>
+  <text x="115" y="99.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">用户手机</text>
+  <rect x="38" y="114" width="154" height="34" rx="0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <text x="115" y="126.96" font-size="11" text-anchor="middle" fill="#6b7280">«artifact»</text>
+  <text x="115" y="142.68" font-size="13" text-anchor="middle" fill="#1f2937">shop.apk</text>
+  <polygon points="310.0,56.0 326.0,40.0 516.0,40.0 500.0,56.0" fill="#f3f4f6" stroke="#374151" stroke-width="1.5"/>
+  <polygon points="500.0,56.0 516.0,40.0 516.0,210.0 500.0,226.0" fill="#e5e7eb" stroke="#374151" stroke-width="1.5"/>
+  <rect x="310" y="56" width="190" height="170" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="405" y="76.32" font-size="12" text-anchor="middle" fill="#6b7280">«server»</text>
+  <text x="405" y="99.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Web 服务器</text>
+  <rect x="328" y="114" width="154" height="34" rx="0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <text x="405" y="126.96" font-size="11" text-anchor="middle" fill="#6b7280">«artifact»</text>
+  <text x="405" y="142.68" font-size="13" text-anchor="middle" fill="#1f2937">shop.war</text>
+  <rect x="328" y="154" width="154" height="34" rx="0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <text x="405" y="166.96" font-size="11" text-anchor="middle" fill="#6b7280">«artifact»</text>
+  <text x="405" y="182.68" font-size="13" text-anchor="middle" fill="#1f2937">config.xml</text>
+  <polygon points="600.0,56.0 616.0,40.0 806.0,40.0 790.0,56.0" fill="#f3f4f6" stroke="#374151" stroke-width="1.5"/>
+  <polygon points="790.0,56.0 806.0,40.0 806.0,210.0 790.0,226.0" fill="#e5e7eb" stroke="#374151" stroke-width="1.5"/>
+  <rect x="600" y="56" width="190" height="170" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="695" y="76.32" font-size="12" text-anchor="middle" fill="#6b7280">«server»</text>
+  <text x="695" y="99.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">数据库服务器</text>
+  <rect x="618" y="114" width="154" height="34" rx="0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <text x="695" y="126.96" font-size="11" text-anchor="middle" fill="#6b7280">«artifact»</text>
+  <text x="695" y="142.68" font-size="13" text-anchor="middle" fill="#1f2937">shop.db</text>
+  <line x1="210.0" y1="140.0" x2="310.0" y2="140.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="260" y="130" font-size="12" text-anchor="middle" fill="#1f2937">«HTTPS»</text>
+  <line x1="500.0" y1="140.0" x2="600.0" y2="140.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="550" y="130" font-size="12" text-anchor="middle" fill="#1f2937">«JDBC»</text>
+</svg>
