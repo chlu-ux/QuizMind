@@ -47,7 +47,7 @@ function logout() {
         <el-menu-item index="/banks"><el-icon><Collection /></el-icon>题库</el-menu-item>
         <el-menu-item index="/jobs"><el-icon><List /></el-icon>任务</el-menu-item>
         <el-menu-item index="/usage"><el-icon><TrendCharts /></el-icon>用量</el-menu-item>
-        <el-menu-item index="/ai"><el-icon><MagicStick /></el-icon>AI 解读</el-menu-item>
+        <el-menu-item index="/ai"><el-icon><MagicStick /></el-icon>AI 与模型</el-menu-item>
       </el-menu>
       <a class="quiz-link" :href="quizUrl" target="_blank" rel="noopener"><el-icon><EditPen /></el-icon>去刷题</a>
       <div class="aside-foot">

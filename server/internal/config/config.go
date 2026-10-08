@@ -16,7 +16,10 @@ type Config struct {
 	DataDir  string         `yaml:"data_dir"`
 	Auth     AuthConfig     `yaml:"auth"`
 	Pipeline PipelineConfig `yaml:"pipeline"`
-	LLM      LLMConfig      `yaml:"llm"`
+	// LLM is deprecated: providers, models and limits are now configured in the admin UI and stored
+	// in the database. This section is only read once, on the first start after upgrading, to import
+	// what an existing config.yaml had (see service.SeedLLMConfig).
+	LLM LLMConfig `yaml:"llm"`
 }
 
 type AuthConfig struct {

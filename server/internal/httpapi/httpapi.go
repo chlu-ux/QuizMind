@@ -67,7 +67,16 @@ func New(svc *service.Service, hub *events.Hub, token string, static fs.FS, log 
 
 		r.Get("/ai", a.getAIConfig)
 		r.Put("/ai", a.putAIConfig)
-		r.Post("/ai/test", a.testAIConfig)
+		r.Get("/llm", a.getLLMConfig)
+		r.Post("/llm/providers", a.createLLMProvider)
+		r.Put("/llm/providers/{id}", a.updateLLMProvider)
+		r.Delete("/llm/providers/{id}", a.deleteLLMProvider)
+		r.Post("/llm/models", a.createLLMModel)
+		r.Put("/llm/models/{id}", a.updateLLMModel)
+		r.Delete("/llm/models/{id}", a.deleteLLMModel)
+		r.Post("/llm/models/{id}/test", a.testLLMModel)
+		r.Put("/llm/roles", a.putLLMRoles)
+		r.Put("/llm/limits", a.putLLMLimits)
 		r.Get("/ai/notes", a.listAINotes)
 	})
 

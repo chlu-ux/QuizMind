@@ -29,3 +29,11 @@ func (r *Registry) For(role Role) (Client, error) {
 	}
 	return c, nil
 }
+
+// Replace swaps the whole set of clients at once, so a configuration change never leaves a
+// half-updated registry visible to a running job.
+func (r *Registry) Replace(clients map[Role]Client) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	r.clients = clients
+}

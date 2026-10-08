@@ -150,21 +150,60 @@ export interface ServerEvent {
   error?: string
 }
 
+/** AI explanation settings. The model it uses is chosen in the model settings (the 解读 role). */
 export interface AIConfig {
   enabled: boolean
-  base_url: string
-  model: string
-  max_tokens: number
-  temperature: number
   app_token: string
+  /** "provider / model" of the model bound to the explain role; empty when none is. */
+  model_name: string
+  /** True when that model is complete enough for an app to use. */
+  ready: boolean
+}
+
+export type AIConfigUpdate = Pick<AIConfig, 'enabled' | 'app_token'>
+
+export type Protocol = 'anthropic' | 'openai'
+export type LlmRole = 'generator' | 'validator' | 'agent' | 'explain'
+
+export interface LlmProvider {
+  id: string
+  name: string
+  protocol: Protocol
+  base_url: string
   api_key_set: boolean
   api_key_hint: string
 }
 
 /** What is sent when saving; an empty api_key keeps the stored key. */
-export type AIConfigUpdate = Omit<AIConfig, 'api_key_set' | 'api_key_hint'> & { api_key: string }
+export type LlmProviderInput = Pick<LlmProvider, 'name' | 'protocol' | 'base_url'> & { api_key: string }
 
-export interface AITestResult {
+export interface LlmModel {
+  id: string
+  provider_id: string
+  name: string
+  model: string
+  max_tokens: number
+  temperature: number
+  effort: string
+}
+
+export type LlmModelInput = Omit<LlmModel, 'id'>
+
+export interface LlmLimits {
+  max_concurrency: number
+  rps: number
+  daily_token_budget: number
+}
+
+export interface LlmConfig {
+  providers: LlmProvider[]
+  models: LlmModel[]
+  /** Role name to model id; a role that is not bound is absent. */
+  roles: Partial<Record<LlmRole, string>>
+  limits: LlmLimits
+}
+
+export interface ModelTestResult {
   ok: boolean
   reply?: string
   error?: string

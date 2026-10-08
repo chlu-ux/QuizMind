@@ -16,6 +16,19 @@ const (
 	RoleGenerator Role = "generator"
 	RoleValidator Role = "validator"
 	RoleEmbedding Role = "embedding"
+	// RoleAgent is the study / question-writing assistant (Anthropic protocol only).
+	RoleAgent Role = "agent"
+	// RoleExplain is the AI explanation the apps call themselves; the server never calls it, but
+	// the apps report its token usage under this name.
+	RoleExplain Role = "explain"
+)
+
+// Protocol names the wire format a provider speaks.
+type Protocol string
+
+const (
+	ProtocolAnthropic Protocol = "anthropic"
+	ProtocolOpenAI    Protocol = "openai"
 )
 
 // Client is implemented once per provider protocol.
@@ -45,6 +58,12 @@ type Usage struct {
 	InputTokens  int64
 	OutputTokens int64
 	CachedTokens int64
+}
+
+// Pinger is implemented by clients that can make a tiny plain-text request, so the admin UI can
+// check that a saved provider and model work.
+type Pinger interface {
+	Ping(ctx context.Context) (string, error)
 }
 
 // ErrBudgetExceeded is returned by Guard when the daily token budget is spent.

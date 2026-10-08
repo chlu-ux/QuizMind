@@ -49,17 +49,15 @@ func run() error {
 
 	hub := events.NewHub()
 	queue := jobs.NewQueue(database)
-	guard := llm.NewGuard(llm.Limits{
-		MaxConcurrency:   cfg.LLM.Limits.MaxConcurrency,
-		RPS:              cfg.LLM.Limits.RPS,
-		DailyTokenBudget: cfg.LLM.Limits.DailyTokenBudget,
-	}, service.LLMRecorder{DB: database})
-	reg, err := buildRegistry(cfg, guard, log)
-	if err != nil {
-		return err
-	}
 
-	svc := service.New(database, cfg, reg, queue, hub, log)
+	svc := service.New(database, cfg, llm.NewRegistry(), queue, hub, log)
+	// Models are configured in the admin UI; the first start after upgrading imports the old settings.
+	if err := svc.SeedLLMConfig(context.Background()); err != nil {
+		return fmt.Errorf("import llm settings: %w", err)
+	}
+	if err := svc.ReloadLLM(context.Background()); err != nil {
+		return fmt.Errorf("load llm configuration: %w", err)
+	}
 	runner := jobs.NewRunner(database, queue, cfg.Pipeline.WorkerConcurrency, log, hub)
 	svc.RegisterHandlers(runner)
 

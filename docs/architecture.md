@@ -282,38 +282,22 @@ structured_mode: json_schema | tools | json_object | prompt
 
 无论哪种模式，**服务端一律再做一次校验**：用 Go 结构体和业务规则（选项数、答案在选项范围内、必填字段等）验证，失败则带着错误信息让模型修复重试，最多 2 次，仍失败则记为该块生成失败。这样即使模型只支持"自由文本输出 JSON"也能稳定使用。（M1 的 Anthropic 路径依赖结构化输出，**尚未实现修复重试**；单个问题不合规时直接丢弃该题并记录原因，整个调用失败时由任务队列重试。修复重试随 OpenAI 兼容实现一起做。）
 
-### 4.4 配置示例
+### 4.4 配置（2026-10-08 起在管理后台）
 
-```yaml
-llm:
-  providers:
-    anthropic_main:
-      type: anthropic
-      api_key_env: ANTHROPIC_API_KEY
-      # base_url: https://...        # 可选，走代理时设置（读取 ANTHROPIC_BASE_URL 亦可）
-    cn_openai:
-      type: openai_compat
-      base_url: https://api.example.com/v1
-      api_key_env: CN_LLM_API_KEY
-      structured_mode: tools          # json_schema | tools | json_object | prompt
-  roles:
-    generator:
-      provider: anthropic_main
-      model: claude-sonnet-5-5        # 已确定：出题使用 Sonnet 5.5
-      effort: medium                  # low|medium|high|xhigh|max；控制思考深度与成本
-      max_tokens: 16000               # 含思考 token，别设太小
-    validator:                        # M3 启用；M1 先靠人工审核
-      provider: cn_openai             # 待定：可用便宜的国内模型，或 claude-haiku-4-5-20251001
-      model: <校验模型>
-      temperature: 0
-    embedding:                        # M3 启用
-      provider: cn_openai
-      model: <embedding 模型>
-  limits:
-    max_concurrency: 4                # 同时在途的 LLM 请求数
-    rps: 3
-    daily_token_budget: 2000000       # 超出后暂停生成并告警
-```
+供应商、模型、角色绑定和调用限额都在管理后台「AI 与模型」页配置，存在数据库里，保存即生效，不用重启；`config.yaml` 不再有 `llm:` 段。
+
+| 存放 | 内容 |
+|---|---|
+| `llm_provider` 表 | 名称、协议（`anthropic` / `openai`）、Base URL、API Key。一个供应商一个 Key，可挂多个模型 |
+| `llm_model` 表 | 所属供应商、模型 ID、显示名、`max_tokens`；`temperature`（仅 OpenAI 协议）、`effort`（仅 Anthropic 协议） |
+| `app_setting`：`llm_roles` | 角色 → 模型 id。角色：`generator`（出题）、`validator`（复核，预留）、`agent`（学习 / 出题助手，只能绑 Anthropic 协议）、`explain`（App 的 AI 解读，只能绑 OpenAI 协议） |
+| `app_setting`：`llm_limits` | 同时请求数、每秒请求数、每日 token 预算，对服务端发起的所有调用合计生效 |
+
+- **热更新**：保存后 `Service.ReloadLLM` 重建各角色的 client 并整体替换进 `llm.Registry`，`llm.Guard` 的限额同时更新（已在途的调用按开始时的限额跑完）。某个角色的模型建不起来（没 Key、地址错）只记警告，该角色不可用，其他照常。
+- **校验**：绑定角色、改供应商协议时检查角色对协议的要求；正在使用的模型不能删，还有模型的供应商不能删。
+- **测试**：每个模型有「测试」按钮，发一次最小请求（不计入限额和预算）。
+- **结构化输出的兼容**：Anthropic 客户端先用 `output_config.format`，端点以 400 / 404 / 422 拒绝时改为把 JSON Schema 写进系统提示、从回复里提取 JSON，重试成功后记住这个模式（兼容 Anthropic 接口的第三方网关常没有结构化输出）。OpenAI 兼容客户端依次试 `json_schema`、`json_object`、纯提示词，记住第一个被接受的。
+- **从旧版升级**：首次启动时一次性导入旧 `config.yaml` 的 `llm:` 段（Key 从它指定的环境变量读，如 `ANTHROPIC_API_KEY`）和后台已保存的 AI 解读端点，之后不再读取；`app_setting.llm_seeded` 标记已导入，全部删除后不会再导入。
 
 ### 4.5 可观测
 
@@ -623,8 +607,9 @@ POST /api/v1/sync/exams                             body: [同上，最多 10 �
 刷题页答题后可以让大模型讲解这道题。**由客户端直接调用 OpenAI 兼容接口**，服务端只保存配置、下发配置、收存解读文本，所以没有服务端时也能解读（只要手机能连上 LLM）。
 
 ```
-管理页「AI 解读」（Base URL / API Key / 模型 / 访问令牌）
-      │  app_setting 表，key = "ai"
+管理页「AI 与模型」（供应商 / 模型 / 把一个 OpenAI 协议的模型指定给「AI 解读」角色）
+管理页「AI 解读」（启用开关 / 访问令牌）
+      │  llm_provider、llm_model 表 + app_setting 的 llm_roles、ai
       ▼
 GET /api/v1/ai/config      Authorization: Bearer <访问令牌>
 → { base_url, api_key, model, max_tokens, temperature }
@@ -636,7 +621,7 @@ GET /api/v1/ai/config      Authorization: Bearer <访问令牌>
 GET/POST /api/v1/sync/notes   → 服务端 ai_note 表（每题一条，覆盖式）
 ```
 
-- **配置在服务端、同步到客户端**：配置存在 `app_setting`（SQLite），在管理页编辑；管理页不回显 API Key（只显示 `sk-…a1b2`），保存时留空表示不改。管理页有「测试已保存的配置」按钮，由服务端发一次最小请求。
+- **配置在服务端、同步到客户端**：连接信息来自「AI 解读」角色绑定的模型及其供应商（SQLite），在管理页编辑；管理页不回显 API Key（只显示 `sk-…a1b2`），保存时留空表示不改。每个模型有「测试」按钮，由服务端发一次最小请求。`app_setting` 的 `ai` 只存启用开关和访问令牌。
 - **访问令牌**：`/api/v1/ai/config` 会交出 API Key，所以不像其他 `/api/v1/*` 那样免鉴权，要带管理页里设置的访问令牌（一个简单的字符串，≥4 位，和管理后台的 `QUIZMIND_TOKEN` 是两回事）。未设置令牌则没有客户端能取；功能关闭时返回 404，客户端据此删掉本机副本；令牌错返回 401（同步不失败，只提示）。客户端在设置页输入令牌，同步时自动取配置。
 - **没连过服务端**：客户端设置页可以手动填一份本机配置（Base URL / Key / 模型）。**本机配置优先于服务器配置**，清除后回到服务器配置。
 - **解读文本**：每题一条，`question_id` 为主键，重新解读覆盖旧文本；同步按 `updated_at` 后写覆盖先写（和 `question_state` 一致），行上带服务端 `sync_seq` 供其他设备增量拉取。字段：`content`（Markdown）、`model`、`prompt_version`（客户端提示词版本，现为 `explain.v3`）、`selected`（提问时所选选项）。内容 ≤ 64 KB，未知题目的笔记被忽略。流式生成过程中中止或出错不保存半截文本。
@@ -692,7 +677,8 @@ GET /api/v1/lessons?version=<n>
 | Admin：审核 | `GET /admin/questions`（`?flagged=1` 列出有未处理反馈的题）、`GET/PATCH /admin/questions/{id}`、`POST …/approve`、`POST …/reject`、`POST …/dismiss-flags`、`POST /admin/questions/bulk` | 详情带原文块与标题路径，供审核页高亮 `source_quote`；带 `flags`（反馈原因与时间，最新在前） |
 | Admin：配图 | `POST /admin/media` | 上传一张图（multipart：`file`），返回 `id` 和 Markdown 引用 `media:<id>`，§7.7 |
 | Admin：成本 | `GET /admin/usage?days=30` | 按天、按模型汇总调用次数和 token |
-| Admin：AI 解读 | `GET/PUT /admin/ai`、`POST /admin/ai/test` | LLM 配置与访问令牌（不回显 Key）；测试已保存的配置 |
+| Admin：AI 解读 | `GET/PUT /admin/ai` | 是否启用与访问令牌；显示当前绑定的模型 |
+| Admin：模型 | `GET /admin/llm`、`POST/PUT/DELETE /admin/llm/providers[/{id}]`、`POST/PUT/DELETE /admin/llm/models[/{id}]`、`POST /admin/llm/models/{id}/test`、`PUT /admin/llm/roles`、`PUT /admin/llm/limits` | 供应商、模型、角色绑定、调用限额（不回显 Key），保存即生效；§4.4 |
 | App：同步 | `/api/v1/sync/*` | §7 |
 | App：题库 | `/api/v1/banks`、`/api/v1/questions/{id}/flag` | 反馈可带可选的 `reason`，§7.5 |
 | App：讲义 | `GET /api/v1/lessons?version=<n>` | 所有小节的原文，带版本号，没变就不重传，§7.8 |
@@ -710,7 +696,7 @@ GET /api/v1/lessons?version=<n>
 
 - **鉴权**：配置文件里一个静态 Bearer Token（App 和 Admin 共用，或各一个）；Token 通过环境变量注入，不进仓库。
 - **传输**：服务端在本机，默认只监听 `127.0.0.1`；手机通过**家庭局域网**以 HTTP 访问时才开启局域网监听。局域网内明文传输的 Token 有被同网设备嗅探的理论风险，家用网络可接受；**不暴露公网**。将来若要外网访问，应加 Tailscale（`tailscale serve` 提供 HTTPS）或反向代理 + HTTPS，并为 Admin 加登录。
-- **密钥**：出题用的 LLM API Key 只走环境变量，日志中脱敏。AI 解读用的 Key 存在 SQLite（`app_setting`），因为要下发给客户端：数据库文件按敏感文件对待，`/api/v1/ai/config` 必须带访问令牌，管理页不回显。
+- **密钥**：所有模型的 API Key 存在 SQLite（`llm_provider`），管理页不回显；其中「AI 解读」角色模型的 Key 还要下发给客户端。数据库文件按敏感文件对待，`/api/v1/ai/config` 必须带访问令牌。
 - **成本防护**：`daily_token_budget` 与并发/速率限制，防止流水线故障时循环重试烧钱。
 - **提示词注入**：文档内容是不可信数据，输出受 schema 与规则校验约束，不执行文档中的指令。
 - 以后若升级为多用户：补用户表与 JWT，Token 机制换成登录即可，其余不动。

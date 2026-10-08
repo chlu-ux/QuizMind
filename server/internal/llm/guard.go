@@ -3,6 +3,7 @@ package llm
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"golang.org/x/time/rate"
@@ -38,14 +39,23 @@ type Limits struct {
 // budget, and call logging. One Guard is shared by every role so limits apply
 // to the whole process.
 type Guard struct {
+	mu  sync.RWMutex
 	sem chan struct{}
 	lim *rate.Limiter
-	rec Recorder
 	max int64
+	rec Recorder
 	now func() time.Time
 }
 
 func NewGuard(l Limits, rec Recorder) *Guard {
+	g := &Guard{rec: rec, now: time.Now}
+	g.SetLimits(l)
+	return g
+}
+
+// SetLimits changes the limits for calls that start from now on. A call already in flight finishes
+// under the limits it started with.
+func (g *Guard) SetLimits(l Limits) {
 	if l.MaxConcurrency < 1 {
 		l.MaxConcurrency = 1
 	}
@@ -53,14 +63,17 @@ func NewGuard(l Limits, rec Recorder) *Guard {
 	if l.RPS > 0 {
 		rps = rate.Limit(l.RPS)
 	}
-	burst := l.MaxConcurrency
-	return &Guard{
-		sem: make(chan struct{}, l.MaxConcurrency),
-		lim: rate.NewLimiter(rps, burst),
-		rec: rec,
-		max: l.DailyTokenBudget,
-		now: time.Now,
-	}
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.sem = make(chan struct{}, l.MaxConcurrency)
+	g.lim = rate.NewLimiter(rps, l.MaxConcurrency)
+	g.max = l.DailyTokenBudget
+}
+
+func (g *Guard) snapshot() (sem chan struct{}, lim *rate.Limiter, max int64) {
+	g.mu.RLock()
+	defer g.mu.RUnlock()
+	return g.sem, g.lim, g.max
 }
 
 // Wrap returns a Client that enforces the guard's limits for the given role.
@@ -86,23 +99,24 @@ func WithJobID(ctx context.Context, id string) context.Context {
 
 func (c *guarded) GenerateJSON(ctx context.Context, req JSONRequest, out any) (Usage, error) {
 	g := c.g
-	if g.max > 0 {
+	sem, lim, max := g.snapshot()
+	if max > 0 {
 		day := g.now()
 		start := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, day.Location())
 		used, err := g.rec.TokensSince(ctx, start)
 		if err != nil {
 			return Usage{}, fmt.Errorf("check token budget: %w", err)
 		}
-		if used >= g.max {
+		if used >= max {
 			return Usage{}, ErrBudgetExceeded
 		}
 	}
-	if err := g.lim.Wait(ctx); err != nil {
+	if err := lim.Wait(ctx); err != nil {
 		return Usage{}, err
 	}
 	select {
-	case g.sem <- struct{}{}:
-		defer func() { <-g.sem }()
+	case sem <- struct{}{}:
+		defer func() { <-sem }()
 	case <-ctx.Done():
 		return Usage{}, ctx.Err()
 	}

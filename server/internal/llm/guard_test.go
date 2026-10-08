@@ -126,3 +126,21 @@ func TestRegistry_MissingRole(t *testing.T) {
 	_, err := r.For(llm.RoleGenerator)
 	assert.Error(t, err)
 }
+
+func TestGuard_SetLimitsAppliesToLaterCalls(t *testing.T) {
+	rec := &memRecorder{tokens: 500}
+	g := llm.NewGuard(llm.Limits{MaxConcurrency: 1}, rec)
+	c := g.Wrap(llm.RoleGenerator, fake.New(func(llm.JSONRequest) (any, error) { return map[string]any{}, nil }))
+	var out map[string]any
+
+	_, err := c.GenerateJSON(context.Background(), llm.JSONRequest{}, &out)
+	require.NoError(t, err, "no budget set")
+
+	g.SetLimits(llm.Limits{MaxConcurrency: 1, DailyTokenBudget: 100})
+	_, err = c.GenerateJSON(context.Background(), llm.JSONRequest{}, &out)
+	assert.ErrorIs(t, err, llm.ErrBudgetExceeded, "the new budget applies to a client wrapped before the change")
+
+	g.SetLimits(llm.Limits{MaxConcurrency: 1})
+	_, err = c.GenerateJSON(context.Background(), llm.JSONRequest{}, &out)
+	assert.NoError(t, err)
+}

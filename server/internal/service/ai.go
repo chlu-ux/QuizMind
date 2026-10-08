@@ -7,11 +7,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net/url"
 	"strings"
-	"time"
 
-	"github.com/chlu-ux/quizmind/server/internal/llm/openaicompat"
+	"github.com/chlu-ux/quizmind/server/internal/llm"
 	"github.com/chlu-ux/quizmind/server/internal/store"
 )
 
@@ -20,25 +18,28 @@ var ErrUnauthorized = errors.New("unauthorized")
 
 const aiSettingKey = "ai"
 
-// AIConfig is the stored configuration of the AI-explanation feature. The apps
-// call the model themselves, so it is handed to them (see AppAIConfig); the
-// server only keeps it. Edited in the admin UI.
+// AIConfig is the stored configuration of the AI-explanation feature. The apps call the model
+// themselves, so the server hands them the connection details (see AppAIConfig); those come from the
+// model bound to the "explain" role (see llmconfig.go). What is kept here is whether the feature is on
+// and the token an app must present. Edited in the admin UI.
+//
+// The connection fields below are how this configuration was stored before models were configured
+// separately; SeedLLMConfig moves them over, and they are never written again.
 type AIConfig struct {
-	Enabled     bool    `json:"enabled"`
-	BaseURL     string  `json:"base_url"` // OpenAI-compatible, including the version segment, e.g. https://api.openai.com/v1
-	APIKey      string  `json:"api_key"`
-	Model       string  `json:"model"`
-	MaxTokens   int     `json:"max_tokens"`
-	Temperature float64 `json:"temperature"`
+	Enabled bool `json:"enabled"`
 	// AppToken is the (deliberately simple) secret an app must present to fetch
 	// the configuration, since it contains the API key. Empty = nobody can.
 	AppToken string `json:"app_token"`
+
+	BaseURL     string  `json:"base_url,omitempty"`
+	APIKey      string  `json:"api_key,omitempty"`
+	Model       string  `json:"model,omitempty"`
+	MaxTokens   int     `json:"max_tokens,omitempty"`
+	Temperature float64 `json:"temperature,omitempty"`
 }
 
-func defaultAIConfig() AIConfig { return AIConfig{MaxTokens: 1500, Temperature: 0.3} }
-
 func (s *Service) loadAIConfig(ctx context.Context) (AIConfig, error) {
-	cfg := defaultAIConfig()
+	var cfg AIConfig
 	raw, err := s.reader().GetSetting(ctx, aiSettingKey)
 	if errors.Is(err, sql.ErrNoRows) {
 		return cfg, nil
@@ -48,18 +49,6 @@ func (s *Service) loadAIConfig(ctx context.Context) (AIConfig, error) {
 	}
 	err = json.Unmarshal([]byte(raw), &cfg)
 	return cfg, err
-}
-
-// AIConfigView is what the admin UI sees: everything except the API key itself.
-type AIConfigView struct {
-	Enabled     bool    `json:"enabled"`
-	BaseURL     string  `json:"base_url"`
-	Model       string  `json:"model"`
-	MaxTokens   int     `json:"max_tokens"`
-	Temperature float64 `json:"temperature"`
-	AppToken    string  `json:"app_token"`
-	APIKeySet   bool    `json:"api_key_set"`
-	APIKeyHint  string  `json:"api_key_hint"` // e.g. "sk-…a1b2"
 }
 
 func keyHint(k string) string {
@@ -73,58 +62,77 @@ func keyHint(k string) string {
 	return string(r[:3]) + "…" + string(r[len(r)-4:])
 }
 
+// explainModel returns the model bound to the explain role and its provider; ok is false when no
+// usable model is bound.
+func (s *Service) explainModel(ctx context.Context) (m store.LlmModel, p store.LlmProvider, ok bool, err error) {
+	q := s.reader()
+	roles, err := loadRoles(ctx, q)
+	if err != nil {
+		return m, p, false, err
+	}
+	mid, bound := roles[string(llm.RoleExplain)]
+	if !bound {
+		return m, p, false, nil
+	}
+	if m, err = q.GetLLMModel(ctx, mid); err != nil {
+		return m, p, false, ignoreNoRows(err)
+	}
+	if p, err = q.GetLLMProvider(ctx, m.ProviderID); err != nil {
+		return m, p, false, ignoreNoRows(err)
+	}
+	return m, p, p.BaseUrl != "" && p.ApiKey != "" && m.Model != "", nil
+}
+
+func ignoreNoRows(err error) error {
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil
+	}
+	return err
+}
+
+// AIConfigView is what the admin UI sees. The model itself is chosen in the model settings.
+type AIConfigView struct {
+	Enabled  bool   `json:"enabled"`
+	AppToken string `json:"app_token"`
+	// ModelName is the model bound to the explain role ("provider / model"); empty when none is.
+	ModelName string `json:"model_name"`
+	// Ready is true when that model is complete enough for an app to use.
+	Ready bool `json:"ready"`
+}
+
 func (s *Service) AdminAIConfig(ctx context.Context) (AIConfigView, error) {
 	c, err := s.loadAIConfig(ctx)
 	if err != nil {
 		return AIConfigView{}, err
 	}
-	return AIConfigView{
-		Enabled: c.Enabled, BaseURL: c.BaseURL, Model: c.Model, MaxTokens: c.MaxTokens,
-		Temperature: c.Temperature, AppToken: c.AppToken, APIKeySet: c.APIKey != "", APIKeyHint: keyHint(c.APIKey),
-	}, nil
-}
-
-// AIConfigUpdate is the admin's edit. APIKey nil or empty keeps the stored key.
-type AIConfigUpdate struct {
-	Enabled     bool    `json:"enabled"`
-	BaseURL     string  `json:"base_url"`
-	APIKey      string  `json:"api_key"`
-	Model       string  `json:"model"`
-	MaxTokens   int     `json:"max_tokens"`
-	Temperature float64 `json:"temperature"`
-	AppToken    string  `json:"app_token"`
-}
-
-func (s *Service) SaveAIConfig(ctx context.Context, in AIConfigUpdate) (AIConfigView, error) {
-	cur, err := s.loadAIConfig(ctx)
+	m, p, ready, err := s.explainModel(ctx)
 	if err != nil {
 		return AIConfigView{}, err
 	}
-	next := AIConfig{
-		Enabled: in.Enabled, BaseURL: strings.TrimRight(strings.TrimSpace(in.BaseURL), "/"),
-		APIKey: cur.APIKey, Model: strings.TrimSpace(in.Model), MaxTokens: in.MaxTokens,
-		Temperature: in.Temperature, AppToken: strings.TrimSpace(in.AppToken),
+	v := AIConfigView{Enabled: c.Enabled, AppToken: c.AppToken, Ready: ready}
+	if m.ID != "" && p.ID != "" {
+		v.ModelName = p.Name + " / " + m.Name
 	}
-	if k := strings.TrimSpace(in.APIKey); k != "" {
-		next.APIKey = k
-	}
-	if next.MaxTokens == 0 {
-		next.MaxTokens = defaultAIConfig().MaxTokens
-	}
-	if next.BaseURL != "" {
-		if u, err := url.Parse(next.BaseURL); err != nil || (u.Scheme != "http" && u.Scheme != "https") || u.Host == "" {
-			return AIConfigView{}, invalid("base_url must be an http(s) URL such as https://api.openai.com/v1")
-		}
+	return v, nil
+}
+
+// AIConfigUpdate is the admin's edit.
+type AIConfigUpdate struct {
+	Enabled  bool   `json:"enabled"`
+	AppToken string `json:"app_token"`
+}
+
+func (s *Service) SaveAIConfig(ctx context.Context, in AIConfigUpdate) (AIConfigView, error) {
+	next := AIConfig{Enabled: in.Enabled, AppToken: strings.TrimSpace(in.AppToken)}
+	_, _, ready, err := s.explainModel(ctx)
+	if err != nil {
+		return AIConfigView{}, err
 	}
 	switch {
-	case next.MaxTokens < 16 || next.MaxTokens > 32000:
-		return AIConfigView{}, invalid("max_tokens must be between 16 and 32000")
-	case next.Temperature < 0 || next.Temperature > 2:
-		return AIConfigView{}, invalid("temperature must be between 0 and 2")
 	case next.AppToken != "" && len([]rune(next.AppToken)) < 4:
 		return AIConfigView{}, invalid("the access token must have at least 4 characters")
-	case next.Enabled && (next.BaseURL == "" || next.APIKey == "" || next.Model == ""):
-		return AIConfigView{}, invalid("base_url, api_key and model are required to enable AI explanations")
+	case next.Enabled && !ready:
+		return AIConfigView{}, invalid("choose a model for AI explanations in the model settings first")
 	case next.Enabled && next.AppToken == "":
 		return AIConfigView{}, invalid("set an access token so the apps can fetch the configuration")
 	}
@@ -133,36 +141,6 @@ func (s *Service) SaveAIConfig(ctx context.Context, in AIConfigUpdate) (AIConfig
 		return AIConfigView{}, err
 	}
 	return s.AdminAIConfig(ctx)
-}
-
-type AITestResult struct {
-	OK      bool   `json:"ok"`
-	Reply   string `json:"reply,omitempty"`
-	Error   string `json:"error,omitempty"`
-	Latency int64  `json:"latency_ms"`
-}
-
-// TestAIConfig sends a tiny request with the saved configuration. A failing
-// endpoint is a result, not an error: the admin UI shows what went wrong.
-func (s *Service) TestAIConfig(ctx context.Context) (AITestResult, error) {
-	c, err := s.loadAIConfig(ctx)
-	if err != nil {
-		return AITestResult{}, err
-	}
-	if c.BaseURL == "" || c.APIKey == "" || c.Model == "" {
-		return AITestResult{Error: "请先保存 Base URL、API Key 和模型"}, nil
-	}
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
-	start := time.Now()
-	reply, err := openaicompat.Chat(ctx, nil, c.BaseURL, c.APIKey, c.Model, "Reply with the single word: pong", 32)
-	res := AITestResult{Latency: time.Since(start).Milliseconds()}
-	if err != nil {
-		res.Error = strings.ReplaceAll(err.Error(), c.APIKey, "***")
-		return res, nil
-	}
-	res.OK, res.Reply = true, strings.TrimSpace(reply)
-	return res, nil
 }
 
 // AppAIConfig is what an app receives: the whole configuration, key included.
@@ -182,13 +160,17 @@ func (s *Service) AppAIConfig(ctx context.Context, token string) (AppAIConfig, e
 	if err != nil {
 		return AppAIConfig{}, err
 	}
-	if !c.Enabled || c.BaseURL == "" || c.APIKey == "" || c.Model == "" {
+	m, p, ready, err := s.explainModel(ctx)
+	if err != nil {
+		return AppAIConfig{}, err
+	}
+	if !c.Enabled || !ready {
 		return AppAIConfig{}, fmt.Errorf("%w: ai config", ErrNotFound)
 	}
 	if c.AppToken == "" || subtle.ConstantTimeCompare([]byte(token), []byte(c.AppToken)) != 1 {
 		return AppAIConfig{}, ErrUnauthorized
 	}
-	return AppAIConfig{BaseURL: c.BaseURL, APIKey: c.APIKey, Model: c.Model, MaxTokens: c.MaxTokens, Temperature: c.Temperature}, nil
+	return AppAIConfig{BaseURL: p.BaseUrl, APIKey: p.ApiKey, Model: m.Model, MaxTokens: int(m.MaxTokens), Temperature: m.Temperature}, nil
 }
 
 // ---- explanation sync ----

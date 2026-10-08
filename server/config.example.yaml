@@ -15,20 +15,9 @@ pipeline:
   max_upload_bytes: 2097152
   dedupe_threshold: 0.8
 
-llm:
-  providers:
-    anthropic_main:
-      type: anthropic
-      api_key_env: ANTHROPIC_API_KEY
-      # base_url: https://your-proxy.example.com   # optional
-  roles:
-    generator:
-      provider: anthropic_main
-      model: claude-sonnet-5-5
-      effort: medium            # low | medium | high | xhigh | max
-      max_tokens: 16000
-    # validator: (M3) independent answering check, e.g. a cheaper model
-  limits:
-    max_concurrency: 2          # in-flight LLM requests
-    rps: 2
-    daily_token_budget: 2000000 # generation pauses (jobs deferred) once spent; 0 = unlimited
+# Model providers, models, which model plays which role (generator, assistant, AI explanation) and the
+# call limits are configured in the admin UI ("AI 与模型") and stored in the database; there is no `llm:`
+# section here any more.
+#
+# Upgrading: an existing `llm:` section in config.yaml, together with the API key in the environment
+# variable it names (ANTHROPIC_API_KEY), is imported once on the first start; after that it is ignored.

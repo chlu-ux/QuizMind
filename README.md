@@ -26,12 +26,12 @@ Markdown 文档 → AI 生成题目 → 自动校验 → 人工审核 → 发布
 **服务端 / 管理后台**
 
 - 上传 Markdown，按标题切块，增量更新（内容没变的小节不重复生成）
-- 同时支持 Anthropic API 和 OpenAI 兼容接口，可按角色配置模型
+- 在管理后台配置多个供应商和模型（Anthropic / OpenAI 兼容），按角色（出题、复核、助手、AI 解读）指定，保存即生效
 - 单选 / 判断题生成，规则校验（原文出处必须能原样找到、选项不重复）、近似题去重
 - 审核页：原文高亮、快捷键、批准 / 驳回；用户反馈的题自动下线待审，可「处理完毕」
 - 题目支持插图（UML、流程图等），可在编辑器里粘贴截图
 - 任务队列与实时进度（SSE）、LLM 用量与每日 token 预算
-- AI 解读：配置一个 OpenAI 兼容端点，客户端可请求 AI 解释题目
+- AI 解读：指定一个 OpenAI 兼容的模型，客户端可请求 AI 解释题目
 
 **H5 / Flutter 客户端**
 
@@ -48,12 +48,11 @@ Markdown 文档 → AI 生成题目 → 自动校验 → 人工审核 → 发布
 ```bash
 cd server
 cp config.example.yaml config.yaml     # 可选，默认配置即可本地使用
-export ANTHROPIC_API_KEY=sk-ant-...    # 不设置也能启动，但出题任务会失败
 make web                               # 构建管理后台和 H5，嵌入二进制
 make run                               # http://127.0.0.1:8080
 ```
 
-- 管理后台：`http://127.0.0.1:8080/`
+- 管理后台：`http://127.0.0.1:8080/`；首次使用先到「AI 与模型」页添加供应商（Anthropic 或 OpenAI 兼容）和模型，并指定给「出题」角色，不设置也能启动，但出题任务会失败
 - 手机 H5：`http://127.0.0.1:8080/m/`
 
 没有 API Key 时，可以先灌入示例数据体验整个流程：
@@ -75,7 +74,7 @@ cd server
 ./run.sh start|stop|status|logs
 ```
 
-密钥放在 `server/.env`（如 `ANTHROPIC_API_KEY=...`）和 `server/.token`，两者都不会提交。
+访问令牌放在 `server/.token`（其他环境变量可放 `server/.env`），两者都不会提交；模型的 API Key 在管理后台配置，存在数据库里。
 
 ## 导入题库素材
 
@@ -129,7 +128,7 @@ APK 需要 `app/android/key.properties` 和对应的 keystore，缺少时脚本�
 sqlite3 app.db "VACUUM INTO 'backup.db'"
 ```
 
-注意数据库里存有图片和 AI 解读的 API Key，备份文件要按密钥对待。
+注意数据库里存有图片和所有模型的 API Key，备份文件要按密钥对待。
 
 ## 安全说明
 

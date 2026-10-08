@@ -415,13 +415,118 @@ func (a *API) putAIConfig(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, v)
 }
 
-func (a *API) testAIConfig(w http.ResponseWriter, r *http.Request) {
-	res, err := a.svc.TestAIConfig(r.Context())
+// ---- model providers, models and roles ----
+
+func (a *API) getLLMConfig(w http.ResponseWriter, r *http.Request) {
+	v, err := a.svc.LLMConfig(r.Context())
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, v)
+}
+
+func (a *API) createLLMProvider(w http.ResponseWriter, r *http.Request) {
+	var in service.ProviderInput
+	if !decode(w, r, &in) {
+		return
+	}
+	v, err := a.svc.CreateProvider(r.Context(), in)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, v)
+}
+
+func (a *API) updateLLMProvider(w http.ResponseWriter, r *http.Request) {
+	var in service.ProviderInput
+	if !decode(w, r, &in) {
+		return
+	}
+	v, err := a.svc.UpdateProvider(r.Context(), chi.URLParam(r, "id"), in)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, v)
+}
+
+func (a *API) deleteLLMProvider(w http.ResponseWriter, r *http.Request) {
+	if err := a.svc.DeleteProvider(r.Context(), chi.URLParam(r, "id")); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (a *API) createLLMModel(w http.ResponseWriter, r *http.Request) {
+	var in service.ModelInput
+	if !decode(w, r, &in) {
+		return
+	}
+	v, err := a.svc.CreateModel(r.Context(), in)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, v)
+}
+
+func (a *API) updateLLMModel(w http.ResponseWriter, r *http.Request) {
+	var in service.ModelInput
+	if !decode(w, r, &in) {
+		return
+	}
+	v, err := a.svc.UpdateModel(r.Context(), chi.URLParam(r, "id"), in)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, v)
+}
+
+func (a *API) deleteLLMModel(w http.ResponseWriter, r *http.Request) {
+	if err := a.svc.DeleteModel(r.Context(), chi.URLParam(r, "id")); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (a *API) testLLMModel(w http.ResponseWriter, r *http.Request) {
+	res, err := a.svc.TestModel(r.Context(), chi.URLParam(r, "id"))
 	if err != nil {
 		a.fail(w, r, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, res)
+}
+
+func (a *API) putLLMRoles(w http.ResponseWriter, r *http.Request) {
+	var in map[string]string
+	if !decode(w, r, &in) {
+		return
+	}
+	v, err := a.svc.SaveRoles(r.Context(), in)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, v)
+}
+
+func (a *API) putLLMLimits(w http.ResponseWriter, r *http.Request) {
+	var in service.LLMLimits
+	if !decode(w, r, &in) {
+		return
+	}
+	v, err := a.svc.SaveLimits(r.Context(), in)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, v)
 }
 
 func (a *API) appAIConfig(w http.ResponseWriter, r *http.Request) {

@@ -35,16 +35,20 @@ const (
 )
 
 type Service struct {
-	DB    *db.DB
-	Cfg   config.Config
-	LLM   *llm.Registry
+	DB  *db.DB
+	Cfg config.Config
+	LLM *llm.Registry
+	// Guard limits and logs every model call made through LLM; its limits come from the stored
+	// model configuration (see ReloadLLM).
+	Guard *llm.Guard
 	Queue *jobs.Queue
 	Hub   *events.Hub
 	Log   *slog.Logger
 }
 
 func New(d *db.DB, cfg config.Config, reg *llm.Registry, q *jobs.Queue, hub *events.Hub, log *slog.Logger) *Service {
-	return &Service{DB: d, Cfg: cfg, LLM: reg, Queue: q, Hub: hub, Log: log}
+	return &Service{DB: d, Cfg: cfg, LLM: reg, Guard: llm.NewGuard(defaultLLMLimits().toGuard(), LLMRecorder{DB: d}),
+		Queue: q, Hub: hub, Log: log}
 }
 
 // RegisterHandlers wires the pipeline job handlers into the runner.

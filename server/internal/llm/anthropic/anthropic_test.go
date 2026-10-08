@@ -148,3 +148,42 @@ func mustJSON(v any) string {
 	b, _ := json.Marshal(v)
 	return string(b)
 }
+
+func TestGenerateJSON_FallsBackWhenStructuredOutputsAreRefused(t *testing.T) {
+	var native, prompt int
+	c := newClient(t, func(w http.ResponseWriter, r *http.Request) {
+		var got map[string]any
+		b, _ := io.ReadAll(r.Body)
+		require.NoError(t, json.Unmarshal(b, &got))
+		w.Header().Set("Content-Type", "application/json")
+		if _, ok := got["output_config"]; ok {
+			native++
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte(`{"type":"error","error":{"type":"invalid_request_error","message":"output_config: extra inputs are not permitted"}}`))
+			return
+		}
+		prompt++
+		sys := got["system"].([]any)[0].(map[string]any)["text"].(string)
+		assert.Contains(t, sys, "JSON Schema", "the schema moves into the system prompt")
+		_ = json.NewEncoder(w).Encode(messageResponse("end_turn", "```json\n{\"n\":5}\n```"))
+	})
+	var out struct{ N int }
+	schema := map[string]any{"type": "object"}
+	for i := 0; i < 2; i++ {
+		_, err := c.GenerateJSON(context.Background(), llm.JSONRequest{System: "S", User: "U", Schema: schema}, &out)
+		require.NoError(t, err)
+		assert.Equal(t, 5, out.N)
+	}
+	assert.Equal(t, 1, native, "the structured request is only tried until the endpoint refuses it")
+	assert.Equal(t, 2, prompt)
+}
+
+func TestPing(t *testing.T) {
+	c := newClient(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(messageResponse("end_turn", "pong"))
+	})
+	got, err := c.Ping(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, "pong", got)
+}

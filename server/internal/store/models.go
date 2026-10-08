@@ -114,6 +114,28 @@ type LlmCallLog struct {
 	CreatedAt    int64  `json:"created_at"`
 }
 
+type LlmModel struct {
+	ID          string  `json:"id"`
+	ProviderID  string  `json:"provider_id"`
+	Name        string  `json:"name"`
+	Model       string  `json:"model"`
+	MaxTokens   int64   `json:"max_tokens"`
+	Temperature float64 `json:"temperature"`
+	Effort      string  `json:"effort"`
+	CreatedAt   int64   `json:"created_at"`
+	UpdatedAt   int64   `json:"updated_at"`
+}
+
+type LlmProvider struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Protocol  string `json:"protocol"`
+	BaseUrl   string `json:"base_url"`
+	ApiKey    string `json:"api_key"`
+	CreatedAt int64  `json:"created_at"`
+	UpdatedAt int64  `json:"updated_at"`
+}
+
 type Medium struct {
 	ID        string `json:"id"`
 	Mime      string `json:"mime"`

@@ -1,7 +1,7 @@
 import axios, { AxiosError } from 'axios'
 import type {
-  AIConfig, AIConfigUpdate, AINotePage, AITestResult, Bank, BulkResult, DocumentContent, DocumentDetail, DocumentRow, ImportResult, Job, MediaView, QuestionDetail,
-  QuestionEdit, QuestionPage, Question, UsageRow,
+  AIConfig, AIConfigUpdate, AINotePage, Bank, BulkResult, DocumentContent, DocumentDetail, DocumentRow, ImportResult, Job, LlmConfig, LlmLimits, LlmModel,
+  LlmModelInput, LlmProvider, LlmProviderInput, LlmRole, MediaView, ModelTestResult, QuestionDetail, QuestionEdit, QuestionPage, Question, UsageRow,
 } from './types'
 
 const TOKEN_KEY = 'quizmind.token'
@@ -67,6 +67,7 @@ const get = <T>(url: string, params?: Record<string, unknown>) =>
   http.get<T>(url, { params }).then((r) => r.data)
 const put = <T>(url: string, body?: unknown) => http.put<T>(url, body).then((r) => r.data)
 const post = <T>(url: string, body?: unknown) => http.post<T>(url, body).then((r) => r.data)
+const del = (url: string) => http.delete(url).then(() => undefined)
 
 export const api = {
   /** Cheap authenticated call used to check whether the stored token works. */
@@ -112,7 +113,18 @@ export const api = {
 
   aiConfig: () => get<AIConfig>('/admin/ai'),
   saveAIConfig: (c: AIConfigUpdate) => put<AIConfig>('/admin/ai', c),
-  testAI: () => post<AITestResult>('/admin/ai/test'),
+
+  llm: () => get<LlmConfig>('/admin/llm'),
+  createProvider: (p: LlmProviderInput) => post<LlmProvider>('/admin/llm/providers', p),
+  updateProvider: (id: string, p: LlmProviderInput) => put<LlmProvider>(`/admin/llm/providers/${id}`, p),
+  deleteProvider: (id: string) => del(`/admin/llm/providers/${id}`),
+  createModel: (m: LlmModelInput) => post<LlmModel>('/admin/llm/models', m),
+  updateModel: (id: string, m: LlmModelInput) => put<LlmModel>(`/admin/llm/models/${id}`, m),
+  deleteModel: (id: string) => del(`/admin/llm/models/${id}`),
+  testModel: (id: string) => post<ModelTestResult>(`/admin/llm/models/${id}/test`),
+  saveRoles: (roles: Partial<Record<LlmRole, string>>) => put<LlmConfig>('/admin/llm/roles', roles),
+  saveLimits: (l: LlmLimits) => put<LlmConfig>('/admin/llm/limits', l),
+
   aiNotes: (params: { bank_id?: string; search?: string; limit?: number; offset?: number }) =>
     get<AINotePage>('/admin/ai/notes', params),
 }

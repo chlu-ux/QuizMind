@@ -732,27 +732,29 @@ func TestAIConfigAccess(t *testing.T) {
 
 	assert.Equal(t, 404, appGet("").StatusCode, "not configured: feature off")
 
-	// Enabling needs the whole configuration and an access token.
-	s.do(t, "PUT", "/admin/ai", `{"enabled":true,"base_url":"`+llmSrv.URL+`/v1","api_key":"sk-secret-key-1234","model":"m"}`, 400, nil)
-	s.do(t, "PUT", "/admin/ai", `{"enabled":true,"base_url":"ftp://x","api_key":"k","model":"m","app_token":"1234"}`, 400, nil)
+	// Enabling needs a model for the explain role and an access token.
+	s.do(t, "PUT", "/admin/ai", `{"enabled":true,"app_token":"1234"}`, 400, nil)
+
+	var provider struct{ ID string }
+	s.do(t, "POST", "/admin/llm/providers", `{"name":"测试","protocol":"openai","base_url":"`+llmSrv.URL+`/v1/","api_key":"sk-secret-key-1234"}`, 201, &provider)
+	var model struct{ ID string }
+	s.do(t, "POST", "/admin/llm/models", `{"provider_id":"`+provider.ID+`","model":"m","max_tokens":800,"temperature":0.5}`, 201, &model)
+	s.do(t, "PUT", "/admin/llm/roles", `{"explain":"`+model.ID+`"}`, 200, nil)
+
+	s.do(t, "PUT", "/admin/ai", `{"enabled":true}`, 400, nil)
 	s.do(t, "PUT", "/admin/ai", `{"enabled":false,"app_token":"ab"}`, 400, nil)
-
 	var view map[string]any
-	s.do(t, "PUT", "/admin/ai", `{"enabled":true,"base_url":"`+llmSrv.URL+`/v1/","api_key":"sk-secret-key-1234","model":"m","app_token":"1234","max_tokens":800,"temperature":0.5}`, 200, &view)
-	assert.Equal(t, true, view["api_key_set"])
+	s.do(t, "PUT", "/admin/ai", `{"enabled":true,"app_token":"1234"}`, 200, &view)
+	assert.Equal(t, true, view["ready"])
+	assert.Equal(t, "测试 / m", view["model_name"])
 	assert.NotContains(t, view, "api_key", "the admin view never returns the key")
-	assert.Equal(t, llmSrv.URL+"/v1", view["base_url"], "trailing slash is trimmed")
-
-	// Saving again with an empty key keeps the stored one.
-	s.do(t, "PUT", "/admin/ai", `{"enabled":true,"base_url":"`+llmSrv.URL+`/v1","api_key":"","model":"m2","app_token":"1234","max_tokens":800,"temperature":0.5}`, 200, &view)
-	assert.Equal(t, true, view["api_key_set"])
 
 	var test struct {
 		OK    bool
 		Reply string
 		Error string
 	}
-	s.do(t, "POST", "/admin/ai/test", "", 200, &test)
+	s.do(t, "POST", "/admin/llm/models/"+model.ID+"/test", "", 200, &test)
 	assert.True(t, test.OK, test.Error)
 	assert.Equal(t, "pong", test.Reply)
 
@@ -760,10 +762,11 @@ func TestAIConfigAccess(t *testing.T) {
 	assert.Equal(t, 401, appGet("").StatusCode)
 	assert.Equal(t, 401, appGet("wrong").StatusCode)
 	var cfg struct {
-		BaseURL   string `json:"base_url"`
-		APIKey    string `json:"api_key"`
-		Model     string
-		MaxTokens int `json:"max_tokens"`
+		BaseURL     string  `json:"base_url"`
+		APIKey      string  `json:"api_key"`
+		Model       string  `json:"model"`
+		MaxTokens   int     `json:"max_tokens"`
+		Temperature float64 `json:"temperature"`
 	}
 	r, _ := http.NewRequest("GET", s.ts.URL+"/api/v1/ai/config", nil)
 	r.Header.Set("Authorization", "Bearer 1234")
@@ -773,17 +776,132 @@ func TestAIConfigAccess(t *testing.T) {
 	require.Equal(t, 200, resp.StatusCode)
 	require.NoError(t, json.NewDecoder(resp.Body).Decode(&cfg))
 	assert.Equal(t, "sk-secret-key-1234", cfg.APIKey)
-	assert.Equal(t, "m2", cfg.Model)
+	assert.Equal(t, llmSrv.URL+"/v1", cfg.BaseURL, "trailing slash is trimmed")
+	assert.Equal(t, "m", cfg.Model)
 	assert.Equal(t, 800, cfg.MaxTokens)
+	assert.Equal(t, 0.5, cfg.Temperature)
+
+	// Editing the model reaches the apps on their next sync.
+	s.do(t, "PUT", "/admin/llm/models/"+model.ID, `{"provider_id":"`+provider.ID+`","model":"m2","max_tokens":800,"temperature":0.5}`, 200, nil)
+	r, _ = http.NewRequest("GET", s.ts.URL+"/api/v1/ai/config", nil)
+	r.Header.Set("Authorization", "Bearer 1234")
+	resp3, err := http.DefaultClient.Do(r)
+	require.NoError(t, err)
+	defer resp3.Body.Close()
+	require.NoError(t, json.NewDecoder(resp3.Body).Decode(&cfg))
+	assert.Equal(t, "m2", cfg.Model)
 
 	// Switching it off withdraws the configuration, even for a valid token.
-	s.do(t, "PUT", "/admin/ai", `{"enabled":false,"base_url":"`+llmSrv.URL+`/v1","model":"m2","app_token":"1234"}`, 200, nil)
+	s.do(t, "PUT", "/admin/ai", `{"enabled":false,"app_token":"1234"}`, 200, nil)
 	assert.Equal(t, 404, appGet("1234").StatusCode)
 
 	// The admin endpoints stay behind the admin token.
 	resp2 := s.req(t, "GET", "/admin/ai", nil, "", false)
 	resp2.Body.Close()
 	assert.Equal(t, 401, resp2.StatusCode)
+	resp4 := s.req(t, "GET", "/admin/llm", nil, "", false)
+	resp4.Body.Close()
+	assert.Equal(t, 401, resp4.StatusCode)
+}
+
+func TestLLMConfigAdmin(t *testing.T) {
+	s := newServer(t)
+	type provider struct {
+		ID         string `json:"id"`
+		Name       string `json:"name"`
+		Protocol   string `json:"protocol"`
+		BaseURL    string `json:"base_url"`
+		APIKeySet  bool   `json:"api_key_set"`
+		APIKeyHint string `json:"api_key_hint"`
+	}
+	type cfgView struct {
+		Providers []provider
+		Models    []struct {
+			ID, ProviderID, Name, Model string
+			MaxTokens                   int `json:"max_tokens"`
+		}
+		Roles  map[string]string
+		Limits struct {
+			MaxConcurrency   int   `json:"max_concurrency"`
+			DailyTokenBudget int64 `json:"daily_token_budget"`
+		}
+	}
+
+	var v cfgView
+	s.do(t, "GET", "/admin/llm", "", 200, &v)
+	assert.Empty(t, v.Providers)
+	assert.Empty(t, v.Roles)
+	assert.Equal(t, 2, v.Limits.MaxConcurrency, "defaults")
+
+	// Validation of providers.
+	for name, body := range map[string]string{
+		"no name":            `{"name":"","protocol":"openai","base_url":"https://x/v1","api_key":"k"}`,
+		"bad protocol":       `{"name":"a","protocol":"gemini","base_url":"https://x","api_key":"k"}`,
+		"openai needs url":   `{"name":"a","protocol":"openai","api_key":"k"}`,
+		"not http":           `{"name":"a","protocol":"anthropic","base_url":"ftp://x","api_key":"k"}`,
+		"key needed to make": `{"name":"a","protocol":"anthropic"}`,
+	} {
+		t.Run(name, func(t *testing.T) { s.do(t, "POST", "/admin/llm/providers", body, 400, nil) })
+	}
+
+	var anth, oai provider
+	s.do(t, "POST", "/admin/llm/providers", `{"name":"Claude","protocol":"anthropic","api_key":"sk-ant-abcdefgh1234"}`, 201, &anth)
+	s.do(t, "POST", "/admin/llm/providers", `{"name":"DeepSeek","protocol":"openai","base_url":"http://127.0.0.1:1/v1","api_key":"sk-deepseek-1"}`, 201, &oai)
+	assert.True(t, anth.APIKeySet)
+	assert.Equal(t, "sk-…1234", anth.APIKeyHint)
+
+	// The key is never returned, and an empty key on edit keeps it.
+	raw := s.req(t, "GET", "/admin/llm", nil, "", true)
+	body, _ := io.ReadAll(raw.Body)
+	raw.Body.Close()
+	assert.NotContains(t, string(body), "sk-ant-abcdefgh1234")
+	s.do(t, "PUT", "/admin/llm/providers/"+anth.ID, `{"name":"Claude 官方","protocol":"anthropic","api_key":""}`, 200, &anth)
+	assert.Equal(t, "Claude 官方", anth.Name)
+	assert.True(t, anth.APIKeySet)
+
+	// Models.
+	var claude, deepseek struct{ ID string }
+	s.do(t, "POST", "/admin/llm/models", `{"provider_id":"nope","model":"x"}`, 400, nil)
+	s.do(t, "POST", "/admin/llm/models", `{"provider_id":"`+anth.ID+`","model":""}`, 400, nil)
+	s.do(t, "POST", "/admin/llm/models", `{"provider_id":"`+anth.ID+`","model":"claude-sonnet-5-5","effort":"turbo"}`, 400, nil)
+	s.do(t, "POST", "/admin/llm/models", `{"provider_id":"`+anth.ID+`","model":"claude-sonnet-5-5","effort":"medium"}`, 201, &claude)
+	s.do(t, "POST", "/admin/llm/models", `{"provider_id":"`+oai.ID+`","name":"DS","model":"deepseek-chat","temperature":0.3}`, 201, &deepseek)
+
+	// Roles: the agent needs the Anthropic protocol, the explanation the OpenAI one.
+	s.do(t, "PUT", "/admin/llm/roles", `{"agent":"`+deepseek.ID+`"}`, 400, nil)
+	s.do(t, "PUT", "/admin/llm/roles", `{"explain":"`+claude.ID+`"}`, 400, nil)
+	s.do(t, "PUT", "/admin/llm/roles", `{"generator":"nope"}`, 400, nil)
+	s.do(t, "PUT", "/admin/llm/roles", `{"singer":"`+claude.ID+`"}`, 400, nil)
+	s.do(t, "PUT", "/admin/llm/roles", `{"generator":"`+deepseek.ID+`","agent":"`+claude.ID+`","explain":"`+deepseek.ID+`","validator":""}`, 200, &v)
+	assert.Equal(t, map[string]string{"generator": deepseek.ID, "agent": claude.ID, "explain": deepseek.ID}, v.Roles)
+
+	// A model in use cannot be deleted, nor a provider that still has models; and a protocol
+	// change that breaks a role is refused.
+	s.do(t, "DELETE", "/admin/llm/models/"+claude.ID, "", 400, nil)
+	s.do(t, "DELETE", "/admin/llm/providers/"+anth.ID, "", 400, nil)
+	s.do(t, "PUT", "/admin/llm/providers/"+anth.ID, `{"name":"x","protocol":"openai","base_url":"https://x/v1"}`, 400, nil)
+	s.do(t, "PUT", "/admin/llm/roles", `{"generator":"`+deepseek.ID+`","explain":"`+deepseek.ID+`"}`, 200, nil)
+	s.do(t, "DELETE", "/admin/llm/models/"+claude.ID, "", 204, nil)
+	s.do(t, "DELETE", "/admin/llm/providers/"+anth.ID, "", 204, nil)
+	s.do(t, "DELETE", "/admin/llm/providers/"+anth.ID, "", 404, nil)
+
+	// Limits.
+	s.do(t, "PUT", "/admin/llm/limits", `{"max_concurrency":0,"rps":1}`, 400, nil)
+	s.do(t, "PUT", "/admin/llm/limits", `{"max_concurrency":3,"rps":-1}`, 400, nil)
+	s.do(t, "PUT", "/admin/llm/limits", `{"max_concurrency":3,"rps":1.5,"daily_token_budget":500000}`, 200, &v)
+	assert.Equal(t, 3, v.Limits.MaxConcurrency)
+	assert.EqualValues(t, 500000, v.Limits.DailyTokenBudget)
+
+	// A model that cannot be reached is a test result, not an error.
+	var test struct {
+		OK    bool
+		Error string
+	}
+	s.do(t, "POST", "/admin/llm/models/"+deepseek.ID+"/test", "", 200, &test)
+	assert.False(t, test.OK)
+	assert.NotEmpty(t, test.Error)
+	assert.NotContains(t, test.Error, "sk-deepseek-1")
+	s.do(t, "POST", "/admin/llm/models/nope/test", "", 404, nil)
 }
 
 func TestSyncNotes(t *testing.T) {
