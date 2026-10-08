@@ -52,6 +52,8 @@ type Request struct {
 	Context  Context
 	// Files are the text files of this conversation the model may read.
 	Files []File
+	// HasImages says some message in Messages shows a picture.
+	HasImages bool
 	// MaxTokens caps one model turn; zero uses the model's setting.
 	MaxTokens int
 }
@@ -83,13 +85,19 @@ func (a *Agent) Run(ctx context.Context, req Request, emit func(Event)) {
 	}
 	list := []*tool{toolListOutline(), toolSearchLessons(), toolGetLesson(),
 		toolSearchQuestions(), toolPickQuestions(), toolGetWeakPoints()}
+	addExtra := func(t string) {
+		if extra == "" {
+			extra = t
+		} else {
+			extra += "\n\n" + t
+		}
+	}
 	if a.Files != nil && len(req.Files) > 0 {
 		list = append(list, toolReadAttachment(a.Files, req.Files))
-		if ft := filesText(req.Files); extra == "" {
-			extra = ft
-		} else {
-			extra += "\n\n" + ft
-		}
+		addExtra(filesText(req.Files))
+	}
+	if req.HasImages {
+		addExtra(imagesText)
 	}
 	if req.Mode == ModeCreate {
 		scope := DraftScope{ConversationID: req.ConversationID, DeviceID: req.DeviceID}

@@ -178,6 +178,7 @@ type LlmModel struct {
 	Effort      string  `json:"effort"`
 	CreatedAt   int64   `json:"created_at"`
 	UpdatedAt   int64   `json:"updated_at"`
+	Vision      int64   `json:"vision"`
 }
 
 type LlmProvider struct {

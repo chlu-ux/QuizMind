@@ -431,14 +431,17 @@ paths:
         "409": { description: the conversation is still answering a question }
   /api/v1/agent/attachments:
     post:
-      summary: Give the assistant a text file for a conversation
+      summary: Give the assistant a text file or a picture for a conversation
       description: >
         Needs the access token. The file is kept for the conversation `conversation_id`, which need not
         exist yet (it is created with the first message), and waits to be sent: list its id in the
-        `attachment_ids` of a chat message. The assistant reads it a page at a time. Text files only
-        (`.md .markdown .txt .csv .json .log`), judged by content: UTF-8, at most 512 KB and 120000
-        characters, and the reason is in the error when a file is refused. A conversation holds at most
-        8 files and a message carries at most 4. Files nobody sent are removed after a day.
+        `attachment_ids` of a chat message. Two kinds are taken, told apart by the bytes and not by the
+        name. Text files (`.md .markdown .txt .csv .json .log`): UTF-8, at most 512 KB and 120000
+        characters; the assistant reads them a page at a time. Pictures (jpeg, png, gif, webp): at most
+        5 MB and 8000 pixels on a side; the model is shown them with the message, so they are accepted
+        only when `GET /agent/status` says `vision` (the assistant's model can look at pictures). The
+        reason is in the error when a file is refused. A conversation holds at most 8 files, at most 4
+        of them pictures, and a message carries at most 4. Files nobody sent are removed after a day.
       requestBody:
         required: true
         content:
@@ -455,17 +458,24 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AgentAttachment" }
-        "400": { description: "not accepted: wrong kind of file, not UTF-8, empty, too long, or the conversation already has 8 files" }
+        "400": { description: "not accepted: wrong kind of file, not UTF-8, empty, too long or too big, a picture while the model cannot look at pictures, or the conversation is full" }
         "401": { description: missing or wrong access token }
         "413": { description: the upload is far too large }
   /api/v1/agent/attachments/{id}:
     get:
       summary: The file itself
-      description: Needs the access token. Text is returned as `text/plain; charset=utf-8` whatever the file was called, with `nosniff` and a sandboxing CSP.
+      description: >
+        Needs the access token. Text is returned as `text/plain; charset=utf-8` whatever the file was
+        called; a picture is returned as it was uploaded, with its own type. Always with `nosniff` and a
+        sandboxing CSP.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       responses:
-        "200": { description: the file, content: { text/plain: { schema: { type: string } } } }
+        "200":
+          description: the file
+          content:
+            text/plain: { schema: { type: string } }
+            image/*: { schema: { type: string, format: binary } }
         "401": { description: missing or wrong access token }
         "404": { description: unknown file }
     delete:
@@ -761,10 +771,11 @@ components:
         ignored: { type: integer }
     AgentStatus:
       type: object
-      required: [available, model, verified]
+      required: [available, model, verified, vision]
       properties:
         available: { type: boolean }
         model: { type: string, description: "the model that answers" }
+        vision: { type: boolean, description: "the model can look at pictures, so pictures may be attached to a message" }
         verified:
           type: boolean
           description: a second model (the validator role) double-checks the questions the assistant writes
@@ -859,7 +870,7 @@ components:
         mime: { type: string }
         size: { type: integer, description: bytes as uploaded }
         chars: { type: integer, description: "text files: characters of the text" }
-        width: { type: integer }
+        width: { type: integer, description: "pictures: pixels; absent when the size could not be read (webp)" }
         height: { type: integer }
     AgentStoredMessage:
       type: object

@@ -28,7 +28,7 @@ func (q *Queries) DeleteLLMProvider(ctx context.Context, id string) error {
 }
 
 const getLLMModel = `-- name: GetLLMModel :one
-SELECT id, provider_id, name, model, max_tokens, temperature, effort, created_at, updated_at FROM llm_model WHERE id = ?
+SELECT id, provider_id, name, model, max_tokens, temperature, effort, created_at, updated_at, vision FROM llm_model WHERE id = ?
 `
 
 func (q *Queries) GetLLMModel(ctx context.Context, id string) (LlmModel, error) {
@@ -44,6 +44,7 @@ func (q *Queries) GetLLMModel(ctx context.Context, id string) (LlmModel, error) 
 		&i.Effort,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Vision,
 	)
 	return i, err
 }
@@ -68,8 +69,8 @@ func (q *Queries) GetLLMProvider(ctx context.Context, id string) (LlmProvider, e
 }
 
 const insertLLMModel = `-- name: InsertLLMModel :exec
-INSERT INTO llm_model (id, provider_id, name, model, max_tokens, temperature, effort, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO llm_model (id, provider_id, name, model, max_tokens, temperature, effort, vision, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 `
 
 type InsertLLMModelParams struct {
@@ -80,6 +81,7 @@ type InsertLLMModelParams struct {
 	MaxTokens   int64   `json:"max_tokens"`
 	Temperature float64 `json:"temperature"`
 	Effort      string  `json:"effort"`
+	Vision      int64   `json:"vision"`
 	CreatedAt   int64   `json:"created_at"`
 	UpdatedAt   int64   `json:"updated_at"`
 }
@@ -93,6 +95,7 @@ func (q *Queries) InsertLLMModel(ctx context.Context, arg InsertLLMModelParams) 
 		arg.MaxTokens,
 		arg.Temperature,
 		arg.Effort,
+		arg.Vision,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)
@@ -128,7 +131,7 @@ func (q *Queries) InsertLLMProvider(ctx context.Context, arg InsertLLMProviderPa
 }
 
 const listLLMModels = `-- name: ListLLMModels :many
-SELECT id, provider_id, name, model, max_tokens, temperature, effort, created_at, updated_at FROM llm_model ORDER BY created_at, id
+SELECT id, provider_id, name, model, max_tokens, temperature, effort, created_at, updated_at, vision FROM llm_model ORDER BY created_at, id
 `
 
 func (q *Queries) ListLLMModels(ctx context.Context) ([]LlmModel, error) {
@@ -150,6 +153,7 @@ func (q *Queries) ListLLMModels(ctx context.Context) ([]LlmModel, error) {
 			&i.Effort,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Vision,
 		); err != nil {
 			return nil, err
 		}
@@ -165,7 +169,7 @@ func (q *Queries) ListLLMModels(ctx context.Context) ([]LlmModel, error) {
 }
 
 const listLLMModelsByProvider = `-- name: ListLLMModelsByProvider :many
-SELECT id, provider_id, name, model, max_tokens, temperature, effort, created_at, updated_at FROM llm_model WHERE provider_id = ? ORDER BY created_at, id
+SELECT id, provider_id, name, model, max_tokens, temperature, effort, created_at, updated_at, vision FROM llm_model WHERE provider_id = ? ORDER BY created_at, id
 `
 
 func (q *Queries) ListLLMModelsByProvider(ctx context.Context, providerID string) ([]LlmModel, error) {
@@ -187,6 +191,7 @@ func (q *Queries) ListLLMModelsByProvider(ctx context.Context, providerID string
 			&i.Effort,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.Vision,
 		); err != nil {
 			return nil, err
 		}
@@ -237,7 +242,7 @@ func (q *Queries) ListLLMProviders(ctx context.Context) ([]LlmProvider, error) {
 }
 
 const updateLLMModel = `-- name: UpdateLLMModel :execrows
-UPDATE llm_model SET provider_id = ?, name = ?, model = ?, max_tokens = ?, temperature = ?, effort = ?, updated_at = ?
+UPDATE llm_model SET provider_id = ?, name = ?, model = ?, max_tokens = ?, temperature = ?, effort = ?, vision = ?, updated_at = ?
 WHERE id = ?
 `
 
@@ -248,6 +253,7 @@ type UpdateLLMModelParams struct {
 	MaxTokens   int64   `json:"max_tokens"`
 	Temperature float64 `json:"temperature"`
 	Effort      string  `json:"effort"`
+	Vision      int64   `json:"vision"`
 	UpdatedAt   int64   `json:"updated_at"`
 	ID          string  `json:"id"`
 }
@@ -260,6 +266,7 @@ func (q *Queries) UpdateLLMModel(ctx context.Context, arg UpdateLLMModelParams) 
 		arg.MaxTokens,
 		arg.Temperature,
 		arg.Effort,
+		arg.Vision,
 		arg.UpdatedAt,
 		arg.ID,
 	)

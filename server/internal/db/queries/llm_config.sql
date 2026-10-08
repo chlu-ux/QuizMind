@@ -24,11 +24,11 @@ SELECT * FROM llm_model WHERE id = ?;
 SELECT * FROM llm_model WHERE provider_id = ? ORDER BY created_at, id;
 
 -- name: InsertLLMModel :exec
-INSERT INTO llm_model (id, provider_id, name, model, max_tokens, temperature, effort, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+INSERT INTO llm_model (id, provider_id, name, model, max_tokens, temperature, effort, vision, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
 
 -- name: UpdateLLMModel :execrows
-UPDATE llm_model SET provider_id = ?, name = ?, model = ?, max_tokens = ?, temperature = ?, effort = ?, updated_at = ?
+UPDATE llm_model SET provider_id = ?, name = ?, model = ?, max_tokens = ?, temperature = ?, effort = ?, vision = ?, updated_at = ?
 WHERE id = ?;
 
 -- name: DeleteLLMModel :exec

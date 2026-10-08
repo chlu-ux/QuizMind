@@ -167,10 +167,10 @@ func (a *API) agentConversationDelete(w http.ResponseWriter, r *http.Request) {
 
 // agentAttachmentUpload takes one file for a conversation: multipart fields conversation_id and file.
 func (a *API) agentAttachmentUpload(w http.ResponseWriter, r *http.Request) {
-	limit := int64(service.MaxAgentTextBytes) + 1<<20 // headroom for multipart framing
+	limit := int64(max(service.MaxAgentTextBytes, service.MaxAgentImageBytes)) + 1<<20 // headroom for multipart framing
 	r.Body = http.MaxBytesReader(w, r.Body, limit)
 	if err := r.ParseMultipartForm(limit); err != nil {
-		writeError(w, http.StatusRequestEntityTooLarge, "文件太大了，请截取需要的部分再上传")
+		writeError(w, http.StatusRequestEntityTooLarge, "文件太大了，请截取需要的部分或压缩后再上传")
 		return
 	}
 	file, header, err := r.FormFile("file")
@@ -179,7 +179,7 @@ func (a *API) agentAttachmentUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer file.Close()
-	data, err := io.ReadAll(io.LimitReader(file, int64(service.MaxAgentTextBytes)+1))
+	data, err := io.ReadAll(io.LimitReader(file, int64(max(service.MaxAgentTextBytes, service.MaxAgentImageBytes))+1))
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "could not read upload")
 		return

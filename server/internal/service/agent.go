@@ -30,6 +30,8 @@ type AgentStatus struct {
 	Model     string `json:"model"`
 	// Verified says a second model double-checks the questions the assistant writes (the validator role is bound).
 	Verified bool `json:"verified"`
+	// Vision says the model can look at pictures, so the apps may offer to attach them.
+	Vision bool `json:"vision"`
 }
 
 // AgentStatus tells an app whether the assistant can be used. ErrNotFound means no model is bound
@@ -43,12 +45,17 @@ func (s *Service) AgentStatus(ctx context.Context, token string) (AgentStatus, e
 		return AgentStatus{}, fmt.Errorf("%w: assistant is not configured", ErrNotFound)
 	}
 	_, verr := s.LLM.For(llm.RoleValidator)
-	return AgentStatus{Available: true, Model: conv.Model(), Verified: verr == nil}, nil
+	return AgentStatus{Available: true, Model: conv.Model(), Verified: verr == nil, Vision: s.agentVision(ctx)}, nil
 }
 
 type AgentMessage struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
+
+	// Pictures the message shows. They come from the stored conversation, never from the request:
+	// imageIDs are the attachments, images the ones the model will be shown, with their bytes.
+	imageIDs []string
+	images   []llm.Block
 }
 
 type AgentQuestionContext struct {
@@ -138,6 +145,7 @@ func (s *Service) StartAgentChat(ctx context.Context, token string, in AgentChat
 	a := &agent.Agent{Conv: conv, Lib: lib}
 	if stored != nil {
 		req.Files = stored.files
+		req.HasImages = stored.hasImages
 		a.Files = agentFiles{s: s, conversation: stored.id}
 	}
 	if req.Mode == agent.ModeCreate {
@@ -199,7 +207,9 @@ func validateAgentRequest(in AgentChatRequest) (agent.Request, error) {
 			return agent.Request{}, invalid("message %d is empty", i)
 		}
 		total += utf8.RuneCountInString(m.Content)
-		msgs = append(msgs, llm.Message{Role: m.Role, Blocks: []llm.Block{{Kind: llm.BlockText, Text: m.Content}}})
+		// Pictures go before the text, which is how the endpoints expect them.
+		blocks := append(append([]llm.Block(nil), m.images...), llm.Block{Kind: llm.BlockText, Text: m.Content})
+		msgs = append(msgs, llm.Message{Role: m.Role, Blocks: blocks})
 	}
 	if total > agentMaxChars {
 		return agent.Request{}, invalid("the messages are longer than %d characters", agentMaxChars)

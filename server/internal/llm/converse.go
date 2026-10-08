@@ -38,6 +38,7 @@ const (
 	BlockThinking   BlockKind = "thinking"
 	BlockToolUse    BlockKind = "tool_use"
 	BlockToolResult BlockKind = "tool_result"
+	BlockImage      BlockKind = "image"
 )
 
 // Block is one piece of a message. Only the fields of its Kind are used.
@@ -52,6 +53,9 @@ type Block struct {
 	ToolName  string
 	ToolInput json.RawMessage
 	IsError   bool
+	// MediaType and Data belong to BlockImage: the picture's own bytes, as uploaded.
+	MediaType string
+	Data      []byte
 }
 
 type Message struct {

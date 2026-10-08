@@ -2,6 +2,7 @@ package anthropic
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -156,6 +157,8 @@ func blocksToParams(blocks []llm.Block) ([]sdk.ContentBlockParamUnion, error) {
 			out = append(out, sdk.NewToolUseBlock(b.ToolUseID, input, b.ToolName))
 		case llm.BlockToolResult:
 			out = append(out, sdk.NewToolResultBlock(b.ToolUseID, b.Text, b.IsError))
+		case llm.BlockImage:
+			out = append(out, sdk.NewImageBlockBase64(b.MediaType, base64.StdEncoding.EncodeToString(b.Data)))
 		default:
 			return nil, fmt.Errorf("anthropic: unknown block kind %q", b.Kind)
 		}

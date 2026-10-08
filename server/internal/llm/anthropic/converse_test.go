@@ -230,3 +230,29 @@ func TestConverse_NoiseIsFilteredEvenWithoutAListener(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "pong", turn.Text())
 }
+
+func TestConverse_SendsImagesAsBase64Blocks(t *testing.T) {
+	var body map[string]any
+	c := newConverser(t, func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		require.NoError(t, json.Unmarshal(raw, &body))
+		writeSSE(w, append([]sse{start(10, 0), blockStart(0, m("type", "text", "text", "")), textDelta(0, "ok"), blockStop(0)}, finish("end_turn", 1)...)...)
+	})
+	_, _, err := c.Converse(context.Background(), llm.ChatRequest{Messages: []llm.Message{
+		{Role: "user", Blocks: []llm.Block{
+			{Kind: llm.BlockImage, MediaType: "image/png", Data: []byte("png-bytes")},
+			{Kind: llm.BlockText, Text: "what is this?"},
+		}},
+	}}, nil)
+	require.NoError(t, err)
+
+	content := body["messages"].([]any)[0].(map[string]any)["content"].([]any)
+	require.Len(t, content, 2)
+	img := content[0].(map[string]any)
+	assert.Equal(t, "image", img["type"])
+	src := img["source"].(map[string]any)
+	assert.Equal(t, "base64", src["type"])
+	assert.Equal(t, "image/png", src["media_type"])
+	assert.Equal(t, "cG5nLWJ5dGVz", src["data"])
+	assert.Equal(t, "text", content[1].(map[string]any)["type"])
+}

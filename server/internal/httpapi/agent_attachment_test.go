@@ -24,6 +24,9 @@ type attView struct {
 	Mime  string `json:"mime"`
 	Size  int    `json:"size"`
 	Chars int    `json:"chars"`
+	// Width and Height are given for pictures whose size could be read.
+	Width  int `json:"width"`
+	Height int `json:"height"`
 }
 
 func (s *server) uploadFile(t *testing.T, token, conv, filename string, content []byte) (*http.Response, attView) {

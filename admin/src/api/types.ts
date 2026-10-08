@@ -228,6 +228,8 @@ export interface LlmModel {
   max_tokens: number
   temperature: number
   effort: string
+  /** The model can look at pictures (the assistant only). */
+  vision: boolean
 }
 
 export type LlmModelInput = Omit<LlmModel, 'id'>

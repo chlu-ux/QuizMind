@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/chlu-ux/quizmind/server/internal/agent"
+	"github.com/chlu-ux/quizmind/server/internal/llm"
 	"github.com/chlu-ux/quizmind/server/internal/store"
 )
 
@@ -45,8 +46,9 @@ func normalizeAgentHistory(in []AgentMessage) []AgentMessage {
 		}
 		if n := len(out); n > 0 && out[n-1].Role == m.Role {
 			out[n-1].Content += "\n\n" + text
+			out[n-1].imageIDs = append(out[n-1].imageIDs, m.imageIDs...)
 		} else {
-			out = append(out, AgentMessage{Role: m.Role, Content: text})
+			out = append(out, AgentMessage{Role: m.Role, Content: text, imageIDs: m.imageIDs})
 		}
 	}
 	chars := func() int {
@@ -75,8 +77,44 @@ func agentTitle(text string) string {
 }
 
 type storedChat struct {
-	id, mode string
-	files    []agent.File // the text files the assistant may read
+	id, mode  string
+	files     []agent.File // the text files the assistant may read
+	hasImages bool         // some message in the history shows a picture
+}
+
+// imageIDsOf returns the pictures among the files a message carried.
+func (cf chatFiles) imageIDsOf(ids []string) []string {
+	var out []string
+	for _, id := range ids {
+		if r, ok := cf.byID[id]; ok && r.Kind == "image" {
+			out = append(out, id)
+		}
+	}
+	return out
+}
+
+// attachImages loads the pictures of the history for the model. A conversation holds few enough that
+// each question can show them all again; when the model cannot look at pictures (it was switched
+// since), the messages that carried them get a line in their text instead, so the model still knows
+// a picture was there. It reports whether any picture is shown.
+func (s *Service) attachImages(ctx context.Context, msgs []AgentMessage, cf chatFiles, vision bool) (bool, error) {
+	shown := false
+	for i := range msgs {
+		m := &msgs[i]
+		for _, id := range m.imageIDs {
+			if !vision {
+				m.Content += "\n（一张图片：" + cf.byID[id].Name + "，现在的模型看不了图片）"
+				continue
+			}
+			a, err := s.reader().GetAgentAttachment(ctx, id)
+			if err != nil {
+				return false, err
+			}
+			m.images = append(m.images, llm.Block{Kind: llm.BlockImage, MediaType: a.Mime, Data: a.Data})
+			shown = true
+		}
+	}
+	return shown, nil
 }
 
 // prepareStoredChat reads the conversation's history from the database and puts it, with the new
@@ -89,7 +127,8 @@ func (s *Service) prepareStoredChat(ctx context.Context, in AgentChatRequest) (A
 	if strings.TrimSpace(in.Message.Text) == "" {
 		return in, storedChat{}, invalid("message.text is required")
 	}
-	files, err := s.loadChatFiles(ctx, in.ConversationID, in.Message.AttachmentIDs)
+	vision := s.agentVision(ctx)
+	files, err := s.loadChatFiles(ctx, in.ConversationID, in.Message.AttachmentIDs, vision)
 	if err != nil {
 		return in, storedChat{}, err
 	}
@@ -107,13 +146,14 @@ func (s *Service) prepareStoredChat(ctx context.Context, in AgentChatRequest) (A
 			return in, storedChat{}, err
 		}
 		for _, r := range rows {
-			text := r.Text
+			m := AgentMessage{Role: r.Role, Content: r.Text}
 			if r.Role == "user" {
 				var ids []string
 				_ = json.Unmarshal([]byte(r.AttachmentIds), &ids)
-				text += files.fileNote(ids)
+				m.Content += files.fileNote(ids)
+				m.imageIDs = files.imageIDsOf(ids)
 			}
-			history = append(history, AgentMessage{Role: r.Role, Content: text})
+			history = append(history, m)
 		}
 	case errors.Is(err, sql.ErrNoRows):
 		if mode == "" {
@@ -124,8 +164,13 @@ func (s *Service) prepareStoredChat(ctx context.Context, in AgentChatRequest) (A
 	}
 	in.Mode = mode
 	// A question whose answer never came (or came empty) is joined with the new one, so roles still alternate.
-	in.Messages = normalizeAgentHistory(append(history, AgentMessage{Role: "user", Content: in.Message.Text + files.fileNote(in.Message.AttachmentIDs)}))
-	return in, storedChat{id: in.ConversationID, mode: mode, files: files.files}, nil
+	in.Messages = normalizeAgentHistory(append(history, AgentMessage{Role: "user", Content: in.Message.Text + files.fileNote(in.Message.AttachmentIDs),
+		imageIDs: files.imageIDsOf(in.Message.AttachmentIDs)}))
+	hasImages, err := s.attachImages(ctx, in.Messages, files, vision)
+	if err != nil {
+		return in, storedChat{}, err
+	}
+	return in, storedChat{id: in.ConversationID, mode: mode, files: files.files, hasImages: hasImages}, nil
 }
 
 // lockAgentConversation allows one answer at a time per conversation; two would interleave in the history.

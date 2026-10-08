@@ -68,7 +68,7 @@ async function removeProvider(p: LlmProvider) {
 
 const modelDialog = ref(false)
 const editingModel = ref<LlmModel | null>(null)
-const modelForm = reactive({ provider_id: '', name: '', model: '', max_tokens: 8000, temperature: 0, effort: '' })
+const modelForm = reactive({ provider_id: '', name: '', model: '', max_tokens: 8000, temperature: 0, effort: '', vision: false })
 const savingModel = ref(false)
 const formProtocol = computed(() => providerOf(modelForm.provider_id)?.protocol)
 
@@ -79,8 +79,8 @@ function openModel(m?: LlmModel) {
   }
   editingModel.value = m ?? null
   Object.assign(modelForm, m
-    ? { provider_id: m.provider_id, name: m.name, model: m.model, max_tokens: m.max_tokens, temperature: m.temperature, effort: m.effort }
-    : { provider_id: cfg.value.providers[0].id, name: '', model: '', max_tokens: 8000, temperature: 0, effort: '' })
+    ? { provider_id: m.provider_id, name: m.name, model: m.model, max_tokens: m.max_tokens, temperature: m.temperature, effort: m.effort, vision: m.vision }
+    : { provider_id: cfg.value.providers[0].id, name: '', model: '', max_tokens: 8000, temperature: 0, effort: '', vision: false })
   modelDialog.value = true
 }
 
@@ -214,11 +214,12 @@ async function saveLimits() {
         <el-table-column label="供应商" min-width="120"><template #default="{ row }">{{ providerOf(row.provider_id)?.name }}</template></el-table-column>
         <el-table-column prop="model" label="模型 ID" min-width="180" />
         <el-table-column label="最大输出" width="100"><template #default="{ row }">{{ formatNumber(row.max_tokens) }}</template></el-table-column>
-        <el-table-column label="参数" width="110">
+        <el-table-column label="参数" width="140">
           <template #default="{ row }">
             <span v-if="protocolOf(row) === 'anthropic' && row.effort">effort {{ row.effort }}</span>
             <span v-else-if="protocolOf(row) === 'openai' && row.temperature">temp {{ row.temperature }}</span>
             <span v-else class="muted">默认</span>
+            <el-tag v-if="row.vision" size="small" type="success" class="vision-tag">识图</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="" width="190" align="right">
@@ -312,6 +313,10 @@ async function saveLimits() {
           </el-select>
           <div class="hint">思考投入程度；第三方兼容接口可能不支持，留默认即可。</div>
         </el-form-item>
+        <el-form-item label="支持识图">
+          <el-switch v-model="modelForm.vision" />
+          <div class="hint">打开后，绑定为“学习 / 出题助手”时，学习者可以给助手发图片。确认这个模型真的看得懂图片再打开；“测试”按钮不测图片。</div>
+        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="modelDialog = false">取消</el-button>
@@ -327,6 +332,7 @@ section { margin-bottom: 32px; }
 h3 { margin: 0; font-size: 16px; }
 .head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
 .muted { color: var(--el-text-color-secondary); font-size: 13px; margin: 4px 0 12px; }
+.vision-tag { margin-left: 6px; }
 .hint { font-size: 12px; color: var(--el-text-color-secondary); line-height: 1.5; margin-top: 4px; width: 100%; }
 .roles { max-width: 720px; }
 </style>

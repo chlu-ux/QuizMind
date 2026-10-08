@@ -16,8 +16,8 @@
 | 第 3 期 | Flutter：数据层、控制器、对话页、草稿卡片、链接跳转、三处入口、令牌横幅 | 代码与自动化测试完成；**2026-10-08 在 Android 模拟器上用真实模型验收过**（见下），尚未在真机上验收 | `flutter analyze lib test` 只剩一条早已存在的 info；全部 313 个测试通过（原有 276 + `app/test/agent_test.dart` 35 个 + `app/test/agent_cancel_test.dart` 2 个） |
 | 第 4 期 | H5 对话页与入口、设置页令牌项、后台（审核页来源、用量页对话号、模型说明）、OpenAPI、architecture 文档 | 已提交（`5f42e9a`、`591959d`）；**没有在真手机上验收**（只用一个假后端，在浏览器的手机视口里走过一遍：查找状态行、Markdown、引用链接、SVG 示意图、草稿卡片都正常显示；没连真实模型） | H5：`npm test` 全部 269 个通过（新增 SSE 解析、`HttpAgentApi`、SVG 白名单、控制器、AgentView 与入口共 66 个）、`vue-tsc` 与 `npm run build` 干净；后台：24 个测试、类型检查、构建通过；Go：`httpapi`、`service` 测试通过；`openapi.yaml` 可解析、引用完整 |
 | 第 5 期 | 历史对话：对话与消息存服务端、历史列表、继续对话（[`agent-history-and-files.md`](agent-history-and-files.md)） | 已提交（`27c7ed6`、`12a9e16`、`5f42e9a`）；已用真实模型、浏览器和 Android 模拟器验证 | Go 全过（含 `-race`）；H5 277 个、Flutter 323 个测试通过；详见该文 §13 |
-| 第 6 期 | 文本文件附件，作为本次对话的参考资料 | 代码与自动化测试完成，**未提交**；已用真实模型、浏览器（H5）和 Android 模拟器（Flutter）验证 | Go 全过（含 `-race`）；H5 293 个、Flutter 340 个测试通过；详见 [`agent-history-and-files.md`](agent-history-and-files.md) §13 |
-| 第 7 期 | 图片附件（需要助手模型支持识图，先做真实端点探针） | 设计已写，未开始 | — |
+| 第 6 期 | 文本文件附件，作为本次对话的参考资料 | 已提交（`a256073`、`3c43243`、`d33c012`）；已用真实模型、浏览器（H5）和 Android 模拟器（Flutter）验证 | Go 全过（含 `-race`）；H5 293 个、Flutter 340 个测试通过；详见 [`agent-history-and-files.md`](agent-history-and-files.md) §13 |
+| 第 7 期 | 图片附件：助手模型要在后台标记为“支持识图”，学习者才能发图 | 代码与自动化测试完成，**未提交**；已用真实模型（DeepSeek）、浏览器（H5）和 Android 模拟器（Flutter）验证 | Go 全过（含 `-race`）；H5 305 个、Flutter 351 个、后台 24 个测试通过；详见 [`agent-history-and-files.md`](agent-history-and-files.md) §13 |
 | 第 8 期 | 依据上传的文件出题 | 设计已写，未开始 | — |
 
 **第 3 期还差什么**

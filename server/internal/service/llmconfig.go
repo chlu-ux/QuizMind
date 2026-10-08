@@ -68,6 +68,8 @@ type ModelView struct {
 	MaxTokens   int     `json:"max_tokens"`
 	Temperature float64 `json:"temperature"`
 	Effort      string  `json:"effort"`
+	// Vision says the model can look at pictures (only the assistant's model uses it).
+	Vision bool `json:"vision"`
 }
 
 type ModelInput struct {
@@ -77,6 +79,7 @@ type ModelInput struct {
 	MaxTokens   int     `json:"max_tokens"`
 	Temperature float64 `json:"temperature"`
 	Effort      string  `json:"effort"`
+	Vision      bool    `json:"vision"`
 }
 
 // LLMLimits apply to every server-side model call together.
@@ -102,7 +105,7 @@ func providerView(p store.LlmProvider) ProviderView {
 
 func modelView(m store.LlmModel) ModelView {
 	return ModelView{ID: m.ID, ProviderID: m.ProviderID, Name: m.Name, Model: m.Model,
-		MaxTokens: int(m.MaxTokens), Temperature: m.Temperature, Effort: m.Effort}
+		MaxTokens: int(m.MaxTokens), Temperature: m.Temperature, Effort: m.Effort, Vision: m.Vision != 0}
 }
 
 func defaultLLMLimits() LLMLimits {
@@ -315,9 +318,9 @@ func (s *Service) CreateModel(ctx context.Context, in ModelInput) (ModelView, er
 	}
 	now := nowMs()
 	m := store.LlmModel{ID: newID(), ProviderID: in.ProviderID, Name: in.Name, Model: in.Model,
-		MaxTokens: int64(in.MaxTokens), Temperature: in.Temperature, Effort: in.Effort, CreatedAt: now, UpdatedAt: now}
+		MaxTokens: int64(in.MaxTokens), Temperature: in.Temperature, Effort: in.Effort, Vision: boolInt(in.Vision), CreatedAt: now, UpdatedAt: now}
 	err := store.New(s.DB.Write).InsertLLMModel(ctx, store.InsertLLMModelParams{ID: m.ID, ProviderID: m.ProviderID,
-		Name: m.Name, Model: m.Model, MaxTokens: m.MaxTokens, Temperature: m.Temperature, Effort: m.Effort,
+		Name: m.Name, Model: m.Model, MaxTokens: m.MaxTokens, Temperature: m.Temperature, Effort: m.Effort, Vision: m.Vision,
 		CreatedAt: now, UpdatedAt: now})
 	if err != nil {
 		return ModelView{}, err
@@ -339,7 +342,7 @@ func (s *Service) UpdateModel(ctx context.Context, id string, in ModelInput) (Mo
 			return invalid("unknown provider")
 		}
 		if _, err := q.UpdateLLMModel(ctx, store.UpdateLLMModelParams{ProviderID: in.ProviderID, Name: in.Name,
-			Model: in.Model, MaxTokens: int64(in.MaxTokens), Temperature: in.Temperature, Effort: in.Effort,
+			Model: in.Model, MaxTokens: int64(in.MaxTokens), Temperature: in.Temperature, Effort: in.Effort, Vision: boolInt(in.Vision),
 			UpdatedAt: nowMs(), ID: id}); err != nil {
 			return err
 		}
@@ -698,4 +701,26 @@ func isRole(name string) bool {
 		}
 	}
 	return false
+}
+
+func boolInt(b bool) int64 {
+	if b {
+		return 1
+	}
+	return 0
+}
+
+// agentVision says whether the model bound to the assistant role can look at pictures.
+func (s *Service) agentVision(ctx context.Context) bool {
+	q := s.reader()
+	roles, err := loadRoles(ctx, q)
+	if err != nil {
+		return false
+	}
+	mid, ok := roles[string(llm.RoleAgent)]
+	if !ok {
+		return false
+	}
+	m, err := q.GetLLMModel(ctx, mid)
+	return err == nil && m.Vision != 0
 }

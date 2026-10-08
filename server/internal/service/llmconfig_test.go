@@ -166,3 +166,38 @@ func modelByID(v service.LLMConfigView, id string) service.ModelView {
 	}
 	return service.ModelView{}
 }
+
+func TestModelVisionFollowsTheAssistantModel(t *testing.T) {
+	svc := bareService(t)
+	ctx := context.Background()
+
+	p, err := svc.CreateProvider(ctx, service.ProviderInput{Name: "A", Protocol: "anthropic", APIKey: "sk-1"})
+	require.NoError(t, err)
+	plain, err := svc.CreateModel(ctx, service.ModelInput{ProviderID: p.ID, Model: "text-only"})
+	require.NoError(t, err)
+	assert.False(t, plain.Vision, "off unless the admin says the model can see")
+	seeing, err := svc.CreateModel(ctx, service.ModelInput{ProviderID: p.ID, Model: "can-see", Vision: true})
+	require.NoError(t, err)
+	assert.True(t, seeing.Vision)
+
+	status := func() service.AgentStatus {
+		t.Helper()
+		st, err := svc.AgentStatus(ctx, "tok-1234")
+		require.NoError(t, err)
+		return st
+	}
+	_, err = svc.SaveAIConfig(ctx, service.AIConfigUpdate{AppToken: "tok-1234"})
+	require.NoError(t, err)
+	_, err = svc.SaveRoles(ctx, map[string]string{"agent": plain.ID})
+	require.NoError(t, err)
+	assert.False(t, status().Vision)
+
+	_, err = svc.SaveRoles(ctx, map[string]string{"agent": seeing.ID})
+	require.NoError(t, err)
+	assert.True(t, status().Vision)
+
+	// Switching the flag off takes effect at once, without rebinding the role.
+	_, err = svc.UpdateModel(ctx, seeing.ID, service.ModelInput{ProviderID: p.ID, Model: "can-see", Vision: false})
+	require.NoError(t, err)
+	assert.False(t, status().Vision)
+}

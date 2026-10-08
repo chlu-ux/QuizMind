@@ -6,6 +6,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"image"
+	_ "image/gif" // registered so image.DecodeConfig can read the size of the pictures the assistant accepts
+	_ "image/jpeg"
+	_ "image/png"
+	"net/http"
 	"path/filepath"
 	"strings"
 	"time"
@@ -17,10 +22,14 @@ import (
 
 // Limits of the files a learner gives the assistant.
 const (
-	MaxAgentTextBytes = 512 << 10 // an uploaded text file
-	agentMaxTextChars = 120000    // what is left of it as text
-	agentMaxFiles     = 8         // per conversation
-	agentMaxPerMsg    = 4         // per message
+	MaxAgentTextBytes  = 512 << 10 // an uploaded text file
+	MaxAgentImageBytes = 5 << 20   // an uploaded picture
+	agentMaxTextChars  = 120000    // what is left of a text file as text
+	agentMaxFiles      = 8         // per conversation, pictures included
+	agentMaxImages     = 4         // pictures per conversation, which bounds what each question re-sends
+	agentMaxPerMsg     = 4         // per message
+	// agentMaxImageSide is the longest side the model endpoints take.
+	agentMaxImageSide = 8000
 	// agentUnsentFileTTL is how long an uploaded file may wait for the message that carries it.
 	agentUnsentFileTTL = 24 * time.Hour
 )
@@ -48,8 +57,18 @@ func attachmentView(id, kind, name, mime string, size, chars, width, height int6
 	return AttachmentView{ID: id, Kind: kind, Name: name, Mime: mime, Size: size, Chars: chars, Width: width, Height: height}
 }
 
-// UploadAgentAttachment stores a text file for a conversation (which need not exist yet: it is
-// created with the first message). The file waits to be sent with a message.
+// agentImageTypes are the picture formats taken, by what the bytes are, not by the file's name.
+var agentImageTypes = map[string]bool{"image/jpeg": true, "image/png": true, "image/gif": true, "image/webp": true}
+
+// agentUpload is a checked file, ready to store.
+type agentUpload struct {
+	kind, mime, text string
+	chars            int
+	width, height    int
+}
+
+// UploadAgentAttachment stores a text file or a picture for a conversation (which need not exist
+// yet: it is created with the first message). The file waits to be sent with a message.
 func (s *Service) UploadAgentAttachment(ctx context.Context, token, conversationID, filename string, data []byte) (AttachmentView, error) {
 	if err := s.checkAppToken(ctx, token); err != nil {
 		return AttachmentView{}, err
@@ -58,23 +77,18 @@ func (s *Service) UploadAgentAttachment(ctx context.Context, token, conversation
 		return AttachmentView{}, invalid("conversation_id is required (at most %d characters)", agentIDMax)
 	}
 	name := agentFileName(filename)
-	mime, ok := agentTextExts[strings.ToLower(filepath.Ext(name))]
-	if !ok {
-		return AttachmentView{}, invalid("不支持这种文件，可以上传 .md .markdown .txt .csv .json .log 文本文件")
-	}
 	if len(data) == 0 {
 		return AttachmentView{}, invalid("这个文件是空的")
 	}
-	if len(data) > MaxAgentTextBytes {
-		return AttachmentView{}, invalid("文件太大了（超过 %d KB），请截取需要的部分再上传", MaxAgentTextBytes>>10)
+	var up agentUpload
+	var err error
+	if mime := http.DetectContentType(data); agentImageTypes[mime] {
+		up, err = s.checkAgentImage(ctx, mime, data)
+	} else {
+		up, err = checkAgentText(name, data)
 	}
-	text, err := agentFileText(data)
 	if err != nil {
 		return AttachmentView{}, err
-	}
-	chars := utf8.RuneCountInString(text)
-	if chars > agentMaxTextChars {
-		return AttachmentView{}, invalid("文件有 %d 字，超过了 %d 字的上限，请截取需要的部分再上传", chars, agentMaxTextChars)
 	}
 
 	s.cleanAgentHistory(ctx)
@@ -82,17 +96,70 @@ func (s *Service) UploadAgentAttachment(ctx context.Context, token, conversation
 	if err != nil {
 		return AttachmentView{}, err
 	}
-	if len(existing) >= agentMaxFiles {
+	images := 0
+	for _, e := range existing {
+		if e.Kind == "image" {
+			images++
+		}
+	}
+	switch {
+	case len(existing) >= agentMaxFiles:
 		return AttachmentView{}, invalid("一场对话最多 %d 个文件", agentMaxFiles)
+	case up.kind == "image" && images >= agentMaxImages:
+		return AttachmentView{}, invalid("一场对话最多 %d 张图片", agentMaxImages)
 	}
 	id := newID()
-	if err := store.New(s.DB.Write).InsertAgentAttachment(ctx, store.InsertAgentAttachmentParams{
-		ID: id, ConversationID: conversationID, Kind: "text", Name: name, Mime: mime, Size: int64(len(data)),
-		Chars: int64(chars), Text: text, CreatedAt: nowMs(),
-	}); err != nil {
+	params := store.InsertAgentAttachmentParams{
+		ID: id, ConversationID: conversationID, Kind: up.kind, Name: name, Mime: up.mime, Size: int64(len(data)),
+		Chars: int64(up.chars), Width: int64(up.width), Height: int64(up.height), Text: up.text, CreatedAt: nowMs(),
+	}
+	if up.kind == "image" {
+		params.Data = data
+	}
+	if err := store.New(s.DB.Write).InsertAgentAttachment(ctx, params); err != nil {
 		return AttachmentView{}, err
 	}
-	return attachmentView(id, "text", name, mime, int64(len(data)), int64(chars), 0, 0), nil
+	return attachmentView(id, up.kind, name, up.mime, int64(len(data)), int64(up.chars), int64(up.width), int64(up.height)), nil
+}
+
+func checkAgentText(name string, data []byte) (agentUpload, error) {
+	mime, ok := agentTextExts[strings.ToLower(filepath.Ext(name))]
+	if !ok {
+		return agentUpload{}, invalid("不支持这种文件，可以上传 .md .markdown .txt .csv .json .log 文本文件，或 jpg / png / gif / webp 图片")
+	}
+	if len(data) > MaxAgentTextBytes {
+		return agentUpload{}, invalid("文件太大了（超过 %d KB），请截取需要的部分再上传", MaxAgentTextBytes>>10)
+	}
+	text, err := agentFileText(data)
+	if err != nil {
+		return agentUpload{}, err
+	}
+	chars := utf8.RuneCountInString(text)
+	if chars > agentMaxTextChars {
+		return agentUpload{}, invalid("文件有 %d 字，超过了 %d 字的上限，请截取需要的部分再上传", chars, agentMaxTextChars)
+	}
+	return agentUpload{kind: "text", mime: mime, text: text, chars: chars}, nil
+}
+
+func (s *Service) checkAgentImage(ctx context.Context, mime string, data []byte) (agentUpload, error) {
+	if !s.agentVision(ctx) {
+		return agentUpload{}, invalid("当前助手模型不支持识别图片")
+	}
+	if len(data) > MaxAgentImageBytes {
+		return agentUpload{}, invalid("图片太大了（超过 %d MB），请压缩或裁剪后再上传", MaxAgentImageBytes>>20)
+	}
+	up := agentUpload{kind: "image", mime: mime}
+	if mime != "image/webp" { // the standard library reads the others; for webp the size stays unknown
+		cfg, _, err := image.DecodeConfig(bytes.NewReader(data))
+		if err != nil {
+			return agentUpload{}, invalid("这张图片打不开，可能已损坏，请换一张再试")
+		}
+		if cfg.Width > agentMaxImageSide || cfg.Height > agentMaxImageSide {
+			return agentUpload{}, invalid("图片尺寸太大了（最长边不能超过 %d 像素），请缩小后再上传", agentMaxImageSide)
+		}
+		up.width, up.height = cfg.Width, cfg.Height
+	}
+	return up, nil
 }
 
 // agentFileName keeps only the last part of a name the client sent, so it is safe to show and store.
@@ -183,7 +250,7 @@ type chatFiles struct {
 
 // loadChatFiles checks the files the new message carries and returns every file of the conversation
 // that has been (or is being) sent.
-func (s *Service) loadChatFiles(ctx context.Context, conversationID string, newIDs []string) (chatFiles, error) {
+func (s *Service) loadChatFiles(ctx context.Context, conversationID string, newIDs []string, vision bool) (chatFiles, error) {
 	rows, err := s.reader().ListConversationAttachments(ctx, conversationID)
 	if err != nil {
 		return chatFiles{}, err
@@ -205,8 +272,8 @@ func (s *Service) loadChatFiles(ctx context.Context, conversationID string, newI
 			return chatFiles{}, invalid("文件 %q 重复了", id)
 		case r.MessageID.Valid:
 			return chatFiles{}, invalid("文件「%s」已经随之前的消息发出了", r.Name)
-		case r.Kind != "text":
-			return chatFiles{}, invalid("暂时只能读取文本文件")
+		case r.Kind == "image" && !vision:
+			return chatFiles{}, invalid("当前助手模型不支持识别图片")
 		}
 		sending[id] = true
 	}
@@ -223,7 +290,7 @@ func (s *Service) loadChatFiles(ctx context.Context, conversationID string, newI
 func (cf chatFiles) fileNote(ids []string) string {
 	var parts []string
 	for _, id := range ids {
-		if r, ok := cf.byID[id]; ok {
+		if r, ok := cf.byID[id]; ok && r.Kind == "text" { // a picture is in the message itself
 			parts = append(parts, fmt.Sprintf("%s，%d 字，id=%s", r.Name, r.Chars, r.ID))
 		}
 	}
