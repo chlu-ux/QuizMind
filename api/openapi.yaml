@@ -342,8 +342,9 @@ paths:
           ```` ```svg ```` block is a diagram.
         - `tool` — `{id, name, label, status}`; `label` is a ready-to-show line ("在讲义里查找…"),
           `status` is `running`, then `done` or `error`.
-        - `drafts` — `{drafts: [AgentDraft]}`, question-writing mode only: new draft questions for the
-          learner to accept or discard.
+        - `drafts` — `{drafts: [AgentDraft]}`: questions the assistant has just written. They are
+          adopted already (`adopted: true`: part of the question bank, or waiting in the review queue when
+          the admin asked for that); the learner can take each one back and adopt it again.
         - `done` — `{stop, usage: {input, output, cached}}`, once, last. `stop` is `end_turn`,
           `max_rounds` (it looked things up too long) or `max_tokens` (the answer was cut off).
         - `error` — `{code, message}`; `code` is `budget_exceeded`, `unavailable`, `refused`,
@@ -490,10 +491,11 @@ paths:
         "404": { description: unknown file }
   /api/v1/agent/drafts:
     get:
-      summary: The draft questions of a conversation that still wait for a decision
+      summary: The questions of a conversation that are in play
       description: >
-        Lets an app that was closed show the cards again. Needs the access token. Drafts nobody decided
-        on for 7 days are discarded.
+        Lets an app that was closed show the cards again. The adopted questions of the conversation, and
+        old-style drafts nobody decided on yet (`adopted: false`); the ones taken back are left out.
+        Needs the access token. Old-style drafts nobody decided on for 7 days are discarded.
       parameters:
         - { name: conversation_id, in: query, required: true, schema: { type: string } }
       responses:
@@ -509,11 +511,13 @@ paths:
         "401": { description: missing or wrong access token }
   /api/v1/agent/drafts/{id}/accept:
     post:
-      summary: Send a draft question to the review queue
+      summary: Adopt a question of the assistant
       description: >
-        Does not publish it: the question gets the status `needs_review` and appears in the admin
-        review queue (source 助手); learners get it only after a reviewer approves it. Needs the
-        access token.
+        New questions are adopted when they are written, so this is for adopting one again after it was
+        taken back with `discard`. The question is published (status `published`, picked up by the apps'
+        next sync), or gets `needs_review` when the admin wants the assistant's questions reviewed.
+        Adopting a question that is adopted already answers 200 and changes nothing. A question a
+        reviewer rejected in the admin cannot be adopted again. Needs the access token.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string }, description: "the draft_id" }
       responses:
@@ -522,13 +526,16 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AgentDraftResult" }
-        "400": { description: already decided, or the lesson section it was written from has changed since }
+        "400": { description: a reviewer rejected it, or the lesson section it was written from has changed since }
         "401": { description: missing or wrong access token }
         "404": { description: unknown draft }
   /api/v1/agent/drafts/{id}/discard:
     post:
-      summary: Throw a draft question away
-      description: Needs the access token.
+      summary: Take an adopted question back
+      description: >
+        The question becomes `rejected`. If it was published, the apps are told on their next sync (it is
+        in `deleted`) and hide it; their answers to it stay. It can be adopted again with `accept`.
+        Doing it twice is fine. Needs the access token.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string }, description: "the draft_id" }
       responses:
@@ -537,7 +544,6 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AgentDraftResult" }
-        "400": { description: already decided }
         "401": { description: missing or wrong access token }
         "404": { description: unknown draft }
 components:
@@ -798,8 +804,8 @@ components:
         mode:
           type: string
           enum: [learn, create]
-          default: learn
-          description: "learn: answer questions about the lessons and the learner's weak points. create: write questions from a lesson section, as drafts. Fixed when the conversation begins; the conversation's own is used when this is empty."
+          default: create
+          description: "Leave it out: the whole assistant, which explains, quizzes and writes questions when asked to (`create`). `learn` is the older read-only form, without the tools that write questions; a conversation begun as `learn` is read-only for an app that names that mode."
         device_id: { type: string, maxLength: 64, description: "limits a device to two conversations at a time" }
         message:
           type: object
@@ -915,8 +921,9 @@ components:
         tags: { type: array, items: { type: string } }
         source_quote: { type: string, description: "the sentence of the section the question rests on" }
         verified: { type: boolean, description: "a second model answered it independently and agreed" }
+        adopted: { type: boolean, description: "part of the question bank (or the review queue); false only for old-style drafts nobody decided on. Missing from servers that predate adoption: then it is false." }
     AgentDraftResult:
       type: object
       properties:
         id: { type: string }
-        status: { type: string, description: "needs_review after accept, rejected after discard" }
+        status: { type: string, description: "published (or needs_review) after accept, rejected after discard" }

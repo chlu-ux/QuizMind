@@ -2,6 +2,7 @@ package httpapi_test
 
 import (
 	"encoding/json"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -95,7 +96,7 @@ func createFixture(t *testing.T, conv *fake.Converser) (*server, string) {
 	return s, lessons.Items[0].ID
 }
 
-func TestAgentCreateMode_ProposeFixAndKeepDraftsPrivate(t *testing.T) {
+func TestAgentCreateMode_ProposeFixAndAdoptAtOnce(t *testing.T) {
 	var lesson string
 	var secondTurn []string
 	conv := fake.NewConverser(func(n int, req llm.ChatRequest) fake.Turn {
@@ -132,6 +133,7 @@ func TestAgentCreateMode_ProposeFixAndKeepDraftsPrivate(t *testing.T) {
 	d := first[0].(map[string]any)
 	assert.Equal(t, lesson, d["lesson_id"])
 	assert.Equal(t, false, d["verified"], "no validator is bound")
+	assert.Equal(t, true, d["adopted"], "a new question is adopted already")
 	assert.Equal(t, realQuote, d["source_quote"])
 
 	// The model was told why the fabricated question failed, in words it can act on.
@@ -144,30 +146,54 @@ func TestAgentCreateMode_ProposeFixAndKeepDraftsPrivate(t *testing.T) {
 	require.Len(t, s.draftsOf(t, "conv-1"), 2)
 	assert.Empty(t, s.draftsOf(t, "another-conversation"))
 
-	// Drafts stay out of everything else: the review queue, the question count, the sync feed.
+	// Adopted questions are part of the bank at once: published, counted, and in the sync feed.
 	var all struct{ Total int }
-	s.do(t, "GET", "/admin/questions", "", 200, &all)
-	assert.Equal(t, 1, all.Total, "only the published question")
+	s.do(t, "GET", "/admin/questions?status=published", "", 200, &all)
+	assert.Equal(t, 3, all.Total, "the published question and the two adopted ones")
 	s.do(t, "GET", "/admin/questions?status=needs_review", "", 200, &all)
-	assert.Equal(t, 0, all.Total)
-	s.do(t, "GET", "/admin/questions?source=agent", "", 200, &all)
-	assert.Equal(t, 0, all.Total, "drafts are listed only when asked for by status")
-	s.do(t, "GET", "/admin/questions?status=draft&source=agent", "", 200, &all)
-	assert.Equal(t, 2, all.Total)
+	assert.Equal(t, 0, all.Total, "nothing waits for a reviewer")
+	s.do(t, "GET", "/admin/questions?source=agent&status=published", "", 200, &all)
+	assert.Equal(t, 2, all.Total, "the review page can still tell them apart")
 	var banksAfter []struct {
 		QuestionCount int64 `json:"question_count"`
 	}
 	s.do(t, "GET", "/api/v1/banks", "", 200, &banksAfter)
-	assert.Equal(t, banksBefore, banksAfter)
+	assert.Equal(t, banksBefore[0].QuestionCount+2, banksAfter[0].QuestionCount)
 	var sync struct{ Items []struct{ ID string } }
 	s.do(t, "GET", "/api/v1/sync/questions?since=0", "", 200, &sync)
-	assert.Len(t, sync.Items, 1)
-	var bankView []struct {
-		Counts map[string]int64 `json:"question_counts"`
-	}
-	s.do(t, "GET", "/admin/banks", "", 200, &bankView)
-	assert.EqualValues(t, 2, bankView[0].Counts["draft"], "drafts are a count of their own")
-	assert.EqualValues(t, 0, bankView[0].Counts["needs_review"])
+	assert.Len(t, sync.Items, 3)
+}
+
+func TestAgentCreateMode_ReviewSettingKeepsThemInTheQueue(t *testing.T) {
+	var lesson string
+	conv := fake.NewConverser(func(n int, _ llm.ChatRequest) fake.Turn {
+		if n == 0 {
+			return fake.Turn{Calls: []fake.Call{proposeCall(lesson, q1("关于读写锁的并发特性，下列哪项描述是正确的？", 0))}}
+		}
+		return fake.Turn{Text: "好了。"}
+	})
+	s, lessonID := createFixture(t, conv)
+	lesson = lessonID
+	s.do(t, "PUT", "/admin/ai", `{"enabled":false,"app_token":"`+appToken+`","review_agent_questions":true}`, 200, nil)
+	s.createChat(t, "conv-r")
+	id := s.draftIDs(t, "conv-r")[0]
+
+	var q struct{ Status string }
+	s.do(t, "GET", "/admin/questions/"+id, "", 200, &q)
+	assert.Equal(t, "needs_review", q.Status, "adopted, but a reviewer decides")
+	var sync struct{ Items []struct{ ID string } }
+	s.do(t, "GET", "/api/v1/sync/questions?since=0", "", 200, &sync)
+	assert.Len(t, sync.Items, 1, "not published yet")
+
+	// Taking it back and adopting it again lands in the queue again.
+	resp := s.agentReq(t, "POST", "/api/v1/agent/drafts/"+id+"/discard", appToken, "")
+	resp.Body.Close()
+	s.do(t, "GET", "/admin/questions/"+id, "", 200, &q)
+	assert.Equal(t, "rejected", q.Status)
+	resp = s.agentReq(t, "POST", "/api/v1/agent/drafts/"+id+"/accept", appToken, "")
+	resp.Body.Close()
+	s.do(t, "GET", "/admin/questions/"+id, "", 200, &q)
+	assert.Equal(t, "needs_review", q.Status)
 }
 
 func TestAgentDrafts_AcceptDiscardAndAuth(t *testing.T) {
@@ -199,47 +225,52 @@ func TestAgentDrafts_AcceptDiscardAndAuth(t *testing.T) {
 	post("/api/v1/agent/drafts/"+keep+"/accept", "wrong", 401)
 	post("/api/v1/agent/drafts/nope/accept", appToken, 404)
 
-	// Accepting sends it to the review queue, not to the learners.
-	assert.Equal(t, "needs_review", post("/api/v1/agent/drafts/"+keep+"/accept", appToken, 200)["status"])
-	post("/api/v1/agent/drafts/"+keep+"/accept", appToken, 400)
-	post("/api/v1/agent/drafts/"+keep+"/discard", appToken, 400)
-	var queue struct {
-		Total int
-		Items []struct {
-			ID               string
-			GenPromptVersion string `json:"gen_prompt_version"`
-		}
+	// Both were adopted when they were written, so they are in the bank already.
+	type syncPage struct {
+		Items   []struct{ ID string }
+		Deleted []string
+		NextSeq int64 `json:"next_seq"`
 	}
-	s.do(t, "GET", "/admin/questions?status=needs_review", "", 200, &queue)
-	require.Equal(t, 1, queue.Total)
-	assert.Equal(t, keep, queue.Items[0].ID)
-	assert.Equal(t, "agent.v1", queue.Items[0].GenPromptVersion)
-	s.do(t, "GET", "/admin/questions?status=needs_review&source=agent", "", 200, &queue)
-	assert.Equal(t, 1, queue.Total, "the review page can filter on the assistant as the source")
-	var sync struct{ Items []struct{ ID string } }
+	var sync syncPage
 	s.do(t, "GET", "/api/v1/sync/questions?since=0", "", 200, &sync)
-	assert.Len(t, sync.Items, 1, "still not published")
+	require.Len(t, sync.Items, 3, "the published question and the two adopted ones")
+	cursor := sync.NextSeq
 
-	// The review page can tell where it came from: this conversation, and whether a second model checked it.
+	// Adopting what is adopted already changes nothing and is not an error.
+	assert.Equal(t, "published", post("/api/v1/agent/drafts/"+keep+"/accept", appToken, 200)["status"])
+
+	// A review of the cards: the review page can tell where they came from, and whether a second model checked.
 	var detail struct {
-		Agent *struct {
+		Status string
+		Agent  *struct {
 			ConversationID string `json:"conversation_id"`
 			Verified       bool   `json:"verified"`
 		} `json:"agent"`
 	}
 	s.do(t, "GET", "/admin/questions/"+keep, "", 200, &detail)
+	assert.Equal(t, "published", detail.Status)
 	require.NotNil(t, detail.Agent)
 	assert.Equal(t, "conv-2", detail.Agent.ConversationID)
 	assert.False(t, detail.Agent.Verified, "no validator model is configured in this test")
 
-	// A reviewer approves it like any other question, and then it syncs.
-	s.do(t, "POST", "/admin/questions/"+keep+"/approve", "", 200, nil)
-	s.do(t, "GET", "/api/v1/sync/questions?since=0", "", 200, &sync)
-	assert.Len(t, sync.Items, 2)
-
+	// Taking one back withdraws it: the apps are told it is gone.
 	assert.Equal(t, "rejected", post("/api/v1/agent/drafts/"+drop+"/discard", appToken, 200)["status"])
-	post("/api/v1/agent/drafts/"+drop+"/accept", appToken, 400)
-	assert.Empty(t, s.draftsOf(t, "conv-2"), "nothing is waiting any more")
+	s.do(t, "GET", "/api/v1/sync/questions?since="+strconv.FormatInt(cursor, 10), "", 200, &sync)
+	assert.Equal(t, []string{drop}, sync.Deleted)
+	cursor = sync.NextSeq
+	assert.Equal(t, "rejected", post("/api/v1/agent/drafts/"+drop+"/discard", appToken, 200)["status"], "taking back twice is fine")
+	assert.Equal(t, []string{keep}, s.draftIDs(t, "conv-2"), "a question taken back leaves the list")
+
+	// Changed its mind: adopting it again publishes it again, and the apps get it back.
+	assert.Equal(t, "published", post("/api/v1/agent/drafts/"+drop+"/accept", appToken, 200)["status"])
+	s.do(t, "GET", "/api/v1/sync/questions?since="+strconv.FormatInt(cursor, 10), "", 200, &sync)
+	require.Len(t, sync.Items, 1)
+	assert.Equal(t, drop, sync.Items[0].ID)
+	assert.ElementsMatch(t, []string{keep, drop}, s.draftIDs(t, "conv-2"))
+
+	// A reviewer's verdict stands: what was rejected in the admin cannot be adopted again from the app.
+	s.do(t, "POST", "/admin/questions/"+keep+"/reject", `{"note":"不好"}`, 200, nil)
+	post("/api/v1/agent/drafts/"+keep+"/accept", appToken, 400)
 }
 
 func TestAgentCreateMode_DuplicatesReplacementsAndUnknownLessons(t *testing.T) {
@@ -363,12 +394,12 @@ func TestAgentModes_ToolsDependOnTheMode(t *testing.T) {
 		}
 		return strings.Join(names, ",")
 	}
-	assert.NotContains(t, toolNames(reqs[0]), "propose_questions")
-	assert.NotContains(t, toolNames(reqs[1]), "propose_questions", "learn is the default")
+	assert.NotContains(t, toolNames(reqs[0]), "propose_questions", "learn is the old read-only form")
+	assert.Contains(t, toolNames(reqs[1]), "propose_questions", "no mode: the whole assistant")
 	assert.Contains(t, toolNames(reqs[2]), "propose_questions")
 	assert.Contains(t, toolNames(reqs[2]), "list_drafts")
-	assert.Contains(t, strings.Join(reqs[2].System, "\n"), "出题模式")
-	assert.NotContains(t, strings.Join(reqs[0].System, "\n"), "出题模式")
+	assert.Contains(t, strings.Join(reqs[1].System, "\n"), "## 出题")
+	assert.NotContains(t, strings.Join(reqs[0].System, "\n"), "## 出题")
 }
 
 func TestAgentDrafts_StaleOnesAreRetiredWhenAChatStarts(t *testing.T) {
@@ -384,8 +415,11 @@ func TestAgentDrafts_StaleOnesAreRetiredWhenAChatStarts(t *testing.T) {
 	s.createChat(t, "conv-5")
 	require.Len(t, s.draftsOf(t, "conv-5"), 1)
 
+	// Only a draft nobody decided on can go stale; questions are adopted when written now, so make an old-style one.
 	old := time.Now().Add(-8 * 24 * time.Hour).UnixMilli()
-	_, err := s.db.Write.Exec(`UPDATE agent_draft SET created_at = ?`, old)
+	_, err := s.db.Write.Exec(`UPDATE question SET status = 'draft', sync_seq = NULL WHERE id IN (SELECT question_id FROM agent_draft)`)
+	require.NoError(t, err)
+	_, err = s.db.Write.Exec(`UPDATE agent_draft SET created_at = ?`, old)
 	require.NoError(t, err)
 	s.createChat(t, "conv-6") // any new conversation does the cleanup
 	assert.Empty(t, s.draftsOf(t, "conv-5"))

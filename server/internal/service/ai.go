@@ -30,6 +30,10 @@ type AIConfig struct {
 	// AppToken is the (deliberately simple) secret an app must present to fetch
 	// the configuration, since it contains the API key. Empty = nobody can.
 	AppToken string `json:"app_token"`
+	// ReviewAgentQuestions makes the questions the assistant writes wait in the review queue. Off
+	// (the default), they are published as soon as they pass the checks, and the learner can take
+	// them back.
+	ReviewAgentQuestions bool `json:"review_agent_questions,omitempty"`
 
 	BaseURL     string  `json:"base_url,omitempty"`
 	APIKey      string  `json:"api_key,omitempty"`
@@ -94,6 +98,8 @@ func ignoreNoRows(err error) error {
 type AIConfigView struct {
 	Enabled  bool   `json:"enabled"`
 	AppToken string `json:"app_token"`
+	// ReviewAgentQuestions: questions the assistant writes go to the review queue instead of being published.
+	ReviewAgentQuestions bool `json:"review_agent_questions"`
 	// ModelName is the model bound to the explain role ("provider / model"); empty when none is.
 	ModelName string `json:"model_name"`
 	// Ready is true when that model is complete enough for an app to use.
@@ -109,7 +115,7 @@ func (s *Service) AdminAIConfig(ctx context.Context) (AIConfigView, error) {
 	if err != nil {
 		return AIConfigView{}, err
 	}
-	v := AIConfigView{Enabled: c.Enabled, AppToken: c.AppToken, Ready: ready}
+	v := AIConfigView{Enabled: c.Enabled, AppToken: c.AppToken, ReviewAgentQuestions: c.ReviewAgentQuestions, Ready: ready}
 	if m.ID != "" && p.ID != "" {
 		v.ModelName = p.Name + " / " + m.Name
 	}
@@ -118,12 +124,13 @@ func (s *Service) AdminAIConfig(ctx context.Context) (AIConfigView, error) {
 
 // AIConfigUpdate is the admin's edit.
 type AIConfigUpdate struct {
-	Enabled  bool   `json:"enabled"`
-	AppToken string `json:"app_token"`
+	Enabled              bool   `json:"enabled"`
+	AppToken             string `json:"app_token"`
+	ReviewAgentQuestions bool   `json:"review_agent_questions"`
 }
 
 func (s *Service) SaveAIConfig(ctx context.Context, in AIConfigUpdate) (AIConfigView, error) {
-	next := AIConfig{Enabled: in.Enabled, AppToken: strings.TrimSpace(in.AppToken)}
+	next := AIConfig{Enabled: in.Enabled, AppToken: strings.TrimSpace(in.AppToken), ReviewAgentQuestions: in.ReviewAgentQuestions}
 	_, _, ready, err := s.explainModel(ctx)
 	if err != nil {
 		return AIConfigView{}, err

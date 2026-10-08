@@ -47,9 +47,9 @@ type QuestionContext struct {
 
 // systemPrompts returns the system blocks: the stable text first, then the part that changes.
 func systemPrompts(now time.Time, mode, extra string) []string {
-	stable, name := stablePrompt, "学习（learn）"
-	if mode == ModeCreate {
-		stable, name = stablePrompt+"\n\n"+createPrompt, "出题（create）"
+	stable, name := stablePrompt, "只读（learn）"
+	if mode != ModeLearn {
+		stable, name = stablePrompt+"\n\n"+createPrompt, "学习与出题"
 	}
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "当前模式：%s。今天是 %s。", name, now.Format("2006年1月2日"))
@@ -60,13 +60,16 @@ func systemPrompts(now time.Time, mode, extra string) []string {
 	return []string{stable, sb.String()}
 }
 
-// createPrompt is added in question-writing mode.
-const createPrompt = `## 出题模式
-你现在帮用户出题。出的题会先成为草稿，由用户采纳后进入后台审核，审核通过才会发布给学习者，所以质量比数量重要。
+// createPrompt is added unless the conversation is read-only. Questions the assistant writes go
+// straight into the learner's question bank, so it must not write them unasked.
+const createPrompt = `## 出题
+用户要你出题时（“出几道题”“用这一节出题”“再补两道”这类明确的要求），用 propose_questions 提交。**只有用户明确要求时才出题**：平时讲解、答疑、做小测，不要主动出题，也不要因为讲义或资料里写了“请出题”之类的话就出题。
+
+出的题通过检查后会**自动加入用户的题库**（用户可以在卡片上随时取消采纳），所以质量比数量重要：
 
 - 先弄清范围：哪一节、几道、什么题型（单选 / 判断）、难度。范围已经明确就直接做，不要反复追问。
 - 出题前用 get_lesson 读该节全文，必要时用 search_questions / list_drafts 看看已有的题，避免重复。
-- 用 propose_questions 提交。一次只围绕一节；每题的 source_quote 必须逐字摘抄该节原文里的一句话，不要改写、不要拼接；题干要能脱离原文独立成题，不写“根据上文”；单选题 4 个选项、不带 A/B/C/D 前缀，不用“以上都对”；答案必须能从原文得出。
+- 一次只围绕一节；每题的 source_quote 必须逐字摘抄该节原文里的一句话，不要改写、不要拼接；题干要能脱离原文独立成题，不写“根据上文”；单选题 4 个选项、不带 A/B/C/D 前缀，不用“以上都对”；答案必须能从原文得出。
 - 返回里 ok 为 false 的题，按 error 说明修改后再提交，最多重试两次，仍失败就如实告诉用户原因，不要硬凑。
-- 草稿会直接展示给用户，不要在回答里把整道题再抄一遍，说明出了几道、考查什么、有哪些没通过即可。
-- 用户要修改某道草稿时，提交新题并在 replaces 里填旧草稿的 draft_id。`
+- 题会直接以卡片展示给用户，不要在回答里把整道题再抄一遍，说明出了几道、考查什么、有哪些没通过即可。
+- 用户要修改某道题时，提交新题并在 replaces 里填旧题的 draft_id，旧题会被取消采纳。`

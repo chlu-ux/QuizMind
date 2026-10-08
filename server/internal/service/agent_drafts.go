@@ -18,10 +18,32 @@ import (
 // agentDraftTTL is how long a draft may wait for the learner before it is retired.
 const agentDraftTTL = 7 * 24 * time.Hour
 
+// draftNote is the review note of a question the learner took back; only such a question can be
+// adopted again.
+const draftNote = "discarded by user"
+
+// adoptedStatus is what a question becomes when the learner adopts it: published at once, or waiting
+// in the review queue when the admin asked for every assistant question to be reviewed.
+func (s *Service) adoptedStatus(ctx context.Context) (string, error) {
+	c, err := s.loadAIConfig(ctx)
+	if err != nil {
+		return "", err
+	}
+	if c.ReviewAgentQuestions {
+		return "needs_review", nil
+	}
+	return "published", nil
+}
+
+// liveDraftStatus says whether a question of a conversation is in play (not thrown away).
+func liveDraftStatus(status string) bool {
+	return status == "draft" || status == "needs_review" || status == "published"
+}
+
 // agentDrafter checks and stores the questions the assistant proposes. A question must pass the
 // same rules as one the pipeline wrote, must not duplicate any live question or draft of the bank,
 // and, when a validator model is bound, must be answered the same way by that model without seeing
-// the answer key. Only then is it stored, as a draft.
+// the answer key. Only then is it stored, already adopted: the learner can take it back.
 type agentDrafter struct {
 	s     *Service
 	model string
@@ -55,16 +77,21 @@ func (d agentDrafter) Propose(ctx context.Context, scope agent.DraftScope, lesso
 	if err != nil {
 		return nil, err
 	}
+	adopted, err := d.s.adoptedStatus(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	// A draft that is being replaced does not count as a duplicate of its replacement.
-	replaced := map[string]bool{}
+	// A question that is being replaced does not count as a duplicate of its replacement. The map
+	// holds its status, which says whether taking it back must be announced to the apps.
+	replaced := map[string]string{}
 	for _, pq := range qs {
 		if pq.Replaces == "" {
 			continue
 		}
 		row, err := q.GetAgentDraft(ctx, pq.Replaces)
-		if err == nil && row.ConversationID == scope.ConversationID && row.Status == "draft" {
-			replaced[pq.Replaces] = true
+		if err == nil && row.ConversationID == scope.ConversationID && liveDraftStatus(row.Status) {
+			replaced[pq.Replaces] = row.Status
 		}
 	}
 	live, err := q.ListLiveQuestionsByBank(ctx, doc.BankID)
@@ -73,7 +100,7 @@ func (d agentDrafter) Propose(ctx context.Context, scope agent.DraftScope, lesso
 	}
 	existing := make([]pipeline.Existing, 0, len(live))
 	for _, l := range live {
-		if replaced[l.ID] {
+		if _, gone := replaced[l.ID]; gone {
 			continue
 		}
 		var opts []string
@@ -85,12 +112,12 @@ func (d agentDrafter) Propose(ctx context.Context, scope agent.DraftScope, lesso
 
 	for i, pq := range qs {
 		fail := func(format string, a ...any) { results[i] = agent.ProposeResult{Error: fmt.Sprintf(format, a...)} }
-		if pq.Replaces != "" && !replaced[pq.Replaces] {
-			fail("replaces 指向的草稿 %q 不存在、不属于本对话或已处理", pq.Replaces)
+		if _, ok := replaced[pq.Replaces]; pq.Replaces != "" && !ok {
+			fail("replaces 指向的题 %q 不存在、不属于本对话或已被用户取消采纳", pq.Replaces)
 			continue
 		}
 		if pq.Replaces == "" && alive >= agent.MaxDraftsPerChat {
-			fail("本对话的草稿已有 %d 道，达到上限；请先让用户采纳或丢弃一些", alive)
+			fail("本对话已经出了 %d 道题，达到上限；请告诉用户新开一个对话再继续出题", alive)
 			continue
 		}
 		v, err := pipeline.ValidateQuestion(pipeline.GeneratedQuestion{
@@ -134,7 +161,7 @@ func (d agentDrafter) Propose(ctx context.Context, scope agent.DraftScope, lesso
 			ID: id, BankID: doc.BankID, ChunkID: sql.NullString{String: chunk.ID, Valid: true},
 			Type: v.Type, Stem: v.Stem, Options: jsonArray(v.Options), Answer: jsonArray([]int{v.AnswerIndex}),
 			Explanation: v.Explanation, Difficulty: int64(v.Difficulty), Tags: jsonArray(v.Tags),
-			SourceQuote: v.SourceQuote, Status: "draft", ContentHash: v.Hash,
+			SourceQuote: v.SourceQuote, Status: adopted, ContentHash: v.Hash,
 			GenModel: d.model, GenPromptVersion: agent.PromptVersion, CreatedAt: now, UpdatedAt: now,
 		}
 		isVerified := int64(0)
@@ -152,10 +179,13 @@ func (d agentDrafter) Propose(ctx context.Context, scope agent.DraftScope, lesso
 			}); err != nil {
 				return err
 			}
+			if adopted == "published" {
+				if err := publishNow(ctx, qs, id, "", now); err != nil {
+					return err
+				}
+			}
 			if pq.Replaces != "" {
-				return qs.SetQuestionStatus(ctx, store.SetQuestionStatusParams{
-					Status: "rejected", ReviewNote: "replaced by a newer draft", UpdatedAt: now, ID: pq.Replaces,
-				})
+				return withdraw(ctx, qs, pq.Replaces, replaced[pq.Replaces], "replaced by a newer draft", now)
 			}
 			return nil
 		})
@@ -168,6 +198,7 @@ func (d agentDrafter) Propose(ctx context.Context, scope agent.DraftScope, lesso
 		results[i] = agent.ProposeResult{OK: true, DraftID: id, Draft: &agent.Draft{
 			DraftID: id, LessonID: chunk.ID, Type: v.Type, Stem: v.Stem, Options: v.Options, AnswerIndex: v.AnswerIndex,
 			Explanation: v.Explanation, Difficulty: v.Difficulty, Tags: v.Tags, SourceQuote: v.SourceQuote, Verified: verified,
+			Adopted: true,
 		}}
 	}
 	return results, nil
@@ -184,8 +215,10 @@ func (s *Service) listAgentDrafts(ctx context.Context, conversationID string) ([
 	}
 	out := make([]agent.Draft, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, buildAgentDraft(r.ID, r.ChunkID.String, r.Type, r.Stem, r.Options, r.Answer, r.Tags, r.Explanation,
-			r.SourceQuote, r.Difficulty, r.Verified != 0))
+		d := buildAgentDraft(r.ID, r.ChunkID.String, r.Type, r.Stem, r.Options, r.Answer, r.Tags, r.Explanation,
+			r.SourceQuote, r.Difficulty, r.Verified != 0)
+		d.Adopted = r.Status != "draft"
+		out = append(out, d)
 	}
 	return out, nil
 }
@@ -222,8 +255,37 @@ type AgentDraftResult struct {
 	Status string `json:"status"`
 }
 
-// AcceptAgentDraft sends a draft to the review queue (status needs_review). Accepting does not
-// publish: a reviewer still approves it in the admin UI like any other question.
+// publishNow makes a question published with a fresh sync_seq, so the apps pick it up.
+func publishNow(ctx context.Context, qs *store.Queries, id, note string, now int64) error {
+	seq, err := qs.NextSyncSeq(ctx)
+	if err != nil {
+		return err
+	}
+	return qs.SetQuestionStatus(ctx, store.SetQuestionStatusParams{
+		Status: "published", ReviewNote: note, SyncSeq: sql.NullInt64{Int64: seq, Valid: true}, UpdatedAt: now, ID: id,
+	})
+}
+
+// withdraw rejects a question that was in play. One that was published gets a fresh sync_seq, which
+// is how the apps learn it is gone.
+func withdraw(ctx context.Context, qs *store.Queries, id, was, note string, now int64) error {
+	seq := sql.NullInt64{}
+	if was == "published" {
+		n, err := qs.NextSyncSeq(ctx)
+		if err != nil {
+			return err
+		}
+		seq = sql.NullInt64{Int64: n, Valid: true}
+	}
+	return qs.SetQuestionStatus(ctx, store.SetQuestionStatusParams{
+		Status: "rejected", ReviewNote: note, SyncSeq: seq, UpdatedAt: now, ID: id,
+	})
+}
+
+// AcceptAgentDraft adopts a question of the assistant: it is published, or sent to the review queue
+// when the admin wants every assistant question reviewed. New questions are adopted already, so this
+// is mostly "adopt again" after the learner took one back. Adopting a question that is adopted
+// already changes nothing.
 func (s *Service) AcceptAgentDraft(ctx context.Context, token, id string) (AgentDraftResult, error) {
 	if err := s.checkAppToken(ctx, token); err != nil {
 		return AgentDraftResult{}, err
@@ -232,18 +294,35 @@ func (s *Service) AcceptAgentDraft(ctx context.Context, token, id string) (Agent
 	if err != nil {
 		return AgentDraftResult{}, notFound(err, "draft")
 	}
-	if row.Status != "draft" {
-		return AgentDraftResult{}, invalid("这道草稿已经处理过了")
+	if row.Status == "needs_review" || row.Status == "published" {
+		return AgentDraftResult{ID: id, Status: row.Status}, nil
 	}
 	// The question was written from the section's text as it was; if that changed, the quote may be gone.
 	chunk, err := s.reader().GetChunk(ctx, row.LessonID)
 	if err != nil || chunk.Status != "active" {
-		return AgentDraftResult{}, invalid("这一节讲义已经更新，这道草稿已过期，请让助手重新出题")
+		return AgentDraftResult{}, invalid("这一节讲义已经更新，这道题已过期，请让助手重新出题")
 	}
-	return s.decideAgentDraft(ctx, id, "needs_review", "")
+	status, err := s.adoptedStatus(ctx)
+	if err != nil {
+		return AgentDraftResult{}, err
+	}
+	v, err := s.transition(ctx, id, func(q store.Question) (string, string, bool, error) {
+		switch {
+		case q.Status == "draft", q.Status == "rejected" && q.ReviewNote == draftNote:
+			return status, "", false, nil
+		case q.Status == "needs_review", q.Status == "published":
+			return "", "", false, nil
+		}
+		return "", "", false, invalid("这道题已被后台驳回或下线，不能再采纳")
+	})
+	if err != nil {
+		return AgentDraftResult{}, err
+	}
+	return AgentDraftResult{ID: v.ID, Status: v.Status}, nil
 }
 
-// DiscardAgentDraft throws a draft away.
+// DiscardAgentDraft takes an adopted question back (or throws a draft away). A published one
+// disappears from the apps; its answers stay. The learner can adopt it again.
 func (s *Service) DiscardAgentDraft(ctx context.Context, token, id string) (AgentDraftResult, error) {
 	if err := s.checkAppToken(ctx, token); err != nil {
 		return AgentDraftResult{}, err
@@ -251,15 +330,16 @@ func (s *Service) DiscardAgentDraft(ctx context.Context, token, id string) (Agen
 	if _, err := s.reader().GetAgentDraft(ctx, id); err != nil {
 		return AgentDraftResult{}, notFound(err, "draft")
 	}
-	return s.decideAgentDraft(ctx, id, "rejected", "discarded by user")
-}
-
-func (s *Service) decideAgentDraft(ctx context.Context, id, status, note string) (AgentDraftResult, error) {
 	v, err := s.transition(ctx, id, func(q store.Question) (string, string, bool, error) {
-		if q.Status != "draft" {
-			return "", "", false, invalid("这道草稿已经处理过了")
+		switch q.Status {
+		case "draft", "needs_review":
+			return "rejected", draftNote, false, nil
+		case "published":
+			return "rejected", draftNote, true, nil
+		case "rejected", "retired":
+			return "", "", false, nil // already out
 		}
-		return status, note, false, nil
+		return "", "", false, invalid("这道题现在不能取消采纳")
 	})
 	if err != nil {
 		return AgentDraftResult{}, err

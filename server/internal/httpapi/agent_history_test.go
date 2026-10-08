@@ -361,6 +361,9 @@ func TestAgentHistory_ReopenedDraftsShowWhatBecameOfThem_AndDeletingDiscardsTheR
 	ids := s.draftIDs(t, "c-1")
 	require.Len(t, ids, 3)
 	keep, drop, wait := ids[0], ids[1], ids[2]
+	// An old-style draft, from before questions were adopted when written, still waits for a decision.
+	_, err := s.db.Write.Exec(`UPDATE question SET status = 'draft', sync_seq = NULL WHERE id = ?`, wait)
+	require.NoError(t, err)
 	for path, want := range map[string]int{keep + "/accept": 200, drop + "/discard": 200} {
 		resp := s.agentReq(t, "POST", "/api/v1/agent/drafts/"+path, appToken, "")
 		require.Equal(t, want, resp.StatusCode)
@@ -382,16 +385,16 @@ func TestAgentHistory_ReopenedDraftsShowWhatBecameOfThem_AndDeletingDiscardsTheR
 	assert.Equal(t, 1, list.Items[0].PendingDrafts)
 	assert.Equal(t, "create", list.Items[0].Mode)
 
-	// Deleting throws away the one nobody decided on; the accepted question stays in the review queue.
+	// Deleting throws away the one nobody decided on; the adopted question stays in the bank.
 	resp := s.agentReq(t, "DELETE", "/api/v1/agent/conversations/c-1", appToken, "")
 	require.Equal(t, 204, resp.StatusCode)
 	resp.Body.Close()
 	s.conversation(t, "c-1", 404)
 	assert.Empty(t, s.conversations(t, "").Items)
-	assert.Empty(t, s.draftIDs(t, "c-1"))
+	assert.Equal(t, []string{keep}, s.draftIDs(t, "c-1"), "only the adopted one is left")
 	var q struct{ Status string }
 	s.do(t, "GET", "/admin/questions/"+keep, "", 200, &q)
-	assert.Equal(t, "needs_review", q.Status)
+	assert.Equal(t, "published", q.Status)
 	s.do(t, "GET", "/admin/questions/"+wait, "", 200, &q)
 	assert.Equal(t, "rejected", q.Status)
 

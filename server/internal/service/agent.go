@@ -148,7 +148,7 @@ func (s *Service) StartAgentChat(ctx context.Context, token string, in AgentChat
 		req.HasImages = stored.hasImages
 		a.Files = agentFiles{s: s, conversation: stored.id}
 	}
-	if req.Mode == agent.ModeCreate {
+	if req.Mode != agent.ModeLearn {
 		a.Drafter = agentDrafter{s: s, model: conv.Model()}
 	}
 	return func(ctx context.Context, emit func(agent.Event)) {
@@ -224,7 +224,7 @@ func validateAgentRequest(in AgentChatRequest) (agent.Request, error) {
 	}
 	mode := in.Mode
 	if mode == "" {
-		mode = agent.ModeLearn
+		mode = agent.ModeCreate
 	}
 	return agent.Request{ConversationID: id, Mode: mode, DeviceID: in.DeviceID, Messages: msgs, Context: ctx}, nil
 }

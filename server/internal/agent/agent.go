@@ -23,7 +23,7 @@ const (
 type Agent struct {
 	Conv llm.Converser
 	Lib  Library
-	// Drafter stores the questions the model proposes. Required for ModeCreate, unused otherwise.
+	// Drafter stores the questions the model proposes. Without it the model cannot write questions.
 	Drafter Drafter
 	// Files reads the text of Request.Files. Without it the files are not offered to the model.
 	Files FileReader
@@ -35,7 +35,9 @@ type Agent struct {
 	Now func() time.Time
 }
 
-// Modes of a conversation, fixed when it starts.
+// Modes of a conversation, fixed when it starts. ModeCreate is the whole assistant: it explains,
+// quizzes and writes questions. ModeLearn is the older read-only form, still accepted from apps that
+// have not been updated.
 const (
 	ModeLearn  = "learn"
 	ModeCreate = "create"
@@ -44,7 +46,7 @@ const (
 // Request is one chat request after validation.
 type Request struct {
 	ConversationID string
-	// Mode is ModeLearn (the default) or ModeCreate, which adds the tools that write draft questions.
+	// Mode is ModeCreate (the default) or ModeLearn, which leaves out the tools that write questions.
 	Mode     string
 	DeviceID string
 	// Messages is the text history; the last one is from the user.
@@ -99,7 +101,8 @@ func (a *Agent) Run(ctx context.Context, req Request, emit func(Event)) {
 	if req.HasImages {
 		addExtra(imagesText)
 	}
-	if req.Mode == ModeCreate {
+	// Every conversation can write questions unless it is an old read-only (learn) one.
+	if req.Mode != ModeLearn && a.Drafter != nil {
 		scope := DraftScope{ConversationID: req.ConversationID, DeviceID: req.DeviceID}
 		list = append(list, toolProposeQuestions(a.Drafter, scope), toolListDrafts(a.Drafter, scope))
 	}

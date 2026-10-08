@@ -197,13 +197,15 @@ export interface ServerEvent {
 export interface AIConfig {
   enabled: boolean
   app_token: string
+  /** True: the questions the assistant writes wait in the review queue. False: they are published at once. */
+  review_agent_questions: boolean
   /** "provider / model" of the model bound to the explain role; empty when none is. */
   model_name: string
   /** True when that model is complete enough for an app to use. */
   ready: boolean
 }
 
-export type AIConfigUpdate = Pick<AIConfig, 'enabled' | 'app_token'>
+export type AIConfigUpdate = Pick<AIConfig, 'enabled' | 'app_token' | 'review_agent_questions'>
 
 export type Protocol = 'anthropic' | 'openai'
 export type LlmRole = 'generator' | 'validator' | 'agent' | 'explain'

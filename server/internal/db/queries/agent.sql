@@ -19,15 +19,17 @@ FROM agent_draft d JOIN question q ON q.id = d.question_id
 WHERE d.question_id = ?;
 
 -- name: ListAgentDrafts :many
--- The drafts of a conversation that are still waiting for the learner's decision.
+-- The questions of a conversation that are in play: waiting for a decision (older drafts) or adopted.
+-- Thrown-away ones are left out.
 SELECT q.*, d.conversation_id, d.verified
 FROM agent_draft d JOIN question q ON q.id = d.question_id
-WHERE d.conversation_id = ? AND q.status = 'draft'
+WHERE d.conversation_id = ? AND q.status IN ('draft', 'needs_review', 'published')
 ORDER BY d.created_at, q.id;
 
 -- name: CountAgentDrafts :one
+-- How many questions of a conversation are in play, the number the per-conversation cap counts.
 SELECT COUNT(*) FROM agent_draft d JOIN question q ON q.id = d.question_id
-WHERE d.conversation_id = ? AND q.status = 'draft';
+WHERE d.conversation_id = ? AND q.status IN ('draft', 'needs_review', 'published');
 
 -- name: RetireStaleDrafts :execrows
 -- Drafts nobody decided on for a while are taken out of the way. They stay in the table for the record.

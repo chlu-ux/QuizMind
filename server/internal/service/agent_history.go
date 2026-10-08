@@ -137,10 +137,14 @@ func (s *Service) prepareStoredChat(ctx context.Context, in AgentChatRequest) (A
 	conv, err := s.reader().GetAgentConversation(ctx, in.ConversationID)
 	switch {
 	case err == nil:
-		if mode != "" && mode != conv.Mode {
+		// An app that names no mode wants the whole assistant, whatever an older version of this
+		// conversation was; one that names a mode gets exactly that.
+		switch {
+		case mode == "":
+			mode = agent.ModeCreate
+		case mode != conv.Mode:
 			return in, storedChat{}, invalid("this is a %s conversation; start a new one for %s", conv.Mode, mode)
 		}
-		mode = conv.Mode
 		rows, err := s.reader().ListAgentMessages(ctx, conv.ID)
 		if err != nil {
 			return in, storedChat{}, err
@@ -157,7 +161,7 @@ func (s *Service) prepareStoredChat(ctx context.Context, in AgentChatRequest) (A
 		}
 	case errors.Is(err, sql.ErrNoRows):
 		if mode == "" {
-			mode = agent.ModeLearn
+			mode = agent.ModeCreate
 		}
 	default:
 		return in, storedChat{}, err

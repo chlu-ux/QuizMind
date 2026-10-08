@@ -12,9 +12,10 @@ import (
 
 const countAgentDrafts = `-- name: CountAgentDrafts :one
 SELECT COUNT(*) FROM agent_draft d JOIN question q ON q.id = d.question_id
-WHERE d.conversation_id = ? AND q.status = 'draft'
+WHERE d.conversation_id = ? AND q.status IN ('draft', 'needs_review', 'published')
 `
 
+// How many questions of a conversation are in play, the number the per-conversation cap counts.
 func (q *Queries) CountAgentDrafts(ctx context.Context, conversationID string) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countAgentDrafts, conversationID)
 	var count int64
@@ -82,7 +83,7 @@ func (q *Queries) InsertAgentDraft(ctx context.Context, arg InsertAgentDraftPara
 const listAgentDrafts = `-- name: ListAgentDrafts :many
 SELECT q.id, q.bank_id, q.chunk_id, q.type, q.stem, q.options, q.answer, q.explanation, q.difficulty, q.tags, q.source_quote, q.status, q.review_note, q.content_hash, q.gen_model, q.gen_prompt_version, q.flag_count, q.sync_seq, q.created_at, q.updated_at, d.conversation_id, d.verified
 FROM agent_draft d JOIN question q ON q.id = d.question_id
-WHERE d.conversation_id = ? AND q.status = 'draft'
+WHERE d.conversation_id = ? AND q.status IN ('draft', 'needs_review', 'published')
 ORDER BY d.created_at, q.id
 `
 
@@ -111,7 +112,8 @@ type ListAgentDraftsRow struct {
 	Verified         int64          `json:"verified"`
 }
 
-// The drafts of a conversation that are still waiting for the learner's decision.
+// The questions of a conversation that are in play: waiting for a decision (older drafts) or adopted.
+// Thrown-away ones are left out.
 func (q *Queries) ListAgentDrafts(ctx context.Context, conversationID string) ([]ListAgentDraftsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listAgentDrafts, conversationID)
 	if err != nil {

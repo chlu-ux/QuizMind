@@ -4,14 +4,14 @@ import { ElMessage } from 'element-plus'
 import { api, errorMessage } from '@/api/client'
 import type { AIConfig } from '@/api/types'
 
-const form = reactive({ enabled: false, app_token: '' })
+const form = reactive({ enabled: false, app_token: '', review_agent_questions: false })
 const saved = ref<AIConfig | null>(null)
 const loading = ref(false)
 const saving = ref(false)
 
 function fill(c: AIConfig) {
   saved.value = c
-  Object.assign(form, { enabled: c.enabled, app_token: c.app_token })
+  Object.assign(form, { enabled: c.enabled, app_token: c.app_token, review_agent_questions: c.review_agent_questions })
 }
 
 async function load() {
@@ -56,6 +56,12 @@ onMounted(load)
       <el-form-item label="访问令牌">
         <el-input v-model="form.app_token" placeholder="随便设一个简单的，至少 4 个字符" autocomplete="off" />
         <div class="hint">在 App 或 H5 的设置页输入同一个令牌，才能拉取配置、上报用量和使用 AI 助手。留空则都不能用。</div>
+      </el-form-item>
+      <el-form-item label="助手出的题">
+        <el-switch v-model="form.review_agent_questions" active-text="先审核再发布" inactive-text="直接发布" />
+        <div class="hint">
+          在 AI 助手里让它出题，通过检查的题默认就算“采纳”：关闭时立刻进入题库，学习者可以在卡片上取消采纳；打开时先进入审核队列，由你在审核页通过后才发布。
+        </div>
       </el-form-item>
 
       <el-form-item>

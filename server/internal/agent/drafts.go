@@ -8,7 +8,7 @@ import (
 // Draft limits.
 const (
 	MaxProposePerCall   = 5
-	MaxDraftsPerChat    = 20
+	MaxDraftsPerChat    = 30
 	draftUnverifiedNote = "未经独立复核（后台没有配置复核模型）"
 )
 
@@ -26,7 +26,7 @@ type ProposedQuestion struct {
 	Replaces string `json:"replaces"`
 }
 
-// Draft is a question that passed every check and waits for the learner to accept or discard it.
+// Draft is a question that passed every check. It is adopted at once; the learner can take it back.
 type Draft struct {
 	DraftID     string   `json:"draft_id"`
 	LessonID    string   `json:"lesson_id"`
@@ -40,6 +40,9 @@ type Draft struct {
 	SourceQuote string   `json:"source_quote"`
 	// Verified says a second model answered the question independently and agreed.
 	Verified bool `json:"verified"`
+	// Adopted says the question is part of the question bank (or waits in the review queue) and not
+	// thrown away. New questions are adopted already; the learner can take them back.
+	Adopted bool `json:"adopted"`
 }
 
 // Drafts is sent to the client when new drafts exist.
@@ -82,7 +85,7 @@ func toolProposeQuestions(d Drafter, scope DraftScope) *tool {
 	}
 	return &tool{
 		spec: llmSpec("propose_questions",
-			"提出 1–5 道新题，存为草稿，供用户采纳或丢弃。题必须出自 lesson_id 这一节：source_quote 必须逐字摘抄这一节原文里的一句话，答案必须能从原文得出。返回每道题的结果；失败的会说明原因，请按原因修改后重新提出（最多重试两次）。",
+			"提出 1–5 道新题。通过检查的题会自动加入用户的题库（用户可以在卡片上取消采纳），所以只在用户明确要求出题时使用。题必须出自 lesson_id 这一节：source_quote 必须逐字摘抄这一节原文里的一句话，答案必须能从原文得出。返回每道题的结果；失败的会说明原因，请按原因修改后重新提出（最多重试两次）。",
 			schema([]string{"lesson_id", "questions"}, map[string]any{
 				"lesson_id": str("题目依据的小节 id"),
 				"questions": map[string]any{
@@ -99,7 +102,7 @@ func toolProposeQuestions(d Drafter, scope DraftScope) *tool {
 							"difficulty":   integer("难度 1–5"),
 							"tags":         map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "最多 3 个知识点标签"},
 							"source_quote": str("原文里的一句话，逐字照抄，不要改写"),
-							"replaces":     str("可选：本对话里一道旧草稿的 draft_id，新题通过后它会被替换"),
+							"replaces":     str("可选：本对话里一道旧题的 draft_id，新题通过后旧题会被取消采纳"),
 						},
 					},
 				},
@@ -134,7 +137,7 @@ func toolProposeQuestions(d Drafter, scope DraftScope) *tool {
 			e.addDrafts(made)
 			res := map[string]any{"results": results}
 			if len(made) > 0 {
-				res["note"] = "通过的题已作为草稿展示给用户，等待用户采纳。不要在回答里重复整道题的内容，简要说明即可。"
+				res["note"] = "通过的题已经加入用户的题库，并作为卡片展示给用户（用户可取消采纳）。不要在回答里重复整道题的内容，简要说明即可。"
 			}
 			return res, nil
 		},
@@ -144,7 +147,7 @@ func toolProposeQuestions(d Drafter, scope DraftScope) *tool {
 func toolListDrafts(d Drafter, scope DraftScope) *tool {
 	return &tool{
 		spec: llmSpec("list_drafts",
-			"列出本对话里仍在等用户决定的草稿（draft_id、题干、选项、答案）。用户要求修改、补充或避免重复时先看看已有的草稿。",
+			"列出本对话里已出的题（draft_id、题干、选项、答案、adopted 表示是否仍在题库里）。用户要求修改、补充或避免重复时先看看已出的题。",
 			schema(nil, map[string]any{})),
 		label: func(context.Context, *env, json.RawMessage) string { return "查看已有草稿" },
 		run: func(ctx context.Context, e *env, _ json.RawMessage) (any, error) {
