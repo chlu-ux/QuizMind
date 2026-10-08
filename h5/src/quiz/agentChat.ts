@@ -3,8 +3,12 @@ import { newUlid } from '@/core/ulid'
 import type { AgentApi } from '@/data/agentApi'
 import {
   ATTACH_EXTENSIONS,
+  ATTACH_IMAGE_EXTENSIONS,
+  ATTACH_IMAGE_MAX_BYTES,
+  ATTACH_IMAGE_TYPES,
   ATTACH_MAX_BYTES,
   ATTACH_MAX_FILES,
+  ATTACH_MAX_IMAGES,
   ATTACH_MAX_PER_MESSAGE,
   AgentError,
   type AgentAttachment,
@@ -41,6 +45,9 @@ export interface PendingFile {
   key: number
   name: string
   size: number
+  kind: 'text' | 'image'
+  /** Pictures: an address to show it by while it is still only on this device. */
+  preview?: string
   status: 'uploading' | 'ready' | 'error'
   attachment?: AgentAttachment
   /** Why the file was not taken. */
@@ -67,10 +74,14 @@ export class AgentChat {
   busy = false
   /** Files chosen for the next message. */
   files: PendingFile[] = []
+  /** The assistant's model can look at pictures (from the status); pictures are turned away without it. */
+  vision = false
 
   readonly conversationId: string
   private nextId = 1
   private nextFile = 1
+  /** Picture addresses by attachment id, made once: from the file chosen here, or fetched from the server. */
+  private images = new Map<string, Promise<string>>()
   private abort: AbortController | null = null
   private disposed = false
 
@@ -109,9 +120,20 @@ export class AgentChat {
     return sent + this.files.filter((f) => f.status !== 'error').length
   }
 
+  /** Pictures this conversation holds, sent or chosen. */
+  get imageCount(): number {
+    const sent = this.messages.reduce((n, m) => n + m.attachments.filter((a) => a.kind === 'image').length, 0)
+    return sent + this.files.filter((f) => f.kind === 'image' && f.status !== 'error').length
+  }
+
   /** Another file may be added. */
   get canAttach(): boolean {
     return this.fileCount < ATTACH_MAX_FILES && this.files.filter((f) => f.status !== 'error').length < ATTACH_MAX_PER_MESSAGE
+  }
+
+  /** Another picture may be added: the model sees them, and there is room. */
+  get canAttachImage(): boolean {
+    return this.vision && this.canAttach && this.imageCount < ATTACH_MAX_IMAGES
   }
 
   get uploading(): boolean {
@@ -122,13 +144,26 @@ export class AgentChat {
     return this.files.filter((f) => f.status === 'ready')
   }
 
+  private static extOf(file: File): string {
+    const dot = file.name.lastIndexOf('.')
+    return dot < 0 ? '' : file.name.slice(dot).toLowerCase()
+  }
+
+  private static isImage(file: File): boolean {
+    return ATTACH_IMAGE_TYPES.includes(file.type) || ATTACH_IMAGE_EXTENSIONS.includes(AgentChat.extOf(file))
+  }
+
   /** Why [file] cannot be taken, judged before uploading; the server checks again. */
   private refusal(file: File): string {
-    const dot = file.name.lastIndexOf('.')
-    const ext = dot < 0 ? '' : file.name.slice(dot).toLowerCase()
-    if (!ATTACH_EXTENSIONS.includes(ext)) return `不支持这种文件，可以上传 ${ATTACH_EXTENSIONS.join(' ')} 文本文件`
     if (file.size === 0) return '这个文件是空的'
-    if (file.size > ATTACH_MAX_BYTES) return `文件太大了（超过 ${ATTACH_MAX_BYTES / 1024} KB），请截取需要的部分再上传`
+    if (AgentChat.isImage(file)) {
+      if (!this.vision) return '当前助手模型不支持识别图片'
+      if (file.size > ATTACH_IMAGE_MAX_BYTES) return `图片太大了（超过 ${ATTACH_IMAGE_MAX_BYTES / 1024 / 1024} MB），请压缩或裁剪后再上传`
+      if (this.imageCount >= ATTACH_MAX_IMAGES) return `一场对话最多 ${ATTACH_MAX_IMAGES} 张图片`
+    } else {
+      if (!ATTACH_EXTENSIONS.includes(AgentChat.extOf(file))) return `不支持这种文件，可以上传 ${ATTACH_EXTENSIONS.join(' ')} 文本文件`
+      if (file.size > ATTACH_MAX_BYTES) return `文件太大了（超过 ${ATTACH_MAX_BYTES / 1024} KB），请截取需要的部分再上传`
+    }
     if (!this.canAttach) return `一场对话最多 ${ATTACH_MAX_FILES} 个文件，一条消息最多带 ${ATTACH_MAX_PER_MESSAGE} 个`
     return ''
   }
@@ -137,7 +172,9 @@ export class AgentChat {
   async addFile(file: File) {
     const key = this.nextFile++
     const why = this.refusal(file)
-    this.files.push({ key, name: file.name, size: file.size, status: why ? 'error' : 'uploading', error: why || undefined })
+    const kind = AgentChat.isImage(file) ? 'image' : 'text'
+    const preview = !why && kind === 'image' && typeof URL.createObjectURL === 'function' ? URL.createObjectURL(file) : undefined
+    this.files.push({ key, name: file.name, size: file.size, kind, preview, status: why ? 'error' : 'uploading', error: why || undefined })
     if (why) return
     const set = (change: (f: PendingFile) => void) => {
       const f = this.files.find((x) => x.key === key)
@@ -146,17 +183,31 @@ export class AgentChat {
     try {
       const a = await this.api.uploadAttachment(this.conversationId, file)
       if (this.disposed) return
+      if (preview) this.images.set(a.id, Promise.resolve(preview)) // shown from here once it is sent
       set((f) => {
         f.status = 'ready'
         f.attachment = a
       })
     } catch (e) {
       if (this.disposed) return
+      if (preview) URL.revokeObjectURL(preview)
       set((f) => {
         f.status = 'error'
+        f.preview = undefined
         f.error = e instanceof AgentError ? e.message : `出错了：${(e as Error).message ?? e}`
       })
     }
+  }
+
+  /** The address to show a picture by. Fetched from the server unless it was chosen on this device. */
+  imageUrl(id: string): Promise<string> {
+    let url = this.images.get(id)
+    if (!url) {
+      url = this.api.attachmentBlob(id).then((b) => URL.createObjectURL(b))
+      this.images.set(id, url)
+      url.catch(() => this.images.delete(id)) // a failed fetch may be tried again
+    }
+    return url
   }
 
   /** Takes a file off the next message and, if it reached the server, removes it there. */
@@ -164,6 +215,10 @@ export class AgentChat {
     const at = this.files.findIndex((f) => f.key === key)
     if (at < 0) return
     const [f] = this.files.splice(at, 1)
+    if (f.preview) {
+      URL.revokeObjectURL(f.preview)
+      if (f.attachment) this.images.delete(f.attachment.id)
+    }
     if (f.attachment) {
       try {
         await this.api.deleteAttachment(f.attachment.id)
@@ -182,6 +237,8 @@ export class AgentChat {
   dispose() {
     this.disposed = true
     this.abort?.abort()
+    for (const url of this.images.values()) void url.then((u) => URL.revokeObjectURL(u), () => {})
+    this.images.clear()
   }
 
   /** Sends [text] and streams the answer in. */

@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { reactive } from 'vue'
 import { AgentError } from '@/data/agentTypes'
 import { draft, FakeAgentApi, storedMessage } from '@/test-support'
@@ -264,7 +264,7 @@ describe('AgentChat', () => {
     it('does not send while a file is still going up', async () => {
       const api = new FakeAgentApi()
       let release: () => void = () => {}
-      api.uploadAttachment = () => new Promise((r) => (release = () => r({ id: 'F9', kind: 'text', name: 'a.md', mime: '', size: 1, chars: 1 })))
+      api.uploadAttachment = () => new Promise((r) => (release = () => r({ id: 'F9', kind: 'text', name: 'a.md', mime: '', size: 1, chars: 1, width: 0, height: 0 })))
       api.events = [ok, done]
       const chat = make(api)
       const adding = chat.addFile(file('a.md'))
@@ -331,10 +331,100 @@ describe('AgentChat', () => {
       expect(api.uploads).toHaveLength(8)
     })
 
+    describe('pictures', () => {
+      const png = (name = 'a.png', size = 4) => new File(['x'.repeat(size)], name, { type: 'image/png' })
+      const seeing = (api: FakeAgentApi) => {
+        const chat = make(api)
+        chat.vision = true
+        return chat
+      }
+
+      it('are turned away while the model cannot look at pictures', async () => {
+        const api = new FakeAgentApi()
+        const chat = make(api)
+        await chat.addFile(png())
+        expect(chat.files[0]).toMatchObject({ kind: 'image', status: 'error', error: '当前助手模型不支持识别图片' })
+        expect(api.uploads).toEqual([])
+        expect(chat.canAttachImage).toBe(false)
+      })
+
+      it('go up like files, are told apart by type or name, and are counted', async () => {
+        const api = new FakeAgentApi()
+        const chat = seeing(api)
+        await chat.addFile(png())
+        await chat.addFile(new File(['x'], 'photo.JPG')) // the type is unknown, the name says it
+        expect(chat.files.map((f) => [f.kind, f.status])).toEqual([['image', 'ready'], ['image', 'ready']])
+        expect(api.uploads.map((u) => u.name)).toEqual(['a.png', 'photo.JPG'])
+        expect(chat.imageCount).toBe(2)
+      })
+
+      it('are limited in size and to four a conversation, with the reason shown', async () => {
+        const api = new FakeAgentApi()
+        const chat = seeing(api)
+        await chat.addFile(png('big.png', 5 * 1024 * 1024 + 1))
+        expect(chat.files[0].error).toContain('5 MB')
+        chat.files = []
+        for (let i = 0; i < 4; i++) await chat.addFile(png(`${i}.png`))
+        expect(chat.canAttachImage).toBe(false)
+        await chat.removeFile(chat.files[0].key)
+        expect(chat.canAttachImage).toBe(true)
+        await chat.addFile(png('a.png'))
+        await chat.addFile(png('b.png'))
+        expect(chat.files.at(-1)?.error).toContain('最多')
+      })
+
+      it('are fetched once to be shown, and a failed fetch can be tried again', async () => {
+        const api = new FakeAgentApi()
+        const chat = seeing(api)
+        const url = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:one')
+        expect(await chat.imageUrl('A1')).toBe('blob:one')
+        expect(await chat.imageUrl('A1')).toBe('blob:one')
+        expect(api.fetched).toEqual(['A1'])
+
+        api.attachmentBlob = async () => {
+          throw new AgentError('gone', 404)
+        }
+        await expect(chat.imageUrl('A2')).rejects.toThrow('gone')
+        api.attachmentBlob = async () => new Blob(['x'])
+        expect(await chat.imageUrl('A2')).toBe('blob:one')
+        url.mockRestore()
+      })
+
+      it('are shown from the file chosen here once sent, without asking the server', async () => {
+        const api = new FakeAgentApi()
+        api.events = [ok, done]
+        const chat = seeing(api)
+        const create = vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:local')
+        const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+        await chat.addFile(png())
+        expect(chat.files[0].preview).toBe('blob:local')
+        await chat.send('这是什么')
+        expect(await chat.imageUrl('F1')).toBe('blob:local')
+        expect(api.fetched).toEqual([])
+        chat.dispose()
+        await Promise.resolve()
+        expect(revoke).toHaveBeenCalledWith('blob:local')
+        create.mockRestore()
+        revoke.mockRestore()
+      })
+
+      it('taken off before sending are released', async () => {
+        const api = new FakeAgentApi()
+        const chat = seeing(api)
+        vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:local')
+        const revoke = vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {})
+        await chat.addFile(png())
+        await chat.removeFile(chat.files[0].key)
+        expect(revoke).toHaveBeenCalledWith('blob:local')
+        expect(api.removed).toEqual(['F1'])
+        vi.restoreAllMocks()
+      })
+    })
+
     it('a stored conversation shows the files its messages carried', () => {
       const api = new FakeAgentApi()
       const stored = api.keep('c1', {
-        messages: [storedMessage({ role: 'user', text: '看', attachments: [{ id: 'A1', kind: 'text', name: 'n.md', mime: 'text/markdown', size: 3, chars: 3 }] })],
+        messages: [storedMessage({ role: 'user', text: '看', attachments: [{ id: 'A1', kind: 'text', name: 'n.md', mime: 'text/markdown', size: 3, chars: 3, width: 0, height: 0 }] })],
       })
       const chat = reactive(new AgentChat(learn, 'dev1', api, stored)) as AgentChat
       expect(chat.messages[0].attachments.map((a) => a.name)).toEqual(['n.md'])

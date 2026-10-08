@@ -193,7 +193,7 @@ export const draft = (id = 'D1'): AgentDraft => draftFromJson({ ...draftJson, dr
 
 /** A scripted assistant that records what it was asked. */
 export class FakeAgentApi implements AgentApi {
-  statusValue: AgentStatus = { available: true, model: 'm', verified: false }
+  statusValue: AgentStatus = { available: true, model: 'm', verified: false, vision: false }
   statusError: Error | null = null
   requests: AgentChatRequest[] = []
   /** The events of the next answer; [holdOpen] then keeps the stream open until it is aborted. */
@@ -253,7 +253,17 @@ export class FakeAgentApi implements AgentApi {
     if (this.uploadError) throw this.uploadError
     const id = `F${this.uploads.length + 1}`
     this.uploads.push({ conversationId, name: file.name, id })
-    return { id, kind: 'text', name: file.name, mime: 'text/plain', size: file.size, chars: file.size }
+    const image = file.type.startsWith('image/')
+    return {
+      id, kind: image ? 'image' : 'text', name: file.name, mime: file.type || 'text/plain', size: file.size,
+      chars: image ? 0 : file.size, width: 0, height: 0,
+    }
+  }
+  /** The pictures asked for, by id. */
+  fetched: string[] = []
+  async attachmentBlob(id: string): Promise<Blob> {
+    this.fetched.push(id)
+    return new Blob(['png'], { type: 'image/png' })
   }
   async deleteAttachment(id: string) {
     this.removed.push(id)

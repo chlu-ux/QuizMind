@@ -982,10 +982,93 @@ describe('study assistant', () => {
         w.unmount()
       })
 
+      describe('pictures', () => {
+        const attachImage = async (w: VueWrapper, ...files: File[]) => {
+          const el = w.find('[data-testid="agent-image-input"]').element as HTMLInputElement
+          Object.defineProperty(el, 'files', { value: files, configurable: true })
+          await w.find('[data-testid="agent-image-input"]').trigger('change')
+          await flush()
+        }
+        const pic = (name: string) => new File(['png'], name, { type: 'image/png' })
+        beforeEach(() => {
+          URL.createObjectURL = vi.fn(() => 'blob:pic')
+          URL.revokeObjectURL = vi.fn()
+        })
+
+        it('the plus button opens a choice only when the model can see; otherwise it picks a file at once', async () => {
+          let w = await open('/agent?mode=learn', AgentView)
+          const fileClick = vi.spyOn(w.find('[data-testid="agent-file-input"]').element as HTMLInputElement, 'click')
+          await w.find('[data-testid="agent-attach"]').trigger('click')
+          expect(fileClick).toHaveBeenCalled()
+          expect(w.find('[data-testid="agent-attach-menu"]').exists()).toBe(false)
+          w.unmount()
+
+          api.statusValue = { ...api.statusValue, vision: true }
+          w = await open('/agent?mode=learn', AgentView)
+          const imageClick = vi.spyOn(w.find('[data-testid="agent-image-input"]').element as HTMLInputElement, 'click')
+          await w.find('[data-testid="agent-attach"]').trigger('click')
+          expect(w.find('[data-testid="agent-attach-menu"]').exists()).toBe(true)
+          await w.find('[data-testid="agent-attach-image"]').trigger('click')
+          expect(imageClick).toHaveBeenCalled()
+          expect(w.find('[data-testid="agent-attach-menu"]').exists()).toBe(false)
+          expect(w.find('[data-testid="agent-image-input"]').attributes('accept')).toContain('image/png')
+          w.unmount()
+        })
+
+        it('a chosen picture shows as a thumbnail, goes with the question, and can be opened large', async () => {
+          api.statusValue = { ...api.statusValue, vision: true }
+          api.events = [{ kind: 'delta', text: '好' }, done]
+          const w = await open('/agent?mode=learn', AgentView)
+          await attachImage(w, pic('图.png'))
+          expect(w.find('[data-testid="agent-file-preview"]').attributes('src')).toBe('blob:pic')
+          await type(w, '这是什么')
+          await sendBtn(w).trigger('click')
+          await flush()
+          expect(api.requests[0].message).toEqual({ text: '这是什么', attachmentIds: ['F1'] })
+          expect(w.find('.bubble.user [data-testid="agent-file-tag"]').exists()).toBe(false)
+          const thumb = w.find('.bubble.user [data-testid="agent-image"]')
+          expect(thumb.find('img').attributes('src')).toBe('blob:pic')
+          expect(api.fetched).toEqual([])
+
+          expect(w.find('[data-testid="agent-image-big"]').exists()).toBe(false)
+          await thumb.trigger('click')
+          expect(w.find('[data-testid="agent-image-big"] img').attributes('src')).toBe('blob:pic')
+          await w.find('[data-testid="agent-image-big"]').trigger('click')
+          expect(w.find('[data-testid="agent-image-big"]').exists()).toBe(false)
+          w.unmount()
+        })
+
+        it('a stored conversation fetches its pictures with the token to show them', async () => {
+          api.keep('c1', {
+            messages: [
+              storedMessage({
+                id: 1, role: 'user', text: '看',
+                attachments: [{ id: 'A1', kind: 'image', name: 'p.png', mime: 'image/png', size: 3, chars: 0, width: 3, height: 2 }],
+              }),
+              storedMessage({ id: 2, role: 'assistant', text: '好' }),
+            ],
+          })
+          const w = await open('/agent?conversation=c1', AgentView)
+          await flush()
+          expect(api.fetched).toEqual(['A1'])
+          expect(w.find('[data-testid="agent-image"] img').attributes('src')).toBe('blob:pic')
+          expect(w.find('[data-testid="agent-file-tag"]').exists()).toBe(false)
+          w.unmount()
+        })
+
+        it('a picture is turned away with the reason while the model cannot see', async () => {
+          const w = await open('/agent?mode=learn', AgentView)
+          await attachImage(w, pic('图.png'))
+          expect(w.find('[data-testid="agent-file"]').text()).toContain('不支持识别图片')
+          expect(api.uploads).toEqual([])
+          w.unmount()
+        })
+      })
+
       it('a stored conversation shows its files as tags', async () => {
         api.keep('c1', {
           messages: [
-            storedMessage({ id: 1, role: 'user', text: '看', attachments: [{ id: 'A1', kind: 'text', name: 'n.md', mime: 'text/markdown', size: 3, chars: 3 }] }),
+            storedMessage({ id: 1, role: 'user', text: '看', attachments: [{ id: 'A1', kind: 'text', name: 'n.md', mime: 'text/markdown', size: 3, chars: 3, width: 0, height: 0 }] }),
             storedMessage({ id: 2, role: 'assistant', text: '好' }),
           ],
         })
@@ -1196,7 +1279,7 @@ describe('study assistant', () => {
         const w = await open('/agent?mode=create&bank=b1', AgentView)
         expect(w.text()).toContain('出的题不会经过独立复核')
         w.unmount()
-        api.statusValue = { available: true, model: 'm', verified: true }
+        api.statusValue = { available: true, model: 'm', verified: true, vision: false }
         const w2 = await open('/agent?mode=create&bank=b1', AgentView)
         expect(w2.text()).not.toContain('出的题不会经过独立复核')
         w2.unmount()

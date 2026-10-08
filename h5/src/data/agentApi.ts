@@ -34,6 +34,8 @@ export interface AgentApi {
   uploadAttachment(conversationId: string, file: File): Promise<AgentAttachment>
   /** Removes a file that has not been sent. */
   deleteAttachment(id: string): Promise<void>
+  /** The bytes of a picture, to show it (it needs the access token, so it cannot be a plain image address). */
+  attachmentBlob(id: string): Promise<Blob>
 }
 
 const OLD_SERVER = '服务器还不支持历史对话，请先更新服务端'
@@ -105,7 +107,12 @@ export class HttpAgentApi implements AgentApi {
 
   async status(): Promise<AgentStatus> {
     const j = (await (await this.send('GET', '/api/v1/agent/status')).json()) as Record<string, unknown>
-    return { available: j.available === true, model: typeof j.model === 'string' ? j.model : '', verified: j.verified === true }
+    return {
+      available: j.available === true,
+      model: typeof j.model === 'string' ? j.model : '',
+      verified: j.verified === true,
+      vision: j.vision === true,
+    }
   }
 
   async acceptDraft(id: string) {
@@ -157,6 +164,11 @@ export class HttpAgentApi implements AgentApi {
 
   async deleteAttachment(id: string) {
     await this.history(() => this.send('DELETE', `/api/v1/agent/attachments/${encodeURIComponent(id)}`))
+  }
+
+  async attachmentBlob(id: string): Promise<Blob> {
+    const res = await this.history(() => this.send('GET', `/api/v1/agent/attachments/${encodeURIComponent(id)}`), '这个文件已经不存在了')
+    return res.blob()
   }
 
   async *chat(request: AgentChatRequest, signal?: AbortSignal): AsyncGenerator<AgentEvent> {

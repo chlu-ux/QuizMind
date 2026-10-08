@@ -17,6 +17,8 @@ export interface AgentStatus {
   model: string
   /** A second model double-checks the questions the assistant writes. */
   verified: boolean
+  /** The model can look at pictures, so pictures may be attached to a message. */
+  vision: boolean
 }
 
 /** A question the assistant wrote that waits for the learner to accept or discard it. */
@@ -239,6 +241,9 @@ export interface AgentAttachment {
   size: number
   /** Text files: characters of the text. */
   chars: number
+  /** Pictures: pixels, 0 when the server could not read them. */
+  width: number
+  height: number
 }
 
 /** What the server accepts. The server checks them again; these only spare a round trip. */
@@ -247,6 +252,11 @@ export const ATTACH_MAX_BYTES = 512 * 1024
 /** Files in a conversation, and in one message. */
 export const ATTACH_MAX_FILES = 8
 export const ATTACH_MAX_PER_MESSAGE = 4
+/** Pictures: the types taken (the server judges by content), the size, and how many a conversation holds. */
+export const ATTACH_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+export const ATTACH_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp']
+export const ATTACH_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+export const ATTACH_MAX_IMAGES = 4
 
 export function attachmentFromJson(j: Record<string, unknown>): AgentAttachment {
   return {
@@ -256,6 +266,8 @@ export function attachmentFromJson(j: Record<string, unknown>): AgentAttachment 
     mime: text(j.mime),
     size: whole(j.size),
     chars: whole(j.chars),
+    width: whole(j.width),
+    height: whole(j.height),
   }
 }
 

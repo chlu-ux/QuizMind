@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import AttachImage from '@/components/AttachImage.vue'
 import DraftCard from '@/components/DraftCard.vue'
 import LessonBody from '@/components/LessonBody.vue'
 import Md from '@/components/Md.vue'
 import { agentApi, agentSettings } from '@/core/agent'
 import { getRepo, settings, showToast } from '@/core/app'
-import { ATTACH_EXTENSIONS, AgentError, type AgentStatus } from '@/data/agentTypes'
+import { ATTACH_EXTENSIONS, ATTACH_IMAGE_TYPES, AgentError, type AgentStatus } from '@/data/agentTypes'
 import type { Lesson, LocalQuestion } from '@/data/types'
 import { AgentChat } from '@/quiz/agentChat'
 import { agentArgs, agentQuery, argsFromQuery, parseAgentLink } from '@/quiz/agentLinks'
@@ -70,6 +71,8 @@ async function loadStatus() {
   }
 }
 const ready = computed(() => hasToken.value && !!status.value?.available)
+// Pictures are taken only when the model can look at them.
+watch([status, chat], () => (chat.value.vision = status.value?.vision === true), { immediate: true })
 
 const banner = computed<{ message: string; action?: 'settings' | 'retry' } | null>(() => {
   if (!hasToken.value) return { message: '还没有填访问令牌。到「设置」填写后台设置的访问令牌。', action: 'settings' }
@@ -120,15 +123,28 @@ const prompts = computed(() => {
 
 // ---- files ----
 const fileEl = ref<HTMLInputElement | null>(null)
+const imageEl = ref<HTMLInputElement | null>(null)
 const accept = ATTACH_EXTENSIONS.join(',')
-function pickFile() {
-  fileEl.value?.click()
+const acceptImage = ATTACH_IMAGE_TYPES.join(',')
+/** The two choices behind the plus button, shown only when there is more than one kind to add. */
+const menu = ref(false)
+const canPickImage = computed(() => chat.value.vision)
+function attachClick() {
+  if (canPickImage.value) menu.value = !menu.value
+  else fileEl.value?.click()
+}
+function pick(kind: 'file' | 'image') {
+  menu.value = false
+  ;(kind === 'image' ? imageEl : fileEl).value?.click()
 }
 function onFiles(e: Event) {
   const el = e.target as HTMLInputElement
   for (const f of Array.from(el.files ?? [])) void chat.value.addFile(f)
   el.value = '' // the same file can be chosen again
 }
+// A picture opened large.
+const big = ref<{ url: string; name: string } | null>(null)
+const openBig = (url: string, name: string) => (big.value = { url, name })
 const kb = (n: number) => (n < 1024 ? `${n} B` : `${Math.round(n / 1024)} KB`)
 const canSend = computed(
   () => ready.value && !chat.value.busy && !chat.value.uploading && (!!input.value.trim() || chat.value.readyFiles.length > 0),
@@ -220,8 +236,17 @@ async function openLink(href: string) {
     <template v-for="m in chat.messages" :key="m.id">
       <div v-if="m.role === 'user'" class="bubble user">
         {{ m.text }}
-        <div v-if="m.attachments.length" class="file-tags">
-          <span v-for="a in m.attachments" :key="a.id" class="file-tag" data-testid="agent-file-tag">📎 {{ a.name }}</span>
+        <div v-if="m.attachments.some((a) => a.kind === 'image')" class="thumbs">
+          <AttachImage
+            v-for="a in m.attachments.filter((x) => x.kind === 'image')"
+            :key="a.id"
+            :name="a.name"
+            :load="() => chat.imageUrl(a.id)"
+            @open="openBig"
+          />
+        </div>
+        <div v-if="m.attachments.some((a) => a.kind === 'text')" class="file-tags">
+          <span v-for="a in m.attachments.filter((x) => x.kind === 'text')" :key="a.id" class="file-tag" data-testid="agent-file-tag">📎 {{ a.name }}</span>
         </div>
       </div>
       <div v-else class="bubble bot">
@@ -266,11 +291,16 @@ async function openLink(href: string) {
     </div>
   </div>
 
+  <div v-if="big" class="scrim big-scrim" data-testid="agent-image-big" @click="big = null">
+    <img :src="big.url" :alt="big.name" class="big-image" />
+  </div>
+
   <footer class="actionbar agent-input">
     <div v-if="chat.files.length" class="agent-files" data-testid="agent-files">
       <div v-for="f in chat.files" :key="f.key" class="file-row" :class="f.status" data-testid="agent-file">
+        <img v-if="f.preview" :src="f.preview" :alt="f.name" class="thumb-sm" data-testid="agent-file-preview" />
         <div class="file-info">
-          <div class="name">📎 {{ f.name }}</div>
+          <div class="name"><template v-if="!f.preview">📎 </template>{{ f.name }}</div>
           <div v-if="f.status === 'uploading'" class="muted small"><span class="spin">◌</span> 上传中</div>
           <div v-else-if="f.status === 'error'" class="err small">{{ f.error }}</div>
           <div v-else class="muted small">{{ kb(f.size) }}</div>
@@ -279,16 +309,24 @@ async function openLink(href: string) {
       </div>
     </div>
     <input ref="fileEl" type="file" class="hidden-file" multiple :accept="accept" data-testid="agent-file-input" @change="onFiles" />
-    <button
-      class="icon-btn attach"
-      aria-label="添加文件"
-      data-testid="agent-attach"
-      :disabled="!ready || !chat.canAttach"
-      :title="chat.canAttach ? '添加 .md / .txt 等文本文件' : '文件数量到上限了'"
-      @click="pickFile"
-    >
-      ＋
-    </button>
+    <input ref="imageEl" type="file" class="hidden-file" multiple :accept="acceptImage" data-testid="agent-image-input" @change="onFiles" />
+    <div class="attach-wrap">
+      <div v-if="menu" class="menu-backdrop" @click="menu = false" />
+      <div v-if="menu" class="attach-menu" role="menu" data-testid="agent-attach-menu">
+        <button class="btn" role="menuitem" data-testid="agent-attach-file" @click="pick('file')">添加文件</button>
+        <button class="btn" role="menuitem" :disabled="!chat.canAttachImage" data-testid="agent-attach-image" @click="pick('image')">添加图片</button>
+      </div>
+      <button
+        class="icon-btn attach"
+        aria-label="添加文件"
+        data-testid="agent-attach"
+        :disabled="!ready || !chat.canAttach"
+        :title="chat.canAttach ? (canPickImage ? '添加文件或图片' : '添加 .md / .txt 等文本文件') : '文件数量到上限了'"
+        @click="attachClick"
+      >
+        ＋
+      </button>
+    </div>
     <textarea
       ref="inputEl"
       v-model="input"

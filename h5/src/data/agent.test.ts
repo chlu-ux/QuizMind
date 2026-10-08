@@ -82,8 +82,8 @@ describe('HttpAgentApi', () => {
   const api = new HttpAgentApi(() => 'tok')
 
   it('sends the token with every call and reads the status', async () => {
-    const calls = stub(() => json({ available: true, model: 'deepseek', verified: true }))
-    expect(await api.status()).toEqual({ available: true, model: 'deepseek', verified: true })
+    const calls = stub(() => json({ available: true, model: 'deepseek', verified: true, vision: true }))
+    expect(await api.status()).toEqual({ available: true, model: 'deepseek', verified: true, vision: true })
     expect(calls[0].url).toBe('/api/v1/agent/status')
     expect((calls[0].init.headers as Record<string, string>).Authorization).toBe('Bearer tok')
   })
@@ -206,6 +206,19 @@ describe('HttpAgentApi', () => {
     ])
   })
 
+  it('reads a status from a server that does not know about pictures as "cannot see"', async () => {
+    stub(() => json({ available: true, model: 'm', verified: false }))
+    expect((await api.status()).vision).toBe(false)
+  })
+
+  it('fetches a picture with the token', async () => {
+    const calls = stub(() => new Response(new Blob(['png'], { type: 'image/png' }), { status: 200 }))
+    const b = await api.attachmentBlob('A/1')
+    expect(b.type).toBe('image/png')
+    expect(calls[0].url).toBe('/api/v1/agent/attachments/A%2F1')
+    expect((calls[0].init.headers as Record<string, string>).Authorization).toBe('Bearer tok')
+  })
+
   it('uploads a file as a form with the conversation, and removes one', async () => {
     const calls = stub((_url, init) =>
       init.method === 'POST'
@@ -213,7 +226,7 @@ describe('HttpAgentApi', () => {
         : new Response(null, { status: 204 }),
     )
     const a = await api.uploadAttachment('c1', new File(['# 笔记'], '笔记.md'))
-    expect(a).toEqual({ id: 'F1', kind: 'text', name: '笔记.md', mime: 'text/markdown', size: 6, chars: 2 })
+    expect(a).toEqual({ id: 'F1', kind: 'text', name: '笔记.md', mime: 'text/markdown', size: 6, chars: 2, width: 0, height: 0 })
     expect(calls[0].url).toBe('/api/v1/agent/attachments')
     const h = calls[0].init.headers as Record<string, string>
     expect(h.Authorization).toBe('Bearer tok')
@@ -245,7 +258,7 @@ describe('HttpAgentApi', () => {
       }),
     )
     const c = await api.conversation('c1')
-    expect(c.messages[0].attachments).toEqual([{ id: 'A1', kind: 'text', name: 'n.md', mime: 'text/markdown', size: 3, chars: 3 }])
+    expect(c.messages[0].attachments).toEqual([{ id: 'A1', kind: 'text', name: 'n.md', mime: 'text/markdown', size: 3, chars: 3, width: 0, height: 0 }])
     expect(c.messages[1].attachments).toEqual([])
   })
 })
