@@ -2,7 +2,12 @@ import { agentApi } from '@/core/agent'
 import { newUlid } from '@/core/ulid'
 import type { AgentApi } from '@/data/agentApi'
 import {
+  ATTACH_EXTENSIONS,
+  ATTACH_MAX_BYTES,
+  ATTACH_MAX_FILES,
+  ATTACH_MAX_PER_MESSAGE,
   AgentError,
+  type AgentAttachment,
   type AgentConversationDetail,
   type AgentDraft,
   type AgentEvent,
@@ -27,7 +32,23 @@ export interface AgentMsg {
   error?: string
   /** A remark about how the answer ended (stopped, cut short). */
   note?: string
+  /** The files this message carried. */
+  attachments: AgentAttachment[]
 }
+
+/** A file chosen for the next message: on its way to the server, or kept there waiting to be sent. */
+export interface PendingFile {
+  key: number
+  name: string
+  size: number
+  status: 'uploading' | 'ready' | 'error'
+  attachment?: AgentAttachment
+  /** Why the file was not taken. */
+  error?: string
+}
+
+/** The words sent when a file comes with no question. */
+export const FILE_ONLY_TEXT = '请看一下我给你的文件。'
 
 /** A card's state: what the server says, plus `working` while a decision is on its way. */
 export type DraftPhase = Phase | 'working'
@@ -44,9 +65,12 @@ export class AgentChat {
   drafts: Record<string, DraftEntry> = {}
   /** An answer is being written. */
   busy = false
+  /** Files chosen for the next message. */
+  files: PendingFile[] = []
 
   readonly conversationId: string
   private nextId = 1
+  private nextFile = 1
   private abort: AbortController | null = null
   private disposed = false
 
@@ -71,8 +95,81 @@ export class AgentChat {
         streaming: false,
         error: m.error || undefined,
         note: m.note || undefined,
+        attachments: m.attachments.map((a) => ({ ...a })),
       })
       for (const d of m.drafts) this.drafts[d.draft.id] = { draft: d.draft, phase: d.phase }
+    }
+  }
+
+  // ---- files ----
+
+  /** Files this conversation holds: the ones sent before and the ones chosen now. */
+  get fileCount(): number {
+    const sent = this.messages.reduce((n, m) => n + m.attachments.length, 0)
+    return sent + this.files.filter((f) => f.status !== 'error').length
+  }
+
+  /** Another file may be added. */
+  get canAttach(): boolean {
+    return this.fileCount < ATTACH_MAX_FILES && this.files.filter((f) => f.status !== 'error').length < ATTACH_MAX_PER_MESSAGE
+  }
+
+  get uploading(): boolean {
+    return this.files.some((f) => f.status === 'uploading')
+  }
+
+  get readyFiles(): PendingFile[] {
+    return this.files.filter((f) => f.status === 'ready')
+  }
+
+  /** Why [file] cannot be taken, judged before uploading; the server checks again. */
+  private refusal(file: File): string {
+    const dot = file.name.lastIndexOf('.')
+    const ext = dot < 0 ? '' : file.name.slice(dot).toLowerCase()
+    if (!ATTACH_EXTENSIONS.includes(ext)) return `不支持这种文件，可以上传 ${ATTACH_EXTENSIONS.join(' ')} 文本文件`
+    if (file.size === 0) return '这个文件是空的'
+    if (file.size > ATTACH_MAX_BYTES) return `文件太大了（超过 ${ATTACH_MAX_BYTES / 1024} KB），请截取需要的部分再上传`
+    if (!this.canAttach) return `一场对话最多 ${ATTACH_MAX_FILES} 个文件，一条消息最多带 ${ATTACH_MAX_PER_MESSAGE} 个`
+    return ''
+  }
+
+  /** Uploads [file] for the next message. A file that is not taken stays in the list with the reason, until dismissed. */
+  async addFile(file: File) {
+    const key = this.nextFile++
+    const why = this.refusal(file)
+    this.files.push({ key, name: file.name, size: file.size, status: why ? 'error' : 'uploading', error: why || undefined })
+    if (why) return
+    const set = (change: (f: PendingFile) => void) => {
+      const f = this.files.find((x) => x.key === key)
+      if (f) change(f)
+    }
+    try {
+      const a = await this.api.uploadAttachment(this.conversationId, file)
+      if (this.disposed) return
+      set((f) => {
+        f.status = 'ready'
+        f.attachment = a
+      })
+    } catch (e) {
+      if (this.disposed) return
+      set((f) => {
+        f.status = 'error'
+        f.error = e instanceof AgentError ? e.message : `出错了：${(e as Error).message ?? e}`
+      })
+    }
+  }
+
+  /** Takes a file off the next message and, if it reached the server, removes it there. */
+  async removeFile(key: number) {
+    const at = this.files.findIndex((f) => f.key === key)
+    if (at < 0) return
+    const [f] = this.files.splice(at, 1)
+    if (f.attachment) {
+      try {
+        await this.api.deleteAttachment(f.attachment.id)
+      } catch {
+        /* the server drops unsent files after a day anyway */
+      }
     }
   }
 
@@ -89,10 +186,14 @@ export class AgentChat {
 
   /** Sends [text] and streams the answer in. */
   async send(text: string) {
-    const t = text.trim()
-    if (!t || this.busy) return
-    const user: AgentMsg = { id: this.nextId++, role: 'user', text: t, tools: [], draftIds: [], streaming: false }
-    const bot: AgentMsg = { id: this.nextId++, role: 'assistant', text: '', tools: [], draftIds: [], streaming: true }
+    const sending = this.readyFiles
+    const t = text.trim() || (sending.length ? FILE_ONLY_TEXT : '')
+    if (!t || this.busy || this.uploading) return
+    const attachments = sending.map((f) => ({ ...f.attachment! }))
+    const user: AgentMsg = { id: this.nextId++, role: 'user', text: t, tools: [], draftIds: [], streaming: false, attachments }
+    const bot: AgentMsg = { id: this.nextId++, role: 'assistant', text: '', tools: [], draftIds: [], streaming: true, attachments: [] }
+    // Files that were not taken are not sent; they leave with the message that carried the good ones.
+    this.files = []
     this.messages.push(user, bot)
     this.busy = true
 
@@ -102,7 +203,7 @@ export class AgentChat {
         conversationId: this.conversationId,
         mode: this.args.mode,
         deviceId: this.deviceId,
-        message: { text: t },
+        message: { text: t, attachmentIds: attachments.map((a) => a.id) },
         context: {
           bankId: this.args.bankId,
           lessonId: this.args.lessonId,

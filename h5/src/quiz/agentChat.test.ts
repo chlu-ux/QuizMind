@@ -43,7 +43,7 @@ describe('AgentChat', () => {
     api.events = [{ kind: 'delta', text: '好' }, { kind: 'done', stop: 'end_turn', inputTokens: 0, outputTokens: 0 }]
     await chat.send('再讲讲')
     // The server has the first exchange; the same conversation carries on.
-    expect(api.requests[1].message).toEqual({ text: '再讲讲' })
+    expect(api.requests[1].message).toEqual({ text: '再讲讲', attachmentIds: [] })
     expect(api.requests[1].conversationId).toBe(api.requests[0].conversationId)
   })
 
@@ -224,6 +224,121 @@ describe('AgentChat', () => {
       await chat.accept('D3')
       expect(api.accepted).toEqual(['D3'])
       expect(chat.drafts.D3.phase).toBe('accepted')
+    })
+  })
+
+  describe('files', () => {
+    const file = (name: string, text = '内容', type = 'text/markdown') => new File([text], name, { type })
+    const ok = { kind: 'delta', text: '好' } as const
+    const done = { kind: 'done', stop: 'end_turn', inputTokens: 0, outputTokens: 0 } as const
+
+    it('uploads for this conversation, sends the ids with the question and shows the files on the message', async () => {
+      const api = new FakeAgentApi()
+      api.events = [ok, done]
+      const chat = make(api)
+      await chat.addFile(file('笔记.md'))
+      await chat.addFile(file('b.txt', 'x', 'text/plain'))
+      expect(api.uploads.map((u) => [u.conversationId, u.name])).toEqual([[chat.conversationId, '笔记.md'], [chat.conversationId, 'b.txt']])
+      expect(chat.files.map((f) => f.status)).toEqual(['ready', 'ready'])
+
+      await chat.send('总结一下')
+      expect(api.requests[0].message).toEqual({ text: '总结一下', attachmentIds: ['F1', 'F2'] })
+      expect(chat.messages[0].attachments.map((a) => a.name)).toEqual(['笔记.md', 'b.txt'])
+      expect(chat.files).toEqual([])
+
+      await chat.send('再问')
+      expect(api.requests[1].message).toEqual({ text: '再问', attachmentIds: [] })
+    })
+
+    it('a file with no question is a question of its own', async () => {
+      const api = new FakeAgentApi()
+      api.events = [ok, done]
+      const chat = make(api)
+      await chat.send('  ')
+      expect(api.requests).toEqual([])
+      await chat.addFile(file('a.md'))
+      await chat.send('')
+      expect(api.requests[0].message.text).toBe('请看一下我给你的文件。')
+    })
+
+    it('does not send while a file is still going up', async () => {
+      const api = new FakeAgentApi()
+      let release: () => void = () => {}
+      api.uploadAttachment = () => new Promise((r) => (release = () => r({ id: 'F9', kind: 'text', name: 'a.md', mime: '', size: 1, chars: 1 })))
+      api.events = [ok, done]
+      const chat = make(api)
+      const adding = chat.addFile(file('a.md'))
+      expect(chat.uploading).toBe(true)
+      await chat.send('问')
+      expect(api.requests).toEqual([])
+      release()
+      await adding
+      expect(chat.uploading).toBe(false)
+      await chat.send('问')
+      expect(api.requests[0].message.attachmentIds).toEqual(['F9'])
+    })
+
+    it('turns a wrong kind, an empty or a big file away without asking the server', async () => {
+      const api = new FakeAgentApi()
+      const chat = make(api)
+      await chat.addFile(file('a.pdf', 'x', 'application/pdf'))
+      await chat.addFile(file('empty.md', ''))
+      await chat.addFile(file('big.txt', 'x'.repeat(512 * 1024 + 1)))
+      expect(api.uploads).toEqual([])
+      expect(chat.files.map((f) => f.error)).toEqual([
+        expect.stringContaining('不支持这种文件'),
+        '这个文件是空的',
+        expect.stringContaining('太大了'),
+      ])
+      expect(chat.canAttach).toBe(true)
+    })
+
+    it('shows the reason when the server refuses, and the file can be dismissed', async () => {
+      const api = new FakeAgentApi()
+      api.uploadError = new AgentError('这个文件不是 UTF-8 文本', 400)
+      const chat = make(api)
+      await chat.addFile(file('gbk.txt'))
+      expect(chat.files[0]).toMatchObject({ status: 'error', error: '这个文件不是 UTF-8 文本' })
+      await chat.removeFile(chat.files[0].key)
+      expect(chat.files).toEqual([])
+      expect(api.removed).toEqual([])
+    })
+
+    it('removing a file that reached the server removes it there', async () => {
+      const api = new FakeAgentApi()
+      const chat = make(api)
+      await chat.addFile(file('a.md'))
+      await chat.removeFile(chat.files[0].key)
+      expect(api.removed).toEqual(['F1'])
+      expect(chat.files).toEqual([])
+    })
+
+    it('stops at four files for a message and eight for the conversation', async () => {
+      const api = new FakeAgentApi()
+      api.events = [ok, done]
+      const chat = make(api)
+      for (let i = 0; i < 5; i++) await chat.addFile(file(`f${i}.md`))
+      expect(chat.files.filter((f) => f.status === 'ready')).toHaveLength(4)
+      expect(chat.files[4].error).toContain('最多')
+      expect(chat.canAttach).toBe(false)
+      await chat.removeFile(chat.files[4].key)
+      await chat.send('问')
+      for (let i = 0; i < 4; i++) await chat.addFile(file(`g${i}.md`))
+      expect(chat.fileCount).toBe(8)
+      expect(chat.canAttach).toBe(false)
+      await chat.addFile(file('last.md'))
+      expect(chat.files.at(-1)?.error).toContain('最多')
+      expect(api.uploads).toHaveLength(8)
+    })
+
+    it('a stored conversation shows the files its messages carried', () => {
+      const api = new FakeAgentApi()
+      const stored = api.keep('c1', {
+        messages: [storedMessage({ role: 'user', text: '看', attachments: [{ id: 'A1', kind: 'text', name: 'n.md', mime: 'text/markdown', size: 3, chars: 3 }] })],
+      })
+      const chat = reactive(new AgentChat(learn, 'dev1', api, stored)) as AgentChat
+      expect(chat.messages[0].attachments.map((a) => a.name)).toEqual(['n.md'])
+      expect(chat.fileCount).toBe(1)
     })
   })
 })

@@ -919,6 +919,82 @@ describe('study assistant', () => {
   })
 
   describe('AgentView', () => {
+    describe('files', () => {
+      const attach = async (w: VueWrapper, ...files: File[]) => {
+        const el = w.find('[data-testid="agent-file-input"]').element as HTMLInputElement
+        Object.defineProperty(el, 'files', { value: files, configurable: true })
+        await w.find('[data-testid="agent-file-input"]').trigger('change')
+        await flush()
+      }
+      const md = (name: string) => new File(['# 笔记'], name, { type: 'text/markdown' })
+
+      it('a chosen file shows above the box, goes with the question, and shows as a tag on it', async () => {
+        api.events = [{ kind: 'delta', text: '好' }, done]
+        const w = await open('/agent?mode=learn&bank=b1', AgentView)
+        expect(w.find('[data-testid="agent-files"]').exists()).toBe(false)
+        expect(w.find('[data-testid="agent-file-input"]').attributes('accept')).toContain('.md')
+
+        await attach(w, md('笔记.md'))
+        expect(w.find('[data-testid="agent-file"]').text()).toContain('笔记.md')
+        // A file alone is enough to send.
+        expect(sendBtn(w).attributes('disabled')).toBeUndefined()
+        await type(w, '总结一下')
+        await sendBtn(w).trigger('click')
+        await flush()
+        expect(api.requests[0].message).toEqual({ text: '总结一下', attachmentIds: ['F1'] })
+        expect(w.find('[data-testid="agent-files"]').exists()).toBe(false)
+        expect(w.find('.bubble.user [data-testid="agent-file-tag"]').text()).toContain('笔记.md')
+        w.unmount()
+      })
+
+      it('shows why a file was turned away, lets it be taken off, and does not send it', async () => {
+        const w = await open('/agent?mode=learn', AgentView)
+        await attach(w, new File(['x'], 'a.pdf'))
+        expect(w.find('[data-testid="agent-file"]').text()).toContain('不支持这种文件')
+        await type(w, '你好')
+        await w.find('[data-testid="agent-file-remove"]').trigger('click')
+        await flush()
+        expect(w.find('[data-testid="agent-files"]').exists()).toBe(false)
+        expect(api.uploads).toEqual([])
+        w.unmount()
+      })
+
+      it('removing an uploaded file removes it on the server', async () => {
+        const w = await open('/agent?mode=learn', AgentView)
+        await attach(w, md('a.md'))
+        await w.find('[data-testid="agent-file-remove"]').trigger('click')
+        await flush()
+        expect(api.removed).toEqual(['F1'])
+        w.unmount()
+      })
+
+      it('the plus button is off without a connection, and when the files are at their limit', async () => {
+        setAgentToken('')
+        let w = await open('/agent?mode=learn', AgentView)
+        expect(w.find('[data-testid="agent-attach"]').attributes('disabled')).toBeDefined()
+        w.unmount()
+
+        setAgentToken('tok')
+        w = await open('/agent?mode=learn', AgentView)
+        expect(w.find('[data-testid="agent-attach"]').attributes('disabled')).toBeUndefined()
+        await attach(w, md('1.md'), md('2.md'), md('3.md'), md('4.md'))
+        expect(w.find('[data-testid="agent-attach"]').attributes('disabled')).toBeDefined()
+        w.unmount()
+      })
+
+      it('a stored conversation shows its files as tags', async () => {
+        api.keep('c1', {
+          messages: [
+            storedMessage({ id: 1, role: 'user', text: '看', attachments: [{ id: 'A1', kind: 'text', name: 'n.md', mime: 'text/markdown', size: 3, chars: 3 }] }),
+            storedMessage({ id: 2, role: 'assistant', text: '好' }),
+          ],
+        })
+        const w = await open('/agent?conversation=c1', AgentView)
+        expect(w.find('[data-testid="agent-file-tag"]').text()).toContain('n.md')
+        w.unmount()
+      })
+    })
+
     it('asks for a token when there is none, and cannot send', async () => {
       setAgentToken('')
       const w = await open('/agent?mode=learn&bank=b1', AgentView)

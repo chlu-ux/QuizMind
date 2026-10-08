@@ -6,7 +6,7 @@ import LessonBody from '@/components/LessonBody.vue'
 import Md from '@/components/Md.vue'
 import { agentApi, agentSettings } from '@/core/agent'
 import { getRepo, settings, showToast } from '@/core/app'
-import { AgentError, type AgentStatus } from '@/data/agentTypes'
+import { ATTACH_EXTENSIONS, AgentError, type AgentStatus } from '@/data/agentTypes'
 import type { Lesson, LocalQuestion } from '@/data/types'
 import { AgentChat } from '@/quiz/agentChat'
 import { agentArgs, agentQuery, argsFromQuery, parseAgentLink } from '@/quiz/agentLinks'
@@ -118,9 +118,25 @@ const prompts = computed(() => {
   return ['我哪里比较薄弱？', '帮我安排一下复习顺序', '出几道题考考我']
 })
 
+// ---- files ----
+const fileEl = ref<HTMLInputElement | null>(null)
+const accept = ATTACH_EXTENSIONS.join(',')
+function pickFile() {
+  fileEl.value?.click()
+}
+function onFiles(e: Event) {
+  const el = e.target as HTMLInputElement
+  for (const f of Array.from(el.files ?? [])) void chat.value.addFile(f)
+  el.value = '' // the same file can be chosen again
+}
+const kb = (n: number) => (n < 1024 ? `${n} B` : `${Math.round(n / 1024)} KB`)
+const canSend = computed(
+  () => ready.value && !chat.value.busy && !chat.value.uploading && (!!input.value.trim() || chat.value.readyFiles.length > 0),
+)
+
 function send(text?: string) {
   const t = (text ?? input.value).trim()
-  if (!t || chat.value.busy || !ready.value) return
+  if ((!t && !chat.value.readyFiles.length) || chat.value.busy || chat.value.uploading || !ready.value) return
   input.value = ''
   void chat.value.send(t)
 }
@@ -202,7 +218,12 @@ async function openLink(href: string) {
     </template>
 
     <template v-for="m in chat.messages" :key="m.id">
-      <div v-if="m.role === 'user'" class="bubble user">{{ m.text }}</div>
+      <div v-if="m.role === 'user'" class="bubble user">
+        {{ m.text }}
+        <div v-if="m.attachments.length" class="file-tags">
+          <span v-for="a in m.attachments" :key="a.id" class="file-tag" data-testid="agent-file-tag">📎 {{ a.name }}</span>
+        </div>
+      </div>
       <div v-else class="bubble bot">
         <div v-for="t in m.tools" :key="t.id" class="tool" :class="t.status">
           <span v-if="t.status === 'running'" class="spin">◌</span>
@@ -246,6 +267,28 @@ async function openLink(href: string) {
   </div>
 
   <footer class="actionbar agent-input">
+    <div v-if="chat.files.length" class="agent-files" data-testid="agent-files">
+      <div v-for="f in chat.files" :key="f.key" class="file-row" :class="f.status" data-testid="agent-file">
+        <div class="file-info">
+          <div class="name">📎 {{ f.name }}</div>
+          <div v-if="f.status === 'uploading'" class="muted small"><span class="spin">◌</span> 上传中</div>
+          <div v-else-if="f.status === 'error'" class="err small">{{ f.error }}</div>
+          <div v-else class="muted small">{{ kb(f.size) }}</div>
+        </div>
+        <button class="icon-btn small" aria-label="移除文件" data-testid="agent-file-remove" @click="chat.removeFile(f.key)">✕</button>
+      </div>
+    </div>
+    <input ref="fileEl" type="file" class="hidden-file" multiple :accept="accept" data-testid="agent-file-input" @change="onFiles" />
+    <button
+      class="icon-btn attach"
+      aria-label="添加文件"
+      data-testid="agent-attach"
+      :disabled="!ready || !chat.canAttach"
+      :title="chat.canAttach ? '添加 .md / .txt 等文本文件' : '文件数量到上限了'"
+      @click="pickFile"
+    >
+      ＋
+    </button>
     <textarea
       ref="inputEl"
       v-model="input"
@@ -256,6 +299,6 @@ async function openLink(href: string) {
       @keydown.enter="onEnter"
     />
     <button v-if="chat.busy" class="btn" data-testid="agent-stop" aria-label="停止" @click="chat.stop()">■</button>
-    <button v-else class="btn primary" data-testid="agent-send" aria-label="发送" :disabled="!ready || !input.trim()" @click="send()">↑</button>
+    <button v-else class="btn primary" data-testid="agent-send" aria-label="发送" :disabled="!canSend" @click="send()">↑</button>
   </footer>
 </template>

@@ -229,12 +229,43 @@ export interface AgentConversationPage {
   hasMore: boolean
 }
 
+/** A file a message carried. */
+export interface AgentAttachment {
+  id: string
+  kind: 'text' | 'image'
+  name: string
+  mime: string
+  /** Bytes as uploaded. */
+  size: number
+  /** Text files: characters of the text. */
+  chars: number
+}
+
+/** What the server accepts. The server checks them again; these only spare a round trip. */
+export const ATTACH_EXTENSIONS = ['.md', '.markdown', '.txt', '.csv', '.json', '.log']
+export const ATTACH_MAX_BYTES = 512 * 1024
+/** Files in a conversation, and in one message. */
+export const ATTACH_MAX_FILES = 8
+export const ATTACH_MAX_PER_MESSAGE = 4
+
+export function attachmentFromJson(j: Record<string, unknown>): AgentAttachment {
+  return {
+    id: text(j.id),
+    kind: j.kind === 'image' ? 'image' : 'text',
+    name: text(j.name),
+    mime: text(j.mime),
+    size: whole(j.size),
+    chars: whole(j.chars),
+  }
+}
+
 export interface StoredMessage {
   id: number
   role: 'user' | 'assistant'
   text: string
   tools: { id: string; label: string; status: 'running' | 'done' | 'error' }[]
   drafts: StoredDraft[]
+  attachments: AgentAttachment[]
   note: string
   error: string
   createdAt: number
@@ -286,6 +317,7 @@ export function conversationFromJson(j: Record<string, unknown>): AgentConversat
         draft: draftFromJson(d),
         phase: d.phase === 'accepted' ? 'accepted' : d.phase === 'discarded' ? 'discarded' : 'pending',
       })),
+      attachments: list(m.attachments).map(attachmentFromJson),
       note: text(m.note),
       error: text(m.error),
       createdAt: whole(m.created_at),

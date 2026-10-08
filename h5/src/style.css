@@ -330,7 +330,18 @@ mark { background: color-mix(in srgb, #d69e2e 40%, transparent); color: inherit;
 .bubble.bot .tool.error { color: var(--err); }
 .chip.pick { border: 0; cursor: pointer; min-height: 36px; padding: 0 14px; font: inherit; font-size: 14px; }
 .chip.pick:disabled { opacity: 0.45; cursor: default; }
-.agent-input { align-items: flex-end; z-index: 4; }
+.agent-input { align-items: flex-end; flex-wrap: wrap; z-index: 4; }
+.agent-input .attach { flex: none; align-self: flex-end; }
+.agent-input .attach:disabled { opacity: 0.4; }
+.hidden-file { display: none; }
+.agent-files { flex: 1 0 100%; display: flex; flex-direction: column; gap: 4px; }
+.file-row { display: flex; align-items: center; gap: 8px; padding: 4px 10px; border-radius: 8px; background: var(--primary-soft); font-size: 14px; }
+.file-info { flex: 1; min-width: 0; }
+.file-info .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.file-row.error { background: var(--err-soft); }
+.file-row .icon-btn { min-width: 28px; min-height: 28px; }
+.file-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.file-tag { font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--surface); color: var(--muted); }
 .agent-input .input { flex: 1; min-height: 44px; max-height: 140px; padding: 10px 12px; resize: none; }
 .draft { margin-top: 8px; }
 .draft.discarded { opacity: 0.5; }

@@ -5,7 +5,9 @@ import {
   conversationItemFromJson,
   type AgentConversationDetail,
   type AgentConversationPage,
+  attachmentFromJson,
   parseAgentSse,
+  type AgentAttachment,
   type AgentChatRequest,
   type AgentEvent,
   type AgentStatus,
@@ -28,12 +30,17 @@ export interface AgentApi {
   conversation(id: string): Promise<AgentConversationDetail>
   /** Also discards the drafts nobody decided on; questions already accepted stay. */
   deleteConversation(id: string): Promise<void>
+  /** Keeps a text file for the conversation until a message carries it. A refusal's reason is the error's message. */
+  uploadAttachment(conversationId: string, file: File): Promise<AgentAttachment>
+  /** Removes a file that has not been sent. */
+  deleteAttachment(id: string): Promise<void>
 }
 
 const OLD_SERVER = '服务器还不支持历史对话，请先更新服务端'
 
 function messageFor(status: number, detail: string): string {
   if (status === 401) return '访问令牌不对或还没设置。到「设置」填写和后台一致的访问令牌'
+  if (status === 413) return '文件太大了，请截取需要的部分再上传'
   if (status === 404) return 'AI 助手还没有启用。请先到后台「AI 与模型」，给「助手」角色绑定一个 Anthropic 协议的模型'
   if (status === 409) return '这场对话还在回答上一个问题，请等它结束'
   if (status === 429) return '同时进行的对话太多了，请等上一个结束'
@@ -56,7 +63,11 @@ export class HttpAgentApi implements AgentApi {
     private readonly base = '',
   ) {}
 
-  private async send(method: string, path: string, opts: { body?: unknown; signal?: AbortSignal; stream?: boolean } = {}) {
+  private async send(
+    method: string,
+    path: string,
+    opts: { body?: unknown; form?: FormData; signal?: AbortSignal; stream?: boolean } = {},
+  ) {
     const headers: Record<string, string> = { Authorization: `Bearer ${this.token()}` }
     if (opts.body !== undefined) headers['Content-Type'] = 'application/json'
     if (opts.stream) headers.Accept = 'text/event-stream'
@@ -72,7 +83,8 @@ export class HttpAgentApi implements AgentApi {
       res = await fetch(this.base + path, {
         method,
         headers,
-        body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+        // A form sets its own Content-Type, with the boundary.
+        body: opts.form ?? (opts.body === undefined ? undefined : JSON.stringify(opts.body)),
         signal: ctrl.signal,
       })
     } catch (e) {
@@ -133,6 +145,18 @@ export class HttpAgentApi implements AgentApi {
 
   async deleteConversation(id: string) {
     await this.history(() => this.send('DELETE', `/api/v1/agent/conversations/${encodeURIComponent(id)}`))
+  }
+
+  async uploadAttachment(conversationId: string, file: File): Promise<AgentAttachment> {
+    const form = new FormData()
+    form.set('conversation_id', conversationId)
+    form.set('file', file, file.name)
+    const res = await this.history(() => this.send('POST', '/api/v1/agent/attachments', { form }), '服务器还不支持上传文件，请先更新服务端')
+    return attachmentFromJson((await res.json()) as Record<string, unknown>)
+  }
+
+  async deleteAttachment(id: string) {
+    await this.history(() => this.send('DELETE', `/api/v1/agent/attachments/${encodeURIComponent(id)}`))
   }
 
   async *chat(request: AgentChatRequest, signal?: AbortSignal): AsyncGenerator<AgentEvent> {

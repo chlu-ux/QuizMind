@@ -4,6 +4,7 @@ import type { AgentApi } from '@/data/agentApi'
 import {
   AgentError,
   draftFromJson,
+  type AgentAttachment,
   type AgentChatRequest,
   type AgentConversationDetail,
   type AgentConversationPage,
@@ -243,6 +244,21 @@ export class FakeAgentApi implements AgentApi {
     this.deleted.push(id)
   }
 
+  /** Files "on the server": uploaded and not sent yet. */
+  uploads: { conversationId: string; name: string; id: string }[] = []
+  removed: string[] = []
+  /** Refuses the next upload with this. */
+  uploadError: Error | null = null
+  async uploadAttachment(conversationId: string, file: File): Promise<AgentAttachment> {
+    if (this.uploadError) throw this.uploadError
+    const id = `F${this.uploads.length + 1}`
+    this.uploads.push({ conversationId, name: file.name, id })
+    return { id, kind: 'text', name: file.name, mime: 'text/plain', size: file.size, chars: file.size }
+  }
+  async deleteAttachment(id: string) {
+    this.removed.push(id)
+  }
+
   async status() {
     if (this.statusError) throw this.statusError
     return this.statusValue
@@ -269,5 +285,5 @@ export class FakeAgentApi implements AgentApi {
 }
 
 export const storedMessage = (o: Partial<StoredMessage> & Pick<StoredMessage, 'role' | 'text'>): StoredMessage => ({
-  id: 1, tools: [], drafts: [], note: '', error: '', createdAt: 0, ...o,
+  id: 1, tools: [], drafts: [], attachments: [], note: '', error: '', createdAt: 0, ...o,
 })

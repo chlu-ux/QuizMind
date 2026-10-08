@@ -205,4 +205,47 @@ describe('HttpAgentApi', () => {
       'POST /api/v1/agent/drafts/D2/discard',
     ])
   })
+
+  it('uploads a file as a form with the conversation, and removes one', async () => {
+    const calls = stub((_url, init) =>
+      init.method === 'POST'
+        ? json({ id: 'F1', kind: 'text', name: '笔记.md', mime: 'text/markdown', size: 6, chars: 2 }, 201)
+        : new Response(null, { status: 204 }),
+    )
+    const a = await api.uploadAttachment('c1', new File(['# 笔记'], '笔记.md'))
+    expect(a).toEqual({ id: 'F1', kind: 'text', name: '笔记.md', mime: 'text/markdown', size: 6, chars: 2 })
+    expect(calls[0].url).toBe('/api/v1/agent/attachments')
+    const h = calls[0].init.headers as Record<string, string>
+    expect(h.Authorization).toBe('Bearer tok')
+    expect(h['Content-Type']).toBeUndefined() // the browser adds it, with the boundary
+    const form = calls[0].init.body as FormData
+    expect(form.get('conversation_id')).toBe('c1')
+    expect((form.get('file') as File).name).toBe('笔记.md')
+
+    await api.deleteAttachment('F/1')
+    expect(`${calls[1].init.method} ${calls[1].url}`).toBe('DELETE /api/v1/agent/attachments/F%2F1')
+  })
+
+  it("an upload's refusal is shown as the server worded it; an old server is named", async () => {
+    stub(() => json({ error: '一场对话最多 8 个文件' }, 400))
+    await expect(api.uploadAttachment('c1', new File(['x'], 'a.md'))).rejects.toMatchObject({ message: '一场对话最多 8 个文件', status: 400 })
+    stub(() => json({ error: 'not found' }, 404))
+    await expect(api.uploadAttachment('c1', new File(['x'], 'a.md'))).rejects.toMatchObject({ message: expect.stringContaining('更新服务端') })
+    stub(() => new Response('', { status: 413 }))
+    await expect(api.uploadAttachment('c1', new File(['x'], 'a.md'))).rejects.toMatchObject({ message: expect.stringContaining('太大') })
+  })
+
+  it('reads the files of a stored conversation', async () => {
+    stub(() =>
+      json({
+        id: 'c1', mode: 'learn', title: 't', messages: [
+          { id: 1, role: 'user', text: '看', attachments: [{ id: 'A1', kind: 'text', name: 'n.md', mime: 'text/markdown', size: 3, chars: 3 }] },
+          { id: 2, role: 'assistant', text: '好' },
+        ],
+      }),
+    )
+    const c = await api.conversation('c1')
+    expect(c.messages[0].attachments).toEqual([{ id: 'A1', kind: 'text', name: 'n.md', mime: 'text/markdown', size: 3, chars: 3 }])
+    expect(c.messages[1].attachments).toEqual([])
+  })
 })
