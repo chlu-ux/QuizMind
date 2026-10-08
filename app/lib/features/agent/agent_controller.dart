@@ -8,8 +8,9 @@ import '../../core/settings.dart';
 import '../../core/ulid.dart';
 import '../../data/agent_models.dart';
 
-/// Where a conversation starts: which assistant mode and what the learner is looking at. Two
-/// pages with equal args share one conversation while either is open.
+/// Where a conversation starts: which assistant mode and what the learner is looking at, or, with
+/// [conversationId], a conversation kept on the server. Two pages with equal args share one
+/// conversation while either is open.
 class AgentArgs {
   const AgentArgs({
     required this.mode,
@@ -17,6 +18,8 @@ class AgentArgs {
     this.lessonId = '',
     this.questionId = '',
     this.selected = const [],
+    this.conversationId = '',
+    this.fresh = 0,
   });
 
   /// learn | create
@@ -25,6 +28,13 @@ class AgentArgs {
   final String lessonId;
   final String questionId;
   final List<int> selected;
+
+  /// Set to read a stored conversation back and carry on in it; empty for a new one.
+  final String conversationId;
+
+  /// Makes otherwise equal args a different conversation ("new conversation" from a page that
+  /// has the same starting point).
+  final int fresh;
 
   bool get isCreate => mode == 'create';
 
@@ -35,6 +45,8 @@ class AgentArgs {
       other.bankId == bankId &&
       other.lessonId == lessonId &&
       other.questionId == questionId &&
+      other.conversationId == conversationId &&
+      other.fresh == fresh &&
       other.selected.length == selected.length &&
       [
         for (var i = 0; i < selected.length; i++)
@@ -43,7 +55,7 @@ class AgentArgs {
 
   @override
   int get hashCode =>
-      Object.hash(mode, bankId, lessonId, questionId, Object.hashAll(selected));
+      Object.hash(mode, bankId, lessonId, questionId, conversationId, fresh, Object.hashAll(selected));
 }
 
 class ToolRow {
@@ -125,6 +137,8 @@ class AgentState {
     this.messages = const [],
     this.drafts = const {},
     this.busy = false,
+    this.opening = false,
+    this.openError,
   });
 
   final List<AgentMsg> messages;
@@ -133,51 +147,27 @@ class AgentState {
   /// An answer is being written.
   final bool busy;
 
+  /// A stored conversation is being read from the server.
+  final bool opening;
+
+  /// Why a stored conversation could not be opened.
+  final String? openError;
+
   AgentState copyWith({
     List<AgentMsg>? messages,
     Map<String, DraftEntry>? drafts,
     bool? busy,
+    bool? opening,
+    String? openError,
+    bool clearOpenError = false,
   }) => AgentState(
     messages: messages ?? this.messages,
     drafts: drafts ?? this.drafts,
     busy: busy ?? this.busy,
+    opening: opening ?? this.opening,
+    openError: clearOpenError ? null : (openError ?? this.openError),
   );
 }
-
-/// The most the server takes in one request; older messages are dropped by the client.
-const agentMaxMessages = 30;
-const agentMaxChars = 24000;
-
-/// The text history to send. The server keeps nothing: the assistant looks things up again with its
-/// tools when it needs them, so only the words of the conversation are sent. Empty answers (a failed
-/// or stopped one) are left out, neighbours with the same role are joined so roles alternate, and the
-/// oldest messages are dropped until the request fits what the server accepts.
-List<AgentTurn> buildAgentHistory(Iterable<AgentMsg> messages) {
-  final turns = <AgentTurn>[];
-  for (final m in messages) {
-    final text = m.text.trim();
-    if (text.isEmpty) continue;
-    if (turns.isNotEmpty && turns.last.role == m.role) {
-      turns[turns.length - 1] = AgentTurn(
-        m.role,
-        '${turns.last.content}\n\n$text',
-      );
-    } else {
-      turns.add(AgentTurn(m.role, text));
-    }
-  }
-  int chars() => turns.fold(0, (n, t) => n + t.content.runes.length);
-  while (turns.length > agentMaxMessages ||
-      (turns.length > 1 && chars() > agentMaxChars)) {
-    turns.removeAt(0);
-  }
-  while (turns.isNotEmpty && turns.first.role != 'user') {
-    turns.removeAt(0);
-  }
-  return turns;
-}
-
-const _createConvKey = 'agent_create_conversation';
 
 final agentControllerProvider = NotifierProvider.autoDispose
     .family<AgentController, AgentState, AgentArgs>(AgentController.new);
@@ -193,56 +183,61 @@ class AgentController extends Notifier<AgentState> {
 
   @override
   AgentState build() {
-    // A question-writing conversation is remembered, so the drafts it made can be shown again when
-    // the page is reopened; a learning conversation starts fresh.
-    final prefs = ref.read(sharedPrefsProvider);
-    if (args.isCreate) {
-      var id = prefs.getString(_createConvKey);
-      if (id == null || id.isEmpty) {
-        id = newUlid();
-        unawaited(prefs.setString(_createConvKey, id));
-      }
-      _conversationId = id;
-      Future.microtask(_restoreDrafts);
-    } else {
-      _conversationId = newUlid();
-    }
     ref.onDispose(() => _cancel?.cancel());
-    return const AgentState();
+    if (args.conversationId.isEmpty) {
+      _conversationId = newUlid();
+      return const AgentState();
+    }
+    _conversationId = args.conversationId;
+    Future.microtask(_open);
+    return const AgentState(opening: true);
   }
 
   String get conversationId => _conversationId;
 
-  Future<void> _restoreDrafts() async {
+  /// Reads the stored conversation back: its messages, lookups, notes, and the cards as they stand.
+  Future<void> open() => _open();
+
+  Future<void> _open() async {
+    state = state.copyWith(opening: true, clearOpenError: true);
     try {
-      final drafts = await ref.read(agentApiProvider).drafts(_conversationId);
-      if (!ref.mounted || drafts.isEmpty) return;
-      final entries = {
-        ...state.drafts,
-        for (final d in drafts) d.id: state.drafts[d.id] ?? DraftEntry(d),
-      };
-      final note = AgentMsg(
-        id: _nextId++,
-        role: 'assistant',
-        text: '上次还有 ${drafts.length} 道草稿没有处理：',
-        draftIds: [for (final d in drafts) d.id],
-      );
-      state = state.copyWith(
-        messages: [...state.messages, note],
-        drafts: entries,
-      );
-    } catch (_) {
-      // Not being able to restore is not worth a message; the learner can simply ask again.
+      final stored = await ref.read(agentApiProvider).conversation(_conversationId);
+      if (!ref.mounted) return;
+      final drafts = <String, DraftEntry>{};
+      final messages = <AgentMsg>[];
+      for (final m in stored.messages) {
+        for (final d in m.drafts) {
+          drafts[d.draft.id] = DraftEntry(d.draft, phase: switch (d.phase) {
+            StoredDraftPhase.pending => DraftPhase.pending,
+            StoredDraftPhase.accepted => DraftPhase.accepted,
+            StoredDraftPhase.discarded => DraftPhase.discarded,
+          });
+        }
+        messages.add(AgentMsg(
+          id: _nextId++,
+          role: m.role,
+          text: m.text,
+          tools: [for (final t in m.tools) ToolRow(id: t.id, label: t.label, status: t.status)],
+          draftIds: [for (final d in m.drafts) d.draft.id],
+          error: m.error.isEmpty ? null : m.error,
+          note: m.note.isEmpty ? null : m.note,
+        ));
+      }
+      state = state.copyWith(messages: messages, drafts: drafts, opening: false);
+    } on AgentException catch (e) {
+      if (ref.mounted) state = state.copyWith(opening: false, openError: e.message);
+    } catch (e) {
+      if (ref.mounted) state = state.copyWith(opening: false, openError: '出错了：$e');
     }
   }
 
   /// Sends [text] and streams the answer in.
   Future<void> send(String text) async {
     final t = text.trim();
-    if (t.isEmpty || state.busy) return;
+    // Not while a stored conversation is being read, or when it could not be: its history is unknown.
+    if (t.isEmpty || state.busy || state.opening || state.openError != null) return;
     final user = AgentMsg(id: _nextId++, role: 'user', text: t);
     final bot = AgentMsg(id: _nextId++, role: 'assistant', streaming: true);
-    final history = buildAgentHistory([...state.messages, user]);
     state = state.copyWith(
       messages: [...state.messages, user, bot],
       busy: true,
@@ -254,7 +249,7 @@ class AgentController extends Notifier<AgentState> {
         conversationId: _conversationId,
         mode: args.mode,
         deviceId: ref.read(settingsProvider).deviceId,
-        messages: history,
+        message: t,
         context: AgentContext(
           bankId: args.bankId,
           lessonId: args.lessonId,

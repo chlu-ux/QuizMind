@@ -5,6 +5,7 @@ import '../../core/providers.dart';
 import '../../data/agent_models.dart';
 import '../settings/settings_page.dart';
 import 'agent_controller.dart';
+import 'agent_history_page.dart';
 import 'agent_links.dart';
 import 'agent_widgets.dart';
 
@@ -66,12 +67,13 @@ class _AgentPageState extends ConsumerState<AgentPage> {
     _scrollToEnd();
   }
 
-  void _scrollToEnd() {
+  /// Follows the answer as it is written, unless the learner scrolled up to read something;
+  /// [force] goes to the end whatever (a stored conversation that was just opened).
+  void _scrollToEnd({bool force = false}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_scroll.hasClients) return;
       final max = _scroll.position.maxScrollExtent;
-      // Follow the answer, unless the learner scrolled up to read something.
-      if (max - _scroll.offset < 160) _scroll.jumpTo(max);
+      if (force || max - _scroll.offset < 160) _scroll.jumpTo(max);
     });
   }
 
@@ -84,6 +86,28 @@ class _AgentPageState extends ConsumerState<AgentPage> {
       selection: TextSelection.collapsed(offset: prompt.length),
     );
     _focus.requestFocus();
+  }
+
+  void _openHistory() => Navigator.of(context).push(
+    MaterialPageRoute<void>(builder: (_) => const AgentHistoryPage()),
+  );
+
+  /// Leaves this conversation for a new one that starts from the same place.
+  void _newConversation() {
+    final a = args;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        builder: (_) => AgentPage(
+          args: AgentArgs(
+            mode: a.mode,
+            bankId: a.bankId,
+            lessonId: a.lessonId,
+            questionId: a.questionId,
+            fresh: DateTime.now().microsecondsSinceEpoch,
+          ),
+        ),
+      ),
+    );
   }
 
   void _openSettings() =>
@@ -133,11 +157,31 @@ class _AgentPageState extends ConsumerState<AgentPage> {
         : const AsyncValue<AgentStatus>.loading();
     final ready = hasToken && (status.value?.available ?? false);
     final banner = _banner(hasToken, status);
-    ref.listen(agentControllerProvider(args), (_, _) => _scrollToEnd());
+    ref.listen(
+      agentControllerProvider(args),
+      (prev, next) => _scrollToEnd(force: prev?.opening == true && !next.opening),
+    );
 
     final theme = Theme.of(context);
     return Scaffold(
-      appBar: AppBar(title: Text(args.isCreate ? 'AI 出题' : '问 AI')),
+      appBar: AppBar(
+        title: Text(args.isCreate ? 'AI 出题' : '问 AI'),
+        actions: [
+          if (state.messages.isNotEmpty)
+            IconButton(
+              key: const ValueKey('agent-new'),
+              tooltip: '新对话',
+              icon: const Icon(Icons.add_comment_outlined),
+              onPressed: _newConversation,
+            ),
+          IconButton(
+            key: const ValueKey('agent-history'),
+            tooltip: '历史对话',
+            icon: const Icon(Icons.history),
+            onPressed: _openHistory,
+          ),
+        ],
+      ),
       body: Column(
         children: [
           ?banner,
@@ -155,7 +199,37 @@ class _AgentPageState extends ConsumerState<AgentPage> {
             child: Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 760),
-                child: state.messages.isEmpty
+                child: state.opening
+                    ? const Center(
+                        key: ValueKey('agent-opening'),
+                        child: CircularProgressIndicator(),
+                      )
+                    : state.openError != null
+                    ? Center(
+                        key: const ValueKey('agent-open-error'),
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                state.openError!,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: theme.colorScheme.error),
+                              ),
+                              const SizedBox(height: 12),
+                              Wrap(
+                                spacing: 8,
+                                children: [
+                                  FilledButton(onPressed: controller.open, child: const Text('重试')),
+                                  OutlinedButton(onPressed: _openHistory, child: const Text('回到历史')),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    : state.messages.isEmpty
                     ? ListView(
                         padding: const EdgeInsets.all(20),
                         children: [
@@ -200,7 +274,7 @@ class _AgentPageState extends ConsumerState<AgentPage> {
             controller: _input,
             focusNode: _focus,
             busy: state.busy,
-            canSend: ready,
+            canSend: ready && !state.opening && state.openError == null,
             hint: ready
                 ? (args.isCreate ? '说说想出什么题' : '问点什么')
                 : (hasToken ? '连接助手后才能提问' : '先填写访问令牌'),

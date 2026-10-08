@@ -15,6 +15,7 @@ import 'package:quizmind_app/data/agent_models.dart';
 import 'package:quizmind_app/data/database.dart';
 import 'package:quizmind_app/features/agent/agent_controller.dart';
 import 'package:quizmind_app/features/agent/agent_links.dart';
+import 'package:quizmind_app/features/agent/agent_history_page.dart';
 import 'package:quizmind_app/features/agent/agent_page.dart';
 import 'package:quizmind_app/features/quiz/ai_explain_card.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -60,7 +61,32 @@ class FakeAgentApi implements AgentApi {
   bool holdOpen = false;
   Object? chatError;
 
-  List<AgentDraft> stored = [];
+  /// The conversations the server keeps, by id.
+  final history = <String, AgentConversationDetail>{};
+  final deleted = <String>[];
+  Object? listError;
+  var _clock = 0;
+
+  /// Puts a conversation on the "server", as one that was talked in before.
+  AgentConversationDetail keep(
+    String id, {
+    String mode = 'learn',
+    String? title,
+    String bankId = '',
+    String lessonId = '',
+    List<StoredMessage> messages = const [],
+  }) {
+    final pending = messages.fold<int>(0, (n, m) => n + m.drafts.where((d) => d.phase == StoredDraftPhase.pending).length);
+    final d = AgentConversationDetail(
+      AgentConversationItem(
+        id: id, mode: mode, title: title ?? '对话 $id', bankId: bankId, lessonId: lessonId,
+        messageCount: messages.length, pendingDrafts: pending, updatedAt: ++_clock,
+      ),
+      messages,
+    );
+    history[id] = d;
+    return d;
+  }
   final accepted = <String>[];
   final discarded = <String>[];
   Object? decideError;
@@ -90,7 +116,24 @@ class FakeAgentApi implements AgentApi {
   }
 
   @override
-  Future<List<AgentDraft>> drafts(String conversationId) async => stored;
+  Future<AgentConversationPage> conversations({int? before, int limit = 30}) async {
+    final e = listError;
+    if (e != null) throw e;
+    final rows = [for (final d in history.values) d.item]
+      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    final left = rows.where((c) => before == null || c.updatedAt < before).toList();
+    return AgentConversationPage(left.take(limit).toList(), hasMore: left.length > limit);
+  }
+
+  @override
+  Future<AgentConversationDetail> conversation(String id) async =>
+      history[id] ?? (throw AgentException('这场对话已经不存在了，可能被删除了', status: 404));
+
+  @override
+  Future<void> deleteConversation(String id) async {
+    if (history.remove(id) == null) throw AgentException('not found', status: 404);
+    deleted.add(id);
+  }
 
   @override
   Future<void> acceptDraft(String id) async {
@@ -194,62 +237,10 @@ void main() {
     });
   });
 
-  group('buildAgentHistory', () {
-    AgentMsg msg(int id, String role, String text) =>
-        AgentMsg(id: id, role: role, text: text);
-
-    test(
-      'leaves out empty answers and joins neighbours so roles alternate',
-      () {
-        final h = buildAgentHistory([
-          msg(1, 'user', 'a'),
-          msg(2, 'assistant', ''),
-          msg(3, 'user', 'b'),
-          msg(4, 'assistant', 'c'),
-          msg(5, 'user', 'd'),
-        ]);
-        expect(h.map((t) => t.role), ['user', 'assistant', 'user']);
-        expect(h.first.content, 'a\n\nb');
-      },
-    );
-
-    test('drops the oldest messages beyond the count and the length the server takes', () {
-      final many = [
-        for (var i = 0; i < 40; i++)
-          msg(i, i.isEven ? 'user' : 'assistant', 'm$i'),
-      ];
-      final h = buildAgentHistory(many);
-      expect(h.length, lessThanOrEqualTo(agentMaxMessages));
-      expect(h.first.role, 'user');
-      expect(h.last.content, 'm39'.isEmpty ? '' : h.last.content);
-
-      final long = [
-        msg(1, 'user', '长' * 20000),
-        msg(2, 'assistant', '答' * 5000),
-        msg(3, 'user', '问'),
-      ];
-      final trimmed = buildAgentHistory(long);
-      expect(
-        trimmed.fold<int>(0, (n, t) => n + t.content.runes.length),
-        lessThanOrEqualTo(agentMaxChars),
-      );
-      expect(trimmed.first.role, 'user');
-      expect(trimmed.last.content, '问');
-    });
-
-    test('never starts with the assistant', () {
-      final h = buildAgentHistory([
-        msg(1, 'assistant', '你好'),
-        msg(2, 'user', '问'),
-      ]);
-      expect(h.map((t) => t.role), ['user']);
-    });
-  });
-
   group('AgentController', () {
     const args = AgentArgs(mode: 'learn', bankId: 'b1', lessonId: 'L1');
 
-    test('sends the history with the context and builds the answer from the events', () async {
+    test('sends the new question with the context and builds the answer from the events', () async {
       final api = FakeAgentApi()
         ..events = [
           const AgentStarted('c'),
@@ -278,7 +269,7 @@ void main() {
       expect(req.context.bankId, 'b1');
       expect(req.context.lessonId, 'L1');
       expect(req.conversationId, controller.conversationId);
-      expect(req.messages.map((t) => t.content), ['讲讲读写锁']);
+      expect(req.message, '讲讲读写锁');
       expect(req.deviceId, isNotEmpty);
 
       final s = c.read(agentControllerProvider(args));
@@ -293,14 +284,11 @@ void main() {
         reason: 'one row per tool call, updated in place',
       );
 
-      // A second question carries the first exchange along as plain text.
+      // The server has the first exchange: a second question is only that question, in the same conversation.
       api.events = [const AgentDelta('好'), const AgentDone(stop: 'end_turn')];
       await controller.send('再讲讲');
-      expect(api.requests.last.messages.map((t) => '${t.role}:${t.content}'), [
-        'user:讲讲读写锁',
-        'assistant:读写锁允许多个读者。',
-        'user:再讲讲',
-      ]);
+      expect(api.requests.last.message, '再讲讲');
+      expect(api.requests.last.conversationId, req.conversationId);
     });
 
     test(
@@ -361,9 +349,7 @@ void main() {
       expect(bot.text, '半');
       expect(bot.error, '今日额度已用完');
       expect(c.read(agentControllerProvider(args)).busy, isFalse);
-      // The failed answer has no words, so the history stays alternating.
-      expect(api.requests.last.messages.map((t) => t.role), ['user']);
-      expect(api.requests.last.messages.single.content, '问\n\n再问');
+      expect(api.requests.last.message, '再问');
     });
 
     test('a tool that never reported back is not left spinning', () async {
@@ -488,49 +474,95 @@ void main() {
         expect(p, contains('读写锁的特点是什么？'));
       });
 
-      test('reopening a question-writing chat brings back the drafts that still wait', () async {
-        final api = FakeAgentApi()..stored = [draft('D7'), draft('D8')];
-        final c = await container(api);
-        c.listen(agentControllerProvider(create), (_, _) {});
-        await Future<void>.delayed(const Duration(milliseconds: 10));
-        final s = c.read(agentControllerProvider(create));
-        expect(s.messages.single.draftIds, ['D7', 'D8']);
-        expect(s.messages.single.text, contains('2 道草稿'));
-        expect(s.drafts.keys, containsAll(['D7', 'D8']));
-      });
-
-      test('the question-writing conversation id is remembered; a learning one is new each time', () async {
+      test('every conversation is new: no id is remembered between them', () async {
         final api = FakeAgentApi();
-        final p = await prefs();
-        final c1 = ProviderContainer(
-          overrides: [
-            sharedPrefsProvider.overrideWithValue(p),
-            agentApiProvider.overrideWithValue(api),
-          ],
-        );
-        final id1 = c1
-            .read(agentControllerProvider(create).notifier)
-            .conversationId;
-        final learn1 = c1
-            .read(agentControllerProvider(args).notifier)
-            .conversationId;
-        c1.dispose();
-        final c2 = ProviderContainer(
-          overrides: [
-            sharedPrefsProvider.overrideWithValue(p),
-            agentApiProvider.overrideWithValue(api),
-          ],
-        );
-        addTearDown(c2.dispose);
-        expect(
-          c2.read(agentControllerProvider(create).notifier).conversationId,
-          id1,
-        );
-        expect(
-          c2.read(agentControllerProvider(args).notifier).conversationId,
-          isNot(learn1),
-        );
+        final c = await container(api);
+        final a = c.read(agentControllerProvider(create).notifier).conversationId;
+        final b = c.read(agentControllerProvider(args).notifier).conversationId;
+        expect(a, isNot(b));
+        // The same starting point asked for as a new conversation is not the one that is open.
+        final fresh = AgentArgs(mode: 'create', bankId: 'b1', lessonId: 'L1', fresh: DateTime.now().microsecondsSinceEpoch);
+        expect(c.read(agentControllerProvider(fresh).notifier).conversationId, isNot(a));
       });
+    });
+  });
+
+  group('a stored conversation', () {
+    final stored = [
+      const StoredMessage(id: 1, role: 'user', text: '出 3 道题'),
+      StoredMessage(
+        id: 2,
+        role: 'assistant',
+        text: '出好了',
+        note: '已停止',
+        tools: const [StoredTool(id: 't', label: '读取讲义', status: 'done')],
+        drafts: [
+          StoredDraft(draft('D1'), StoredDraftPhase.accepted),
+          StoredDraft(draft('D2'), StoredDraftPhase.discarded),
+          StoredDraft(draft('D3'), StoredDraftPhase.pending),
+        ],
+      ),
+      const StoredMessage(id: 3, role: 'user', text: '再来'),
+      const StoredMessage(id: 4, role: 'assistant', text: '', error: '今日额度用完'),
+    ];
+    const open = AgentArgs(mode: 'create', bankId: 'b1', lessonId: 'L1', conversationId: 'old-1');
+
+    test('is read back: messages, lookups, notes, and the cards as they stood', () async {
+      final api = FakeAgentApi()..keep('old-1', mode: 'create', bankId: 'b1', lessonId: 'L1', messages: stored);
+      final c = await container(api);
+      c.listen(agentControllerProvider(open), (_, _) {});
+      expect(c.read(agentControllerProvider(open)).opening, isTrue);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      final s = c.read(agentControllerProvider(open));
+      expect(s.opening, isFalse);
+      expect(s.openError, isNull);
+      expect(c.read(agentControllerProvider(open).notifier).conversationId, 'old-1');
+      expect(s.messages.map((m) => [m.role, m.text]), [['user', '出 3 道题'], ['assistant', '出好了'], ['user', '再来'], ['assistant', '']]);
+      expect(s.messages[1].note, '已停止');
+      expect(s.messages[1].draftIds, ['D1', 'D2', 'D3']);
+      expect(s.messages[1].tools.single.label, '读取讲义');
+      expect(s.messages[3].error, '今日额度用完');
+      expect(s.messages[0].error, isNull);
+      expect({for (final e in s.drafts.entries) e.key: e.value.phase}, {
+        'D1': DraftPhase.accepted,
+        'D2': DraftPhase.discarded,
+        'D3': DraftPhase.pending,
+      });
+    });
+
+    test('carries on in the same conversation, and a card that waits can still be decided', () async {
+      final api = FakeAgentApi()
+        ..keep('old-1', mode: 'create', bankId: 'b1', lessonId: 'L1', messages: stored)
+        ..events = [const AgentDelta('好'), const AgentDone(stop: 'end_turn')];
+      final c = await container(api);
+      c.listen(agentControllerProvider(open), (_, _) {});
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      final controller = c.read(agentControllerProvider(open).notifier);
+      await controller.send('再出两道');
+      expect(api.requests.single.conversationId, 'old-1');
+      expect(api.requests.single.mode, 'create');
+      expect(api.requests.single.message, '再出两道');
+      expect(api.requests.single.context.lessonId, 'L1');
+      await controller.accept('D3');
+      expect(api.accepted, ['D3']);
+      expect(c.read(agentControllerProvider(open)).drafts['D3']!.phase, DraftPhase.accepted);
+    });
+
+    test('says why it could not be opened, and tries again', () async {
+      final api = FakeAgentApi();
+      final c = await container(api);
+      c.listen(agentControllerProvider(open), (_, _) {});
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      expect(c.read(agentControllerProvider(open)).openError, contains('已经不存在'));
+      // Asking is refused while it is not open.
+      final controller = c.read(agentControllerProvider(open).notifier);
+      await controller.send('问');
+      expect(api.requests, isEmpty);
+
+      api.keep('old-1', mode: 'create', bankId: 'b1', lessonId: 'L1', messages: stored);
+      await controller.open();
+      expect(c.read(agentControllerProvider(open)).openError, isNull);
+      expect(c.read(agentControllerProvider(open)).messages, hasLength(4));
     });
   });
 
@@ -587,7 +619,7 @@ void main() {
               conversationId: 'c',
               mode: 'create',
               deviceId: 'dev',
-              messages: const [AgentTurn('user', '出题')],
+              message: '出题',
               context: const AgentContext(
                 bankId: 'b',
                 lessonId: 'L',
@@ -605,9 +637,9 @@ void main() {
       final body = adapter.last!.data as Map<String, dynamic>;
       expect(body['mode'], 'create');
       expect(body['device_id'], 'dev');
-      expect(body['messages'], [
-        {'role': 'user', 'content': '出题'},
-      ]);
+      expect(body['conversation_id'], 'c');
+      expect(body['message'], {'text': '出题', 'attachment_ids': []});
+      expect(body.containsKey('messages'), isFalse);
       expect(body['context'], {
         'bank_id': 'b',
         'lesson_id': 'L',
@@ -634,7 +666,7 @@ void main() {
                     conversationId: 'c',
                     mode: 'learn',
                     deviceId: 'd',
-                    messages: [AgentTurn('user', 'q')],
+                    message: 'q',
                   ),
                 )
                 .toList();
@@ -657,23 +689,82 @@ void main() {
       },
     );
 
-    test('drafts, accept and discard use the right paths', () async {
-      final adapter = StubAdapter(
-        (o) => json(
-          o.path.contains('/drafts/')
-              ? {'id': 'D1', 'status': 'needs_review'}
-              : {
-                  'drafts': [draftJson],
-                },
-        ),
-      );
+    test('accept and discard use the right paths', () async {
+      final adapter = StubAdapter((_) => json({'id': 'D1', 'status': 'needs_review'}));
       final api = apiWith(adapter);
-      expect((await api.drafts('conv 1')).single.id, 'D1');
-      expect(adapter.last!.uri.queryParameters['conversation_id'], 'conv 1');
       await api.acceptDraft('D1');
       expect(adapter.last!.path, '/api/v1/agent/drafts/D1/accept');
       await api.discardDraft('D1');
       expect(adapter.last!.path, '/api/v1/agent/drafts/D1/discard');
+    });
+
+    test('lists conversations, reads one back and deletes one', () async {
+      final adapter = StubAdapter((o) {
+        if (o.method == 'DELETE') return json({});
+        if (o.path == '/api/v1/agent/conversations') {
+          return json({
+            'items': [
+              {'id': 'c1', 'mode': 'create', 'title': '出题', 'bank_id': 'b1', 'message_count': 2, 'pending_drafts': 1, 'updated_at': 99},
+            ],
+            'has_more': true,
+          });
+        }
+        return json({
+          'id': 'c 1', 'mode': 'create', 'title': '出题', 'bank_id': 'b1', 'lesson_id': 'L1',
+          'messages': [
+            {'id': 1, 'role': 'user', 'text': '出一道题'},
+            {
+              'id': 2, 'role': 'assistant', 'text': '好', 'note': '已停止',
+              'tools': [{'id': 't', 'label': '查找', 'status': 'done'}],
+              'drafts': [
+                {...draftJson, 'phase': 'accepted'},
+                {...draftJson, 'draft_id': 'D2', 'phase': 'weird'},
+              ],
+            },
+          ],
+        });
+      });
+      final api = apiWith(adapter);
+
+      final page = await api.conversations(before: 120, limit: 10);
+      expect(adapter.last!.uri.queryParameters, {'before': '120', 'limit': '10'});
+      expect(page.hasMore, isTrue);
+      expect(page.items.single.title, '出题');
+      expect(page.items.single.pendingDrafts, 1);
+      expect(page.items.single.bankId, 'b1');
+
+      final c = await api.conversation('c 1');
+      expect(adapter.last!.path, '/api/v1/agent/conversations/c%201');
+      expect(c.item.mode, 'create');
+      expect(c.item.lessonId, 'L1');
+      expect(c.messages[1].note, '已停止');
+      expect(c.messages[1].tools.single.status, 'done');
+      expect(c.messages[1].drafts.map((d) => [d.draft.id, d.phase]), [
+        ['D1', StoredDraftPhase.accepted],
+        ['D2', StoredDraftPhase.pending],
+      ]);
+
+      await api.deleteConversation('c 1');
+      expect(adapter.last!.method, 'DELETE');
+      expect(adapter.last!.path, '/api/v1/agent/conversations/c%201');
+    });
+
+    test('a server from before history says so, instead of "the assistant is not enabled"', () async {
+      final api = apiWith(StubAdapter((_) => json({'error': 'not found'}, status: 404)));
+      for (final call in [() => api.conversations(), () => api.deleteConversation('c')]) {
+        final e = await call().then<Object?>((_) => null, onError: (Object e) => e);
+        expect(e, isA<AgentException>().having((x) => x.message, 'message', allOf(contains('更新服务端'), isNot(contains('助手')))));
+      }
+    });
+
+    test('a missing conversation says so, and one that is being answered is a message', () async {
+      var status = 404;
+      final api = apiWith(StubAdapter((_) => json({'error': 'x'}, status: status)));
+      final missing = await api.conversation('c').then<Object?>((_) => null, onError: (Object e) => e);
+      expect(missing, isA<AgentException>().having((x) => x.message, 'message', contains('已经不存在')));
+      status = 409;
+      final busy = await api.deleteConversation('c').then<Object?>((_) => null, onError: (Object e) => e);
+      expect(busy, isA<AgentException>().having((x) => x.status, 'status', 409).having((x) => x.message, 'message', contains('还在回答')));
     });
   });
 
@@ -802,7 +893,7 @@ void main() {
         expect(find.text('我哪里比较薄弱？'), findsOneWidget);
         await tester.tap(find.text('我哪里比较薄弱？'));
         await tester.pumpAndSettle();
-        expect(api.requests.single.messages.single.content, '我哪里比较薄弱？');
+        expect(api.requests.single.message, '我哪里比较薄弱？');
         expect(
           find.text('我哪里比较薄弱？'),
           findsOneWidget,
@@ -964,6 +1055,184 @@ void main() {
           expect(find.textContaining('没有配置复核模型'), findsNothing);
         },
       );
+    });
+  });
+
+  group('history', () {
+    final banks = banksProvider.overrideWith(
+      (ref) => Stream.value([const Bank(id: 'b1', title: '软件设计师（中级）', description: '', questionCount: 3)]),
+    );
+
+    Future<void> pumpHistory(WidgetTester tester, FakeAgentApi api, {Map<String, Object> prefValues = const {'ai.token': 'tok'}, Widget? home}) async {
+      tester.view.physicalSize = const Size(900, 2400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final sp = await prefs(prefValues);
+      await tester.pumpWidget(
+        ProviderScope(
+          key: UniqueKey(), // a second pump in one test starts a new app, not an update of the first
+          overrides: [sharedPrefsProvider.overrideWithValue(sp), agentApiProvider.overrideWithValue(api), banks],
+          child: MaterialApp(home: home ?? const AgentHistoryPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    FakeAgentApi withOld() {
+      final api = FakeAgentApi()
+        ..keep('c-old', title: '死锁的四个条件', bankId: 'b1', messages: const [StoredMessage(id: 1, role: 'user', text: '死锁？')])
+        ..keep('c-make', mode: 'create', title: '用这一节出 3 道单选题', bankId: 'b1', lessonId: 'L1', messages: [
+          const StoredMessage(id: 1, role: 'user', text: '出 3 道题'),
+          StoredMessage(id: 2, role: 'assistant', text: '出好了：', tools: const [StoredTool(id: 't', label: '读取讲义「锁」', status: 'done')], drafts: [
+            StoredDraft(draft('D1'), StoredDraftPhase.pending),
+            StoredDraft(draft('D2'), StoredDraftPhase.accepted),
+            StoredDraft(draft('D3'), StoredDraftPhase.discarded),
+          ]),
+        ]);
+      return api;
+    }
+
+    testWidgets('lists the conversations newest first, with their kind, bank and waiting drafts', (tester) async {
+      await pumpHistory(tester, withOld());
+      final titles = tester.widgetList<ListTile>(find.byType(ListTile)).map((t) => (t.title as Text).data).toList();
+      expect(titles, ['用这一节出 3 道单选题', '死锁的四个条件']);
+      final first = tester.widget<ListTile>(find.byType(ListTile).first);
+      final sub = (first.subtitle as Text).data!;
+      expect(sub, contains('出题'));
+      expect(sub, contains('软件设计师（中级）'));
+      expect(sub, contains('1 道草稿待处理'));
+      final second = (tester.widget<ListTile>(find.byType(ListTile).last).subtitle as Text).data!;
+      expect(second, contains('问 AI'));
+      expect(second, isNot(contains('待处理')));
+    });
+
+    testWidgets('says so when there is nothing, no token, or the server cannot be reached (and tries again)', (tester) async {
+      await pumpHistory(tester, FakeAgentApi());
+      expect(find.byKey(const ValueKey('history-empty')), findsOneWidget);
+
+      await pumpHistory(tester, FakeAgentApi(), prefValues: const {});
+      expect(find.byKey(const ValueKey('history-no-token')), findsOneWidget);
+
+      final api = FakeAgentApi()
+        ..keep('c-1')
+        ..listError = AgentException('连不上服务器，请确认地址正确并已联网');
+      await pumpHistory(tester, api);
+      expect(find.byKey(const ValueKey('history-error')), findsOneWidget);
+      expect(find.textContaining('连不上服务器'), findsOneWidget);
+      api.listError = null;
+      await tester.tap(find.text('重试'));
+      await tester.pumpAndSettle();
+      expect(find.byType(ListTile), findsOneWidget);
+    });
+
+    testWidgets('loads more when there are more than a page', (tester) async {
+      final api = FakeAgentApi();
+      for (var i = 1; i <= 35; i++) {
+        api.keep('c-$i', title: '第 $i 场');
+      }
+      await pumpHistory(tester, api);
+      await tester.scrollUntilVisible(find.byKey(const ValueKey('history-more')), 300, scrollable: find.byType(Scrollable).first);
+      await tester.tap(find.byKey(const ValueKey('history-more')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('history-more')), findsNothing);
+      await tester.scrollUntilVisible(find.text('第 1 场'), 300, scrollable: find.byType(Scrollable).first);
+      expect(find.text('第 1 场'), findsOneWidget);
+    });
+
+    testWidgets('deletes a conversation after asking, and keeps it when the learner says no', (tester) async {
+      final api = withOld();
+      await pumpHistory(tester, api);
+      await tester.tap(find.byTooltip('删除对话').first);
+      await tester.pumpAndSettle();
+      expect(find.textContaining('1 道没处理的草稿也会被丢弃'), findsOneWidget);
+      await tester.tap(find.text('取消'));
+      await tester.pumpAndSettle();
+      expect(api.deleted, isEmpty);
+      expect(find.byType(ListTile), findsNWidgets(2));
+
+      await tester.tap(find.byTooltip('删除对话').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('删除'));
+      await tester.pumpAndSettle();
+      expect(api.deleted, ['c-make']);
+      expect(find.byType(ListTile), findsOneWidget);
+    });
+
+    testWidgets('opens a conversation: its messages, lookups and cards as they stood; it carries on', (tester) async {
+      final api = withOld()..events = [const AgentDelta('好'), const AgentDone(stop: 'end_turn')];
+      await pumpHistory(tester, api);
+      await tester.tap(find.text('用这一节出 3 道单选题'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('AI 出题'), findsOneWidget);
+      expect(find.text('出 3 道题'), findsOneWidget);
+      expect(find.text('读取讲义「锁」'), findsOneWidget);
+      expect(find.text('采纳'), findsOneWidget, reason: 'only the card that still waits has buttons');
+      expect(find.text('已提交审核，通过后会出现在题库里'), findsOneWidget);
+      expect(find.text('已丢弃'), findsOneWidget);
+
+      await tester.enterText(find.byKey(const ValueKey('agent-input')), '再出一道');
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('agent-send')));
+      await tester.pumpAndSettle();
+      final req = api.requests.single;
+      expect(req.conversationId, 'c-make');
+      expect(req.mode, 'create');
+      expect(req.message, '再出一道');
+      expect(req.context.bankId, 'b1');
+      expect(req.context.lessonId, 'L1');
+    });
+
+    testWidgets('a stored conversation opens at its end, where the last answer is', (tester) async {
+      final api = FakeAgentApi()
+        ..keep('long', messages: [
+          for (var i = 0; i < 12; i++) ...[
+            StoredMessage(id: 2 * i + 1, role: 'user', text: '问题 $i'),
+            StoredMessage(id: 2 * i + 2, role: 'assistant', text: '回答 $i\n\n${List.filled(60, '很长的一段话。').join()}'),
+          ],
+        ]);
+      await pumpHistory(tester, api, home: const AgentPage(args: AgentArgs(mode: 'learn', conversationId: 'long')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('回答 11'), findsOneWidget, reason: 'the last answer is on screen');
+      expect(find.text('问题 0'), findsNothing, reason: 'and the start is not');
+    });
+
+    testWidgets('says so when the conversation is gone, with a way back', (tester) async {
+      final api = FakeAgentApi();
+      await pumpHistory(
+        tester,
+        api,
+        home: const AgentPage(args: AgentArgs(mode: 'learn', conversationId: 'nope')),
+      );
+      expect(find.byKey(const ValueKey('agent-open-error')), findsOneWidget);
+      expect(find.textContaining('已经不存在'), findsOneWidget);
+      expect(find.text('回到历史'), findsOneWidget);
+    });
+
+    testWidgets('the chat page links to the history, and "new conversation" starts over from the same place', (tester) async {
+      final api = FakeAgentApi()..events = [const AgentDelta('好'), const AgentDone(stop: 'end_turn')];
+      await pumpHistory(
+        tester,
+        api,
+        home: const AgentPage(args: AgentArgs(mode: 'learn', bankId: 'b1', lessonId: 'L1')),
+      );
+      expect(find.byKey(const ValueKey('agent-new')), findsNothing, reason: 'nothing to leave yet');
+      await tester.tap(find.text('讲一下这一节'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('agent-new')), findsOneWidget);
+
+      await tester.tap(find.byKey(const ValueKey('agent-new')));
+      await tester.pumpAndSettle();
+      expect(find.text('可以问我讲义里的内容、你的薄弱点，或者让我出题考你。'), findsOneWidget);
+      await tester.tap(find.text('讲一下这一节'));
+      await tester.pumpAndSettle();
+      expect(api.requests, hasLength(2));
+      expect(api.requests[1].conversationId, isNot(api.requests[0].conversationId));
+      expect(api.requests[1].context.lessonId, 'L1');
+
+      await tester.tap(find.byKey(const ValueKey('agent-history')));
+      await tester.pumpAndSettle();
+      expect(find.text('历史对话'), findsOneWidget);
     });
   });
 

@@ -82,17 +82,6 @@ class AgentDraft {
       );
 }
 
-/// One message of the history sent with a request. The server keeps no history: only the text is
-/// sent, and the assistant looks things up again with its tools when it needs them.
-class AgentTurn {
-  const AgentTurn(this.role, this.content);
-
-  final String role; // user | assistant
-  final String content;
-
-  Map<String, dynamic> toJson() => {'role': role, 'content': content};
-}
-
 /// What the learner is looking at, which the server puts into the assistant's instructions.
 class AgentContext {
   const AgentContext({this.bankId = '', this.lessonId = '', this.questionId = '', this.selected = const []});
@@ -116,25 +105,152 @@ class AgentChatRequest {
     required this.conversationId,
     required this.mode,
     required this.deviceId,
-    required this.messages,
+    required this.message,
+    this.attachmentIds = const [],
     this.context = const AgentContext(),
   });
 
+  /// Chosen by the app; the server keeps the conversation under it and reads the history itself.
   final String conversationId;
 
   /// learn | create
   final String mode;
   final String deviceId;
-  final List<AgentTurn> messages;
+  /// The new question; the earlier ones are on the server.
+  final String message;
+  final List<String> attachmentIds;
   final AgentContext context;
 
   Map<String, dynamic> toJson() => {
         'conversation_id': conversationId,
         'mode': mode,
         'device_id': deviceId,
-        'messages': [for (final m in messages) m.toJson()],
+        'message': {'text': message, 'attachment_ids': attachmentIds},
         'context': context.toJson(),
       };
+}
+
+/// What became of a draft: still waiting, sent to review, or thrown away.
+enum StoredDraftPhase { pending, accepted, discarded }
+
+class StoredDraft {
+  const StoredDraft(this.draft, this.phase);
+
+  final AgentDraft draft;
+  final StoredDraftPhase phase;
+}
+
+class StoredTool {
+  const StoredTool({required this.id, required this.label, required this.status});
+
+  final String id;
+  final String label;
+
+  /// running | done | error
+  final String status;
+}
+
+class StoredMessage {
+  const StoredMessage({
+    required this.id,
+    required this.role,
+    required this.text,
+    this.tools = const [],
+    this.drafts = const [],
+    this.note = '',
+    this.error = '',
+  });
+
+  final int id;
+  final String role; // user | assistant
+  final String text;
+  final List<StoredTool> tools;
+  final List<StoredDraft> drafts;
+  final String note;
+  final String error;
+}
+
+/// A conversation as the history list shows it.
+class AgentConversationItem {
+  const AgentConversationItem({
+    required this.id,
+    required this.mode,
+    required this.title,
+    this.bankId = '',
+    this.lessonId = '',
+    this.questionId = '',
+    this.messageCount = 0,
+    this.pendingDrafts = 0,
+    this.updatedAt = 0,
+  });
+
+  final String id;
+  final String mode; // learn | create
+  final String title;
+  final String bankId;
+  final String lessonId;
+  final String questionId;
+  final int messageCount;
+
+  /// Drafts nobody has decided on yet.
+  final int pendingDrafts;
+  final int updatedAt;
+
+  factory AgentConversationItem.fromJson(Map<String, dynamic> j) => AgentConversationItem(
+        id: (j['id'] as String?) ?? '',
+        mode: j['mode'] == 'create' ? 'create' : 'learn',
+        title: (j['title'] as String?) ?? '',
+        bankId: (j['bank_id'] as String?) ?? '',
+        lessonId: (j['lesson_id'] as String?) ?? '',
+        questionId: (j['question_id'] as String?) ?? '',
+        messageCount: (j['message_count'] as num?)?.toInt() ?? 0,
+        pendingDrafts: (j['pending_drafts'] as num?)?.toInt() ?? 0,
+        updatedAt: (j['updated_at'] as num?)?.toInt() ?? 0,
+      );
+}
+
+class AgentConversationPage {
+  const AgentConversationPage(this.items, {this.hasMore = false});
+
+  final List<AgentConversationItem> items;
+  final bool hasMore;
+}
+
+/// A whole conversation, to show it again and carry on.
+class AgentConversationDetail {
+  const AgentConversationDetail(this.item, this.messages);
+
+  final AgentConversationItem item;
+  final List<StoredMessage> messages;
+
+  factory AgentConversationDetail.fromJson(Map<String, dynamic> j) {
+    List<Map<String, dynamic>> maps(Object? v) =>
+        [for (final x in (v as List? ?? const [])) if (x is Map<String, dynamic>) x];
+    StoredDraftPhase phase(Object? v) => switch (v) {
+          'accepted' => StoredDraftPhase.accepted,
+          'discarded' => StoredDraftPhase.discarded,
+          _ => StoredDraftPhase.pending,
+        };
+    return AgentConversationDetail(AgentConversationItem.fromJson(j), [
+      for (final m in maps(j['messages']))
+        StoredMessage(
+          id: (m['id'] as num?)?.toInt() ?? 0,
+          role: m['role'] == 'assistant' ? 'assistant' : 'user',
+          text: (m['text'] as String?) ?? '',
+          note: (m['note'] as String?) ?? '',
+          error: (m['error'] as String?) ?? '',
+          tools: [
+            for (final t in maps(m['tools']))
+              StoredTool(
+                id: (t['id'] as String?) ?? '',
+                label: (t['label'] as String?) ?? '',
+                status: t['status'] == 'error' ? 'error' : t['status'] == 'running' ? 'running' : 'done',
+              ),
+          ],
+          drafts: [for (final d in maps(m['drafts'])) StoredDraft(AgentDraft.fromJson(d), phase(d['phase']))],
+        ),
+    ]);
+  }
 }
 
 /// Events of POST /agent/chat, in the order they arrive.

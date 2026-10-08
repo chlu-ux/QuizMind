@@ -16,8 +16,13 @@ abstract class AgentApi {
   /// arrive as an [AgentErrorEvent].
   Stream<AgentEvent> chat(AgentChatRequest request, {CancelToken? cancel});
 
-  /// The conversation's drafts that still wait for a decision.
-  Future<List<AgentDraft>> drafts(String conversationId);
+  /// The history of conversations, newest first; [before] is the `updatedAt` of the last one of the previous page.
+  Future<AgentConversationPage> conversations({int? before, int limit = 30});
+
+  Future<AgentConversationDetail> conversation(String id);
+
+  /// Also discards the drafts nobody decided on; questions already accepted stay.
+  Future<void> deleteConversation(String id);
 
   /// Sends a draft to the review queue (it is not published until a reviewer approves it).
   Future<void> acceptDraft(String id);
@@ -59,10 +64,47 @@ class HttpAgentApi implements AgentApi {
       );
 
   @override
-  Future<List<AgentDraft>> drafts(String conversationId) => _call(
-        () => _dio.get('/api/v1/agent/drafts', queryParameters: {'conversation_id': conversationId}, options: _options()),
-        (d) => [for (final x in ((d as Map)['drafts'] as List? ?? const [])) AgentDraft.fromJson(x as Map<String, dynamic>)],
+  Future<AgentConversationPage> conversations({int? before, int limit = 30}) => _history(
+        () => _call(
+          () => _dio.get('/api/v1/agent/conversations',
+              queryParameters: {'before': ?before, 'limit': limit}, options: _options()),
+          (d) {
+            final m = d as Map<String, dynamic>;
+            return AgentConversationPage(
+              [for (final x in (m['items'] as List? ?? const [])) AgentConversationItem.fromJson(x as Map<String, dynamic>)],
+              hasMore: m['has_more'] == true,
+            );
+          },
+        ),
       );
+
+  /// The history calls answer 404 for a server from before they existed; that is not "no assistant".
+  Future<T> _history<T>(Future<T> Function() call) async {
+    try {
+      return await call();
+    } on AgentException catch (e) {
+      if (e.status == 404) throw AgentException('服务器还不支持历史对话，请先更新服务端', status: 404);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<AgentConversationDetail> conversation(String id) async {
+    try {
+      return await _call(
+        () => _dio.get('/api/v1/agent/conversations/${Uri.encodeComponent(id)}', options: _options()),
+        (d) => AgentConversationDetail.fromJson(d as Map<String, dynamic>),
+      );
+    } on AgentException catch (e) {
+      // Here a 404 is this conversation (or a server too old to keep any), not a missing assistant.
+      if (e.status == 404) throw AgentException('这场对话已经不存在了，可能被删除了，或服务器还不支持历史对话', status: 404);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteConversation(String id) => _history(() => _call(
+      () => _dio.delete('/api/v1/agent/conversations/${Uri.encodeComponent(id)}', options: _options()), (_) {}));
 
   @override
   Future<void> acceptDraft(String id) =>
@@ -89,9 +131,18 @@ class HttpAgentApi implements AgentApi {
       throw await _translate(e);
     }
     try {
-      yield* parseAgentSse(res.data!.stream);
+      // Not `yield*`: that forwards the stream's errors to the caller without passing through this
+      // try, so a cancelled or dropped connection would reach the page as a raw DioException.
+      await for (final event in parseAgentSse(res.data!.stream)) {
+        yield event;
+      }
     } on DioException catch (e) {
       throw await _translate(e);
+    } on AgentException {
+      rethrow;
+    } catch (_) {
+      // The connection dropped while the answer was coming (a plain HttpException / SocketException).
+      throw AgentException('网络中断了，请重试');
     }
   }
 
@@ -102,6 +153,7 @@ class HttpAgentApi implements AgentApi {
       final detail = await _errorText(e.response!.data);
       final message = switch (status) {
         401 => '访问令牌不对或还没设置。到「设置 → AI 解读」填写和后台一致的访问令牌',
+        409 => '这场对话还在回答上一个问题，请等它结束',
         404 => 'AI 助手还没有启用。请先到后台「AI 与模型」，给「助手」角色绑定一个 Anthropic 协议的模型',
         429 => '同时进行的对话太多了，请等上一个结束',
         _ when status >= 500 => '服务器出错了，请稍后再试',
