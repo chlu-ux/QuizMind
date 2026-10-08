@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { UsageRow } from '@/api/types'
-import { cacheRate, dayKey, filterRows, firstDay, todayAndMonth, totalsOf } from './usage'
+import { agentSourceLabel, callSubject, cacheRate, dayKey, filterRows, firstDay, todayAndMonth, totalsOf } from './usage'
 
 const row = (over: Partial<UsageRow>): UsageRow => ({
   day: '2026-10-08', source: 'server', role: 'generator', model: 'm', calls: 1,
@@ -43,5 +43,30 @@ describe('usage helpers', () => {
   it('computes the cache hit rate without dividing by zero', () => {
     expect(cacheRate(totalsOf([]))).toBe(0)
     expect(cacheRate(totalsOf([row({ input_tokens: 300, cached_tokens: 100 })]))).toBe(25)
+  })
+})
+
+describe('callSubject', () => {
+  const base = { role: 'explain' as const, question_id: '', question_stem: '', job_id: '' }
+
+  it('names the conversation of an assistant call, since there is no question behind it', () => {
+    expect(callSubject({ ...base, role: 'agent', question_id: '01JABCDEF123456' })).toEqual({ kind: 'conversation', label: '对话 123456' })
+  })
+
+  it('shows the question for the others, then the job, then nothing', () => {
+    expect(callSubject({ ...base, question_id: 'q1', question_stem: '读写锁？' })).toEqual({ kind: 'question', label: '读写锁？' })
+    expect(callSubject({ ...base, role: 'generator', job_id: '01JOB000999' })).toEqual({ kind: 'job', label: '任务 000999' })
+    expect(callSubject(base)).toEqual({ kind: 'none', label: '-' })
+  })
+
+  it('an assistant call without a conversation falls through like any other', () => {
+    expect(callSubject({ ...base, role: 'agent' })).toEqual({ kind: 'none', label: '-' })
+  })
+})
+
+describe('agentSourceLabel', () => {
+  it('says which conversation wrote the question and whether a second model checked it', () => {
+    expect(agentSourceLabel({ conversation_id: '01JCONV123456', verified: true })).toBe('助手草稿 · 对话 123456 · 经独立复核')
+    expect(agentSourceLabel({ conversation_id: '01JCONV123456', verified: false })).toBe('助手草稿 · 对话 123456 · 未经独立复核')
   })
 })

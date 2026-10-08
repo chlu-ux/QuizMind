@@ -136,7 +136,7 @@ async function testModel(m: LlmModel) {
 
 const roleRows: { role: LlmRole; label: string; hint: string; protocol?: Protocol }[] = [
   { role: 'generator', label: '出题', hint: '把讲义生成题目的模型。' },
-  { role: 'validator', label: '复核', hint: '独立答题、检查题目对不对（预留，暂未启用）。' },
+  { role: 'validator', label: '复核', hint: '助手出题时，用它不看答案独立做一遍；答案和助手给的不一致的题会被拒绝。没有指定则不复核。' },
   { role: 'agent', label: '学习 / 出题助手', hint: '对话式助手，需要 Anthropic 协议（可以是兼容 Anthropic 接口的第三方）。', protocol: 'anthropic' },
   { role: 'explain', label: 'AI 解读', hint: 'App 里的「AI 解读」直接调用它，需要 OpenAI 兼容接口。启用与令牌在「AI 解读」页设置。', protocol: 'openai' },
 ]

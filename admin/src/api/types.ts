@@ -35,7 +35,16 @@ export interface QuestionFlag {
   resolved_at: number | null
 }
 
+/** Where a question written by the study assistant came from. */
+export interface AgentSource {
+  conversation_id: string
+  /** A second model answered it independently and agreed. */
+  verified: boolean
+}
+
 export interface QuestionDetail extends Question {
+  /** Set for questions the study assistant wrote, whatever their status now. */
+  agent: AgentSource | null
   chunk_text: string
   heading_path: string
   document_id: string

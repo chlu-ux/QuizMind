@@ -55,7 +55,7 @@ onMounted(load)
       <el-form-item label="启用"><el-switch v-model="form.enabled" /></el-form-item>
       <el-form-item label="访问令牌">
         <el-input v-model="form.app_token" placeholder="随便设一个简单的，至少 4 个字符" autocomplete="off" />
-        <div class="hint">在 App 设置页输入同一个令牌，才能拉取配置。留空则没有 App 能拉取。</div>
+        <div class="hint">在 App 或 H5 的设置页输入同一个令牌，才能拉取配置、上报用量和使用 AI 助手。留空则都不能用。</div>
       </el-form-item>
 
       <el-form-item>

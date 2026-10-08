@@ -5,7 +5,7 @@ import { api, errorMessage } from '@/api/client'
 import type { UsageCall } from '@/api/types'
 import { plainText } from '@/utils/media'
 import { formatNumber, formatTime } from '@/utils/format'
-import { ROLE_LABEL, SOURCE_LABEL } from '@/utils/usage'
+import { ROLE_LABEL, SOURCE_LABEL, callSubject } from '@/utils/usage'
 
 const props = defineProps<{ days: number; source: string; role: string }>()
 
@@ -78,11 +78,13 @@ const who = (c: UsageCall) => (c.source === 'client' ? `设备 ${c.device_id.sli
       </el-table-column>
       <el-table-column label="题目" min-width="240">
         <template #default="{ row }">
-          <el-tooltip v-if="row.question_stem" :content="`${row.bank_title}：${plainText(row.question_stem)}`" placement="top-start">
+          <el-tooltip v-if="callSubject(row).kind === 'question'" :content="`${row.bank_title}：${plainText(row.question_stem)}`" placement="top-start">
             <span class="stem">{{ plainText(row.question_stem) }}</span>
           </el-tooltip>
-          <span v-else-if="row.job_id" class="muted">任务 {{ row.job_id.slice(-6) }}</span>
-          <span v-else class="muted">-</span>
+          <el-tooltip v-else-if="callSubject(row).kind === 'conversation'" :content="`助手对话 ${row.question_id}`" placement="top-start">
+            <span class="muted">{{ callSubject(row).label }}</span>
+          </el-tooltip>
+          <span v-else class="muted">{{ callSubject(row).label }}</span>
         </template>
       </el-table-column>
     </el-table>

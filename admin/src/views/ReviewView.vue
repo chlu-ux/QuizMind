@@ -11,6 +11,7 @@ import StatusTag from '@/components/StatusTag.vue'
 import EditQuestionDialog from '@/components/EditQuestionDialog.vue'
 import { FLAG_REASON_LABEL, QUESTION_STATUS_LABEL, TYPE_LABEL, formatTime } from '@/utils/format'
 import { plainText } from '@/utils/media'
+import { agentSourceLabel } from '@/utils/usage'
 import { debounce } from '@/utils/debounce'
 
 const route = useRoute()
@@ -392,6 +393,7 @@ onBeforeUnmount(() => {
           <h4>原文依据 <span class="muted path">{{ detail.heading_path }}</span></h4>
           <SourceExcerpt :text="detail.chunk_text" :quote="detail.source_quote" />
 
+          <div v-if="detail.agent" class="foot muted" data-testid="agent-source">{{ agentSourceLabel(detail.agent) }}</div>
           <div class="foot muted">
             {{ detail.gen_model }} · {{ detail.gen_prompt_version }}
             <template v-if="detail.sync_seq !== null"> · sync #{{ detail.sync_seq }}</template>

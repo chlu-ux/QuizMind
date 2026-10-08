@@ -1,4 +1,4 @@
-import type { UsageRow } from '@/api/types'
+import type { AgentSource, UsageCall, UsageRow } from '@/api/types'
 
 export const ROLE_LABEL: Record<string, string> = {
   generator: '出题',
@@ -78,4 +78,20 @@ export function todayAndMonth(rows: UsageRow[], now: Date): { today: number; mon
 export function cacheRate(t: UsageTotals): number {
   const denom = t.input + t.cached
   return denom ? Math.round((t.cached / denom) * 100) : 0
+}
+
+/**
+ * What a call was about, for the 题目 column: the assistant's calls carry a conversation id where
+ * the others carry a question id.
+ */
+export function callSubject(c: Pick<UsageCall, 'role' | 'question_id' | 'question_stem' | 'job_id'>): { kind: 'question' | 'conversation' | 'job' | 'none'; label: string } {
+  if (c.role === 'agent' && c.question_id) return { kind: 'conversation', label: `对话 ${c.question_id.slice(-6)}` }
+  if (c.question_stem) return { kind: 'question', label: c.question_stem }
+  if (c.job_id) return { kind: 'job', label: `任务 ${c.job_id.slice(-6)}` }
+  return { kind: 'none', label: '-' }
+}
+
+/** The review page's line about a question the assistant wrote. */
+export function agentSourceLabel(a: AgentSource): string {
+  return `助手草稿 · 对话 ${a.conversation_id.slice(-6)} · ${a.verified ? '经独立复核' : '未经独立复核'}`
 }
