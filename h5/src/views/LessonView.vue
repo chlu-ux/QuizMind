@@ -69,10 +69,10 @@ async function practise() {
   void startQuiz(`本节 · ${lessonTitle(l)}`, orderQuestions(questions.value, 'random'))
 }
 
-/** Opens the assistant on this section: to ask about it, or to have questions written from it. */
-function openAgent(mode: 'learn' | 'create') {
-  const args = agentArgs({ mode, bankId: props.id, lessonId: props.lessonId })
-  void router.push({ path: '/agent', query: agentQuery(args, mode === 'create' ? '用这一节出 3 道单选题' : '') })
+/** Opens the assistant on this section: to ask about it, or (with [text]) to have questions written from it. */
+function openAgent(text = '') {
+  const args = agentArgs({ bankId: props.id, lessonId: props.lessonId })
+  void router.push({ path: '/agent', query: agentQuery(args, text) })
 }
 
 async function go(to: Lesson | null) {
@@ -95,8 +95,8 @@ const state = computed(() => STATE_LABEL[progress.value?.state ?? 'new'])
     <button class="icon-btn" aria-label="返回" @click="router.back()">‹</button>
     <h1 class="clamp">{{ lesson ? lessonTitle(lesson) : '讲义' }}</h1>
     <template v-if="lesson">
-      <button class="icon-btn" aria-label="问 AI" data-testid="lesson-ask-ai" @click="openAgent('learn')">✨</button>
-      <button class="icon-btn" aria-label="用这一节出题" data-testid="lesson-ai-questions" @click="openAgent('create')">✏️</button>
+      <button class="icon-btn" aria-label="问 AI" data-testid="lesson-ask-ai" @click="openAgent()">✨</button>
+      <button class="icon-btn" aria-label="用这一节出题" data-testid="lesson-ai-questions" @click="openAgent('用这一节出 3 道单选题')">✏️</button>
     </template>
     <button v-if="lesson" class="flag-btn" :class="{ on: cover }" :aria-pressed="cover" @click="cover = !cover">
       {{ cover ? '显示全部' : '背诵遮盖' }}

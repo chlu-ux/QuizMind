@@ -49,7 +49,6 @@ async function remove(c: AgentConversationItem) {
   }
 }
 
-const modeLabel = (c: AgentConversationItem) => (c.mode === 'create' ? '出题' : '问 AI')
 </script>
 
 <template>
@@ -68,7 +67,6 @@ const modeLabel = (c: AgentConversationItem) => (c.mode === 'create' ? '出题' 
       <button class="plain grow" @click="open(c)">
         <span class="title clamp">{{ c.title || '（没有标题）' }}</span>
         <span class="muted small history-meta">
-          <span class="chip">{{ modeLabel(c) }}</span>
           <span v-if="bankTitles.get(c.bankId)" class="clamp">{{ bankTitles.get(c.bankId) }}</span>
           <span>{{ formatTime(c.updatedAt) }}</span>
           <span v-if="c.pendingDrafts" class="pending">{{ c.pendingDrafts }} 道草稿待处理</span>

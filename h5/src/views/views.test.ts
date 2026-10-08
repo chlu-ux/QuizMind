@@ -5,7 +5,7 @@ import router from '@/router'
 import { getRepo, toast } from '@/core/app'
 import { setAgentApi, setAgentToken } from '@/core/agent'
 import { AgentError } from '@/data/agentTypes'
-import { draft, FakeAgentApi, storedMessage } from '@/test-support'
+import { adoptedDraft, draft, FakeAgentApi, storedMessage } from '@/test-support'
 import { DEFAULT_GOALS, updateGoals } from '@/core/goals'
 import { newUlid } from '@/core/ulid'
 import type { ExamDraft, ExamRecord, Lesson, LocalQuestion } from '@/data/types'
@@ -930,7 +930,7 @@ describe('study assistant', () => {
 
       it('a chosen file shows above the box, goes with the question, and shows as a tag on it', async () => {
         api.events = [{ kind: 'delta', text: '好' }, done]
-        const w = await open('/agent?mode=learn&bank=b1', AgentView)
+        const w = await open('/agent?bank=b1', AgentView)
         expect(w.find('[data-testid="agent-files"]').exists()).toBe(false)
         expect(w.find('[data-testid="agent-file-input"]').attributes('accept')).toContain('.md')
 
@@ -948,7 +948,7 @@ describe('study assistant', () => {
       })
 
       it('shows why a file was turned away, lets it be taken off, and does not send it', async () => {
-        const w = await open('/agent?mode=learn', AgentView)
+        const w = await open('/agent', AgentView)
         await attach(w, new File(['x'], 'a.pdf'))
         expect(w.find('[data-testid="agent-file"]').text()).toContain('不支持这种文件')
         await type(w, '你好')
@@ -960,7 +960,7 @@ describe('study assistant', () => {
       })
 
       it('removing an uploaded file removes it on the server', async () => {
-        const w = await open('/agent?mode=learn', AgentView)
+        const w = await open('/agent', AgentView)
         await attach(w, md('a.md'))
         await w.find('[data-testid="agent-file-remove"]').trigger('click')
         await flush()
@@ -970,12 +970,12 @@ describe('study assistant', () => {
 
       it('the plus button is off without a connection, and when the files are at their limit', async () => {
         setAgentToken('')
-        let w = await open('/agent?mode=learn', AgentView)
+        let w = await open('/agent', AgentView)
         expect(w.find('[data-testid="agent-attach"]').attributes('disabled')).toBeDefined()
         w.unmount()
 
         setAgentToken('tok')
-        w = await open('/agent?mode=learn', AgentView)
+        w = await open('/agent', AgentView)
         expect(w.find('[data-testid="agent-attach"]').attributes('disabled')).toBeUndefined()
         await attach(w, md('1.md'), md('2.md'), md('3.md'), md('4.md'))
         expect(w.find('[data-testid="agent-attach"]').attributes('disabled')).toBeDefined()
@@ -996,7 +996,7 @@ describe('study assistant', () => {
         })
 
         it('the plus button opens a choice only when the model can see; otherwise it picks a file at once', async () => {
-          let w = await open('/agent?mode=learn', AgentView)
+          let w = await open('/agent', AgentView)
           const fileClick = vi.spyOn(w.find('[data-testid="agent-file-input"]').element as HTMLInputElement, 'click')
           await w.find('[data-testid="agent-attach"]').trigger('click')
           expect(fileClick).toHaveBeenCalled()
@@ -1004,7 +1004,7 @@ describe('study assistant', () => {
           w.unmount()
 
           api.statusValue = { ...api.statusValue, vision: true }
-          w = await open('/agent?mode=learn', AgentView)
+          w = await open('/agent', AgentView)
           const imageClick = vi.spyOn(w.find('[data-testid="agent-image-input"]').element as HTMLInputElement, 'click')
           await w.find('[data-testid="agent-attach"]').trigger('click')
           expect(w.find('[data-testid="agent-attach-menu"]').exists()).toBe(true)
@@ -1018,7 +1018,7 @@ describe('study assistant', () => {
         it('a chosen picture shows as a thumbnail, goes with the question, and can be opened large', async () => {
           api.statusValue = { ...api.statusValue, vision: true }
           api.events = [{ kind: 'delta', text: '好' }, done]
-          const w = await open('/agent?mode=learn', AgentView)
+          const w = await open('/agent', AgentView)
           await attachImage(w, pic('图.png'))
           expect(w.find('[data-testid="agent-file-preview"]').attributes('src')).toBe('blob:pic')
           await type(w, '这是什么')
@@ -1057,7 +1057,7 @@ describe('study assistant', () => {
         })
 
         it('a picture is turned away with the reason while the model cannot see', async () => {
-          const w = await open('/agent?mode=learn', AgentView)
+          const w = await open('/agent', AgentView)
           await attachImage(w, pic('图.png'))
           expect(w.find('[data-testid="agent-file"]').text()).toContain('不支持识别图片')
           expect(api.uploads).toEqual([])
@@ -1080,7 +1080,7 @@ describe('study assistant', () => {
 
     it('asks for a token when there is none, and cannot send', async () => {
       setAgentToken('')
-      const w = await open('/agent?mode=learn&bank=b1', AgentView)
+      const w = await open('/agent?bank=b1', AgentView)
       expect(w.find('[data-testid="agent-banner"]').text()).toContain('还没有填访问令牌')
       await type(w, '你好')
       expect(sendBtn(w).attributes('disabled')).toBeDefined()
@@ -1092,13 +1092,13 @@ describe('study assistant', () => {
 
     it('says so when the token is wrong, or the server has no assistant', async () => {
       api.statusError = new AgentError('访问令牌不对或还没设置', 401)
-      let w = await open('/agent?mode=learn', AgentView)
+      let w = await open('/agent', AgentView)
       expect(w.find('[data-testid="agent-banner"]').text()).toContain('访问令牌不对或还没设置')
       expect(w.find('[data-testid="agent-banner"] button').text()).toBe('去设置')
       w.unmount()
 
       api.statusError = new AgentError('AI 助手还没有启用', 404)
-      w = await open('/agent?mode=learn', AgentView)
+      w = await open('/agent', AgentView)
       expect(w.find('[data-testid="agent-banner"]').text()).toContain('AI 助手还没有启用')
       expect(w.find('[data-testid="agent-banner"] button').exists()).toBe(false)
       w.unmount()
@@ -1106,7 +1106,7 @@ describe('study assistant', () => {
 
     it('offline: explains and offers a retry, which brings it back', async () => {
       api.statusError = new AgentError('连不上服务器，请确认地址正确并已联网')
-      const w = await open('/agent?mode=learn', AgentView)
+      const w = await open('/agent', AgentView)
       expect(w.find('[data-testid="agent-banner"]').text()).toContain('连不上服务器')
       api.statusError = null
       await w.find('[data-testid="agent-banner"] button').trigger('click')
@@ -1123,7 +1123,7 @@ describe('study assistant', () => {
         { kind: 'delta', text: '读写锁**允许**多个读者。' },
         done,
       ]
-      const w = await open('/agent?mode=learn&bank=b1', AgentView)
+      const w = await open('/agent?bank=b1', AgentView)
       expect(w.text()).toContain('可以问我讲义里的内容')
       await w.findAll('.chip.pick')[0].trigger('click')
       await flush()
@@ -1137,7 +1137,7 @@ describe('study assistant', () => {
     it('typing and sending clears the box; stop appears while the answer is written and keeps what came', async () => {
       api.events = [{ kind: 'delta', text: '写到一半' }]
       api.holdOpen = true
-      const w = await open('/agent?mode=learn', AgentView)
+      const w = await open('/agent', AgentView)
       await type(w, '讲讲锁')
       await sendBtn(w).trigger('click')
       await flush()
@@ -1154,7 +1154,7 @@ describe('study assistant', () => {
 
     it('leaving the page stops the answer on the server', async () => {
       api.holdOpen = true
-      const w = await open('/agent?mode=learn', AgentView)
+      const w = await open('/agent', AgentView)
       await type(w, '讲讲锁')
       await sendBtn(w).trigger('click')
       await flush()
@@ -1164,7 +1164,7 @@ describe('study assistant', () => {
     })
 
     it('the text from the address is put in the box, not sent', async () => {
-      const w = await open('/agent?mode=learn&question=q1&selected=2&text=' + encodeURIComponent('我还是没懂，'), AgentView)
+      const w = await open('/agent?question=q1&selected=2&text=' + encodeURIComponent('我还是没懂，'), AgentView)
       expect((input(w).element as HTMLTextAreaElement).value).toBe('我还是没懂，')
       expect(api.requests).toHaveLength(0)
       await sendBtn(w).trigger('click')
@@ -1179,7 +1179,7 @@ describe('study assistant', () => {
         { kind: 'delta', text: `流程：\n\n\`\`\`svg\n<svg ${ns} viewBox="0 0 9 9"><rect width="4" height="4"/></svg>\n\`\`\`\n\n再看：<svg ${ns}><script>alert(1)</script></svg>` },
         done,
       ]
-      const w = await open('/agent?mode=learn', AgentView)
+      const w = await open('/agent', AgentView)
       await w.findAll('.chip.pick')[0].trigger('click')
       await flush()
       const imgs = w.findAll('.bubble.bot img')
@@ -1200,7 +1200,7 @@ describe('study assistant', () => {
         { kind: 'delta', text: `见[这一节](lesson:${bank}-L1)和[这道题](question:${qs[0].id})，还有[缺的](lesson:nope)、[外链](https://example.com)。` },
         done,
       ]
-      const w = await open('/agent?mode=learn', AgentView)
+      const w = await open('/agent', AgentView)
       await w.findAll('.chip.pick')[0].trigger('click')
       await flush()
       const links = w.findAll('.bubble.bot a')
@@ -1227,62 +1227,96 @@ describe('study assistant', () => {
     })
 
     describe('question-writing', () => {
-      const writing = async () => {
-        api.events = [{ kind: 'delta', text: '出好了：' }, { kind: 'drafts', drafts: [draft('D1')] }, done]
-        const w = await open('/agent?mode=create&bank=b1&lesson=L1', AgentView)
-        await w.findAll('.chip.pick')[0].trigger('click')
+      const writing = async (drafts = [adoptedDraft('D1')]) => {
+        api.events = [{ kind: 'delta', text: '出好了：' }, { kind: 'drafts', drafts }, done]
+        const w = await open('/agent?bank=b1', AgentView)
+        await w.findAll('.chip.pick').find((c) => c.text() === '帮我出 5 道单选题')!.trigger('click')
         await flush()
         return w
       }
+      const sw = (w: VueWrapper, id: string) => w.find(`[data-testid="draft-switch-${id}"]`)
+      const adopted = (w: VueWrapper, id: string) => (sw(w, id).element as HTMLInputElement).checked
 
-      it('a draft shows as a card with the answer marked, and accepting says it went to review', async () => {
+      it('a new question is adopted already; the switch takes it back and adopts it again', async () => {
         const w = await writing()
-        const card = w.find('[data-testid="draft-card"]')
+        const card = w.find('[data-testid="draft-group"]')
+        expect(card.text()).toContain('出了 1 道题')
+        expect(card.find('[data-testid="drafts-summary"]').text()).toContain('已采纳 1 道')
+        expect(adopted(w, 'D1')).toBe(true)
+        expect(api.accepted).toEqual([])
+        // One question is shown open: the stem, the options with the answer marked.
         expect(card.text()).toContain('读写锁的特点是什么？')
         expect(card.text()).toContain('未经独立复核')
         expect(card.findAll('.draft-opt.right')).toHaveLength(1)
         expect(card.find('.draft-opt.right').text()).toContain('多个读者同时持有')
-        expect(api.requests[0]).toMatchObject({ mode: 'create', context: { bankId: 'b1', lessonId: 'L1' } })
-        await button(w, '采纳').trigger('click')
+        expect(api.requests[0].mode).toBeUndefined()
+
+        await sw(w, 'D1').setValue(false)
+        await flush()
+        expect(api.discarded).toEqual(['D1'])
+        expect(adopted(w, 'D1')).toBe(false)
+        expect(card.find('[data-testid="drafts-summary"]').text()).toContain('已采纳 0 道')
+
+        await sw(w, 'D1').setValue(true)
         await flush()
         expect(api.accepted).toEqual(['D1'])
-        expect(card.text()).toContain('已提交审核')
-        expect(card.findAll('button')).toHaveLength(0)
+        expect(adopted(w, 'D1')).toBe(true)
         w.unmount()
       })
 
-      it('discarding folds the card away; asking for a rewrite fills the box with the draft id', async () => {
+      it('an older server leaves the question to the learner: the switch starts off', async () => {
+        const w = await writing([draft('D1')])
+        expect(adopted(w, 'D1')).toBe(false)
+        await sw(w, 'D1').setValue(true)
+        await flush()
+        expect(api.accepted).toEqual(['D1'])
+        expect(adopted(w, 'D1')).toBe(true)
+        w.unmount()
+      })
+
+      it('a long run of questions is one card: a line each, opened one at a time, all at once on request', async () => {
+        const w = await writing([1, 2, 3, 4, 5, 6].map((n) => adoptedDraft(`D${n}`)))
+        const card = w.find('[data-testid="draft-group"]')
+        expect(card.text()).toContain('出了 6 道题')
+        expect(w.findAll('input.switch')).toHaveLength(6)
+        expect(card.findAll('.draft-opt')).toHaveLength(0) // folded: only the stems show
+
+        await w.find('[data-testid="draft-row-D3"]').trigger('click')
+        expect(card.findAll('.draft-opt').length).toBeGreaterThan(0)
+        await w.find('[data-testid="draft-row-D3"]').trigger('click')
+        expect(card.findAll('.draft-opt')).toHaveLength(0)
+
+        await w.find('[data-testid="drafts-all"]').trigger('click')
+        await flush()
+        expect(api.discarded).toEqual(['D1', 'D2', 'D3', 'D4', 'D5', 'D6'])
+        expect(w.find('[data-testid="drafts-all"]').text()).toBe('全部采纳')
+        await w.find('[data-testid="drafts-all"]').trigger('click')
+        await flush()
+        expect(api.accepted).toEqual(['D1', 'D2', 'D3', 'D4', 'D5', 'D6'])
+
+        await w.find('[data-testid="drafts-header"]').trigger('click')
+        expect(w.findAll('input.switch')).toHaveLength(0) // folded up to the header
+        w.unmount()
+      })
+
+      it('a refused change shows the reason and the switch goes back', async () => {
         const w = await writing()
-        await button(w, '让它改改').trigger('click')
+        api.decideError = new AgentError('网络不通', 500)
+        await sw(w, 'D1').setValue(false)
+        await flush()
+        expect(w.find('[data-testid="draft-group"]').text()).toContain('网络不通')
+        expect(adopted(w, 'D1')).toBe(true) // still adopted: the server did not take it back
+        w.unmount()
+      })
+
+      it('asking for a rewrite fills the box with the question id', async () => {
+        const w = await writing()
+        await w.find('[data-testid="draft-revise-D1"]').trigger('click')
         await flush()
         const box = (input(w).element as HTMLTextAreaElement).value
         expect(box).toContain('draft_id：D1')
         expect(box).toContain('读写锁的特点是什么？')
-        await button(w, '丢弃').trigger('click')
-        await flush()
-        expect(api.discarded).toEqual(['D1'])
-        expect(w.find('[data-testid="draft-card"]').text()).toContain('已丢弃')
         w.unmount()
-      })
-
-      it('a refused accept shows the reason on the card and keeps the buttons', async () => {
-        const w = await writing()
-        api.decideError = new AgentError('这道草稿已经处理过了', 409)
-        await button(w, '采纳').trigger('click')
-        await flush()
-        expect(w.find('[data-testid="draft-card"]').text()).toContain('这道草稿已经处理过了')
-        expect(w.findAll('[data-testid="draft-card"] button')).toHaveLength(3)
-        w.unmount()
-      })
-
-      it('tells the writer when no second model checks the questions', async () => {
-        const w = await open('/agent?mode=create&bank=b1', AgentView)
-        expect(w.text()).toContain('出的题不会经过独立复核')
-        w.unmount()
-        api.statusValue = { available: true, model: 'm', verified: true, vision: false }
-        const w2 = await open('/agent?mode=create&bank=b1', AgentView)
-        expect(w2.text()).not.toContain('出的题不会经过独立复核')
-        w2.unmount()
       })
     })
   })
@@ -1307,17 +1341,16 @@ describe('study assistant', () => {
       })
     }
 
-    it('lists the conversations newest first, with their kind, bank, time and waiting drafts', async () => {
+    it('lists the conversations newest first, with their bank, time and waiting drafts', async () => {
       await old()
       const w = await open('/agent/history', AgentHistoryView)
       const rows = w.findAll('[data-testid="history-row"]')
       expect(rows).toHaveLength(2)
       expect(rows[0].text()).toContain('用这一节出 3 道单选题')
-      expect(rows[0].text()).toContain('出题')
       expect(rows[0].text()).toContain(`题库${bankSeq}`)
       expect(rows[0].text()).toContain('1 道草稿待处理')
       expect(rows[1].text()).toContain('死锁的四个条件')
-      expect(rows[1].text()).toContain('问 AI')
+      expect(rows[1].text()).toContain(`题库${bankSeq}`)
       expect(rows[1].text()).not.toContain('草稿待处理')
       w.unmount()
     })
@@ -1385,24 +1418,24 @@ describe('study assistant', () => {
       h.unmount()
 
       const w = await open('/agent?conversation=c-make', AgentView)
-      expect(w.find('h1').text()).toBe('AI 出题')
+      expect(w.find('h1').text()).toBe('AI 助手')
       expect(w.find('.bubble.user').text()).toBe('出 3 道题')
       expect(w.text()).toContain('读取讲义「锁」')
-      const cards = w.findAll('[data-testid="draft-card"]')
-      expect(cards).toHaveLength(3)
-      expect(cards[0].findAll('button').map((b) => b.text())).toEqual(['采纳', '让它改改', '丢弃'])
-      expect(cards[1].text()).toContain('已提交审核')
-      expect(cards[2].text()).toContain('已丢弃')
+      // The three questions are one card; each switch shows where its question stands.
+      expect(w.findAll('[data-testid="draft-group"]')).toHaveLength(1)
+      expect(w.find('[data-testid="drafts-summary"]').text()).toContain('已采纳 1 道')
+      const on = (id: string) => (w.find(`[data-testid="draft-switch-${id}"]`).element as HTMLInputElement).checked
+      expect([on('D1'), on('D2'), on('D3')]).toEqual([false, true, false])
 
-      // The card that still waits can be decided, and the next question goes into the same conversation.
-      await button(w, '采纳').trigger('click')
+      // The one that still waits can be decided, and the next question goes into the same conversation.
+      await w.find('[data-testid="draft-switch-D1"]').setValue(true)
       await flush()
       expect(api.accepted).toEqual(['D1'])
       api.events = [{ kind: 'delta', text: '好' }, done]
       await type(w, '再出一道')
       await sendBtn(w).trigger('click')
       await flush()
-      expect(api.requests[0]).toMatchObject({ conversationId: 'c-make', mode: 'create', message: { text: '再出一道' }, context: { bankId: bank, lessonId: 'L1' } })
+      expect(api.requests[0]).toMatchObject({ conversationId: 'c-make', message: { text: '再出一道' }, context: { bankId: bank, lessonId: 'L1' } })
       w.unmount()
     })
 
@@ -1413,7 +1446,7 @@ describe('study assistant', () => {
     })
 
     it('the page links to the history, and "new conversation" starts over from the same place', async () => {
-      const w = await open('/agent?mode=learn&bank=b1&lesson=L1', AgentView)
+      const w = await open('/agent?bank=b1&lesson=L1', AgentView)
       expect(w.find('[data-testid="agent-new"]').exists()).toBe(false) // nothing to leave yet
       api.events = [{ kind: 'delta', text: '好' }, done]
       await w.findAll('.chip.pick')[0].trigger('click')
@@ -1422,7 +1455,7 @@ describe('study assistant', () => {
 
       await w.find('[data-testid="agent-new"]').trigger('click')
       await flush()
-      expect(router.currentRoute.value.query).toEqual({ mode: 'learn', bank: 'b1', lesson: 'L1' })
+      expect(router.currentRoute.value.query).toEqual({ bank: 'b1', lesson: 'L1' })
       expect(w.findAll('.bubble')).toHaveLength(0)
       expect(w.text()).toContain('可以问我讲义里的内容')
       await w.findAll('.chip.pick')[0].trigger('click')
@@ -1438,17 +1471,14 @@ describe('study assistant', () => {
   })
 
   describe('entry points', () => {
-    it('the bank page opens the assistant in both modes', async () => {
+    it('the bank page opens the assistant', async () => {
       await seed(1)
       const w = await open(`/bank/${bank}`, BankView, { id: bank })
+      expect(w.find('[data-testid="bank-ai-questions"]').exists()).toBe(false) // one entry now
       await w.find('[data-testid="bank-ask-ai"]').trigger('click')
       await flush()
       expect(router.currentRoute.value.path).toBe('/agent')
-      expect(router.currentRoute.value.query).toEqual({ mode: 'learn', bank })
-      await router.push(`/bank/${bank}`)
-      await w.find('[data-testid="bank-ai-questions"]').trigger('click')
-      await flush()
-      expect(router.currentRoute.value.query).toEqual({ mode: 'create', bank })
+      expect(router.currentRoute.value.query).toEqual({ bank })
       w.unmount()
     })
 
@@ -1461,11 +1491,11 @@ describe('study assistant', () => {
       const w = await open(`/bank/${bank}/learn/${bank}-L1`, LessonView, { id: bank, lessonId: `${bank}-L1` })
       await w.find('[data-testid="lesson-ask-ai"]').trigger('click')
       await flush()
-      expect(router.currentRoute.value.query).toEqual({ mode: 'learn', bank, lesson: `${bank}-L1` })
+      expect(router.currentRoute.value.query).toEqual({ bank, lesson: `${bank}-L1` })
       await router.push(`/bank/${bank}/learn/${bank}-L1`)
       await w.find('[data-testid="lesson-ai-questions"]').trigger('click')
       await flush()
-      expect(router.currentRoute.value.query).toMatchObject({ mode: 'create', lesson: `${bank}-L1`, text: '用这一节出 3 道单选题' })
+      expect(router.currentRoute.value.query).toMatchObject({ lesson: `${bank}-L1`, text: '用这一节出 3 道单选题' })
       w.unmount()
     })
 
@@ -1493,7 +1523,7 @@ describe('study assistant', () => {
       await flush()
       expect(router.currentRoute.value.path).toBe('/agent')
       expect(router.currentRoute.value.query).toEqual({
-        mode: 'learn', bank, question: `${bank}-q1`, selected: String(original), text: '我还是没懂，',
+        bank, question: `${bank}-q1`, selected: String(original), text: '我还是没懂，',
       })
       w.unmount()
     })

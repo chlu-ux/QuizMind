@@ -1,5 +1,3 @@
-import type { AgentMode } from '@/data/agentTypes'
-
 /** The two kinds of link the assistant writes (docs/agent-design.md §5.3). */
 export type AgentLink = { kind: 'lesson' | 'question'; id: string }
 
@@ -16,9 +14,8 @@ export function parseAgentLink(href: string | null | undefined): AgentLink | nul
   return null
 }
 
-/** Where a conversation starts: which assistant mode and what the learner is looking at. */
+/** Where a conversation starts: what the learner is looking at. */
 export interface AgentArgs {
-  mode: AgentMode
   bankId: string
   lessonId: string
   questionId: string
@@ -26,13 +23,13 @@ export interface AgentArgs {
   selected: number[]
 }
 
-export function agentArgs(a: Partial<AgentArgs> & { mode: AgentMode }): AgentArgs {
+export function agentArgs(a: Partial<AgentArgs> = {}): AgentArgs {
   return { bankId: '', lessonId: '', questionId: '', selected: [], ...a }
 }
 
 /** The route query for [args] (and [text], put into the box but not sent). */
 export function agentQuery(args: AgentArgs, text = ''): Record<string, string> {
-  const q: Record<string, string> = { mode: args.mode }
+  const q: Record<string, string> = {}
   if (args.bankId) q.bank = args.bankId
   if (args.lessonId) q.lesson = args.lessonId
   if (args.questionId) {
@@ -57,7 +54,6 @@ export function argsFromQuery(query: Query): { args: AgentArgs; text: string } {
     .map(Number)
   return {
     args: agentArgs({
-      mode: one('mode') === 'create' ? 'create' : 'learn',
       bankId: one('bank'),
       lessonId: one('lesson'),
       questionId: one('question'),

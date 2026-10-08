@@ -35,6 +35,11 @@ export interface AgentDraft {
   sourceQuote: string
   /** A second model answered it independently and agreed. */
   verified: boolean
+  /**
+   * Already adopted when the server sent it: part of the question bank (or the review queue). False from
+   * a server that predates adoption, and for an old-style draft nobody decided on.
+   */
+  adopted: boolean
 }
 
 export function draftFromJson(j: Record<string, unknown>): AgentDraft {
@@ -53,6 +58,7 @@ export function draftFromJson(j: Record<string, unknown>): AgentDraft {
     tags: list(j.tags),
     sourceQuote: str(j.source_quote),
     verified: j.verified === true,
+    adopted: j.adopted === true,
   }
 }
 
@@ -68,8 +74,8 @@ export interface AgentContext {
 export interface AgentChatRequest {
   /** Chosen by the app; the server keeps the conversation under it and reads the history itself. */
   conversationId: string
-  /** learn | create */
-  mode: AgentMode
+  /** Left out: the whole assistant. `learn` asks for the older read-only form. */
+  mode?: AgentMode
   deviceId: string
   /** The new question; the earlier ones are on the server. */
   message: { text: string; attachmentIds?: string[] }
@@ -82,7 +88,7 @@ export function chatRequestJson(r: AgentChatRequest) {
   const c = r.context
   return {
     conversation_id: r.conversationId,
-    mode: r.mode,
+    ...(r.mode ? { mode: r.mode } : {}),
     device_id: r.deviceId,
     message: { text: r.message.text, attachment_ids: r.message.attachmentIds ?? [] },
     context: {

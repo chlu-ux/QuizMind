@@ -258,7 +258,6 @@ export class AgentChat {
     try {
       const request = {
         conversationId: this.conversationId,
-        mode: this.args.mode,
         deviceId: this.deviceId,
         message: { text: t, attachmentIds: attachments.map((a) => a.id) },
         context: {
@@ -311,8 +310,9 @@ export class AgentChat {
         })
         break
       case 'drafts':
-        // A card the learner already decided on is not reset by a repeated event.
-        for (const d of ev.drafts) this.drafts[d.id] ??= { draft: d, phase: 'pending' }
+        // A card the learner already decided on is not reset by a repeated event. The server adopts a
+        // question when it writes it; an older one leaves that to the learner.
+        for (const d of ev.drafts) this.drafts[d.id] ??= { draft: d, phase: d.adopted ? 'accepted' : 'pending' }
         this.patch(id, (m) => {
           for (const d of ev.drafts) if (!m.draftIds.includes(d.id)) m.draftIds.push(d.id)
         })
@@ -329,18 +329,33 @@ export class AgentChat {
 
   // ---- drafts ----
 
-  /** Sends the draft to the review queue; a reviewer still has to approve it before anyone practises it. */
+  /**
+   * Adopts the question (again): it goes back into the question bank, or the review queue when the
+   * admin wants the assistant's questions reviewed.
+   */
   accept(draftId: string) {
     return this.decide(draftId, true)
   }
 
+  /** Takes the question back out of the bank. Answers already given to it stay. */
   discard(draftId: string) {
     return this.decide(draftId, false)
+  }
+
+  /** Adopts or takes back every question of [ids], one after the other. */
+  async setAll(ids: string[], adopt: boolean) {
+    for (const id of ids) {
+      const phase = this.drafts[id]?.phase
+      if (!phase || phase === 'working' || adopt === (phase === 'accepted')) continue
+      await this.decide(id, adopt)
+    }
   }
 
   private async decide(id: string, accept: boolean) {
     const entry = this.drafts[id]
     if (!entry || entry.phase === 'working') return
+    // On failure the card goes back to where it was.
+    const before = entry.phase
     entry.phase = 'working'
     entry.error = undefined
     try {
@@ -349,19 +364,19 @@ export class AgentChat {
       if (!this.disposed) entry.phase = accept ? 'accepted' : 'discarded'
     } catch (e) {
       if (this.disposed) return
-      entry.phase = 'pending'
+      entry.phase = before
       entry.error = e instanceof AgentError ? e.message : `出错了：${(e as Error).message ?? e}`
     }
   }
 
   /**
-   * The words that start a request to rewrite a draft; the learner finishes the sentence. The id lets
-   * the assistant replace exactly that draft.
+   * The words that start a request to rewrite a question; the learner finishes the sentence. The id lets
+   * the assistant replace exactly that question.
    */
   revisionPrompt(draftId: string): string {
     const d = this.drafts[draftId]?.draft
     const stem = d ? d.stem.replace(/\s+/g, ' ') : ''
     const shown = [...stem].length > 30 ? `${[...stem].slice(0, 30).join('')}…` : stem
-    return `请修改这道草稿（draft_id：${draftId}，题干：「${shown}」）：`
+    return `请修改这道题（draft_id：${draftId}，题干：「${shown}」）：`
   }
 }

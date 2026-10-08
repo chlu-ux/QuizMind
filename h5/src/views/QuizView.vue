@@ -34,7 +34,7 @@ async function openLesson() {
 function askMore() {
   const cur = session.value
   if (!cur) return
-  const args = agentArgs({ mode: 'learn', bankId: cur.current.bank_id, questionId: cur.current.id, selected: [...cur.selected] })
+  const args = agentArgs({ bankId: cur.current.bank_id, questionId: cur.current.id, selected: [...cur.selected] })
   void router.push({ path: '/agent', query: agentQuery(args, '我还是没懂，') })
 }
 

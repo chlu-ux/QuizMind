@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { HttpAgentApi } from './agentApi'
-import { AgentError, parseAgentSse, type AgentEvent } from './agentTypes'
+import { AgentError, draftFromJson, parseAgentSse, type AgentEvent } from './agentTypes'
 import { draftJson } from '@/test-support'
 
 const enc = new TextEncoder()
@@ -86,6 +86,17 @@ describe('HttpAgentApi', () => {
     expect(await api.status()).toEqual({ available: true, model: 'deepseek', verified: true, vision: true })
     expect(calls[0].url).toBe('/api/v1/agent/status')
     expect((calls[0].init.headers as Record<string, string>).Authorization).toBe('Bearer tok')
+  })
+
+  it('leaves the mode out unless one is asked for: the whole assistant', async () => {
+    const calls = stub(() => new Response(stream([ev('done', { stop: 'end_turn' })]), { status: 200 }))
+    for await (const _ of api.chat({ conversationId: 'c1', deviceId: 'd1', message: { text: '讲讲' }, context: {} })) void _
+    expect(JSON.parse(calls[0].init.body as string)).not.toHaveProperty('mode')
+  })
+
+  it('reads whether a question was adopted when it was written', () => {
+    expect(draftFromJson({ ...draftJson, adopted: true }).adopted).toBe(true)
+    expect(draftFromJson({ ...draftJson }).adopted).toBe(false)
   })
 
   it('posts the request and streams the events', async () => {

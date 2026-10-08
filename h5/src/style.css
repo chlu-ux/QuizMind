@@ -360,9 +360,17 @@ mark { background: color-mix(in srgb, #d69e2e 40%, transparent); color: inherit;
 .file-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
 .file-tag { font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--surface); color: var(--muted); }
 .agent-input .input { flex: 1; min-height: 44px; max-height: 140px; padding: 10px 12px; resize: none; }
-.draft { margin-top: 8px; }
-.draft.discarded { opacity: 0.5; }
-.draft .unverified { color: var(--err); }
+.draft-group { margin-top: 8px; gap: 0; padding: 0; overflow: hidden; }
+.draft-head { padding: 10px 12px; cursor: pointer; align-items: center; }
+.draft-item { border-top: 1px solid var(--line); }
+.draft-line { padding: 8px 12px; cursor: pointer; align-items: center; }
+.draft-line .num { width: 18px; flex: none; }
+.draft-line .stem { font-size: 15px; }
+.draft-line .stem.clamp2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.draft-line .stem.off { color: var(--muted); }
+.draft-line .switch { flex: none; margin: 0 8px; }
+.draft-body { padding: 0 12px 10px 38px; gap: 8px; }
+.draft-err { padding: 0 12px 8px 38px; margin: 0; }
 .draft-opt {
   display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border: 1px solid var(--line);
   border-radius: 8px; background: var(--surface);

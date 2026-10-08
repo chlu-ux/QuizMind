@@ -2,12 +2,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { reactive } from 'vue'
 import { AgentError } from '@/data/agentTypes'
-import { draft, FakeAgentApi, storedMessage } from '@/test-support'
+import { adoptedDraft, draft, FakeAgentApi, storedMessage } from '@/test-support'
 import { agentArgs } from './agentLinks'
 import { AgentChat } from './agentChat'
 
-const learn = agentArgs({ mode: 'learn', bankId: 'b1' })
-const create = agentArgs({ mode: 'create', bankId: 'b1', lessonId: 'L1' })
+const learn = agentArgs({ bankId: 'b1' })
+const create = agentArgs({ bankId: 'b1', lessonId: 'L1' })
 
 beforeEach(() => localStorage.clear())
 
@@ -34,7 +34,6 @@ describe('AgentChat', () => {
     expect(chat.messages[1].tools).toEqual([{ id: 't1', label: '在讲义里查找…', status: 'done' }])
     expect(api.requests[0]).toMatchObject({
       conversationId: chat.conversationId,
-      mode: 'learn',
       deviceId: 'dev1',
       message: { text: '讲讲读写锁' },
       context: { bankId: 'b1', lessonId: '', questionId: '' },
@@ -115,50 +114,74 @@ describe('AgentChat', () => {
 
   it('tells the server what the learner is looking at', async () => {
     const api = new FakeAgentApi()
-    const chat = make(api, agentArgs({ mode: 'learn', bankId: 'b1', questionId: 'q9', selected: [2, 0] }))
+    const chat = make(api, agentArgs({ bankId: 'b1', questionId: 'q9', selected: [2, 0] }))
     await chat.send('为什么？')
     expect(api.requests[0].context).toEqual({ bankId: 'b1', lessonId: '', questionId: 'q9', selected: [2, 0] })
   })
 
   describe('drafts', () => {
-    it('a drafts event adds a card under the answer', async () => {
+    it('a drafts event adds the questions under the answer, adopted already', async () => {
       const api = new FakeAgentApi()
-      api.events = [{ kind: 'drafts', drafts: [draft('D1'), draft('D2')] }]
+      api.events = [{ kind: 'drafts', drafts: [adoptedDraft('D1'), adoptedDraft('D2')] }]
       const chat = make(api, create)
       await chat.send('出题')
       expect(chat.messages[1].draftIds).toEqual(['D1', 'D2'])
-      expect(chat.drafts.D1).toMatchObject({ phase: 'pending' })
+      expect(chat.drafts.D1).toMatchObject({ phase: 'accepted' })
+      expect(api.accepted).toEqual([])
     })
 
-    it('accept and discard call the server and mark the card', async () => {
-      const api = new FakeAgentApi()
-      api.events = [{ kind: 'drafts', drafts: [draft('D1'), draft('D2')] }]
-      const chat = make(api, create)
-      await chat.send('出题')
-      await chat.accept('D1')
-      await chat.discard('D2')
-      expect(api.accepted).toEqual(['D1'])
-      expect(api.discarded).toEqual(['D2'])
-      expect(chat.drafts.D1.phase).toBe('accepted')
-      expect(chat.drafts.D2.phase).toBe('discarded')
-    })
-
-    it('a refusal puts the card back with the reason, so it can be tried again', async () => {
+    it('a server that predates adoption leaves the question to the learner', async () => {
       const api = new FakeAgentApi()
       api.events = [{ kind: 'drafts', drafts: [draft('D1')] }]
       const chat = make(api, create)
       await chat.send('出题')
-      api.decideError = new AgentError('这道草稿已经处理过了', 409)
-      await chat.accept('D1')
-      expect(chat.drafts.D1).toMatchObject({ phase: 'pending', error: '这道草稿已经处理过了' })
+      expect(chat.drafts.D1).toMatchObject({ phase: 'pending' })
+    })
+
+    it('discard takes a question back, accept adopts it again', async () => {
+      const api = new FakeAgentApi()
+      api.events = [{ kind: 'drafts', drafts: [adoptedDraft('D1'), adoptedDraft('D2')] }]
+      const chat = make(api, create)
+      await chat.send('出题')
+      await chat.discard('D2')
+      expect(api.discarded).toEqual(['D2'])
+      expect(chat.drafts.D1.phase).toBe('accepted')
+      expect(chat.drafts.D2.phase).toBe('discarded')
+      await chat.accept('D2')
+      expect(api.accepted).toEqual(['D2'])
+      expect(chat.drafts.D2.phase).toBe('accepted')
+    })
+
+    it('setAll adopts or takes back every question that is not there yet, one after the other', async () => {
+      const api = new FakeAgentApi()
+      api.events = [{ kind: 'drafts', drafts: [adoptedDraft('D1'), adoptedDraft('D2'), adoptedDraft('D3')] }]
+      const chat = make(api, create)
+      await chat.send('出题')
+      await chat.discard('D2')
+      api.discarded.length = 0
+      await chat.setAll(['D1', 'D2', 'D3'], false)
+      expect(api.discarded).toEqual(['D1', 'D3'])
+      await chat.setAll(['D1', 'D2', 'D3'], true)
+      expect(api.accepted).toEqual(['D1', 'D2', 'D3'])
+      expect(Object.values(chat.drafts).map((e) => e.phase)).toEqual(['accepted', 'accepted', 'accepted'])
+    })
+
+    it('a refusal puts the card back where it was, with the reason, so it can be tried again', async () => {
+      const api = new FakeAgentApi()
+      api.events = [{ kind: 'drafts', drafts: [adoptedDraft('D1')] }]
+      const chat = make(api, create)
+      await chat.send('出题')
+      api.decideError = new AgentError('网络不通', 500)
+      await chat.discard('D1')
+      expect(chat.drafts.D1).toMatchObject({ phase: 'accepted', error: '网络不通' })
       api.decideError = null
-      await chat.accept('D1')
-      expect(chat.drafts.D1).toMatchObject({ phase: 'accepted', error: undefined })
+      await chat.discard('D1')
+      expect(chat.drafts.D1).toMatchObject({ phase: 'discarded', error: undefined })
     })
 
     it('a repeated drafts event does not reset a card the learner already decided on', async () => {
       const api = new FakeAgentApi()
-      api.events = [{ kind: 'drafts', drafts: [draft('D1')] }]
+      api.events = [{ kind: 'drafts', drafts: [adoptedDraft('D1')] }]
       const chat = make(api, create)
       await chat.send('出题')
       await chat.discard('D1')
@@ -167,7 +190,7 @@ describe('AgentChat', () => {
       expect(chat.messages[3].draftIds).toEqual(['D1'])
     })
 
-    it('the revision prompt names the draft', async () => {
+    it('the revision prompt names the question', async () => {
       const api = new FakeAgentApi()
       api.events = [{ kind: 'drafts', drafts: [draft('D1')] }]
       const chat = make(api, create)
@@ -204,7 +227,7 @@ describe('AgentChat', () => {
     })
 
     it('shows the messages, the lookups, the notes and the cards as they stood', () => {
-      const chat = reactive(new AgentChat(agentArgs({ mode: 'create', bankId: 'b1', lessonId: 'L1' }), 'dev1', new FakeAgentApi(), stored())) as AgentChat
+      const chat = reactive(new AgentChat(agentArgs({ bankId: 'b1', lessonId: 'L1' }), 'dev1', new FakeAgentApi(), stored())) as AgentChat
       expect(chat.conversationId).toBe('old-1')
       expect(chat.messages.map((m) => [m.role, m.text])).toEqual([['user', '出 3 道题'], ['assistant', '出好了'], ['user', '再来'], ['assistant', '']])
       expect(chat.messages[1]).toMatchObject({ note: '已停止', draftIds: ['D1', 'D2', 'D3'], streaming: false })
@@ -217,9 +240,9 @@ describe('AgentChat', () => {
     it('carries on in the same conversation, and a card still waiting can be decided', async () => {
       const api = new FakeAgentApi()
       api.events = [{ kind: 'delta', text: '好' }]
-      const chat = reactive(new AgentChat(agentArgs({ mode: 'create', bankId: 'b1', lessonId: 'L1' }), 'dev1', api, stored())) as AgentChat
+      const chat = reactive(new AgentChat(agentArgs({ bankId: 'b1', lessonId: 'L1' }), 'dev1', api, stored())) as AgentChat
       await chat.send('再出两道')
-      expect(api.requests[0]).toMatchObject({ conversationId: 'old-1', mode: 'create', message: { text: '再出两道' }, context: { bankId: 'b1', lessonId: 'L1' } })
+      expect(api.requests[0]).toMatchObject({ conversationId: 'old-1', message: { text: '再出两道' }, context: { bankId: 'b1', lessonId: 'L1' } })
       expect(chat.messages).toHaveLength(6)
       await chat.accept('D3')
       expect(api.accepted).toEqual(['D3'])

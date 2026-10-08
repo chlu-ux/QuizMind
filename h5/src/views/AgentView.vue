@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AttachImage from '@/components/AttachImage.vue'
-import DraftCard from '@/components/DraftCard.vue'
+import DraftGroup from '@/components/DraftGroup.vue'
 import LessonBody from '@/components/LessonBody.vue'
 import Md from '@/components/Md.vue'
 import { agentApi, agentSettings } from '@/core/agent'
@@ -20,7 +20,6 @@ const router = useRouter()
 // learner came from. The page is reused when only the query changes, so it starts over then.
 const chat = ref<AgentChat>(reactive(new AgentChat(argsFromQuery(route.query).args, settings.deviceId)) as AgentChat)
 const args = computed(() => chat.value.args)
-const isCreate = computed(() => args.value.mode === 'create')
 const input = ref(argsFromQuery(route.query).text)
 const inputEl = ref<HTMLTextAreaElement | null>(null)
 /** Opening a stored conversation: loading, or why it could not be opened. */
@@ -40,7 +39,7 @@ async function begin() {
   opening.value = true
   try {
     const stored = await agentApi().conversation(id)
-    const args = agentArgs({ mode: stored.mode, bankId: stored.bankId, lessonId: stored.lessonId, questionId: stored.questionId })
+    const args = agentArgs({ bankId: stored.bankId, lessonId: stored.lessonId, questionId: stored.questionId })
     chat.value = reactive(new AgentChat(args, settings.deviceId, undefined, stored)) as AgentChat
     input.value = ''
     await nextTick()
@@ -102,8 +101,8 @@ onBeforeUnmount(() => chat.value.dispose())
 
 function newConversation() {
   // The same starting point as this conversation had, without the old messages.
-  const { bankId, lessonId, questionId, mode } = args.value
-  const fresh = agentArgs({ mode, bankId, lessonId, questionId })
+  const { bankId, lessonId, questionId } = args.value
+  const fresh = agentArgs({ bankId, lessonId, questionId })
   chat.value.dispose()
   chat.value = reactive(new AgentChat(fresh, settings.deviceId)) as AgentChat
   input.value = ''
@@ -115,10 +114,9 @@ const openHistory = () => router.push('/agent/history')
 
 // ---- the conversation ----
 const prompts = computed(() => {
-  if (isCreate.value) return ['出 5 道单选题', '出 3 道判断题', '出几道偏难的题']
   if (args.value.questionId) return ['为什么我选的不对？', '再讲细一点', '举个例子帮我记住']
-  if (args.value.lessonId) return ['讲一下这一节', '这一节有哪些考点？', '出几道题考考我']
-  return ['我哪里比较薄弱？', '帮我安排一下复习顺序', '出几道题考考我']
+  if (args.value.lessonId) return ['讲一下这一节', '这一节有哪些考点？', '用这一节出 3 道单选题']
+  return ['我哪里比较薄弱？', '帮我安排一下复习顺序', '出几道题考考我', '帮我出 5 道单选题']
 })
 
 // ---- files ----
@@ -207,7 +205,7 @@ async function openLink(href: string) {
 <template>
   <header class="topbar">
     <button class="icon-btn" aria-label="返回" @click="router.back()">‹</button>
-    <h1>{{ isCreate ? 'AI 出题' : '问 AI' }}</h1>
+    <h1>AI 助手</h1>
     <button v-if="chat.messages.length" class="icon-btn" aria-label="新对话" data-testid="agent-new" @click="newConversation">＋</button>
     <button class="icon-btn" aria-label="历史对话" data-testid="agent-history" @click="openHistory">🕘</button>
   </header>
@@ -216,7 +214,6 @@ async function openLink(href: string) {
     <span class="grow">{{ banner.message }}</span>
     <button v-if="banner.action" class="btn" @click="bannerAction">{{ banner.action === 'settings' ? '去设置' : '重试' }}</button>
   </div>
-  <div v-else-if="ready && isCreate && status && !status.verified" class="agent-note">后台没有配置复核模型，出的题不会经过独立复核</div>
 
   <main class="page agent">
     <p v-if="opening" class="muted center" data-testid="agent-opening">正在打开对话…</p>
@@ -226,7 +223,7 @@ async function openLink(href: string) {
     </div>
     <template v-else-if="chat.messages.length === 0">
       <p class="muted">
-        {{ isCreate ? '告诉我出几道题、什么题型，我会依据讲义原文出题，出好的题先放在这里，由你决定是否采纳。' : '可以问我讲义里的内容、你的薄弱点，或者让我出题考你。' }}
+        可以问我讲义里的内容、你的薄弱点，也可以让我出题。出的题依据讲义原文，默认就采纳进题库，不想要的随时可以取消。
       </p>
       <div class="row gap wrap">
         <button v-for="p in prompts" :key="p" class="chip pick" :disabled="!ready" @click="send(p)">{{ p }}</button>
@@ -258,9 +255,14 @@ async function openLink(href: string) {
         </div>
         <Md v-if="m.text" :source="m.text" agent-links @link="openLink" />
         <div v-if="m.streaming && !m.text && !m.tools.some((t) => t.status === 'running')" class="muted"><span class="spin">◌</span> 正在思考…</div>
-        <template v-for="id in m.draftIds" :key="id">
-          <DraftCard v-if="chat.drafts[id]" :entry="chat.drafts[id]" @accept="chat.accept(id)" @discard="chat.discard(id)" @revise="revise(id)" />
-        </template>
+        <DraftGroup
+          v-if="m.draftIds.some((id) => chat.drafts[id])"
+          :entries="m.draftIds.flatMap((id) => (chat.drafts[id] ? [chat.drafts[id]] : []))"
+          @accept="chat.accept($event)"
+          @discard="chat.discard($event)"
+          @revise="revise($event)"
+          @set-all="(ids, adopt) => chat.setAll(ids, adopt)"
+        />
         <p v-if="m.error" class="err">{{ m.error }}</p>
         <p v-if="m.note" class="muted small">{{ m.note }}</p>
       </div>
@@ -333,7 +335,7 @@ async function openLink(href: string) {
       class="input"
       rows="1"
       data-testid="agent-input"
-      :placeholder="ready ? (isCreate ? '说说想出什么题' : '问点什么') : hasToken ? '连接助手后才能提问' : '先填写访问令牌'"
+      :placeholder="ready ? '问点什么，或说说想出什么题' : hasToken ? '连接助手后才能提问' : '先填写访问令牌'"
       @keydown.enter="onEnter"
     />
     <button v-if="chat.busy" class="btn" data-testid="agent-stop" aria-label="停止" @click="chat.stop()">■</button>

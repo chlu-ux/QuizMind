@@ -190,6 +190,8 @@ export const draftJson = {
 }
 
 export const draft = (id = 'D1'): AgentDraft => draftFromJson({ ...draftJson, draft_id: id })
+/** A question the way the server sends it now: adopted when it was written. */
+export const adoptedDraft = (id = 'D1'): AgentDraft => draftFromJson({ ...draftJson, draft_id: id, adopted: true })
 
 /** A scripted assistant that records what it was asked. */
 export class FakeAgentApi implements AgentApi {
