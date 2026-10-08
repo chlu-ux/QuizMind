@@ -353,7 +353,7 @@ DELETE /api/v1/agent/attachments/{id}   → 只能删还没发出的（message_i
 
 **没验证的**：真机；中文文件名在各端的显示以外的边界（极长文件名）；一次读完 12 万字文件的体验（受工具轮数限制，设计里已说明）；Flutter 在 iOS 上的系统选择器（`file_picker` 在 iOS 需要的 Info.plist 项没改）；历史对话里点附件标签不会打开文件（`GET /agent/attachments/{id}` 已有，客户端还没用）。
 
-### 第 7 期：图片（2026-10-08 完成，未提交）
+### 第 7 期：图片（2026-10-08 完成）
 
 **做了什么**：`llm.BlockImage`（媒体类型 + 字节）与 Anthropic 适配器的 base64 图片块；迁移 `00017_llm_model_vision.sql`（`llm_model.vision`）；后台模型表单的“支持识图”开关与列表里的“识图”标签；`GET /agent/status` 的 `vision`；`POST /agent/attachments` 接受 jpeg / png / gif / webp；用户消息把图片块放在文字前面；H5 与 Flutter 的“＋”在模型能看图时弹出“添加文件 / 添加图片”，输入框上方显示缩略图，消息下显示缩略图、点开看大图，历史对话里的图用令牌取回；OpenAPI。
 
