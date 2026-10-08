@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../data/agent_api.dart';
 import '../data/ai_chat.dart';
 import '../data/ai_config_store.dart';
 import '../data/ai_usage.dart';
@@ -83,6 +84,14 @@ final aiUsageReporterProvider = Provider<AiUsageReporter>(
 
 /// How explanations are fetched from the model; overridden in tests.
 final aiChatProvider = Provider<AiChat>((ref) => HttpAiChat());
+
+/// The study assistant on the server. Rebuilt when the server address or the access token changes;
+/// overridden in tests.
+final agentApiProvider = Provider<AgentApi>((ref) {
+  final baseUrl = ref.watch(settingsProvider.select((s) => s.baseUrl));
+  final token = ref.watch(aiSettingsProvider.select((s) => s.token));
+  return HttpAgentApi(baseUrl: baseUrl, token: token);
+});
 
 /// Rebuilt whenever the server address changes.
 final apiProvider = Provider<QuizApi>((ref) {

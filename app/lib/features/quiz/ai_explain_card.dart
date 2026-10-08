@@ -18,6 +18,8 @@ import '../../data/media_store.dart';
 import '../../data/media_text.dart';
 import '../../data/models.dart';
 import '../../data/progress.dart';
+import '../agent/agent_controller.dart';
+import '../agent/agent_page.dart';
 import '../settings/settings_page.dart';
 import 'quiz_media.dart';
 
@@ -231,6 +233,13 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
     setState(() => _partial = null);
   }
 
+  /// Carries on with the assistant, which is told which question this is and what the learner picked.
+  void _askMore() {
+    final q = widget.question;
+    final args = AgentArgs(mode: 'learn', bankId: q.bankId, questionId: q.id, selected: widget.selected);
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => AgentPage(args: args, initialText: '我还是没懂，')));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -300,6 +309,17 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text('由 ${note.model} 生成，已保存在本机', style: theme.textTheme.labelSmall),
+            ),
+          // The assistant needs the same access token as the explanation; without one there is nothing to open.
+          if (!_loading && ref.watch(aiSettingsProvider.select((s) => s.token.isNotEmpty)))
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                key: const ValueKey('ask-ai-more'),
+                onPressed: _askMore,
+                icon: const Icon(Icons.forum_outlined, size: 18),
+                label: const Text('追问 AI'),
+              ),
             ),
         ]),
       ),

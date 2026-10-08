@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../data/database.dart';
+import '../agent/agent_controller.dart';
+import '../agent/agent_page.dart';
 import 'lesson_style.dart';
 import 'lesson_widgets.dart';
 import 'lessons.dart';
@@ -109,6 +111,13 @@ class _LessonPageState extends ConsumerState<LessonPage> {
     if (mounted) Navigator.of(context).pop();
   }
 
+  /// Opens the assistant on this section: to ask about it, or to have questions written from it.
+  void _openAgent(String mode) {
+    final args = AgentArgs(mode: mode, bankId: widget.bank.id, lessonId: widget.lessonId);
+    final text = mode == 'create' ? '用这一节出 3 道单选题' : '';
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => AgentPage(args: args, initialText: text)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -117,6 +126,20 @@ class _LessonPageState extends ConsumerState<LessonPage> {
       appBar: AppBar(
         title: Text(lesson == null ? '讲义' : lessonTitle(lesson), maxLines: 2, overflow: TextOverflow.ellipsis),
         actions: [
+          if (lesson != null) ...[
+            IconButton(
+              key: const ValueKey('lesson-ask-ai'),
+              tooltip: '问 AI',
+              icon: const Icon(Icons.auto_awesome_outlined),
+              onPressed: () => _openAgent('learn'),
+            ),
+            IconButton(
+              key: const ValueKey('lesson-ai-questions'),
+              tooltip: '用这一节出题',
+              icon: const Icon(Icons.edit_note),
+              onPressed: () => _openAgent('create'),
+            ),
+          ],
           if (lesson != null)
             TextButton(
               key: const ValueKey('cover-toggle'),

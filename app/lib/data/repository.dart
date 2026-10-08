@@ -62,6 +62,10 @@ class Repository {
   Stream<List<Bank>> watchBanks() =>
       (db.select(db.banks)..orderBy([(b) => OrderingTerm.asc(b.title)])).watch();
 
+  Future<Bank?> bank(String id) => (db.select(db.banks)..where((b) => b.id.equals(id))).getSingleOrNull();
+
+  Future<Question?> question(String id) => (db.select(db.questions)..where((q) => q.id.equals(id))).getSingleOrNull();
+
   Future<List<Question>> bankQuestions(String bankId) =>
       (db.select(db.questions)
             ..where((q) => q.bankId.equals(bankId) & q.hidden.equals(false))

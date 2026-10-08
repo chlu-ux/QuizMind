@@ -281,7 +281,7 @@ class _AiSettingsSectionState extends ConsumerState<AiSettingsSection> {
         enableSuggestions: false,
         decoration: InputDecoration(
           labelText: '访问令牌',
-          helperText: '服务端管理页「AI 解读」里设置的令牌；同步时用它取回 LLM 配置',
+          helperText: '服务端管理页「AI 解读」里设置的令牌；用于取回 AI 解读的配置、上报用量，以及使用 AI 助手',
           border: const OutlineInputBorder(),
           suffixIcon: IconButton(
             icon: Icon(_showToken ? Icons.visibility_off : Icons.visibility),

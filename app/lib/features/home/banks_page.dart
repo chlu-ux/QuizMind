@@ -5,6 +5,8 @@ import '../../core/providers.dart';
 import '../../core/settings.dart';
 import '../../data/database.dart';
 import '../../data/repository.dart';
+import '../agent/agent_controller.dart';
+import '../agent/agent_page.dart';
 import '../exam/exam_setup_page.dart';
 import '../quiz/learn_page.dart';
 import '../quiz/quiz_page.dart';
@@ -274,6 +276,21 @@ class _BankDetailState extends ConsumerState<BankDetail> {
                         : () => _open(QuestionListPage(kind: QuestionListKind.wrongBook, initialBankId: bank.id)),
                   ),
                   _GridTile(icon: Icons.bar_chart, title: '统计分析', onTap: () => _open(StatsPage(bank: bank))),
+                  // The assistant lives on the server, so these only make sense once there is one.
+                  if (ref.watch(settingsProvider).configured) ...[
+                    _GridTile(
+                      icon: Icons.auto_awesome_outlined,
+                      title: '问 AI',
+                      subtitle: '讲义、薄弱点、小测',
+                      onTap: () => _open(AgentPage(args: AgentArgs(mode: 'learn', bankId: bank.id))),
+                    ),
+                    _GridTile(
+                      icon: Icons.edit_note,
+                      title: 'AI 出题',
+                      subtitle: '依据讲义出题，由你审核',
+                      onTap: () => _open(AgentPage(args: AgentArgs(mode: 'create', bankId: bank.id))),
+                    ),
+                  ],
                 ];
                 // Two to a row, both as tall as the taller one so a longer label never ragged the grid.
                 return Column(

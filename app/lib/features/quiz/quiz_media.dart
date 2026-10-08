@@ -36,16 +36,20 @@ List<(String, bool)> splitSvg(String text) {
 /// Markdown of a question (stem or explanation) or of an AI answer. `media:<id>` pictures come from the
 /// device's picture store, downloading on demand, and complete ```svg blocks are drawn.
 class QuizMarkdown extends ConsumerWidget {
-  const QuizMarkdown(this.data, {super.key, this.selectable = true, this.styleSheet});
+  const QuizMarkdown(this.data, {super.key, this.selectable = true, this.styleSheet, this.onTapLink});
 
   final String data;
   final bool selectable;
   final MarkdownStyleSheet? styleSheet;
 
+  /// Called with the target of a tapped link; without it links are not tappable.
+  final void Function(String? href)? onTapLink;
+
   Widget _markdown(String text) => MarkdownBody(
     data: text,
     selectable: selectable,
     styleSheet: styleSheet,
+    onTapLink: onTapLink == null ? null : (text, href, title) => onTapLink!(href),
     imageBuilder: (uri, title, alt) {
       if (uri.scheme == 'media') {
         return QuizImage(id: uri.path, alt: alt ?? '');
