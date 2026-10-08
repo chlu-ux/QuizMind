@@ -14,6 +14,7 @@ import 'package:quizmind_app/data/agent_api.dart';
 import 'package:quizmind_app/data/agent_models.dart';
 import 'package:quizmind_app/data/database.dart';
 import 'package:quizmind_app/features/agent/agent_controller.dart';
+import 'package:quizmind_app/features/agent/agent_files.dart';
 import 'package:quizmind_app/features/agent/agent_links.dart';
 import 'package:quizmind_app/features/agent/agent_history_page.dart';
 import 'package:quizmind_app/features/agent/agent_page.dart';
@@ -90,6 +91,29 @@ class FakeAgentApi implements AgentApi {
   final accepted = <String>[];
   final discarded = <String>[];
   Object? decideError;
+
+  /// Files "on the server": uploaded and not sent yet.
+  final uploads = <({String conversationId, String name, String id})>[];
+  final removed = <String>[];
+
+  /// Refuses the next upload with this.
+  Object? uploadError;
+
+  /// Holds uploads until completed, to see the state in between.
+  Completer<void>? uploadGate;
+
+  @override
+  Future<AgentAttachment> uploadAttachment(String conversationId, String name, Uint8List bytes) async {
+    await uploadGate?.future;
+    final e = uploadError;
+    if (e != null) throw e;
+    final id = 'F${uploads.length + 1}';
+    uploads.add((conversationId: conversationId, name: name, id: id));
+    return AgentAttachment(id: id, name: name, mime: 'text/plain', size: bytes.length, chars: bytes.length);
+  }
+
+  @override
+  Future<void> deleteAttachment(String id) async => removed.add(id);
 
   @override
   Future<AgentStatus> status() async {
@@ -382,6 +406,119 @@ void main() {
       );
     });
 
+    group('files', () {
+      PickedFile file(String name, {String text = '内容', int? size}) {
+        final bytes = Uint8List.fromList(utf8.encode(text));
+        return PickedFile(name: name, size: size ?? bytes.length, read: () async => bytes);
+      }
+
+      final ok = [const AgentDelta('好'), const AgentDone(stop: 'end_turn')];
+
+      test('uploads for this conversation, sends the ids with the question and keeps the files on the message', () async {
+        final api = FakeAgentApi()..events = ok;
+        final c = await container(api);
+        final controller = c.read(agentControllerProvider(args).notifier);
+        await controller.addFiles([file('笔记.md'), file('b.txt')]);
+        expect(api.uploads.map((u) => (u.conversationId, u.name)), [(controller.conversationId, '笔记.md'), (controller.conversationId, 'b.txt')]);
+        expect(c.read(agentControllerProvider(args)).files.map((f) => f.status), [FileStatus.ready, FileStatus.ready]);
+
+        await controller.send('总结一下');
+        expect(api.requests[0].message, '总结一下');
+        expect(api.requests[0].attachmentIds, ['F1', 'F2']);
+        final s = c.read(agentControllerProvider(args));
+        expect(s.messages[0].attachments.map((a) => a.name), ['笔记.md', 'b.txt']);
+        expect(s.files, isEmpty);
+
+        await controller.send('再问');
+        expect(api.requests[1].attachmentIds, isEmpty);
+      });
+
+      test('a file with no question is a question of its own', () async {
+        final api = FakeAgentApi()..events = ok;
+        final c = await container(api);
+        final controller = c.read(agentControllerProvider(args).notifier);
+        await controller.send('  ');
+        expect(api.requests, isEmpty);
+        await controller.addFiles([file('a.md')]);
+        await controller.send('');
+        expect(api.requests.single.message, fileOnlyText);
+      });
+
+      test('does not send while a file is still going up', () async {
+        final api = FakeAgentApi()
+          ..events = ok
+          ..uploadGate = Completer<void>();
+        final c = await container(api);
+        c.listen(agentControllerProvider(args), (_, _) {}); // keeps the controller alive across the gap
+        final controller = c.read(agentControllerProvider(args).notifier);
+        final adding = controller.addFiles([file('a.md')]);
+        await Future<void>.delayed(Duration.zero);
+        expect(c.read(agentControllerProvider(args)).uploading, isTrue);
+        await controller.send('问');
+        expect(api.requests, isEmpty);
+        api.uploadGate!.complete();
+        await adding;
+        expect(c.read(agentControllerProvider(args)).uploading, isFalse);
+        await controller.send('问');
+        expect(api.requests.single.attachmentIds, ['F1']);
+      });
+
+      test('turns a wrong kind, an empty or a big file away without asking the server', () async {
+        final api = FakeAgentApi();
+        final c = await container(api);
+        final controller = c.read(agentControllerProvider(args).notifier);
+        await controller.addFiles([file('a.pdf'), file('empty.md', text: ''), file('big.txt', size: 512 * 1024 + 1)]);
+        expect(api.uploads, isEmpty);
+        final errors = c.read(agentControllerProvider(args)).files.map((f) => f.error).toList();
+        expect(errors[0], contains('不支持这种文件'));
+        expect(errors[1], '这个文件是空的');
+        expect(errors[2], contains('太大了'));
+        expect(c.read(agentControllerProvider(args)).canAttach, isTrue);
+      });
+
+      test('shows the reason when the server refuses, and the file can be dismissed', () async {
+        final api = FakeAgentApi()..uploadError = AgentException('这个文件不是 UTF-8 文本', status: 400);
+        final c = await container(api);
+        final controller = c.read(agentControllerProvider(args).notifier);
+        await controller.addFiles([file('gbk.txt')]);
+        final f = c.read(agentControllerProvider(args)).files.single;
+        expect((f.status, f.error), (FileStatus.error, '这个文件不是 UTF-8 文本'));
+        await controller.removeFile(f.key);
+        expect(c.read(agentControllerProvider(args)).files, isEmpty);
+        expect(api.removed, isEmpty, reason: 'it never reached the server');
+      });
+
+      test('removing a file that reached the server removes it there', () async {
+        final api = FakeAgentApi();
+        final c = await container(api);
+        final controller = c.read(agentControllerProvider(args).notifier);
+        await controller.addFiles([file('a.md')]);
+        await controller.removeFile(c.read(agentControllerProvider(args)).files.single.key);
+        expect(api.removed, ['F1']);
+        expect(c.read(agentControllerProvider(args)).files, isEmpty);
+      });
+
+      test('stops at four files for a message and eight for the conversation', () async {
+        final api = FakeAgentApi()..events = ok;
+        final c = await container(api);
+        final controller = c.read(agentControllerProvider(args).notifier);
+        await controller.addFiles([for (var i = 0; i < 5; i++) file('f$i.md')]);
+        var s = c.read(agentControllerProvider(args));
+        expect(s.readyFiles, hasLength(4));
+        expect(s.files[4].error, contains('最多'));
+        expect(s.canAttach, isFalse);
+        await controller.removeFile(s.files[4].key);
+        await controller.send('问');
+        await controller.addFiles([for (var i = 0; i < 4; i++) file('g$i.md')]);
+        s = c.read(agentControllerProvider(args));
+        expect(s.fileCount, 8);
+        expect(s.canAttach, isFalse);
+        await controller.addFiles([file('last.md')]);
+        expect(c.read(agentControllerProvider(args)).files.last.error, contains('最多'));
+        expect(api.uploads, hasLength(8));
+      });
+    });
+
     group('drafts', () {
       const create = AgentArgs(mode: 'create', bankId: 'b1', lessonId: 'L1');
 
@@ -566,6 +703,28 @@ void main() {
     });
   });
 
+  group('files in a stored conversation', () {
+    test('the messages that carried files show them, and they count towards the limit', () async {
+      final api = FakeAgentApi()
+        ..keep('c1', messages: const [
+          StoredMessage(
+            id: 1,
+            role: 'user',
+            text: '看',
+            attachments: [AgentAttachment(id: 'A1', name: 'n.md', mime: 'text/markdown', size: 3, chars: 3)],
+          ),
+          StoredMessage(id: 2, role: 'assistant', text: '好'),
+        ]);
+      final c = await container(api);
+      const a = AgentArgs(mode: 'learn', conversationId: 'c1');
+      c.listen(agentControllerProvider(a), (_, _) {});
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      final s = c.read(agentControllerProvider(a));
+      expect(s.messages[0].attachments.map((x) => x.name), ['n.md']);
+      expect(s.fileCount, 1);
+    });
+  });
+
   group('HttpAgentApi', () {
     HttpAgentApi apiWith(StubAdapter adapter) {
       final dio = Dio(BaseOptions(baseUrl: 'http://srv'))
@@ -581,6 +740,68 @@ void main() {
             Headers.contentTypeHeader: [Headers.jsonContentType],
           },
         );
+
+    test('uploads a file as a form with the conversation and the token, and removes one', () async {
+      final adapter = StubAdapter(
+        (o) => o.method == 'POST'
+            ? json({'id': 'F1', 'kind': 'text', 'name': '笔记.md', 'mime': 'text/markdown', 'size': 6, 'chars': 2}, status: 201)
+            : ResponseBody.fromString('', 204),
+      );
+      final api = apiWith(adapter);
+      final a = await api.uploadAttachment('c1', '笔记.md', Uint8List.fromList(utf8.encode('# 笔记')));
+      expect((a.id, a.name, a.mime, a.size, a.chars), ('F1', '笔记.md', 'text/markdown', 6, 2));
+      expect(adapter.last!.path, '/api/v1/agent/attachments');
+      expect(adapter.last!.headers['Authorization'], 'Bearer tok');
+      final form = adapter.last!.data as FormData;
+      expect(Map.fromEntries(form.fields)['conversation_id'], 'c1');
+      expect(form.files.single.key, 'file');
+      expect(form.files.single.value.filename, '笔记.md');
+
+      await api.deleteAttachment('F/1');
+      expect(adapter.last!.method, 'DELETE');
+      expect(adapter.last!.path, '/api/v1/agent/attachments/F%2F1');
+    });
+
+    test("an upload's refusal is shown as the server worded it; an old server is named", () async {
+      final bytes = Uint8List.fromList([120]);
+      var api = apiWith(StubAdapter((_) => json({'error': '一场对话最多 8 个文件'}, status: 400)));
+      await expectLater(
+        api.uploadAttachment('c1', 'a.md', bytes),
+        throwsA(isA<AgentException>().having((e) => e.message, 'message', '一场对话最多 8 个文件')),
+      );
+      api = apiWith(StubAdapter((_) => json({'error': 'not found'}, status: 404)));
+      await expectLater(
+        api.uploadAttachment('c1', 'a.md', bytes),
+        throwsA(isA<AgentException>().having((e) => e.message, 'message', contains('更新服务端'))),
+      );
+      api = apiWith(StubAdapter((_) => ResponseBody.fromString('', 413)));
+      await expectLater(
+        api.uploadAttachment('c1', 'a.md', bytes),
+        throwsA(isA<AgentException>().having((e) => e.message, 'message', contains('太大'))),
+      );
+    });
+
+    test('reads the files of a stored conversation', () async {
+      final api = apiWith(StubAdapter((_) => json({
+            'id': 'c1',
+            'mode': 'learn',
+            'title': 't',
+            'messages': [
+              {
+                'id': 1,
+                'role': 'user',
+                'text': '看',
+                'attachments': [
+                  {'id': 'A1', 'kind': 'text', 'name': 'n.md', 'mime': 'text/markdown', 'size': 3, 'chars': 3},
+                ],
+              },
+              {'id': 2, 'role': 'assistant', 'text': '好'},
+            ],
+          })));
+      final c = await api.conversation('c1');
+      expect(c.messages[0].attachments.single.name, 'n.md');
+      expect(c.messages[1].attachments, isEmpty);
+    });
 
     test('status sends the token', () async {
       final adapter = StubAdapter(
@@ -936,6 +1157,82 @@ void main() {
         );
       },
     );
+
+    group('files', () {
+      PickedFile pick(String name, {String text = '# 笔记'}) {
+        final bytes = Uint8List.fromList(utf8.encode(text));
+        return PickedFile(name: name, size: bytes.length, read: () async => bytes);
+      }
+
+      Override picker(List<PickedFile> files) => agentFilePickerProvider.overrideWithValue(() async => files);
+
+      Future<void> attach(WidgetTester tester) async {
+        await tester.tap(find.byKey(const ValueKey('agent-attach')));
+        await tester.pumpAndSettle();
+      }
+
+      testWidgets('a chosen file shows above the box, goes with the question, and shows as a tag on it', (tester) async {
+        final api = FakeAgentApi()..events = [const AgentDelta('好'), const AgentDone(stop: 'end_turn')];
+        await pump(tester, api, overrides: [picker([pick('笔记.md')])]);
+        expect(find.byKey(const ValueKey('agent-files')), findsNothing);
+
+        await attach(tester);
+        expect(find.byKey(const ValueKey('agent-file')), findsOneWidget);
+        expect(find.textContaining('笔记.md'), findsOneWidget);
+
+        await type(tester, '总结一下');
+        await tester.tap(find.byKey(const ValueKey('agent-send')));
+        await tester.pumpAndSettle();
+        expect(api.requests.single.message, '总结一下');
+        expect(api.requests.single.attachmentIds, ['F1']);
+        expect(find.byKey(const ValueKey('agent-files')), findsNothing);
+        expect(find.byKey(const ValueKey('agent-file-tag')), findsOneWidget);
+        expect(find.text('📎 笔记.md'), findsOneWidget);
+      });
+
+      testWidgets('a file alone can be sent', (tester) async {
+        final api = FakeAgentApi()..events = [const AgentDone(stop: 'end_turn')];
+        await pump(tester, api, overrides: [picker([pick('a.md')])]);
+        await attach(tester);
+        await tester.tap(find.byKey(const ValueKey('agent-send')));
+        await tester.pumpAndSettle();
+        expect(api.requests.single.message, fileOnlyText);
+      });
+
+      testWidgets('shows why a file was turned away, and lets it be taken off', (tester) async {
+        final api = FakeAgentApi();
+        await pump(tester, api, overrides: [picker([pick('a.pdf')])]);
+        await attach(tester);
+        expect(find.textContaining('不支持这种文件'), findsOneWidget);
+        await tester.tap(find.byKey(const ValueKey('agent-file-remove')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('agent-files')), findsNothing);
+        expect(api.uploads, isEmpty);
+      });
+
+      testWidgets('removing an uploaded file removes it on the server', (tester) async {
+        final api = FakeAgentApi();
+        await pump(tester, api, overrides: [picker([pick('a.md')])]);
+        await attach(tester);
+        await tester.tap(find.byKey(const ValueKey('agent-file-remove')));
+        await tester.pumpAndSettle();
+        expect(api.removed, ['F1']);
+      });
+
+      testWidgets('the plus button is off without a connection, and when the files are at their limit', (tester) async {
+        final api = FakeAgentApi();
+        await pump(tester, api, prefValues: const {});
+        expect(tester.widget<IconButton>(find.byKey(const ValueKey('agent-attach'))).onPressed, isNull);
+      });
+
+      testWidgets('four files fill a message', (tester) async {
+        final api = FakeAgentApi();
+        await pump(tester, api, overrides: [picker([for (var i = 1; i <= 4; i++) pick('$i.md')])]);
+        expect(tester.widget<IconButton>(find.byKey(const ValueKey('agent-attach'))).onPressed, isNotNull);
+        await attach(tester);
+        expect(tester.widget<IconButton>(find.byKey(const ValueKey('agent-attach'))).onPressed, isNull);
+      });
+    });
 
     testWidgets('the initial text is put in the box, not sent', (tester) async {
       final api = FakeAgentApi();

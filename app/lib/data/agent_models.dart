@@ -150,6 +150,55 @@ class StoredTool {
   final String status;
 }
 
+/// A file a message carried.
+class AgentAttachment {
+  const AgentAttachment({
+    required this.id,
+    required this.name,
+    this.kind = 'text',
+    this.mime = '',
+    this.size = 0,
+    this.chars = 0,
+  });
+
+  final String id;
+  final String name;
+
+  /// text | image
+  final String kind;
+  final String mime;
+
+  /// Bytes as uploaded.
+  final int size;
+
+  /// Text files: characters of the text.
+  final int chars;
+
+  factory AgentAttachment.fromJson(Map<String, dynamic> j) => AgentAttachment(
+    id: (j['id'] as String?) ?? '',
+    name: (j['name'] as String?) ?? '',
+    kind: j['kind'] == 'image' ? 'image' : 'text',
+    mime: (j['mime'] as String?) ?? '',
+    size: (j['size'] as num?)?.toInt() ?? 0,
+    chars: (j['chars'] as num?)?.toInt() ?? 0,
+  );
+}
+
+/// What the server accepts as a file for the assistant. It checks again; these only spare a round trip.
+const agentFileExtensions = [
+  '.md',
+  '.markdown',
+  '.txt',
+  '.csv',
+  '.json',
+  '.log',
+];
+const agentFileMaxBytes = 512 * 1024;
+
+/// Files in a conversation, and in one message.
+const agentMaxFiles = 8;
+const agentMaxFilesPerMessage = 4;
+
 class StoredMessage {
   const StoredMessage({
     required this.id,
@@ -157,6 +206,7 @@ class StoredMessage {
     required this.text,
     this.tools = const [],
     this.drafts = const [],
+    this.attachments = const [],
     this.note = '',
     this.error = '',
   });
@@ -166,6 +216,7 @@ class StoredMessage {
   final String text;
   final List<StoredTool> tools;
   final List<StoredDraft> drafts;
+  final List<AgentAttachment> attachments;
   final String note;
   final String error;
 }
@@ -248,6 +299,7 @@ class AgentConversationDetail {
               ),
           ],
           drafts: [for (final d in maps(m['drafts'])) StoredDraft(AgentDraft.fromJson(d), phase(d['phase']))],
+          attachments: [for (final a in maps(m['attachments'])) AgentAttachment.fromJson(a)],
         ),
     ]);
   }

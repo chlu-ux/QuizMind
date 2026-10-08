@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 
@@ -23,6 +24,17 @@ abstract class AgentApi {
 
   /// Also discards the drafts nobody decided on; questions already accepted stay.
   Future<void> deleteConversation(String id);
+
+  /// Keeps a text file for the conversation until a message carries it. A refusal's reason is the
+  /// exception's message.
+  Future<AgentAttachment> uploadAttachment(
+    String conversationId,
+    String name,
+    Uint8List bytes,
+  );
+
+  /// Removes a file that has not been sent.
+  Future<void> deleteAttachment(String id);
 
   /// Sends a draft to the review queue (it is not published until a reviewer approves it).
   Future<void> acceptDraft(String id);
@@ -107,6 +119,39 @@ class HttpAgentApi implements AgentApi {
       () => _dio.delete('/api/v1/agent/conversations/${Uri.encodeComponent(id)}', options: _options()), (_) {}));
 
   @override
+  Future<AgentAttachment> uploadAttachment(
+    String conversationId,
+    String name,
+    Uint8List bytes,
+  ) async {
+    try {
+      return await _call(
+        () => _dio.post(
+          '/api/v1/agent/attachments',
+          data: FormData.fromMap({
+            'conversation_id': conversationId,
+            'file': MultipartFile.fromBytes(bytes, filename: name),
+          }),
+          options: _options(),
+        ),
+        (d) => AgentAttachment.fromJson(d as Map<String, dynamic>),
+      );
+    } on AgentException catch (e) {
+      if (e.status == 404) throw AgentException('服务器还不支持上传文件，请先更新服务端', status: 404);
+      rethrow;
+    }
+  }
+
+  @override
+  Future<void> deleteAttachment(String id) => _call(
+    () => _dio.delete(
+      '/api/v1/agent/attachments/${Uri.encodeComponent(id)}',
+      options: _options(),
+    ),
+    (_) {},
+  );
+
+  @override
   Future<void> acceptDraft(String id) =>
       _call(() => _dio.post('/api/v1/agent/drafts/${Uri.encodeComponent(id)}/accept', options: _options()), (_) {});
 
@@ -153,6 +198,7 @@ class HttpAgentApi implements AgentApi {
       final detail = await _errorText(e.response!.data);
       final message = switch (status) {
         401 => '访问令牌不对或还没设置。到「设置 → AI 解读」填写和后台一致的访问令牌',
+        413 => '文件太大了，请截取需要的部分再上传',
         409 => '这场对话还在回答上一个问题，请等它结束',
         404 => 'AI 助手还没有启用。请先到后台「AI 与模型」，给「助手」角色绑定一个 Anthropic 协议的模型',
         429 => '同时进行的对话太多了，请等上一个结束',

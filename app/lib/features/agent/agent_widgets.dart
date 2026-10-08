@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 
+import '../../data/agent_models.dart';
 import '../quiz/quiz_media.dart';
 import 'agent_controller.dart';
 
 /// What the learner said.
 class UserBubble extends StatelessWidget {
-  const UserBubble(this.text, {super.key});
+  const UserBubble(this.text, {super.key, this.attachments = const []});
 
   final String text;
+
+  /// The files this message carried, shown as tags under the words.
+  final List<AgentAttachment> attachments;
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +25,41 @@ class UserBubble extends StatelessWidget {
           color: theme.colorScheme.primaryContainer,
           borderRadius: BorderRadius.circular(16),
         ),
-        child: SelectableText(
-          text,
-          style: TextStyle(color: theme.colorScheme.onPrimaryContainer),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SelectableText(
+              text,
+              style: TextStyle(color: theme.colorScheme.onPrimaryContainer),
+            ),
+            if (attachments.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  children: [
+                    for (final a in attachments)
+                      Container(
+                        key: const ValueKey('agent-file-tag'),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          '📎 ${a.name}',
+                          style: theme.textTheme.labelSmall,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -451,6 +487,10 @@ class AgentInputBar extends StatelessWidget {
     required this.hint,
     required this.onSend,
     required this.onStop,
+    this.files = const [],
+    this.canAttach = false,
+    this.onAttach,
+    this.onRemoveFile,
   });
 
   final TextEditingController controller;
@@ -461,6 +501,12 @@ class AgentInputBar extends StatelessWidget {
   final VoidCallback onSend;
   final VoidCallback onStop;
 
+  /// Files chosen for the next message.
+  final List<PendingFile> files;
+  final bool canAttach;
+  final VoidCallback? onAttach;
+  final void Function(int key)? onRemoveFile;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -470,50 +516,138 @@ class AgentInputBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          padding: const EdgeInsets.fromLTRB(4, 8, 8, 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: TextField(
-                  key: const ValueKey('agent-input'),
-                  controller: controller,
-                  focusNode: focusNode,
-                  minLines: 1,
-                  maxLines: 5,
-                  textInputAction: TextInputAction.newline,
-                  decoration: InputDecoration(
-                    hintText: hint,
-                    filled: true,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(20),
-                      borderSide: BorderSide.none,
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
+              if (files.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(left: 8, bottom: 6),
+                  child: Column(
+                    key: const ValueKey('agent-files'),
+                    children: [
+                      for (final f in files)
+                        _FileRow(
+                          file: f,
+                          onRemove: () => onRemoveFile?.call(f.key),
+                        ),
+                    ],
                   ),
                 ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  IconButton(
+                    key: const ValueKey('agent-attach'),
+                    tooltip: canAttach ? '添加 .md / .txt 等文本文件' : '文件数量到上限了',
+                    onPressed: canSend && canAttach ? onAttach : null,
+                    icon: const Icon(Icons.add_circle_outline),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      key: const ValueKey('agent-input'),
+                      controller: controller,
+                      focusNode: focusNode,
+                      minLines: 1,
+                      maxLines: 5,
+                      textInputAction: TextInputAction.newline,
+                      decoration: InputDecoration(
+                        hintText: hint,
+                        filled: true,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  if (busy)
+                    IconButton.filledTonal(
+                      key: const ValueKey('agent-stop'),
+                      tooltip: '停止',
+                      onPressed: onStop,
+                      icon: const Icon(Icons.stop),
+                    )
+                  else
+                    IconButton.filled(
+                      key: const ValueKey('agent-send'),
+                      tooltip: '发送',
+                      onPressed: canSend ? onSend : null,
+                      icon: const Icon(Icons.arrow_upward),
+                    ),
+                ],
               ),
-              const SizedBox(width: 4),
-              if (busy)
-                IconButton.filledTonal(
-                  key: const ValueKey('agent-stop'),
-                  tooltip: '停止',
-                  onPressed: onStop,
-                  icon: const Icon(Icons.stop),
-                )
-              else
-                IconButton.filled(
-                  key: const ValueKey('agent-send'),
-                  tooltip: '发送',
-                  onPressed: canSend ? onSend : null,
-                  icon: const Icon(Icons.arrow_upward),
-                ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _FileRow extends StatelessWidget {
+  const _FileRow({required this.file, required this.onRemove});
+
+  final PendingFile file;
+  final VoidCallback onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final failed = file.status == FileStatus.error;
+    final size = file.size < 1024
+        ? '${file.size} B'
+        : '${(file.size / 1024).round()} KB';
+    return Container(
+      key: const ValueKey('agent-file'),
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(left: 12),
+      decoration: BoxDecoration(
+        color: failed
+            ? theme.colorScheme.errorContainer
+            : theme.colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '📎 ${file.name}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  switch (file.status) {
+                    FileStatus.uploading => '上传中…',
+                    FileStatus.error => file.error ?? '',
+                    FileStatus.ready => size,
+                  },
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: failed
+                        ? theme.colorScheme.error
+                        : theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            key: const ValueKey('agent-file-remove'),
+            tooltip: '移除文件',
+            visualDensity: VisualDensity.compact,
+            onPressed: onRemove,
+            icon: const Icon(Icons.close, size: 18),
+          ),
+        ],
       ),
     );
   }

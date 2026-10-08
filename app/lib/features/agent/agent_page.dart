@@ -5,6 +5,7 @@ import '../../core/providers.dart';
 import '../../data/agent_models.dart';
 import '../settings/settings_page.dart';
 import 'agent_controller.dart';
+import 'agent_files.dart';
 import 'agent_history_page.dart';
 import 'agent_links.dart';
 import 'agent_widgets.dart';
@@ -59,9 +60,18 @@ class _AgentPageState extends ConsumerState<AgentPage> {
     return const ['我哪里比较薄弱？', '帮我安排一下复习顺序', '出几道题考考我'];
   }
 
+  Future<void> _attach() async {
+    final picked = await ref.read(agentFilePickerProvider)();
+    if (!mounted || picked.isEmpty) return;
+    await ref.read(agentControllerProvider(args).notifier).addFiles(picked);
+  }
+
   void _send([String? text]) {
     final t = (text ?? _input.text).trim();
-    if (t.isEmpty) return;
+    // A file alone is enough: the controller supplies the words.
+    if (t.isEmpty && ref.read(agentControllerProvider(args)).readyFiles.isEmpty) {
+      return;
+    }
     _input.clear();
     ref.read(agentControllerProvider(args).notifier).send(t);
     _scrollToEnd();
@@ -255,7 +265,9 @@ class _AgentPageState extends ConsumerState<AgentPage> {
                         itemCount: state.messages.length,
                         itemBuilder: (context, i) {
                           final m = state.messages[i];
-                          if (m.role == 'user') return UserBubble(m.text);
+                          if (m.role == 'user') {
+                            return UserBubble(m.text, attachments: m.attachments);
+                          }
                           return AssistantMessage(
                             key: ValueKey('msg-${m.id}'),
                             message: m,
@@ -274,7 +286,15 @@ class _AgentPageState extends ConsumerState<AgentPage> {
             controller: _input,
             focusNode: _focus,
             busy: state.busy,
-            canSend: ready && !state.opening && state.openError == null,
+            canSend:
+                ready &&
+                !state.opening &&
+                state.openError == null &&
+                !state.uploading,
+            files: state.files,
+            canAttach: state.canAttach,
+            onAttach: _attach,
+            onRemoveFile: controller.removeFile,
             hint: ready
                 ? (args.isCreate ? '说说想出什么题' : '问点什么')
                 : (hasToken ? '连接助手后才能提问' : '先填写访问令牌'),

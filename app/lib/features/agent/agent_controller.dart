@@ -7,6 +7,7 @@ import '../../core/providers.dart';
 import '../../core/settings.dart';
 import '../../core/ulid.dart';
 import '../../data/agent_models.dart';
+import 'agent_files.dart';
 
 /// Where a conversation starts: which assistant mode and what the learner is looking at, or, with
 /// [conversationId], a conversation kept on the server. Two pages with equal args share one
@@ -78,6 +79,7 @@ class AgentMsg {
     this.streaming = false,
     this.error,
     this.note,
+    this.attachments = const [],
   });
 
   final int id;
@@ -92,6 +94,9 @@ class AgentMsg {
 
   /// A remark about how the answer ended (stopped, cut short).
   final String? note;
+
+  /// The files this message carried.
+  final List<AgentAttachment> attachments;
 
   AgentMsg copyWith({
     String? text,
@@ -109,6 +114,46 @@ class AgentMsg {
     streaming: streaming ?? this.streaming,
     error: error ?? this.error,
     note: note ?? this.note,
+    attachments: attachments,
+  );
+}
+
+/// The words sent when a file comes with no question.
+const fileOnlyText = '请看一下我给你的文件。';
+
+enum FileStatus { uploading, ready, error }
+
+/// A file chosen for the next message: on its way to the server, or kept there waiting to be sent.
+class PendingFile {
+  const PendingFile({
+    required this.key,
+    required this.name,
+    required this.size,
+    required this.status,
+    this.attachment,
+    this.error,
+  });
+
+  final int key;
+  final String name;
+  final int size;
+  final FileStatus status;
+  final AgentAttachment? attachment;
+
+  /// Why the file was not taken.
+  final String? error;
+
+  PendingFile copyWith({
+    FileStatus? status,
+    AgentAttachment? attachment,
+    String? error,
+  }) => PendingFile(
+    key: key,
+    name: name,
+    size: size,
+    status: status ?? this.status,
+    attachment: attachment ?? this.attachment,
+    error: error ?? this.error,
   );
 }
 
@@ -139,10 +184,32 @@ class AgentState {
     this.busy = false,
     this.opening = false,
     this.openError,
+    this.files = const [],
   });
 
   final List<AgentMsg> messages;
   final Map<String, DraftEntry> drafts;
+
+  /// Files chosen for the next message.
+  final List<PendingFile> files;
+
+  bool get uploading => files.any((f) => f.status == FileStatus.uploading);
+
+  List<PendingFile> get readyFiles => [
+    for (final f in files)
+      if (f.status == FileStatus.ready) f,
+  ];
+
+  /// Files this conversation holds: the ones sent before and the ones chosen now.
+  int get fileCount =>
+      messages.fold<int>(0, (n, m) => n + m.attachments.length) +
+      files.where((f) => f.status != FileStatus.error).length;
+
+  /// Another file may be added.
+  bool get canAttach =>
+      fileCount < agentMaxFiles &&
+      files.where((f) => f.status != FileStatus.error).length <
+          agentMaxFilesPerMessage;
 
   /// An answer is being written.
   final bool busy;
@@ -160,7 +227,9 @@ class AgentState {
     bool? opening,
     String? openError,
     bool clearOpenError = false,
+    List<PendingFile>? files,
   }) => AgentState(
+    files: files ?? this.files,
     messages: messages ?? this.messages,
     drafts: drafts ?? this.drafts,
     busy: busy ?? this.busy,
@@ -179,6 +248,7 @@ class AgentController extends Notifier<AgentState> {
 
   late final String _conversationId;
   int _nextId = 1;
+  int _nextFile = 1;
   CancelToken? _cancel;
 
   @override
@@ -219,6 +289,7 @@ class AgentController extends Notifier<AgentState> {
           text: m.text,
           tools: [for (final t in m.tools) ToolRow(id: t.id, label: t.label, status: t.status)],
           draftIds: [for (final d in m.drafts) d.draft.id],
+          attachments: m.attachments,
           error: m.error.isEmpty ? null : m.error,
           note: m.note.isEmpty ? null : m.note,
         ));
@@ -231,16 +302,107 @@ class AgentController extends Notifier<AgentState> {
     }
   }
 
-  /// Sends [text] and streams the answer in.
+  // ---- files ----
+
+  /// Why [f] cannot be taken, judged before uploading; the server checks again.
+  String _refusal(PickedFile f) {
+    final dot = f.name.lastIndexOf('.');
+    final ext = dot < 0 ? '' : f.name.substring(dot).toLowerCase();
+    if (!agentFileExtensions.contains(ext)) {
+      return '不支持这种文件，可以上传 ${agentFileExtensions.join(' ')} 文本文件';
+    }
+    if (f.size == 0) return '这个文件是空的';
+    if (f.size > agentFileMaxBytes) {
+      return '文件太大了（超过 ${agentFileMaxBytes ~/ 1024} KB），请截取需要的部分再上传';
+    }
+    if (!state.canAttach) {
+      return '一场对话最多 $agentMaxFiles 个文件，一条消息最多带 $agentMaxFilesPerMessage 个';
+    }
+    return '';
+  }
+
+  void _setFile(int key, PendingFile Function(PendingFile) change) =>
+      state = state.copyWith(
+        files: [for (final f in state.files) f.key == key ? change(f) : f],
+      );
+
+  /// Uploads [picked] for the next message. A file that is not taken stays in the list with the
+  /// reason, until dismissed.
+  Future<void> addFiles(List<PickedFile> picked) async {
+    for (final f in picked) {
+      if (!ref.mounted) return;
+      final key = _nextFile++;
+      final why = _refusal(f);
+      state = state.copyWith(
+        files: [
+          ...state.files,
+          PendingFile(
+            key: key,
+            name: f.name,
+            size: f.size,
+            status: why.isEmpty ? FileStatus.uploading : FileStatus.error,
+            error: why.isEmpty ? null : why,
+          ),
+        ],
+      );
+      if (why.isNotEmpty) continue;
+      try {
+        final bytes = await f.read();
+        final a = await ref
+            .read(agentApiProvider)
+            .uploadAttachment(_conversationId, f.name, bytes);
+        if (!ref.mounted) return;
+        _setFile(
+          key,
+          (p) => p.copyWith(status: FileStatus.ready, attachment: a),
+        );
+      } on AgentException catch (e) {
+        if (ref.mounted) {
+          _setFile(key, (p) => p.copyWith(status: FileStatus.error, error: e.message));
+        }
+      } catch (e) {
+        if (ref.mounted) {
+          _setFile(key, (p) => p.copyWith(status: FileStatus.error, error: '出错了：$e'));
+        }
+      }
+    }
+  }
+
+  /// Takes a file off the next message and, if it reached the server, removes it there.
+  Future<void> removeFile(int key) async {
+    final f = state.files.where((x) => x.key == key).firstOrNull;
+    if (f == null) return;
+    state = state.copyWith(
+      files: [
+        for (final x in state.files)
+          if (x.key != key) x,
+      ],
+    );
+    final a = f.attachment;
+    if (a == null) return;
+    try {
+      await ref.read(agentApiProvider).deleteAttachment(a.id);
+    } catch (_) {
+      // The server drops unsent files after a day anyway.
+    }
+  }
+
+  /// Sends [text] (with the chosen files) and streams the answer in.
   Future<void> send(String text) async {
-    final t = text.trim();
+    final sending = state.readyFiles;
+    final t = text.trim().isEmpty && sending.isNotEmpty
+        ? fileOnlyText
+        : text.trim();
     // Not while a stored conversation is being read, or when it could not be: its history is unknown.
-    if (t.isEmpty || state.busy || state.opening || state.openError != null) return;
-    final user = AgentMsg(id: _nextId++, role: 'user', text: t);
+    if (t.isEmpty || state.busy || state.uploading || state.opening || state.openError != null) return;
+    final attachments = [for (final f in sending) f.attachment!];
+    final user = AgentMsg(id: _nextId++, role: 'user', text: t, attachments: attachments);
     final bot = AgentMsg(id: _nextId++, role: 'assistant', streaming: true);
     state = state.copyWith(
       messages: [...state.messages, user, bot],
       busy: true,
+      // Files that were not taken are not sent; they leave with the message that carried the good ones.
+      files: const [],
     );
 
     final cancel = _cancel = CancelToken();
@@ -250,6 +412,7 @@ class AgentController extends Notifier<AgentState> {
         mode: args.mode,
         deviceId: ref.read(settingsProvider).deviceId,
         message: t,
+        attachmentIds: [for (final a in attachments) a.id],
         context: AgentContext(
           bankId: args.bankId,
           lessonId: args.lessonId,
