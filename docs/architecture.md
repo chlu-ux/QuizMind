@@ -673,6 +673,29 @@ GET /api/v1/lessons?version=<n>
 - 和刷题接口一样**免鉴权**（讲义本来就是出题用的素材，不含答案）。旧服务端没有这个接口（404），客户端当作「没有讲义」，不影响其他同步。
 - 文本里的图用 `media:<id>` 引用，渲染同题目（§7.7）。
 
+### 7.9 学习 / 出题助手（2026-10-08）
+
+对话式助手，运行在服务端，Flutter 和 H5 都是它的薄客户端。完整设计、取舍与分期见 [`agent-design.md`](agent-design.md)，接口契约见 `api/openapi.yaml`。
+
+```
+GET  /api/v1/agent/status                       → { available, model, verified }
+POST /api/v1/agent/chat                         → text/event-stream
+GET  /api/v1/agent/drafts?conversation_id=…     → { drafts: [AgentDraft] }
+GET  /api/v1/agent/conversations                → 历史列表（分页）
+GET  /api/v1/agent/conversations/{id}           → 一场对话的全部消息
+POST /api/v1/agent/drafts/{id}/accept           → { id, status }
+POST /api/v1/agent/drafts/{id}/discard          → { id, status }
+```
+
+- **两种用法**：`mode=learn` 回答讲义里的内容、分析薄弱点、拿现成的题考你；`mode=create` 依据讲义原文出题，出好的题先是**草稿**，由用户决定采纳或丢弃。
+- **对话存在服务端**（2026-10-08 起，见 [`agent-history-and-files.md`](agent-history-and-files.md)）：`agent_conversation` / `agent_message` 两张表，保存学习者看得到的东西（文字、工具状态行、草稿、备注）；模型的工具调用原文和思考块不存。客户端只发新的一条消息，服务端取历史（至多 30 条、24000 字，规则同前）。所有持令牌的设备共享全部对话；`GET /agent/conversations`（列表）、`GET|PATCH|DELETE /agent/conversations/{id}`。旧的"客户端带全部历史"形式（`messages`）仍可用但已过时，不落库。助手需要资料时用自己的工具重新查（讲义、题库、薄弱点；出题模式再加 `propose_questions`、`list_drafts`）。唯一的写入是草稿，助手没有发布、修改、删除已发布题目的能力。删除对话会丢弃其中没处理的草稿，已采纳的题不受影响。
+- **流式协议**：SSE，事件 `start / delta / tool / drafts / done / error`；`: ping` 每 15 秒一次保活；客户端断开连接即中止模型调用。回答是 Markdown，`lesson:<id>`、`question:<id>` 链接指向讲义小节与题目，完整的 ` ```svg ` 块是示意图。客户端在渲染前用与服务端 `checkSVG` 相同的白名单检查再用 `<img>` / SVG 渲染器显示，不通过的显示成代码（H5：`quiz/svg.ts`；Flutter：`quiz_media.dart`）。
+- **草稿的去向**：草稿是 `status = 'draft'` 的题，另有 `agent_draft` 表（对话 id、出处小节、是否经独立复核）；它不出现在审核队列、同步和题数里。**采纳**把它变成 `needs_review`，进入与流水线出题相同的审核队列，审核通过才发布；**丢弃**变成 `rejected`；7 天没处理的草稿在下一次对话开始时清理。后台审核页可按「来源：助手」筛选，详情里显示对话号和是否经独立复核。
+- **独立复核**：绑定了 `validator` 角色模型时，每道草稿入库前先让它不看答案做一遍，不一致的拒绝；没绑定则草稿标注「未经独立复核」。
+- **鉴权与限额**：用「AI 解读」页里设置的那个访问令牌（`Authorization: Bearer`），同一个令牌管理 `/ai/config`、`/ai/usage` 和 `/agent/*`；没有绑定助手模型时 `/agent/status` 为 404。每台设备（请求里的 `device_id`）同时至多 2 个对话（429）；一次对话最长 3 分钟；助手的每一轮模型调用都计入每日 token 预算。
+- **用量**：每轮调用写 `llm_call_log`（`role = agent`、`source = server`），`ref_id` 是对话 id；后台用量页的明细在「题目」一列显示「对话 xxxxxx」。
+- **客户端**：令牌在设置页填写（Flutter：设置 → AI 解读；H5：设置 → AI 助手，存 `localStorage`）；入口有题库页（问 AI、AI 出题）、讲义页（问这一节、用这一节出题）、答题解析下的「追问 AI」（后者需要已填令牌）；对话页顶栏有「历史」和「新对话」，入口一律开新对话。H5 用 `fetch` 读取 `ReadableStream`（`EventSource` 不能 POST、不能带请求头）；点击回答里的引用，H5 在底部面板里显示讲义小节或题目，不离开对话页，对话不会因此丢失。
+
 ## 8. API 概览
 
 | 分组 | 路径 | 说明 |
@@ -690,6 +713,7 @@ GET /api/v1/lessons?version=<n>
 | App：讲义 | `GET /api/v1/lessons?version=<n>` | 所有小节的原文，带版本号，没变就不重传，§7.8 |
 | App：配图 | `GET /api/v1/media/{id}` | 题目里的图，免鉴权、永久可缓存，§7.7 |
 | App：AI 解读 | `GET /api/v1/ai/config`（需访问令牌）、`POST /api/v1/ai/usage`（需访问令牌）、`/api/v1/sync/notes` | §7.6 |
+| App：助手 | `GET /api/v1/agent/status`、`POST /api/v1/agent/chat`（SSE）、`/api/v1/agent/conversations*`（历史）、`GET /api/v1/agent/drafts`、`POST /api/v1/agent/drafts/{id}/accept`、`…/discard`（都需访问令牌） | §7.9 |
 | 运维 | `/healthz` | |
 
 文档只通过 Admin 网页手动上传：`POST /admin/documents`（`multipart/form-data`，接收 `.md` / `.markdown` 文件，限制大小如 2MB，校验为合法 UTF-8）。同一文档重新上传时，按 `source_path`（文件名）匹配已有文档，走 §5.2 的增量更新。暂不提供 CLI 批量导入。
@@ -704,6 +728,7 @@ GET /api/v1/lessons?version=<n>
 - **传输**：服务端在本机，默认只监听 `127.0.0.1`；手机通过**家庭局域网**以 HTTP 访问时才开启局域网监听。局域网内明文传输的 Token 有被同网设备嗅探的理论风险，家用网络可接受；**不暴露公网**。将来若要外网访问，应加 Tailscale（`tailscale serve` 提供 HTTPS）或反向代理 + HTTPS，并为 Admin 加登录。
 - **密钥**：所有模型的 API Key 存在 SQLite（`llm_provider`），管理页不回显；其中「AI 解读」角色模型的 Key 还要下发给客户端。数据库文件按敏感文件对待，`/api/v1/ai/config` 必须带访问令牌。
 - **成本防护**：`daily_token_budget` 与并发/速率限制，防止流水线故障时循环重试烧钱。
+- **助手的权限**：助手只读（讲义、已发布题目、作答统计），唯一的写入是创建草稿；草稿不会自己发布，采纳后还要经过人工审核。它的回答在客户端按 Markdown 渲染（原始 HTML 被转义），其中的 SVG 先过白名单检查再显示；访问令牌与 `/ai/config` 共用，所以泄露令牌也意味着别人可以消耗每日 token 预算（受限于每设备 2 个对话和预算上限），并能读取、删除全部历史对话。
 - **提示词注入**：文档内容是不可信数据，输出受 schema 与规则校验约束，不执行文档中的指令。
 - 以后若升级为多用户：补用户表与 JWT，Token 机制换成登录即可，其余不动。
 
@@ -719,6 +744,7 @@ QuizMind/
 │   │   ├── http/                       # chi 路由、中间件、handler
 │   │   ├── bank/ quiz/ sync/ admin/    # 领域模块
 │   │   ├── pipeline/                   # chunker / generator / validator / dedupe
+│   │   ├── agent/                      # 学习 / 出题助手：对话循环、工具、草稿（§7.9）
 │   │   ├── jobs/                       # SQLite 任务队列 + worker 池
 │   │   ├── llm/
 │   │   │   ├── llm.go                  # Client 接口、Registry

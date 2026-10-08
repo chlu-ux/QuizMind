@@ -119,3 +119,46 @@ func (a *API) agentChat(w http.ResponseWriter, r *http.Request) {
 	close(done)
 	<-pinged
 }
+
+func (a *API) agentConversations(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	page, err := a.svc.ListAgentConversations(r.Context(), bearer(r), q.Get("mode"), int64(intParam(r, "before", 0)), intParam(r, "limit", 30))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, http.StatusOK, page)
+}
+
+func (a *API) agentConversation(w http.ResponseWriter, r *http.Request) {
+	c, err := a.svc.GetAgentConversation(r.Context(), bearer(r), chi.URLParam(r, "id"))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, http.StatusOK, c)
+}
+
+func (a *API) agentConversationRename(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Title string `json:"title"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	if err := a.svc.RenameAgentConversation(r.Context(), bearer(r), chi.URLParam(r, "id"), in.Title); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (a *API) agentConversationDelete(w http.ResponseWriter, r *http.Request) {
+	if err := a.svc.DeleteAgentConversation(r.Context(), bearer(r), chi.URLParam(r, "id")); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}

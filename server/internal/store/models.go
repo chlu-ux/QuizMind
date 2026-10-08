@@ -8,12 +8,37 @@ import (
 	"database/sql"
 )
 
+type AgentConversation struct {
+	ID         string `json:"id"`
+	Mode       string `json:"mode"`
+	Title      string `json:"title"`
+	DeviceID   string `json:"device_id"`
+	BankID     string `json:"bank_id"`
+	LessonID   string `json:"lesson_id"`
+	QuestionID string `json:"question_id"`
+	CreatedAt  int64  `json:"created_at"`
+	UpdatedAt  int64  `json:"updated_at"`
+}
+
 type AgentDraft struct {
 	QuestionID     string `json:"question_id"`
 	ConversationID string `json:"conversation_id"`
 	LessonID       string `json:"lesson_id"`
 	DeviceID       string `json:"device_id"`
 	Verified       int64  `json:"verified"`
+	CreatedAt      int64  `json:"created_at"`
+}
+
+type AgentMessage struct {
+	ID             int64  `json:"id"`
+	ConversationID string `json:"conversation_id"`
+	Role           string `json:"role"`
+	Text           string `json:"text"`
+	Tools          string `json:"tools"`
+	DraftIds       string `json:"draft_ids"`
+	AttachmentIds  string `json:"attachment_ids"`
+	Note           string `json:"note"`
+	Error          string `json:"error"`
 	CreatedAt      int64  `json:"created_at"`
 }
 

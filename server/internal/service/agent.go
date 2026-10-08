@@ -64,11 +64,15 @@ type AgentContext struct {
 }
 
 type AgentChatRequest struct {
-	ConversationID string         `json:"conversation_id"`
-	Mode           string         `json:"mode"`
-	DeviceID       string         `json:"device_id"`
-	Messages       []AgentMessage `json:"messages"`
-	Context        AgentContext   `json:"context"`
+	ConversationID string `json:"conversation_id"`
+	Mode           string `json:"mode"`
+	DeviceID       string `json:"device_id"`
+	// Message is the new question of a conversation kept on the server; the earlier ones are read
+	// from the database. Messages is the older form, in which the app sends the whole history and
+	// nothing is kept; it is used only when Message is absent.
+	Message  *AgentUserMessage `json:"message"`
+	Messages []AgentMessage    `json:"messages"`
+	Context  AgentContext      `json:"context"`
 }
 
 // AgentRun streams the answer to a validated chat request. It must be called exactly once: it
@@ -86,6 +90,15 @@ func (s *Service) StartAgentChat(ctx context.Context, token string, in AgentChat
 	if err != nil {
 		return nil, fmt.Errorf("%w: assistant is not configured", ErrNotFound)
 	}
+	var stored *storedChat
+	if in.Message != nil {
+		var sc storedChat
+		var err error
+		if in, sc, err = s.prepareStoredChat(ctx, in); err != nil {
+			return nil, err
+		}
+		stored = &sc
+	}
 	req, err := validateAgentRequest(in)
 	if err != nil {
 		return nil, err
@@ -94,8 +107,15 @@ func (s *Service) StartAgentChat(ctx context.Context, token string, in AgentChat
 	if err := checkAgentContext(ctx, lib, in.Context); err != nil {
 		return nil, err
 	}
+	unlock := func() {}
+	if stored != nil {
+		if unlock, err = s.lockAgentConversation(stored.id); err != nil {
+			return nil, err
+		}
+	}
 	release, err := s.acquireAgentSlot(in.DeviceID)
 	if err != nil {
+		unlock()
 		return nil, err
 	}
 	// Drafts nobody decided on for a week go away; doing it here saves a background task.
@@ -104,15 +124,43 @@ func (s *Service) StartAgentChat(ctx context.Context, token string, in AgentChat
 	} else if n > 0 {
 		s.Log.Info("retired stale agent drafts", "count", n)
 	}
+	var answer *answerLog
+	if stored != nil {
+		s.cleanAgentHistory(ctx)
+		// The question is kept before the answer starts, so a stopped or dropped answer still leaves it.
+		if err := s.saveAgentQuestion(ctx, in, stored.mode); err != nil {
+			release()
+			unlock()
+			return nil, err
+		}
+		answer = &answerLog{}
+	}
 	a := &agent.Agent{Conv: conv, Lib: lib}
 	if req.Mode == agent.ModeCreate {
 		a.Drafter = agentDrafter{s: s, model: conv.Model()}
 	}
 	return func(ctx context.Context, emit func(agent.Event)) {
+		defer unlock()
 		defer release()
+		outer := ctx
 		ctx, cancel := context.WithTimeout(ctx, agentRequestTimeout)
 		defer cancel()
 		ctx = llm.WithRef(ctx, req.ConversationID, in.DeviceID)
+		if answer != nil {
+			inner := emit
+			emit = func(ev agent.Event) {
+				answer.observe(ev)
+				inner(ev)
+			}
+			defer func() {
+				if !answer.ended && errors.Is(outer.Err(), context.Canceled) {
+					answer.note = "已停止" // the client left before the answer was done
+				}
+				if err := s.saveAgentAnswer(stored.id, answer); err != nil {
+					s.Log.Error("save agent answer", "conversation", stored.id, "err", err)
+				}
+			}()
+		}
 		a.Run(ctx, req, emit)
 	}, nil
 }

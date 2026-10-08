@@ -184,19 +184,24 @@ func (s *Service) listAgentDrafts(ctx context.Context, conversationID string) ([
 	}
 	out := make([]agent.Draft, 0, len(rows))
 	for _, r := range rows {
-		dr := agent.Draft{DraftID: r.ID, LessonID: r.ChunkID.String, Type: r.Type, Stem: r.Stem, Explanation: r.Explanation,
-			Difficulty: int(r.Difficulty), SourceQuote: r.SourceQuote, Verified: r.Verified != 0,
-			Options: []string{}, Tags: []string{}}
-		var answer []int
-		_ = json.Unmarshal([]byte(r.Options), &dr.Options)
-		_ = json.Unmarshal([]byte(r.Tags), &dr.Tags)
-		_ = json.Unmarshal([]byte(r.Answer), &answer)
-		if len(answer) > 0 {
-			dr.AnswerIndex = answer[0]
-		}
-		out = append(out, dr)
+		out = append(out, buildAgentDraft(r.ID, r.ChunkID.String, r.Type, r.Stem, r.Options, r.Answer, r.Tags, r.Explanation,
+			r.SourceQuote, r.Difficulty, r.Verified != 0))
 	}
 	return out, nil
+}
+
+// buildAgentDraft makes the draft the apps show from the columns of a stored question.
+func buildAgentDraft(id, lessonID, typ, stem, options, answer, tags, explanation, quote string, difficulty int64, verified bool) agent.Draft {
+	d := agent.Draft{DraftID: id, LessonID: lessonID, Type: typ, Stem: stem, Explanation: explanation, Difficulty: int(difficulty),
+		SourceQuote: quote, Verified: verified, Options: []string{}, Tags: []string{}}
+	var ans []int
+	_ = json.Unmarshal([]byte(options), &d.Options)
+	_ = json.Unmarshal([]byte(tags), &d.Tags)
+	_ = json.Unmarshal([]byte(answer), &ans)
+	if len(ans) > 0 {
+		d.AnswerIndex = ans[0]
+	}
+	return d
 }
 
 // AgentDrafts lists the drafts of a conversation that still wait for a decision, so an app that

@@ -3,9 +3,10 @@ info:
   title: QuizMind app API
   version: 0.1.0
   description: |
-    Endpoints used by the Flutter app. The admin API (/admin/*) is consumed only by the
+    Endpoints used by the Flutter app and the H5 app. The admin API (/admin/*) is consumed only by the
     bundled Vue UI and is not part of this contract.
-    These endpoints need no authentication; only the admin API (/admin/*) is guarded by the server token.
+    These endpoints need no authentication, except `/ai/*` and `/agent/*`, which need the access token
+    set in the admin UI (`Authorization: Bearer <token>`); the admin API (/admin/*) is guarded by the server token.
     Timestamps are Unix milliseconds. Errors are `{"error": "message"}`.
 servers:
   - url: http://127.0.0.1:8080
@@ -294,6 +295,192 @@ paths:
                   flag_count: { type: integer }
                   status: { type: string }
         "404": { description: unknown question }
+  /api/v1/agent/status:
+    get:
+      summary: Whether the study assistant can be used
+      description: >
+        Needs the access token set in the admin UI (the same one as `/ai/config`):
+        `Authorization: Bearer <token>`. 404 means no model is bound to the assistant role (or the
+        server predates the assistant); the app should hide or disable its entry points.
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AgentStatus" }
+        "401": { description: missing or wrong access token }
+        "404": { description: the assistant is not configured }
+  /api/v1/agent/chat:
+    post:
+      summary: Ask the study assistant; the answer arrives as a stream of server-sent events
+      description: |
+        Needs the access token (see `/agent/status`). The server keeps the conversation: the app names
+        it with a `conversation_id` of its own choosing (a ULID) and sends only the new question as
+        `message`; the earlier ones are read from the database, as plain text (the assistant looks things
+        up again with its own tools when it needs them). The history given to the model alternates
+        `user` / `assistant`: answers that came out empty are left out, neighbours with the same role are
+        joined, and the oldest messages are dropped beyond 30 messages or 24000 characters. The new
+        question and the answer are kept even when the answer is stopped or fails.
+
+        **Older form:** a request with `messages` (the whole history, ending with a `user` message) and no
+        `message` is answered the way it always was and kept nowhere. It is deprecated and will be removed
+        once every app sends `message`.
+
+        One answer at a time per conversation: a second question while the first is still being answered
+        gets `409`.
+
+        Problems found before the answer starts are ordinary HTTP errors (below). Once the response
+        is `200`, the body is `text/event-stream`; later failures arrive as an `error` event. Lines
+        starting with `:` are keep-alive pings (every 15 s) and are to be ignored, as are events
+        whose name the client does not know. Closing the connection stops the model.
+
+        Events, in order of arrival (the `data:` line of each is JSON):
+
+        - `start` — `{conversation_id}`, once, first.
+        - `delta` — `{text}`, a piece of the answer. Markdown, in which `lesson:<id>` and
+          `question:<id>` links point at lesson sections and questions, and a complete
+          ```` ```svg ```` block is a diagram.
+        - `tool` — `{id, name, label, status}`; `label` is a ready-to-show line ("在讲义里查找…"),
+          `status` is `running`, then `done` or `error`.
+        - `drafts` — `{drafts: [AgentDraft]}`, question-writing mode only: new draft questions for the
+          learner to accept or discard.
+        - `done` — `{stop, usage: {input, output, cached}}`, once, last. `stop` is `end_turn`,
+          `max_rounds` (it looked things up too long) or `max_tokens` (the answer was cut off).
+        - `error` — `{code, message}`; `code` is `budget_exceeded`, `unavailable`, `refused`,
+          `timeout` or `internal`. Ends the stream instead of `done`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AgentChatRequest" }
+      responses:
+        "200":
+          description: the answer, as server-sent events
+          content:
+            text/event-stream:
+              schema: { type: string }
+        "400": { description: "invalid request (no `conversation_id`, empty `message.text`, a `mode` different from the conversation's, an invalid history in the older form, unknown bank / lesson / question in `context`)" }
+        "401": { description: missing or wrong access token }
+        "404": { description: the assistant is not configured }
+        "409": { description: the conversation is still answering an earlier question }
+        "429": { description: this device already has the maximum number of conversations running (2) }
+  /api/v1/agent/conversations:
+    get:
+      summary: The history of conversations with the assistant, newest first
+      description: >
+        Needs the access token. Every device that has the token sees every conversation. Conversations
+        nobody has said anything in are not listed. Page with `before`, the `updated_at` of the last item
+        of the previous page.
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, default: 30, minimum: 1, maximum: 100 } }
+        - { name: before, in: query, schema: { type: integer }, description: "epoch ms; only conversations updated before this" }
+        - { name: mode, in: query, schema: { type: string, enum: [learn, create] } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AgentConversationPage" }
+        "400": { description: unknown mode }
+        "401": { description: missing or wrong access token }
+  /api/v1/agent/conversations/{id}:
+    get:
+      summary: A whole conversation, to show it again and carry on in it
+      description: >
+        What the learner saw: the words, the lookup lines, the drafts (with what became of them) and a
+        remark about how each answer ended. Needs the access token.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AgentConversation" }
+        "401": { description: missing or wrong access token }
+        "404": { description: unknown conversation }
+    patch:
+      summary: Rename a conversation
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: { type: string, description: "cut to 30 characters, on one line" }
+      responses:
+        "204": { description: renamed }
+        "400": { description: empty title }
+        "401": { description: missing or wrong access token }
+        "404": { description: unknown conversation }
+    delete:
+      summary: Delete a conversation
+      description: >
+        Deletes its messages, and discards the drafts nobody decided on (status `rejected`). Questions the
+        learner already accepted are not touched. Needs the access token.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: deleted }
+        "401": { description: missing or wrong access token }
+        "404": { description: unknown conversation }
+        "409": { description: the conversation is still answering a question }
+  /api/v1/agent/drafts:
+    get:
+      summary: The draft questions of a conversation that still wait for a decision
+      description: >
+        Lets an app that was closed show the cards again. Needs the access token. Drafts nobody decided
+        on for 7 days are discarded.
+      parameters:
+        - { name: conversation_id, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [drafts]
+                properties:
+                  drafts: { type: array, items: { $ref: "#/components/schemas/AgentDraft" } }
+        "401": { description: missing or wrong access token }
+  /api/v1/agent/drafts/{id}/accept:
+    post:
+      summary: Send a draft question to the review queue
+      description: >
+        Does not publish it: the question gets the status `needs_review` and appears in the admin
+        review queue (source 助手); learners get it only after a reviewer approves it. Needs the
+        access token.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string }, description: "the draft_id" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AgentDraftResult" }
+        "400": { description: already decided, or the lesson section it was written from has changed since }
+        "401": { description: missing or wrong access token }
+        "404": { description: unknown draft }
+  /api/v1/agent/drafts/{id}/discard:
+    post:
+      summary: Throw a draft question away
+      description: Needs the access token.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string }, description: "the draft_id" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AgentDraftResult" }
+        "400": { description: already decided }
+        "401": { description: missing or wrong access token }
+        "404": { description: unknown draft }
 components:
   schemas:
     Bank:
@@ -523,3 +710,137 @@ components:
       properties:
         accepted: { type: integer }
         ignored: { type: integer }
+    AgentStatus:
+      type: object
+      required: [available, model, verified]
+      properties:
+        available: { type: boolean }
+        model: { type: string, description: "the model that answers" }
+        verified:
+          type: boolean
+          description: a second model (the validator role) double-checks the questions the assistant writes
+    AgentMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role: { type: string, enum: [user, assistant] }
+        content: { type: string }
+    AgentChatRequest:
+      type: object
+      properties:
+        conversation_id:
+          type: string
+          maxLength: 64
+          description: >
+            chosen by the app (a ULID). Names the conversation in the history, in the admin usage log and
+            for its drafts. Required with `message`; with the older `messages` the server makes one up when
+            it is empty.
+        mode:
+          type: string
+          enum: [learn, create]
+          default: learn
+          description: "learn: answer questions about the lessons and the learner's weak points. create: write questions from a lesson section, as drafts. Fixed when the conversation begins; the conversation's own is used when this is empty."
+        device_id: { type: string, maxLength: 64, description: "limits a device to two conversations at a time" }
+        message:
+          type: object
+          description: The new question of a conversation kept on the server.
+          required: [text]
+          properties:
+            text: { type: string }
+            attachment_ids: { type: array, items: { type: string } }
+        messages:
+          type: array
+          deprecated: true
+          minItems: 1
+          maxItems: 30
+          description: The older form, used only when `message` is absent. Nothing is kept.
+          items: { $ref: "#/components/schemas/AgentMessage" }
+        context:
+          type: object
+          description: What the learner is looking at; the server puts it into the assistant's instructions. All parts are optional. A conversation keeps what it began with for the history list.
+          properties:
+            bank_id: { type: string }
+            lesson_id: { type: string }
+            question:
+              type: object
+              required: [id]
+              properties:
+                id: { type: string }
+                selected: { type: array, items: { type: integer }, description: "the option indexes (of the question itself, not as shuffled on screen) the learner picked" }
+    AgentConversationItem:
+      type: object
+      required: [id, mode, title, bank_id, lesson_id, question_id, message_count, pending_drafts, updated_at]
+      properties:
+        id: { type: string }
+        mode: { type: string, enum: [learn, create] }
+        title: { type: string, description: "the first 30 characters of the first question" }
+        bank_id: { type: string, description: "what the learner was looking at when it began; empty if nothing" }
+        lesson_id: { type: string }
+        question_id: { type: string }
+        message_count: { type: integer }
+        pending_drafts: { type: integer, description: "drafts nobody has decided on yet" }
+        updated_at: { type: integer, description: "epoch ms of the last message" }
+    AgentConversationPage:
+      type: object
+      required: [items, has_more]
+      properties:
+        items: { type: array, items: { $ref: "#/components/schemas/AgentConversationItem" } }
+        has_more: { type: boolean }
+    AgentDraftState:
+      allOf:
+        - $ref: "#/components/schemas/AgentDraft"
+        - type: object
+          required: [phase]
+          properties:
+            phase:
+              type: string
+              enum: [pending, accepted, discarded]
+              description: "pending: still waiting. accepted: sent to review (maybe published). discarded: thrown away, replaced, or left too long."
+    AgentStoredMessage:
+      type: object
+      required: [id, role, text, tools, drafts, attachments, note, error, created_at]
+      properties:
+        id: { type: integer }
+        role: { type: string, enum: [user, assistant] }
+        text: { type: string }
+        tools:
+          type: array
+          description: the lookup lines shown above an answer
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              label: { type: string }
+              status: { type: string, enum: [running, done, error] }
+        drafts: { type: array, items: { $ref: "#/components/schemas/AgentDraftState" } }
+        attachments: { type: array, items: { type: object }, description: "files the message carried (reserved)" }
+        note: { type: string, description: "how the answer ended, if not simply: stopped, cut short" }
+        error: { type: string }
+        created_at: { type: integer }
+    AgentConversation:
+      allOf:
+        - $ref: "#/components/schemas/AgentConversationItem"
+        - type: object
+          required: [messages]
+          properties:
+            messages: { type: array, items: { $ref: "#/components/schemas/AgentStoredMessage" } }
+    AgentDraft:
+      type: object
+      required: [draft_id, lesson_id, type, stem, options, answer_index, explanation, difficulty, tags, source_quote, verified]
+      properties:
+        draft_id: { type: string }
+        lesson_id: { type: string, description: "the section the question was written from" }
+        type: { type: string, enum: [single, judge] }
+        stem: { type: string }
+        options: { type: array, items: { type: string } }
+        answer_index: { type: integer }
+        explanation: { type: string }
+        difficulty: { type: integer, minimum: 1, maximum: 5 }
+        tags: { type: array, items: { type: string } }
+        source_quote: { type: string, description: "the sentence of the section the question rests on" }
+        verified: { type: boolean, description: "a second model answered it independently and agreed" }
+    AgentDraftResult:
+      type: object
+      properties:
+        id: { type: string }
+        status: { type: string, description: "needs_review after accept, rejected after discard" }

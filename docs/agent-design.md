@@ -1,6 +1,6 @@
 # 学习 / 出题助手（Agent）改造方案
 
-> 状态：设计稿 v1；第 1、2 期（服务端）已实现并提交，第 3 期（Flutter）代码已写完、待验证，详见 §0 · 日期：2026-10-08
+> 状态：设计稿 v1；服务端（第 1、2 期）、Flutter（第 3 期）、H5 / 后台 / 文档（第 4 期）均已实现并通过自动化测试，真机验收和真实模型的端到端验证待做，详见 §0 · 日期：2026-10-08
 > 前置：第 0 期（模型在后台配置）、第 0.5 期（AI 解读用量上报）已完成，见 [`architecture.md`](architecture.md) §4.4、§7.6。
 > 范围：服务端新增一个对话式助手，**学习**和**创建题目**两种用法；Flutter 和 H5 都是它的薄客户端。
 
@@ -11,21 +11,45 @@
 | 期 | 内容 | 状态 | 验证到什么程度 |
 |---|---|---|---|
 | 设计 | 本文、DeepSeek 兼容性笔记 | 已提交（`d11d465`） | — |
-| 第 1 期 | 服务端核心 + 学习模式：`Converser`、对话循环、6 个学习工具、`/agent/status`、`/agent/chat`、后台"测试"按钮的兼容性探针 | 已提交（`b122d18`） | Go 全部测试（含竞态检测）通过；DeepSeek 真实端点的工具往返探针通过（`TestLive_ToolLoop`）。**还没有用真实模型从头到尾跑过一次 `/agent/chat`**（curl 验收待做） |
-| 第 2 期 | 出题模式：迁移 `00014`、`propose_questions` / `list_drafts`、独立复核、草稿的采纳 / 丢弃 / 恢复 / 清理、审核页"来源：助手" | 已提交（`b122d18`，与第 1 期同一提交，见下） | 同上；独立复核、草稿相关用例只用假模型测过 |
-| 第 3 期 | Flutter：数据层、控制器、对话页、草稿卡片、链接跳转、三处入口、令牌横幅 | 代码与自动化测试完成，**尚未在真机 / 模拟器上验收** | `flutter analyze lib test` 只剩一条早已存在的 info；全部 311 个测试通过（原有 276 + `app/test/agent_test.dart` 35 个） |
-| 第 4 期 | H5 对话页与入口、设置页令牌项、后台用量页显示对话 id、OpenAPI、architecture 文档 | 未开始 | — |
+| 第 1 期 | 服务端核心 + 学习模式：`Converser`、对话循环、6 个学习工具、`/agent/status`、`/agent/chat`、后台"测试"按钮的兼容性探针 | 已提交（`b122d18`） | Go 全部测试（含竞态检测）通过；DeepSeek 真实端点的工具往返探针通过（`TestLive_ToolLoop`）。**2026-10-08 用真实模型（DeepSeek `deepseek-flash`，Anthropic 协议端点）跑通了 `/agent/chat`**，见下方「真实模型验收」 |
+| 第 2 期 | 出题模式：迁移 `00014`、`propose_questions` / `list_drafts`、独立复核、草稿的采纳 / 丢弃 / 恢复 / 清理、审核页"来源：助手" | 已提交（`b122d18`，与第 1 期同一提交，见下） | 同上；出题和草稿流程已用真实模型验收；**独立复核（绑定 `validator`）只用假模型测过** |
+| 第 3 期 | Flutter：数据层、控制器、对话页、草稿卡片、链接跳转、三处入口、令牌横幅 | 代码与自动化测试完成；**2026-10-08 在 Android 模拟器上用真实模型验收过**（见下），尚未在真机上验收 | `flutter analyze lib test` 只剩一条早已存在的 info；全部 313 个测试通过（原有 276 + `app/test/agent_test.dart` 35 个 + `app/test/agent_cancel_test.dart` 2 个） |
+| 第 4 期 | H5 对话页与入口、设置页令牌项、后台（审核页来源、用量页对话号、模型说明）、OpenAPI、architecture 文档 | 代码与自动化测试完成，**未提交；没有在真手机上验收**（只用一个假后端，在浏览器的手机视口里走过一遍：查找状态行、Markdown、引用链接、SVG 示意图、草稿卡片都正常显示；没连真实模型） | H5：`npm test` 全部 269 个通过（新增 SSE 解析、`HttpAgentApi`、SVG 白名单、控制器、AgentView 与入口共 66 个）、`vue-tsc` 与 `npm run build` 干净；后台：24 个测试、类型检查、构建通过；Go：`httpapi`、`service` 测试通过；`openapi.yaml` 可解析、引用完整 |
+| 第 5 期 | 历史对话：对话与消息存服务端、历史列表、继续对话（[`agent-history-and-files.md`](agent-history-and-files.md)） | 代码与自动化测试完成，**未提交**；已用真实模型、浏览器和 Android 模拟器验证 | Go 全过（含 `-race`）；H5 277 个、Flutter 323 个测试通过；详见该文 §13 |
+| 第 6 期 | 文本文件附件，作为本次对话的参考资料 | 设计已写，未开始 | — |
+| 第 7 期 | 图片附件（需要助手模型支持识图，先做真实端点探针） | 设计已写，未开始 | — |
+| 第 8 期 | 依据上传的文件出题 | 设计已写，未开始 | — |
 
 **第 3 期还差什么**
 
 1. `app/test/agent_test.dart`（SSE 解析、历史拼装、控制器状态机、`HttpAgentApi`、对话页与入口的 Widget 测试）已全部通过，约 3 秒跑完。此前"超过 400 秒不结束"并不是用例卡住，而是在终端代理环境下 `flutter_tester` 连不上；干净环境里没有问题。跑通时修了两处：令牌错 / 服务器无助手时，Riverpod 3 对失败的 `FutureProvider` 默认自动退避重试，横幅一直出不来，现在给 `agentStatusProvider` 关掉重试（`retry: (_, _) => null`）；两个控制器用例没有持有 `autoDispose` 的控制器，状态在两次读取之间被销毁，补了 `listen`。
-2. 没有在真机或模拟器上走过验收流程（讲义页提问 → 点引用跳转 → 题库页出题 → 采纳）。
+2. **Android 模拟器验收（2026-10-08，Medium Phone API 37，连接本机的临时服务端 + 真实 DeepSeek 模型）**：
+   - 通过：设置里填服务器地址和令牌后同步；题库页出现「问 AI」「AI 出题」；问「我哪里比较薄弱？」，状态行「分析薄弱点」→「正在思考…」→ 流式回答，Markdown、表格、加粗、蓝色引用链接都正常；点引用跳到对应讲义页，顶栏的「问这一节」「用这一节出题」两个图标在；「用这一节出题」预填输入框但不自动发送，发送后得到 3 张草稿卡片（有复核模型时没有「未经独立复核」）；采纳后卡片变为「已提交审核」，服务端该题为 `needs_review`；退出再进入，取回未处理的 2 道草稿（已采纳的不再出现）；断开服务端后进入页面，横幅「连不上服务器」带「重试」，快捷提问和发送键置灰。
+   - **验收中发现并修复了两个真实问题**（自动化测试里的假接口测不出来，因为取消和断线是 Dio 在响应流内部报告的）：① 回答中途点「停止」，页面显示红字「出错了：DioException [request cancelled]…」，而不是灰色的「已停止」。原因是 Dart 的 `async*` 里 `yield*` 把内部流的错误直接转发给调用者，不经过外面的 `try/catch`，所以 `HttpAgentApi.chat` 里的翻译没生效；改为 `await for … yield`。② 回答中途连接断开会抛出裸的 `HttpException`，现统一成「网络中断了，请重试」。两者各有一个用真实本地套接字的回归测试（`agent_cancel_test.dart`）。修复后在模拟器上复测：停止后保留已写出的内容并显示「已停止」，服务端日志里这次调用记为取消。
+   - 没验证的：答题解析下的「追问 AI」入口（需要先让 AI 解读生成解析）、中文输入（`adb input` 不能输入中文，只用了快捷提问）、真机。
 3. 与方案的差别：
    - 对话 id 由客户端生成（出题模式存在本机，重进页面用它取回草稿卡片），不是等服务端在 `start` 事件里发。
    - 讲义页的“问 AI”“用这一节出题”做成顶栏的两个图标按钮，不是页尾按钮；题库详情页的两个入口在“已填服务器地址”时才显示。
    - “让它改改”不新增接口：把“请修改这道草稿（draft_id：…）：”预填进输入框，由助手用 `replaces` 重新提交。
    - `QuizMarkdown` 新增 `onTapLink` 参数，用来拦截 `lesson:` / `question:` 链接；`question:` 链接打开只读的底部弹层。
    - `Repository` 新增 `bank(id)`、`question(id)`。
+
+**真实模型验收（2026-10-08，curl，用复制出来的数据库副本和新构建的服务端，没有动正在运行的实例）**
+
+- 模型：DeepSeek `deepseek-flash`，`https://api.deepseek.com/anthropic`，未绑定复核模型（所以 `verified` 为 false）。
+- `GET /agent/status`：带令牌 200 `{available:true, verified:false}`，错令牌 401。
+- 学习模式：问“死锁的四个必要条件”，助手并行调用了 2 次 `search_lessons`、2 次 `get_lesson`，答案按讲义列出四条件，引用了 3 个真实存在的小节（`lesson:` 链接）；事件顺序 `start → tool×8 → delta… → done`，`stop=end_turn`；正文里没有 `ds_safety` 泄漏；用了 3 轮模型调用，用量写入 `llm_call_log`（`role=agent`、`source=server`、`ref_id` 是对话 id）。
+- 出题模式：对一个小节出 2 道单选题，助手先查了这一节已有的 8 道题以避免重复，入库 2 道草稿，`source_quote` 均为讲义原句；`GET /agent/drafts` 取回 2 道；采纳得 `needs_review`（再次采纳 400「这道草稿已经处理过了」），丢弃得 `rejected`，之后列表为空；后台详情的 `agent` 字段为 `{conversation_id, verified:false}`，审核队列按「来源：助手」能筛出，用量明细的 `ref_id` 为对话 id。
+- 边界：中途断开连接后，模型调用被取消并记入日志（失败，`context canceled`），设备的对话名额随即释放；同一设备 3 个并发请求，第 3 个 429；坏历史（首条不是 user）400；错令牌 401。
+- **没验证的**：绑定复核模型后的独立复核（只有假模型的测试）、预算耗尽、Flutter / H5 在真机上的操作。
+
+**第 4 期与方案的差别**
+
+   - H5 点回答里的 `lesson:` / `question:` 链接，是在对话页上弹出底部面板显示这一节（复用刷题时的「看这一节讲义」面板）或只读的题目，不跳转路由。原因：对话只存在内存里，跳走再返回对话页会丢；Flutter 是压栈再弹出，对话保留。文件上没有 `quiz/agentLinks.ts` 里的「链接 → 路由」，只有链接解析和页面参数（`agentArgs` / `agentQuery` / `argsFromQuery`）。
+   - 新增 `quiz/agentChat.ts`（对话控制器，状态机与 Flutter 的 `AgentController` 一一对应）、`core/agent.ts`（令牌、`AgentApi` 的注入点、出题对话 id）、`quiz/svg.ts`（分隔与白名单检查）。
+   - SVG 白名单用的是**服务端 `checkSVG` 的完整名单**（含 `title`、`desc`、`tspan`、`clipPath`、`linearGradient`、`radialGradient`、`stop`、`use`），不是 §8 原来写的较短名单；`href` 只允许 `#id`，`url()` 只允许 `url(#id)`。根元素缺 `xmlns` 时自动补上（浏览器没有它不会画图）。不通过的显示成代码块。
+   - 入口：题库页（问 AI、AI 出题）两个按钮始终显示（H5 与服务端同源，无需「已填地址」），讲义页顶栏两个图标按钮，答题解析下的「追问 AI」只在已填令牌时显示。输入框在电脑上 Enter 发送，手机上 Enter 换行、用按钮发送，输入法选字时的 Enter 不发送。
+   - 后台：审核页详情里新增「助手草稿 · 对话 xxxxxx · 经独立复核 / 未经独立复核」，数据来自 `GET /admin/questions/{id}` 新增的 `agent` 字段（`{conversation_id, verified}`，非助手出的题为 `null`，题目采纳、发布之后仍然有）；用量页明细里 `role = agent` 的行在「题目」列显示「对话 xxxxxx」（悬停看完整对话 id）；「复核」角色的说明从「预留」改成助手出题时的独立复核；「AI 解读」页的令牌说明补上 H5 和 AI 助手。
 
 **提交说明**：第 1、2 期的服务端代码是在同一批文件上叠加写成的，没法干净地拆开，所以合成了一个提交（`b122d18`）。
 
@@ -34,7 +58,6 @@
 - DeepSeek 网关会把 `<ds_safety>…</ds_safety>` 漏进正文，偶尔还会把回答截短；标记已被过滤，但截短的回答无法修复（后台“测试”会给出警告）。
 - 后台 `POST /admin/questions/{id}/approve` 对 `draft` 状态的题放行，管理员可按 id 直接发布一道草稿，绕过“用户采纳”。
 - 对话草稿 20 道的上限、独立复核的预算耗尽分支，只有代码，没有专门的测试用例。
-- 用量页“调用明细”里，助手那几行的对话 id 显示在“题目”一列（与 AI 解读共用 `ref_id`），第 4 期处理。
 
 ---
 
@@ -462,15 +485,18 @@ H5 由服务端内嵌提供（同源 `/m/`），使用方式和 Flutter 相同�
 ```
 h5/src/
   data/agentApi.ts        # status / chat / drafts；chat 用 fetch 读 ReadableStream 解析 SSE（EventSource 不能 POST、不能带头）
-  data/agentTypes.ts
-  views/AgentView.vue     # 对话页，路由 /agent?mode=&bank=&lesson=&question=
+  data/agentTypes.ts      # 类型与 SSE 解析器
+  core/agent.ts           # 访问令牌、AgentApi 的注入点、出题对话 id
+  quiz/agentChat.ts       # 对话控制器（历史拼装、流式、停止、草稿）
+  quiz/agentLinks.ts      # lesson: / question: 链接解析、页面参数
+  quiz/svg.ts             # 助手画的 SVG：分隔与白名单检查
+  views/AgentView.vue     # 对话页，路由 /agent?mode=&bank=&lesson=&question=&selected=&text=
   components/DraftCard.vue
-  quiz/agentLinks.ts      # lesson: / question: 链接 → 路由
 ```
 
 - **令牌**：H5 目前没有任何令牌概念（同源、免鉴权）。「设置」页新增一项"AI 访问令牌"，存 `localStorage`，调用助手时带上；没填就显示同样的提示横幅。
 - **入口**：`LessonView`、`QuizView`（答题后）、`BankView`，与 Flutter 一致。
-- **渲染**：回答用现有的 `Md.vue`。**H5 目前没有渲染助手画的 SVG**（Flutter 的 `QuizMarkdown` 有，H5 只有统计页自己画图），这是 H5 的新增工作：在 `Md.vue` 里识别 ```` ```svg ```` 围栏，先按与服务端 `checkSVG` 相同的白名单检查（只允许 rect、circle、ellipse、line、polyline、polygon、path、text、g、defs、marker；拒绝 `<script>`、`<style>`、`<foreignObject>`、`<image>`、`on*` 事件属性、外链），通过后用 `<img src="data:image/svg+xml,…">` 显示——作为图片加载的 SVG 不会执行脚本，检查是第二道防线。围栏没关闭时按代码块显示，与 Flutter 一致。
+- **渲染**：回答用现有的 `Md.vue`（已实现，见 §0 第 4 期的差别）。**H5 原来没有渲染助手画的 SVG**（Flutter 的 `QuizMarkdown` 有，H5 只有统计页自己画图），这是 H5 的新增工作：在 `Md.vue` 里识别 ```` ```svg ```` 围栏，先按与服务端 `checkSVG` 相同的白名单检查（只允许 rect、circle、ellipse、line、polyline、polygon、path、text、g、defs、marker；拒绝 `<script>`、`<style>`、`<foreignObject>`、`<image>`、`on*` 事件属性、外链），通过后用 `<img src="data:image/svg+xml,…">` 显示——作为图片加载的 SVG 不会执行脚本，检查是第二道防线。围栏没关闭时按代码块显示，与 Flutter 一致。
 - **取消**：`AbortController`；离开页面时中止。
 - **测试**：SSE 解析器、控制器状态机、SVG 白名单检查、`views.test.ts` 里加 AgentView 的渲染用例。
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -40,11 +41,20 @@ type FlagView struct {
 	ResolvedAt *int64 `json:"resolved_at"`
 }
 
+// AgentSource says a question was written by the study assistant, for the review page.
+type AgentSource struct {
+	ConversationID string `json:"conversation_id"`
+	// Verified: a second model answered it independently and agreed.
+	Verified bool `json:"verified"`
+}
+
 type QuestionDetail struct {
 	QuestionView
-	ChunkText   string `json:"chunk_text"`
-	HeadingPath string `json:"heading_path"`
-	DocumentID  string `json:"document_id"`
+	// Agent is set for questions the study assistant wrote (whatever their status now), else null.
+	Agent       *AgentSource `json:"agent"`
+	ChunkText   string       `json:"chunk_text"`
+	HeadingPath string       `json:"heading_path"`
+	DocumentID  string       `json:"document_id"`
 	// Flags lists the reports, newest first. Counts that predate the question_flag
 	// table have no rows here, so flag_count can exceed the unresolved ones listed.
 	Flags []FlagView `json:"flags"`
@@ -145,6 +155,12 @@ func questionDetail(ctx context.Context, qs *store.Queries, id string) (Question
 		return QuestionDetail{}, err
 	}
 	out := detailView(d)
+	switch ad, err := qs.GetAgentDraft(ctx, id); {
+	case err == nil:
+		out.Agent = &AgentSource{ConversationID: ad.ConversationID, Verified: ad.Verified != 0}
+	case !errors.Is(err, sql.ErrNoRows):
+		return QuestionDetail{}, err
+	}
 	out.Flags = make([]FlagView, 0, len(flags))
 	for _, f := range flags {
 		v := FlagView{Reason: f.Reason, CreatedAt: f.CreatedAt}

@@ -107,6 +107,10 @@ func New(svc *service.Service, hub *events.Hub, token string, static fs.FS, log 
 		// The study assistant. Also needs the access token: every answer costs model tokens.
 		r.Get("/agent/status", a.agentStatus)
 		r.Post("/agent/chat", a.agentChat)
+		r.Get("/agent/conversations", a.agentConversations)
+		r.Get("/agent/conversations/{id}", a.agentConversation)
+		r.Patch("/agent/conversations/{id}", a.agentConversationRename)
+		r.Delete("/agent/conversations/{id}", a.agentConversationDelete)
 		r.Get("/agent/drafts", a.agentDrafts)
 		r.Post("/agent/drafts/{id}/accept", a.agentDraftAccept)
 		r.Post("/agent/drafts/{id}/discard", a.agentDraftDiscard)
@@ -183,6 +187,8 @@ func (a *API) fail(w http.ResponseWriter, r *http.Request, err error) {
 		writeError(w, http.StatusUnauthorized, "missing or invalid access token")
 	case errors.Is(err, service.ErrBusy):
 		writeError(w, http.StatusTooManyRequests, "同时进行的对话太多了，请等上一个结束")
+	case errors.Is(err, service.ErrConflict):
+		writeError(w, http.StatusConflict, "这场对话还在回答上一个问题，请等它结束")
 	case errors.Is(err, service.ErrInvalid):
 		writeError(w, http.StatusBadRequest, strings.TrimPrefix(err.Error(), service.ErrInvalid.Error()+": "))
 	default:

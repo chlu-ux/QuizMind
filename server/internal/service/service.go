@@ -49,6 +49,8 @@ type Service struct {
 	// agentBusy counts running assistant conversations per device.
 	agentMu   sync.Mutex
 	agentBusy map[string]int
+	// agentActive holds the conversations that are being answered.
+	agentActive map[string]bool
 }
 
 func New(d *db.DB, cfg config.Config, reg *llm.Registry, q *jobs.Queue, hub *events.Hub, log *slog.Logger) *Service {

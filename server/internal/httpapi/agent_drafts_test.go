@@ -220,6 +220,18 @@ func TestAgentDrafts_AcceptDiscardAndAuth(t *testing.T) {
 	s.do(t, "GET", "/api/v1/sync/questions?since=0", "", 200, &sync)
 	assert.Len(t, sync.Items, 1, "still not published")
 
+	// The review page can tell where it came from: this conversation, and whether a second model checked it.
+	var detail struct {
+		Agent *struct {
+			ConversationID string `json:"conversation_id"`
+			Verified       bool   `json:"verified"`
+		} `json:"agent"`
+	}
+	s.do(t, "GET", "/admin/questions/"+keep, "", 200, &detail)
+	require.NotNil(t, detail.Agent)
+	assert.Equal(t, "conv-2", detail.Agent.ConversationID)
+	assert.False(t, detail.Agent.Verified, "no validator model is configured in this test")
+
 	// A reviewer approves it like any other question, and then it syncs.
 	s.do(t, "POST", "/admin/questions/"+keep+"/approve", "", 200, nil)
 	s.do(t, "GET", "/api/v1/sync/questions?since=0", "", 200, &sync)

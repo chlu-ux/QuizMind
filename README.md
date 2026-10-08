@@ -139,6 +139,7 @@ sqlite3 app.db "VACUUM INTO 'backup.db'"
 ## 文档
 
 - [架构设计](docs/architecture.md)：技术栈、LLM 抽象层、出题流水线、数据模型、同步协议、路线图
-- [学习 / 出题助手方案](docs/agent-design.md)：对话式助手的设计、接口、分期与验收（服务端第 1、2 期、Flutter 第 3 期已实现并通过自动化测试，真机验收与第 4 期待做，进度见文档 §0）
+- [学习 / 出题助手方案](docs/agent-design.md)：对话式助手的设计、接口、分期与验收（服务端、Flutter、H5、后台均已实现并通过自动化测试，真机验收待做，进度见文档 §0）
+- [助手：历史对话与文件附件](docs/agent-history-and-files.md)：对话存服务端（第 5 期已实现）；文本 / 图片附件与依据文件出题（第 6–8 期，设计已写）
 - [迭代方案 2026-10-05](docs/iteration-2026-10-05.md)：每日目标、按知识点刷题、题库内搜索、反馈处理、错题本分题库
 - 各子项目的详细说明：[server](server/README.md) · [admin](admin/README.md) · [h5](h5/README.md) · [app](app/README.md)
