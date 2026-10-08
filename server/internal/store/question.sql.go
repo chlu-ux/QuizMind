@@ -13,27 +13,31 @@ import (
 const countQuestions = `-- name: CountQuestions :one
 SELECT COUNT(*) FROM question q
 LEFT JOIN chunk c ON c.id = q.chunk_id
-WHERE (?1 IS NULL OR q.status = ?1)
-  AND (?2 IS NULL OR q.bank_id = ?2)
-  AND (?3 IS NULL OR c.document_id = ?3)
-  AND (?4 = 0 OR q.flag_count > 0)
-  AND (?5 IS NULL
-       OR instr(lower(q.stem), lower(?5)) > 0
-       OR instr(lower(q.options), lower(?5)) > 0
-       OR instr(lower(q.explanation), lower(?5)) > 0)
+WHERE (q.status = ?1 OR (?1 IS NULL AND q.status <> 'draft'))
+  AND (?2 = 0 OR q.gen_prompt_version LIKE 'agent.%')
+  AND (?3 IS NULL OR q.bank_id = ?3)
+  AND (?4 IS NULL OR c.document_id = ?4)
+  AND (?5 = 0 OR q.flag_count > 0)
+  AND (?6 IS NULL
+       OR instr(lower(q.stem), lower(?6)) > 0
+       OR instr(lower(q.options), lower(?6)) > 0
+       OR instr(lower(q.explanation), lower(?6)) > 0)
 `
 
 type CountQuestionsParams struct {
-	Status     interface{} `json:"status"`
-	BankID     interface{} `json:"bank_id"`
-	DocumentID interface{} `json:"document_id"`
-	Flagged    interface{} `json:"flagged"`
-	Search     interface{} `json:"search"`
+	Status     sql.NullString `json:"status"`
+	AgentOnly  interface{}    `json:"agent_only"`
+	BankID     interface{}    `json:"bank_id"`
+	DocumentID interface{}    `json:"document_id"`
+	Flagged    interface{}    `json:"flagged"`
+	Search     interface{}    `json:"search"`
 }
 
+// Assistant drafts belong to a chat until accepted, so they are listed only when asked for by status.
 func (q *Queries) CountQuestions(ctx context.Context, arg CountQuestionsParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, countQuestions,
 		arg.Status,
+		arg.AgentOnly,
 		arg.BankID,
 		arg.DocumentID,
 		arg.Flagged,
@@ -272,31 +276,35 @@ func (q *Queries) ListQuestionIDsByChunk(ctx context.Context, chunkID sql.NullSt
 const listQuestions = `-- name: ListQuestions :many
 SELECT q.id, q.bank_id, q.chunk_id, q.type, q.stem, q.options, q.answer, q.explanation, q.difficulty, q.tags, q.source_quote, q.status, q.review_note, q.content_hash, q.gen_model, q.gen_prompt_version, q.flag_count, q.sync_seq, q.created_at, q.updated_at FROM question q
 LEFT JOIN chunk c ON c.id = q.chunk_id
-WHERE (?1 IS NULL OR q.status = ?1)
-  AND (?2 IS NULL OR q.bank_id = ?2)
-  AND (?3 IS NULL OR c.document_id = ?3)
-  AND (?4 = 0 OR q.flag_count > 0)
-  AND (?5 IS NULL
-       OR instr(lower(q.stem), lower(?5)) > 0
-       OR instr(lower(q.options), lower(?5)) > 0
-       OR instr(lower(q.explanation), lower(?5)) > 0)
+WHERE (q.status = ?1 OR (?1 IS NULL AND q.status <> 'draft'))
+  AND (?2 = 0 OR q.gen_prompt_version LIKE 'agent.%')
+  AND (?3 IS NULL OR q.bank_id = ?3)
+  AND (?4 IS NULL OR c.document_id = ?4)
+  AND (?5 = 0 OR q.flag_count > 0)
+  AND (?6 IS NULL
+       OR instr(lower(q.stem), lower(?6)) > 0
+       OR instr(lower(q.options), lower(?6)) > 0
+       OR instr(lower(q.explanation), lower(?6)) > 0)
 ORDER BY q.created_at DESC, q.id DESC
-LIMIT ?7 OFFSET ?6
+LIMIT ?8 OFFSET ?7
 `
 
 type ListQuestionsParams struct {
-	Status     interface{} `json:"status"`
-	BankID     interface{} `json:"bank_id"`
-	DocumentID interface{} `json:"document_id"`
-	Flagged    interface{} `json:"flagged"`
-	Search     interface{} `json:"search"`
-	PageOffset int64       `json:"page_offset"`
-	PageLimit  int64       `json:"page_limit"`
+	Status     sql.NullString `json:"status"`
+	AgentOnly  interface{}    `json:"agent_only"`
+	BankID     interface{}    `json:"bank_id"`
+	DocumentID interface{}    `json:"document_id"`
+	Flagged    interface{}    `json:"flagged"`
+	Search     interface{}    `json:"search"`
+	PageOffset int64          `json:"page_offset"`
+	PageLimit  int64          `json:"page_limit"`
 }
 
+// Assistant drafts belong to a chat until accepted, so they are listed only when asked for by status.
 func (q *Queries) ListQuestions(ctx context.Context, arg ListQuestionsParams) ([]Question, error) {
 	rows, err := q.db.QueryContext(ctx, listQuestions,
 		arg.Status,
+		arg.AgentOnly,
 		arg.BankID,
 		arg.DocumentID,
 		arg.Flagged,

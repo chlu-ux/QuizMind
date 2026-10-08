@@ -481,6 +481,7 @@ func (s *Service) ReloadLLM(ctx context.Context) error {
 		providers[p.ID] = p
 	}
 	clients := map[llm.Role]llm.Client{}
+	conversers := map[llm.Role]llm.Converser{}
 	for _, role := range llmRoleNames {
 		mid, ok := view.Roles[string(role)]
 		if !ok || role == llm.RoleExplain { // the apps call the explanation model themselves
@@ -497,9 +498,12 @@ func (s *Service) ReloadLLM(ctx context.Context) error {
 			continue
 		}
 		clients[role] = s.Guard.Wrap(role, c)
+		if conv, ok := c.(llm.Converser); ok && role == llm.RoleAgent {
+			conversers[role] = s.Guard.WrapConverser(role, conv)
+		}
 		s.Log.Info("llm role ready", "role", role, "protocol", providers[m.ProviderID].Protocol, "model", m.Model)
 	}
-	s.LLM.Replace(clients)
+	s.LLM.ReplaceAll(clients, conversers)
 	return nil
 }
 
@@ -525,6 +529,9 @@ type ModelTestResult struct {
 	Reply   string `json:"reply,omitempty"`
 	Error   string `json:"error,omitempty"`
 	Latency int64  `json:"latency_ms"`
+	// Checks is the compatibility report for a model bound to the assistant role: streaming, tool
+	// calls and multi-turn tool use. OK is false when a check failed, even though the model answered.
+	Checks []llm.Check `json:"checks,omitempty"`
 }
 
 // TestModel sends a tiny request to a saved model. A failing endpoint is a result, not an error:
@@ -555,6 +562,24 @@ func (s *Service) TestModel(ctx context.Context, id string) (ModelTestResult, er
 		return res, nil
 	}
 	res.OK, res.Reply = true, strings.TrimSpace(reply)
+
+	// A model that drives the assistant must also stream and use tools, which gateways often get wrong.
+	if roles, err := loadRoles(ctx, q); err == nil && roles[string(llm.RoleAgent)] == m.ID {
+		if prober, ok := c.(llm.Prober); ok {
+			res.Checks = prober.Probe(ctx)
+			for _, ch := range res.Checks {
+				// A noisy reply is filtered out, so it is a warning and does not fail the model.
+				if !ch.OK && ch.Name != "正文干净" {
+					res.OK = false
+					res.Error = "该模型不能用作助手：" + ch.Name + "未通过"
+					break
+				}
+			}
+			for i := range res.Checks {
+				res.Checks[i].Detail = strings.ReplaceAll(res.Checks[i].Detail, p.ApiKey, "***")
+			}
+		}
+	}
 	return res, nil
 }
 

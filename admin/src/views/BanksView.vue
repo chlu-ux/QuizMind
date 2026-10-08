@@ -38,8 +38,9 @@ const COLUMNS = [
   { status: 'retired', label: '下线', cls: '' },
 ]
 
+/** Assistant drafts belong to their chat until accepted, so they are not part of the bank's question count. */
 function total(bank: Bank): number {
-  return Object.entries(bank.question_counts).reduce((n, [k, v]) => (k === 'flagged' ? n : n + v), 0)
+  return Object.entries(bank.question_counts).reduce((n, [k, v]) => (k === 'flagged' || k === 'draft' ? n : n + v), 0)
 }
 
 function count(bank: Bank, status: string): number {

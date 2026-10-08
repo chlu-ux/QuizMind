@@ -25,6 +25,8 @@ const status = ref<string>((route.query.status as string) ?? 'needs_review')
 const bankId = ref<string>((route.query.bank_id as string) ?? '')
 const documentId = ref<string>((route.query.document_id as string) ?? '')
 const search = ref<string>((route.query.search as string) ?? '')
+// Where a question came from: the study assistant's questions can be reviewed on their own.
+const source = ref<string>((route.query.source as string) ?? '')
 const banks = ref<Bank[]>([])
 const documents = ref<DocumentRow[]>([])
 
@@ -81,6 +83,7 @@ async function load(keepSelection = true) {
     const res = await api.questions({
       status: status.value && status.value !== FLAGGED ? status.value : undefined,
       flagged: status.value === FLAGGED ? 1 : undefined,
+      source: source.value === 'agent' ? 'agent' : undefined,
       bank_id: bankId.value || undefined,
       document_id: documentId.value || undefined,
       search: search.value.trim() || undefined,
@@ -114,7 +117,7 @@ async function loadDetail() {
 }
 
 watch(selectedId, loadDetail)
-watch([status, bankId, documentId], () => {
+watch([status, bankId, documentId, source], () => {
   page.value = 1
   syncQuery()
   load(false)
@@ -136,6 +139,7 @@ function syncQuery() {
       ...(status.value !== 'needs_review' ? { status: status.value } : {}),
       ...(bankId.value ? { bank_id: bankId.value } : {}),
       ...(documentId.value ? { document_id: documentId.value } : {}),
+      ...(source.value ? { source: source.value } : {}),
       ...(search.value.trim() ? { search: search.value.trim() } : {}),
     },
   })
@@ -296,6 +300,9 @@ onBeforeUnmount(() => {
       </el-select>
       <el-select v-model="documentId" clearable placeholder="全部文档" style="width: 200px">
         <el-option v-for="d in docOptions" :key="d.id" :label="d.title" :value="d.id" />
+      </el-select>
+      <el-select v-model="source" clearable placeholder="全部来源" style="width: 130px">
+        <el-option label="来源：助手" value="agent" />
       </el-select>
       <el-input v-model="search" clearable placeholder="搜索题干、选项、解析" style="width: 220px" />
       <span class="muted">共 {{ total }} 道</span>

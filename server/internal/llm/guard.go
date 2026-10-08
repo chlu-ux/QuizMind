@@ -11,7 +11,10 @@ import (
 
 // CallRecord is one logged model call.
 type CallRecord struct {
-	JobID      string
+	JobID string
+	// RefID is what the call was for (an assistant conversation); DeviceID is who asked.
+	RefID      string
+	DeviceID   string
 	Role       Role
 	Provider   string
 	Model      string
@@ -97,45 +100,91 @@ func WithJobID(ctx context.Context, id string) context.Context {
 	return context.WithValue(ctx, jobIDKey{}, id)
 }
 
-func (c *guarded) GenerateJSON(ctx context.Context, req JSONRequest, out any) (Usage, error) {
-	g := c.g
+// admit checks the daily budget, then waits for the rate limiter and a concurrency slot. The
+// returned function frees the slot.
+func (g *Guard) admit(ctx context.Context) (release func(), err error) {
 	sem, lim, max := g.snapshot()
 	if max > 0 {
 		day := g.now()
 		start := time.Date(day.Year(), day.Month(), day.Day(), 0, 0, 0, 0, day.Location())
 		used, err := g.rec.TokensSince(ctx, start)
 		if err != nil {
-			return Usage{}, fmt.Errorf("check token budget: %w", err)
+			return nil, fmt.Errorf("check token budget: %w", err)
 		}
 		if used >= max {
-			return Usage{}, ErrBudgetExceeded
+			return nil, ErrBudgetExceeded
 		}
 	}
 	if err := lim.Wait(ctx); err != nil {
-		return Usage{}, err
+		return nil, err
 	}
 	select {
 	case sem <- struct{}{}:
-		defer func() { <-sem }()
+		return func() { <-sem }, nil
 	case <-ctx.Done():
-		return Usage{}, ctx.Err()
+		return nil, ctx.Err()
 	}
+}
 
-	started := g.now()
-	usage, err := c.inner.GenerateJSON(ctx, req, out)
+// record logs one finished call with a detached context, so a cancelled request still records its cost.
+func (g *Guard) record(ctx context.Context, role Role, inner interface {
+	Name() string
+	Model() string
+}, started time.Time, usage Usage, err error) {
 	jobID, _ := ctx.Value(jobIDKey{}).(string)
-	// Log with a detached context so a cancelled request still records its cost.
+	r := refFrom(ctx)
 	logCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Second)
 	defer cancel()
 	_ = g.rec.Record(logCtx, CallRecord{
 		JobID:      jobID,
-		Role:       c.role,
-		Provider:   c.inner.Name(),
-		Model:      c.inner.Model(),
+		RefID:      r.refID,
+		DeviceID:   r.deviceID,
+		Role:       role,
+		Provider:   inner.Name(),
+		Model:      inner.Model(),
 		Usage:      usage,
 		LatencyMs:  g.now().Sub(started).Milliseconds(),
 		Err:        err,
 		OccurredAt: started,
 	})
+}
+
+func (c *guarded) GenerateJSON(ctx context.Context, req JSONRequest, out any) (Usage, error) {
+	release, err := c.g.admit(ctx)
+	if err != nil {
+		return Usage{}, err
+	}
+	defer release()
+	started := c.g.now()
+	usage, err := c.inner.GenerateJSON(ctx, req, out)
+	c.g.record(ctx, c.role, c.inner, started, usage, err)
 	return usage, err
+}
+
+// WrapConverser returns a Converser that enforces the guard's limits for the given role. Each call
+// to Converse is one admission: a conversation holds a slot only while the model is answering, not
+// while the caller runs tools between turns, so a long chat cannot starve the pipeline.
+func (g *Guard) WrapConverser(role Role, c Converser) Converser {
+	return &guardedConverser{g: g, role: role, inner: c}
+}
+
+type guardedConverser struct {
+	g     *Guard
+	role  Role
+	inner Converser
+}
+
+func (c *guardedConverser) Name() string  { return c.inner.Name() }
+func (c *guardedConverser) Model() string { return c.inner.Model() }
+
+func (c *guardedConverser) Converse(ctx context.Context, req ChatRequest, emit func(StreamEvent)) (ChatTurn, Usage, error) {
+	release, err := c.g.admit(ctx)
+	if err != nil {
+		return ChatTurn{}, Usage{}, err
+	}
+	defer release()
+	started := c.g.now()
+	turn, usage, err := c.inner.Converse(ctx, req, emit)
+	c.g.record(ctx, c.role, c.inner, started, usage, err)
+	return turn, usage, err
 }

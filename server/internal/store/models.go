@@ -8,6 +8,15 @@ import (
 	"database/sql"
 )
 
+type AgentDraft struct {
+	QuestionID     string `json:"question_id"`
+	ConversationID string `json:"conversation_id"`
+	LessonID       string `json:"lesson_id"`
+	DeviceID       string `json:"device_id"`
+	Verified       int64  `json:"verified"`
+	CreatedAt      int64  `json:"created_at"`
+}
+
 type AiNote struct {
 	QuestionID    string `json:"question_id"`
 	Content       string `json:"content"`

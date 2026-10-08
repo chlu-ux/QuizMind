@@ -75,3 +75,16 @@ var ErrTruncated = errors.New("llm: response truncated (max_tokens reached)")
 
 // ErrRefused signals the model declined the request.
 var ErrRefused = errors.New("llm: model refused the request")
+
+// Check is one line of a compatibility report.
+type Check struct {
+	Name   string `json:"name"`
+	OK     bool   `json:"ok"`
+	Detail string `json:"detail,omitempty"`
+}
+
+// Prober is implemented by clients that can check what an endpoint supports beyond a plain
+// request, so the admin UI can say before anyone relies on it whether a model can drive the assistant.
+type Prober interface {
+	Probe(ctx context.Context) []Check
+}

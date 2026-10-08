@@ -242,6 +242,8 @@ export interface ModelTestResult {
   reply?: string
   error?: string
   latency_ms: number
+  /** The compatibility report of a model bound to the assistant role. */
+  checks?: { name: string; ok: boolean; detail?: string }[]
 }
 
 export interface AINote {

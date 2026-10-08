@@ -132,6 +132,7 @@ func TestMigration_BackfillsAttemptSyncSeq(t *testing.T) {
 	// Roll the schema back to what 00003 left, then add attempts the old way.
 	for _, stmt := range []string{
 		`PRAGMA foreign_keys = OFF`,
+		`DROP TABLE agent_draft`,
 		`DROP INDEX idx_flag_question`,
 		`DROP TABLE question_flag`,
 		`DROP TABLE media`,
@@ -185,6 +186,7 @@ func TestMigration_RenumbersQuestionsForModuleSync(t *testing.T) {
 	d, err := db.Open(path)
 	require.NoError(t, err)
 	for _, stmt := range []string{
+		`DROP TABLE agent_draft`,
 		`DROP TABLE media`,
 		`DROP TABLE llm_model`,
 		`DROP INDEX idx_llm_call_source`,

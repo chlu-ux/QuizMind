@@ -119,8 +119,12 @@ async function testModel(m: LlmModel) {
   testing.value = m.id
   try {
     const r = await api.testModel(m.id)
-    if (r.ok) ElMessage.success(`「${m.name}」连接成功（${r.latency_ms} ms），回复：${r.reply}`)
-    else ElMessage({ type: 'error', message: `「${m.name}」连接失败：${r.error}`, duration: 8000, showClose: true })
+    // A model bound to the assistant is also checked for streaming and tool use.
+    const report = (r.checks ?? []).map((c) => `${c.name}${c.ok ? ' ✓' : ` ✗${c.detail ? `（${c.detail}）` : ''}`}`).join('；')
+    const warn = (r.checks ?? []).some((c) => !c.ok)
+    if (r.ok && !warn) ElMessage.success(`「${m.name}」连接成功（${r.latency_ms} ms）${report ? `。${report}` : `，回复：${r.reply}`}`)
+    else if (r.ok) ElMessage({ type: 'warning', message: `「${m.name}」可用，但有提示：${report}`, duration: 10000, showClose: true })
+    else ElMessage({ type: 'error', message: `「${m.name}」${r.checks?.length ? '' : '连接失败：'}${r.error}${report ? `。${report}` : ''}`, duration: 10000, showClose: true })
   } catch (e) {
     ElMessage.error(errorMessage(e))
   } finally {

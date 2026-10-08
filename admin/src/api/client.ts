@@ -98,7 +98,7 @@ export const api = {
     get<Job[]>('/admin/jobs', params),
   retryJob: (id: string) => post<void>(`/admin/jobs/${id}/retry`),
 
-  questions: (params: { status?: string; bank_id?: string; document_id?: string; flagged?: 1; search?: string; limit?: number; offset?: number }) =>
+  questions: (params: { status?: string; bank_id?: string; document_id?: string; flagged?: 1; source?: 'agent'; search?: string; limit?: number; offset?: number }) =>
     get<QuestionPage>('/admin/questions', params),
   question: (id: string) => get<QuestionDetail>(`/admin/questions/${id}`),
   editQuestion: (id: string, edit: QuestionEdit) =>

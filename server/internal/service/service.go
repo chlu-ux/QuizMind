@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sync"
 	"time"
 
 	"github.com/chlu-ux/quizmind/server/internal/config"
@@ -44,6 +45,10 @@ type Service struct {
 	Queue *jobs.Queue
 	Hub   *events.Hub
 	Log   *slog.Logger
+
+	// agentBusy counts running assistant conversations per device.
+	agentMu   sync.Mutex
+	agentBusy map[string]int
 }
 
 func New(d *db.DB, cfg config.Config, reg *llm.Registry, q *jobs.Queue, hub *events.Hub, log *slog.Logger) *Service {
@@ -94,6 +99,7 @@ func (r LLMRecorder) Record(ctx context.Context, rec llm.CallRecord) error {
 		ID: newID(), JobID: rec.JobID, Role: string(rec.Role), Provider: rec.Provider, Model: rec.Model,
 		InputTokens: rec.Usage.InputTokens, OutputTokens: rec.Usage.OutputTokens, CachedTokens: rec.Usage.CachedTokens,
 		LatencyMs: rec.LatencyMs, Ok: ok, Error: msg, CreatedAt: rec.OccurredAt.UnixMilli(), Source: SourceServer,
+		DeviceID: rec.DeviceID, RefID: rec.RefID,
 	})
 }
 

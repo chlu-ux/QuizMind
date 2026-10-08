@@ -73,7 +73,9 @@ type QuestionFilter struct {
 	// Search is a case-insensitive substring match on the stem, options and explanation.
 	Search string
 	// Flagged keeps only questions with unresolved reports, whatever their status.
-	Flagged       bool
+	Flagged bool
+	// AgentOnly keeps only questions the study assistant wrote.
+	AgentOnly     bool
 	Limit, Offset int
 }
 
@@ -99,20 +101,25 @@ func (s *Service) ListQuestions(ctx context.Context, f QuestionFilter) (Question
 	if t := strings.TrimSpace(f.Search); t != "" {
 		search = t
 	}
-	flagged := int64(0)
+	flagged, agentOnly := int64(0), int64(0)
 	if f.Flagged {
 		flagged = 1
 	}
+	if f.AgentOnly {
+		agentOnly = 1
+	}
+	// Without a status the list shows everything except assistant drafts, which belong to their chat.
+	status := sql.NullString{String: f.Status, Valid: f.Status != ""}
 	qs := s.reader()
 	rows, err := qs.ListQuestions(ctx, store.ListQuestionsParams{
-		Status: opt(f.Status), BankID: opt(f.BankID), DocumentID: opt(f.DocumentID), Flagged: flagged, Search: search,
+		Status: status, BankID: opt(f.BankID), DocumentID: opt(f.DocumentID), Flagged: flagged, AgentOnly: agentOnly, Search: search,
 		PageLimit: int64(f.Limit), PageOffset: int64(f.Offset),
 	})
 	if err != nil {
 		return QuestionPage{}, err
 	}
 	total, err := qs.CountQuestions(ctx, store.CountQuestionsParams{
-		Status: opt(f.Status), BankID: opt(f.BankID), DocumentID: opt(f.DocumentID), Flagged: flagged, Search: search,
+		Status: status, BankID: opt(f.BankID), DocumentID: opt(f.DocumentID), Flagged: flagged, AgentOnly: agentOnly, Search: search,
 	})
 	if err != nil {
 		return QuestionPage{}, err

@@ -20,7 +20,9 @@ SELECT * FROM question WHERE id = ?;
 -- name: ListQuestions :many
 SELECT q.* FROM question q
 LEFT JOIN chunk c ON c.id = q.chunk_id
-WHERE (sqlc.narg(status) IS NULL OR q.status = sqlc.narg(status))
+-- Assistant drafts belong to a chat until accepted, so they are listed only when asked for by status.
+WHERE (q.status = sqlc.narg(status) OR (sqlc.narg(status) IS NULL AND q.status <> 'draft'))
+  AND (sqlc.arg(agent_only) = 0 OR q.gen_prompt_version LIKE 'agent.%')
   AND (sqlc.narg(bank_id) IS NULL OR q.bank_id = sqlc.narg(bank_id))
   AND (sqlc.narg(document_id) IS NULL OR c.document_id = sqlc.narg(document_id))
   AND (sqlc.arg(flagged) = 0 OR q.flag_count > 0)
@@ -34,7 +36,9 @@ LIMIT sqlc.arg(page_limit) OFFSET sqlc.arg(page_offset);
 -- name: CountQuestions :one
 SELECT COUNT(*) FROM question q
 LEFT JOIN chunk c ON c.id = q.chunk_id
-WHERE (sqlc.narg(status) IS NULL OR q.status = sqlc.narg(status))
+-- Assistant drafts belong to a chat until accepted, so they are listed only when asked for by status.
+WHERE (q.status = sqlc.narg(status) OR (sqlc.narg(status) IS NULL AND q.status <> 'draft'))
+  AND (sqlc.arg(agent_only) = 0 OR q.gen_prompt_version LIKE 'agent.%')
   AND (sqlc.narg(bank_id) IS NULL OR q.bank_id = sqlc.narg(bank_id))
   AND (sqlc.narg(document_id) IS NULL OR c.document_id = sqlc.narg(document_id))
   AND (sqlc.arg(flagged) = 0 OR q.flag_count > 0)

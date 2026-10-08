@@ -38,8 +38,11 @@ const token = "test-token"
 const doc = "# 并发\n\n## 读写锁\n\n读写锁允许多个读者同时持有锁，但写者必须独占整个资源。这是读写锁最核心的特点之一。在读多写少的场景下，读写锁能够显著提高并发性能，因为读者之间不需要互相等待。\n"
 
 type server struct {
-	ts   *httptest.Server
-	bank string
+	ts    *httptest.Server
+	bank  string
+	reg   *llm.Registry
+	guard *llm.Guard
+	db    *db.DB
 }
 
 func newServer(t *testing.T) *server {
@@ -79,7 +82,7 @@ func newServer(t *testing.T) *server {
 	ts := httptest.NewServer(httpapi.New(svc, hub, token, static, log))
 	t.Cleanup(ts.Close)
 
-	s := &server{ts: ts}
+	s := &server{ts: ts, reg: reg, guard: guard, db: d}
 	var bank struct{ ID string }
 	s.do(t, "POST", "/admin/banks", `{"title":"题库","description":""}`, 201, &bank)
 	s.bank = bank.ID

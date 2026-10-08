@@ -32,6 +32,8 @@ type Client struct {
 	opts Options
 	// promptMode is set once the endpoint has shown it cannot do structured outputs.
 	promptMode atomic.Bool
+	// noiseSeen counts text blocks in which gateway noise had to be removed.
+	noiseSeen atomic.Int64
 }
 
 func New(o Options) (*Client, error) {
