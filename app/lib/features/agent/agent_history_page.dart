@@ -57,7 +57,6 @@ class _AgentHistoryPageState extends ConsumerState<AgentHistoryPage> {
       MaterialPageRoute<void>(
         builder: (_) => AgentPage(
           args: AgentArgs(
-            mode: c.mode,
             bankId: c.bankId,
             lessonId: c.lessonId,
             questionId: c.questionId,
@@ -76,7 +75,7 @@ class _AgentHistoryPageState extends ConsumerState<AgentHistoryPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('删除这场对话？'),
-        content: Text('删除后无法恢复。$pending'),
+        content: Text('删除后无法恢复。这场对话里已采纳的题会留在题库里。$pending'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('取消')),
           FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('删除')),
@@ -125,7 +124,6 @@ class _AgentHistoryPageState extends ConsumerState<AgentHistoryPage> {
               title: Text(c.title.isEmpty ? '（没有标题）' : c.title, maxLines: 1, overflow: TextOverflow.ellipsis),
               subtitle: Text(
                 [
-                  c.mode == 'create' ? '出题' : '问 AI',
                   if (bankTitles[c.bankId] != null) bankTitles[c.bankId]!,
                   DateFormat('M月d日 HH:mm').format(DateTime.fromMillisecondsSinceEpoch(c.updatedAt)),
                   if (c.pendingDrafts > 0) '${c.pendingDrafts} 道草稿待处理',

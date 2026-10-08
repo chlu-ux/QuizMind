@@ -18,12 +18,16 @@ final agentStatusProvider = FutureProvider.autoDispose<AgentStatus>(
   retry: (_, _) => null,
 );
 
-/// The conversation with the study assistant: ask about the lessons (learn), or have it write
-/// questions that wait here for the learner's decision (create).
+/// The conversation with the study assistant: ask about the lessons and the weak points, be quizzed,
+/// or have it write questions, which join the question bank at once and can be taken back.
 class AgentPage extends ConsumerStatefulWidget {
-  const AgentPage({super.key, required this.args, this.initialText = ''});
+  const AgentPage({super.key, required this.args, this.initialText = '', this.onNewConversation});
 
   final AgentArgs args;
+
+  /// Set when the page is a tab of the home screen rather than a page pushed onto it: "new
+  /// conversation" then asks the tab to start over instead of replacing the page.
+  final VoidCallback? onNewConversation;
 
   /// Put in the text box, not sent: the learner finishes the sentence.
   final String initialText;
@@ -50,14 +54,13 @@ class _AgentPageState extends ConsumerState<AgentPage> {
   }
 
   List<String> get _prompts {
-    if (args.isCreate) return const ['出 5 道单选题', '出 3 道判断题', '出几道偏难的题'];
     if (args.questionId.isNotEmpty) {
       return const ['为什么我选的不对？', '再讲细一点', '举个例子帮我记住'];
     }
     if (args.lessonId.isNotEmpty) {
-      return const ['讲一下这一节', '这一节有哪些考点？', '出几道题考考我'];
+      return const ['讲一下这一节', '这一节有哪些考点？', '用这一节出 3 道单选题'];
     }
-    return const ['我哪里比较薄弱？', '帮我安排一下复习顺序', '出几道题考考我'];
+    return const ['我哪里比较薄弱？', '帮我安排一下复习顺序', '出几道题考考我', '帮我出 5 道单选题'];
   }
 
   /// The assistant's model can look at pictures.
@@ -109,12 +112,13 @@ class _AgentPageState extends ConsumerState<AgentPage> {
 
   /// Leaves this conversation for a new one that starts from the same place.
   void _newConversation() {
+    final onNew = widget.onNewConversation;
+    if (onNew != null) return onNew();
     final a = args;
     Navigator.of(context).pushReplacement(
       MaterialPageRoute<void>(
         builder: (_) => AgentPage(
           args: AgentArgs(
-            mode: a.mode,
             bankId: a.bankId,
             lessonId: a.lessonId,
             questionId: a.questionId,
@@ -180,7 +184,7 @@ class _AgentPageState extends ConsumerState<AgentPage> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: Text(args.isCreate ? 'AI 出题' : '问 AI'),
+        title: const Text('AI 助手'),
         actions: [
           if (state.messages.isNotEmpty)
             IconButton(
@@ -200,16 +204,6 @@ class _AgentPageState extends ConsumerState<AgentPage> {
       body: Column(
         children: [
           ?banner,
-          if (ready && args.isCreate && !status.value!.verified)
-            Container(
-              width: double.infinity,
-              color: theme.colorScheme.surfaceContainerHighest,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              child: Text(
-                '后台没有配置复核模型，出的题不会经过独立复核',
-                style: theme.textTheme.labelSmall,
-              ),
-            ),
           Expanded(
             child: Center(
               child: ConstrainedBox(
@@ -249,9 +243,8 @@ class _AgentPageState extends ConsumerState<AgentPage> {
                         padding: const EdgeInsets.all(20),
                         children: [
                           Text(
-                            args.isCreate
-                                ? '告诉我出几道题、什么题型，我会依据讲义原文出题，出好的题先放在这里，由你决定是否采纳。'
-                                : '可以问我讲义里的内容、你的薄弱点，或者让我出题考你。',
+                            '可以问我讲义里的内容、你的薄弱点，也可以让我出题。'
+                            '出的题依据讲义原文，默认就采纳进题库，不想要的随时可以取消。',
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -285,6 +278,7 @@ class _AgentPageState extends ConsumerState<AgentPage> {
                             onAccept: controller.accept,
                             onDiscard: controller.discard,
                             onRevise: _revise,
+                            onSetAll: (ids, adopt) => controller.setAll(ids, adopt: adopt),
                           );
                         },
                       ),
@@ -307,7 +301,7 @@ class _AgentPageState extends ConsumerState<AgentPage> {
             onAttach: _attach,
             onRemoveFile: controller.removeFile,
             hint: ready
-                ? (args.isCreate ? '说说想出什么题' : '问点什么')
+                ? '问点什么，或说说想出什么题'
                 : (hasToken ? '连接助手后才能提问' : '先填写访问令牌'),
             onSend: _send,
             onStop: controller.stop,

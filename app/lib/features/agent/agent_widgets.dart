@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../data/agent_models.dart';
+import '../../data/media_text.dart';
 import '../quiz/quiz_media.dart';
 import 'agent_controller.dart';
 import 'agent_files.dart';
@@ -249,6 +250,7 @@ class AssistantMessage extends StatelessWidget {
     required this.onAccept,
     required this.onDiscard,
     required this.onRevise,
+    required this.onSetAll,
   });
 
   final AgentMsg message;
@@ -257,6 +259,7 @@ class AssistantMessage extends StatelessWidget {
   final void Function(String id) onAccept;
   final void Function(String id) onDiscard;
   final void Function(String id) onRevise;
+  final void Function(List<String> ids, bool adopt) onSetAll;
 
   @override
   Widget build(BuildContext context) {
@@ -289,15 +292,17 @@ class AssistantMessage extends StatelessWidget {
                   ],
                 ),
               ),
-            for (final id in m.draftIds)
-              if (drafts[id] case final entry?)
-                DraftCard(
-                  key: ValueKey('draft-$id'),
-                  entry: entry,
-                  onAccept: () => onAccept(id),
-                  onDiscard: () => onDiscard(id),
-                  onRevise: () => onRevise(id),
-                ),
+            if (m.draftIds.any(drafts.containsKey))
+              DraftGroup(
+                key: ValueKey('drafts-${m.id}'),
+                entries: [
+                  for (final id in m.draftIds) ?drafts[id],
+                ],
+                onAccept: onAccept,
+                onDiscard: onDiscard,
+                onRevise: onRevise,
+                onSetAll: onSetAll,
+              ),
             if (m.error != null)
               Padding(
                 padding: const EdgeInsets.only(top: 6),
@@ -323,17 +328,133 @@ class AssistantMessage extends StatelessWidget {
   }
 }
 
-/// A question the assistant wrote, for the learner to accept, discard or have rewritten.
-class DraftCard extends StatelessWidget {
-  const DraftCard({
+/// The questions the assistant wrote in one answer, as one compact card: a line per question with a
+/// switch for adopting it, and the question itself unfolding when tapped. A long run of questions
+/// takes a screen or two instead of a page each.
+class DraftGroup extends StatefulWidget {
+  const DraftGroup({
     super.key,
+    required this.entries,
+    required this.onAccept,
+    required this.onDiscard,
+    required this.onRevise,
+    required this.onSetAll,
+  });
+
+  final List<DraftEntry> entries;
+  final void Function(String id) onAccept;
+  final void Function(String id) onDiscard;
+  final void Function(String id) onRevise;
+  final void Function(List<String> ids, bool adopt) onSetAll;
+
+  @override
+  State<DraftGroup> createState() => _DraftGroupState();
+}
+
+class _DraftGroupState extends State<DraftGroup> {
+  /// Questions shown unfolded. One or two are shown at once; more are folded up until tapped.
+  late final Set<String> _open = {
+    if (widget.entries.length <= 2) for (final e in widget.entries) e.draft.id,
+  };
+
+  /// Folded up as a whole, leaving the header.
+  bool _folded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final entries = widget.entries;
+    final adopted = entries.where((e) => e.phase == DraftPhase.accepted).length;
+    final busy = entries.any((e) => e.phase == DraftPhase.working);
+    final allAdopted = adopted == entries.length;
+    final ids = [for (final e in entries) e.draft.id];
+    return Card(
+      elevation: 0,
+      margin: const EdgeInsets.only(top: 8),
+      color: theme.colorScheme.surfaceContainerLow,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            key: const ValueKey('drafts-header'),
+            onTap: () => setState(() => _folded = !_folded),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 4, 10),
+              child: Row(
+                children: [
+                  Icon(Icons.fact_check_outlined, size: 20, color: theme.colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('出了 ${entries.length} 道题', style: theme.textTheme.titleSmall),
+                        Text(
+                          '已采纳 $adopted 道 · 采纳的题在题库里，可随时取消',
+                          key: const ValueKey('drafts-summary'),
+                          style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (entries.length > 1)
+                    TextButton(
+                      key: const ValueKey('drafts-all'),
+                      onPressed: busy ? null : () => widget.onSetAll(ids, !allAdopted),
+                      child: Text(allAdopted ? '全部取消' : '全部采纳'),
+                    ),
+                  Icon(_folded ? Icons.expand_more : Icons.expand_less, color: theme.colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                ],
+              ),
+            ),
+          ),
+          if (!_folded)
+            for (var i = 0; i < entries.length; i++) ...[
+              const Divider(height: 1),
+              DraftTile(
+                key: ValueKey('draft-${entries[i].draft.id}'),
+                number: i + 1,
+                entry: entries[i],
+                open: _open.contains(entries[i].draft.id),
+                onToggleOpen: () => setState(() {
+                  final id = entries[i].draft.id;
+                  if (!_open.remove(id)) _open.add(id);
+                }),
+                onAccept: () => widget.onAccept(entries[i].draft.id),
+                onDiscard: () => widget.onDiscard(entries[i].draft.id),
+                onRevise: () => widget.onRevise(entries[i].draft.id),
+              ),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+/// One question of a [DraftGroup]: a line with the stem and the adopt switch; the options, the
+/// explanation and the source show when it is [open].
+class DraftTile extends StatelessWidget {
+  const DraftTile({
+    super.key,
+    required this.number,
     required this.entry,
+    required this.open,
+    required this.onToggleOpen,
     required this.onAccept,
     required this.onDiscard,
     required this.onRevise,
   });
 
+  final int number;
   final DraftEntry entry;
+  final bool open;
+  final VoidCallback onToggleOpen;
   final VoidCallback onAccept;
   final VoidCallback onDiscard;
   final VoidCallback onRevise;
@@ -342,145 +463,104 @@ class DraftCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final d = entry.draft;
-    final phase = entry.phase;
-    final working = phase == DraftPhase.working;
-    return Opacity(
-      opacity: phase == DraftPhase.discarded ? 0.5 : 1,
-      child: Card(
-        elevation: 0,
-        margin: const EdgeInsets.only(top: 8),
-        color: theme.colorScheme.surfaceContainerLow,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: theme.colorScheme.outlineVariant),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                spacing: 6,
-                runSpacing: 4,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                children: [
-                  _Chip(d.type == 'judge' ? '判断题' : '单选题'),
-                  _Chip('难度 ${'★' * d.difficulty.clamp(1, 5)}'),
-                  for (final t in d.tags) _Chip(t),
-                  if (!d.verified)
-                    Text(
-                      '未经独立复核',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.tertiary,
-                      ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              QuizMarkdown(d.stem, selectable: false),
-              for (var i = 0; i < d.options.length; i++)
-                _OptionRow(
-                  index: i,
-                  text: d.options[i],
-                  correct: i == d.answerIndex,
+    final working = entry.phase == DraftPhase.working;
+    final adopted = entry.phase == DraftPhase.accepted;
+    final muted = theme.colorScheme.onSurfaceVariant;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        InkWell(
+          key: ValueKey('draft-row-${d.id}'),
+          onTap: onToggleOpen,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 4, 8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                SizedBox(
+                  width: 22,
+                  child: Text('$number', style: theme.textTheme.labelLarge?.copyWith(color: muted)),
                 ),
-              if (d.explanation.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text('解析', style: theme.textTheme.labelLarge),
-                QuizMarkdown(d.explanation, selectable: false),
-              ],
-              if (d.sourceQuote.isNotEmpty)
-                Theme(
-                  data: theme.copyWith(dividerColor: Colors.transparent),
-                  child: ExpansionTile(
-                    tilePadding: EdgeInsets.zero,
-                    childrenPadding: const EdgeInsets.only(bottom: 8),
-                    dense: true,
-                    title: Text('出处原文', style: theme.textTheme.labelLarge),
-                    expandedCrossAxisAlignment: CrossAxisAlignment.start,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '「${d.sourceQuote}」',
-                        style: theme.textTheme.bodySmall,
+                        plainText(d.stem).replaceAll(RegExp(r'\s+'), ' '),
+                        maxLines: open ? null : 2,
+                        overflow: open ? null : TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(color: adopted ? null : muted),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        [
+                          d.type == 'judge' ? '判断题' : '单选题',
+                          '难度 ${'★' * d.difficulty.clamp(1, 5)}',
+                          if (!d.verified) '未经独立复核',
+                        ].join(' · '),
+                        style: theme.textTheme.labelSmall?.copyWith(color: muted),
                       ),
                     ],
                   ),
                 ),
-              if (entry.error != null)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Text(
-                    entry.error!,
-                    style: TextStyle(color: theme.colorScheme.error),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 56,
+                  child: Center(
+                    child: working
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                        : Switch(
+                            key: ValueKey('draft-switch-${d.id}'),
+                            value: adopted,
+                            onChanged: (on) => on ? onAccept() : onDiscard(),
+                          ),
                   ),
                 ),
-              const SizedBox(height: 4),
-              if (phase == DraftPhase.accepted)
-                Row(
-                  children: [
-                    Icon(
-                      Icons.check_circle_outline,
-                      size: 18,
-                      color: theme.colorScheme.primary,
-                    ),
-                    const SizedBox(width: 6),
-                    const Expanded(child: Text('已提交审核，通过后会出现在题库里')),
-                  ],
-                )
-              else if (phase == DraftPhase.discarded)
-                const Text('已丢弃')
-              else
-                Wrap(
-                  spacing: 8,
-                  children: [
-                    FilledButton(
-                      onPressed: working ? null : onAccept,
-                      child: working
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('采纳'),
-                    ),
-                    OutlinedButton(
-                      onPressed: working ? null : onRevise,
-                      child: const Text('让它改改'),
-                    ),
-                    TextButton(
-                      onPressed: working ? null : onDiscard,
-                      child: const Text('丢弃'),
-                    ),
-                  ],
-                ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  const _Chip(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        label,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: theme.colorScheme.onSecondaryContainer,
-        ),
-      ),
+        if (open)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(34, 0, 12, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                QuizMarkdown(d.stem, selectable: false),
+                for (var i = 0; i < d.options.length; i++)
+                  _OptionRow(index: i, text: d.options[i], correct: i == d.answerIndex),
+                if (d.explanation.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text('解析', style: theme.textTheme.labelLarge),
+                  QuizMarkdown(d.explanation, selectable: false),
+                ],
+                if (d.sourceQuote.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text('出处原文', style: theme.textTheme.labelLarge),
+                  Text('「${d.sourceQuote}」', style: theme.textTheme.bodySmall),
+                ],
+                if (entry.error != null)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(entry.error!, style: TextStyle(color: theme.colorScheme.error)),
+                  ),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    key: ValueKey('draft-revise-${d.id}'),
+                    onPressed: working ? null : onRevise,
+                    child: const Text('让它改改'),
+                  ),
+                ),
+              ],
+            ),
+          )
+        else if (entry.error != null)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(34, 0, 12, 8),
+            child: Text(entry.error!, style: TextStyle(color: theme.colorScheme.error)),
+          ),
+      ],
     );
   }
 }

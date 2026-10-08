@@ -10,12 +10,12 @@ import '../../core/ulid.dart';
 import '../../data/agent_models.dart';
 import 'agent_files.dart';
 
-/// Where a conversation starts: which assistant mode and what the learner is looking at, or, with
-/// [conversationId], a conversation kept on the server. Two pages with equal args share one
+/// Where a conversation starts: what the learner is looking at, or, with [conversationId], a
+/// conversation kept on the server. Two pages with equal args share one
 /// conversation while either is open.
 class AgentArgs {
   const AgentArgs({
-    required this.mode,
+    this.mode = '',
     this.bankId = '',
     this.lessonId = '',
     this.questionId = '',
@@ -24,7 +24,8 @@ class AgentArgs {
     this.fresh = 0,
   });
 
-  /// learn | create
+  /// Empty: the whole assistant, which explains, quizzes and writes questions when asked. `learn` is
+  /// the older read-only form; nothing in the app asks for it any more.
   final String mode;
   final String bankId;
   final String lessonId;
@@ -37,8 +38,6 @@ class AgentArgs {
   /// Makes otherwise equal args a different conversation ("new conversation" from a page that
   /// has the same starting point).
   final int fresh;
-
-  bool get isCreate => mode == 'create';
 
   @override
   bool operator ==(Object other) =>
@@ -546,7 +545,11 @@ class AgentController extends Notifier<AgentState> {
       case AgentDraftsEvent(:final drafts):
         final entries = {...state.drafts};
         for (final d in drafts) {
-          entries.putIfAbsent(d.id, () => DraftEntry(d));
+          // The server adopts a question when it is written; an older one leaves it to the learner.
+          entries.putIfAbsent(
+            d.id,
+            () => DraftEntry(d, phase: d.adopted ? DraftPhase.accepted : DraftPhase.pending),
+          );
         }
         state = state.copyWith(drafts: entries);
         _patch(
@@ -573,14 +576,29 @@ class AgentController extends Notifier<AgentState> {
 
   // ---- drafts ----
 
-  /// Sends the draft to the review queue; a reviewer still has to approve it before anyone practises it.
+  /// Adopts the question (again): it goes back into the question bank, or the review queue when the
+  /// admin wants the assistant's questions reviewed.
   Future<void> accept(String draftId) => _decide(draftId, accept: true);
 
+  /// Takes the question back out of the bank. Answers already given to it stay.
   Future<void> discard(String draftId) => _decide(draftId, accept: false);
+
+  /// Adopts or takes back every question of [ids], one after the other.
+  Future<void> setAll(Iterable<String> ids, {required bool adopt}) async {
+    for (final id in ids.toList()) {
+      if (!ref.mounted) return;
+      final phase = state.drafts[id]?.phase;
+      if (phase == null || phase == DraftPhase.working) continue;
+      if (adopt == (phase == DraftPhase.accepted)) continue;
+      await _decide(id, accept: adopt);
+    }
+  }
 
   Future<void> _decide(String id, {required bool accept}) async {
     final entry = state.drafts[id];
     if (entry == null || entry.phase == DraftPhase.working) return;
+    // On failure the card goes back to where it was.
+    final before = entry.phase;
     _setDraft(id, entry.copyWith(phase: DraftPhase.working, clearError: true));
     try {
       final api = ref.read(agentApiProvider);
@@ -602,14 +620,14 @@ class AgentController extends Notifier<AgentState> {
       if (ref.mounted) {
         _setDraft(
           id,
-          entry.copyWith(phase: DraftPhase.pending, error: e.message),
+          entry.copyWith(phase: before, error: e.message),
         );
       }
     } catch (e) {
       if (ref.mounted) {
         _setDraft(
           id,
-          entry.copyWith(phase: DraftPhase.pending, error: '出错了：$e'),
+          entry.copyWith(phase: before, error: '出错了：$e'),
         );
       }
     }
@@ -618,12 +636,12 @@ class AgentController extends Notifier<AgentState> {
   void _setDraft(String id, DraftEntry entry) =>
       state = state.copyWith(drafts: {...state.drafts, id: entry});
 
-  /// The words that start a request to rewrite a draft; the learner finishes the sentence. The id lets
-  /// the assistant replace exactly that draft.
+  /// The words that start a request to rewrite a question; the learner finishes the sentence. The id lets
+  /// the assistant replace exactly that question.
   String revisionPrompt(String draftId) {
     final d = state.drafts[draftId]?.draft;
     final stem = d == null ? '' : d.stem.replaceAll(RegExp(r'\s+'), ' ');
     final shown = stem.length > 30 ? '${stem.substring(0, 30)}…' : stem;
-    return '请修改这道草稿（draft_id：$draftId，题干：「$shown」）：';
+    return '请修改这道题（draft_id：$draftId，题干：「$shown」）：';
   }
 }

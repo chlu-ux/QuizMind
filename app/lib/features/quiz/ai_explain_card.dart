@@ -236,7 +236,7 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
   /// Carries on with the assistant, which is told which question this is and what the learner picked.
   void _askMore() {
     final q = widget.question;
-    final args = AgentArgs(mode: 'learn', bankId: q.bankId, questionId: q.id, selected: widget.selected);
+    final args = AgentArgs(bankId: q.bankId, questionId: q.id, selected: widget.selected);
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => AgentPage(args: args, initialText: '我还是没懂，')));
   }
 

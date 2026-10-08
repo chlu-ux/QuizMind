@@ -1429,110 +1429,116 @@ void main() {
     });
 
     group('question-writing', () {
-      const create = AgentArgs(mode: 'create', bankId: 'b1', lessonId: 'L1');
+      const args = AgentArgs(bankId: 'b1');
 
-      FakeAgentApi withDraft() => FakeAgentApi()
+      /// A model that adopts what it writes, as the server does.
+      AgentDraft adoptedDraft([String id = 'D1']) =>
+          AgentDraft.fromJson({...draftJson, 'draft_id': id, 'adopted': true});
+
+      FakeAgentApi withDrafts(List<AgentDraft> drafts) => FakeAgentApi()
         ..events = [
-          AgentDraftsEvent([draft()]),
-          const AgentDelta('出了 1 道题。'),
+          AgentDraftsEvent(drafts),
+          const AgentDelta('出了几道题。'),
           const AgentDone(stop: 'end_turn'),
         ];
 
-      testWidgets(
-        'a draft shows as a card with the answer marked, and accepting says it went to review',
-        (tester) async {
-          tester.view.physicalSize = const Size(900, 2400);
-          tester.view.devicePixelRatio = 1;
-          addTearDown(tester.view.reset);
-          final api = withDraft();
-          await pump(tester, api, args: create);
-          expect(find.text('出 5 道单选题'), findsOneWidget);
-          await tester.tap(find.text('出 5 道单选题'));
-          await tester.pumpAndSettle();
+      Future<void> ask(WidgetTester tester, FakeAgentApi api) async {
+        tester.view.physicalSize = const Size(900, 2400);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await pump(tester, api, args: args);
+        await tester.tap(find.text('帮我出 5 道单选题'));
+        await tester.pumpAndSettle();
+      }
 
-          expect(
-            find.textContaining('读写锁的特点是什么？', findRichText: true),
-            findsOneWidget,
-          );
-          expect(find.text('未经独立复核'), findsOneWidget);
-          expect(find.text('多个读者同时持有'), findsOneWidget);
-          expect(
-            find.byIcon(Icons.check_circle),
-            findsOneWidget,
-            reason: 'only the right option is marked',
-          );
-          expect(find.text('单选题'), findsOneWidget);
+      bool adopted(WidgetTester tester, String id) =>
+          tester.widget<Switch>(find.byKey(ValueKey('draft-switch-$id'))).value;
 
-          await tester.tap(find.text('采纳'));
-          await tester.pumpAndSettle();
-          expect(api.accepted, ['D1']);
-          expect(find.text('已提交审核，通过后会出现在题库里'), findsOneWidget);
-          expect(find.text('采纳'), findsNothing);
-        },
-      );
+      testWidgets('a new question is adopted already; the switch takes it back and adopts it again', (tester) async {
+        final api = withDrafts([adoptedDraft()]);
+        await ask(tester, api);
 
-      testWidgets(
-        'discarding folds the card away; asking for a rewrite fills the box with the draft id',
-        (tester) async {
-          tester.view.physicalSize = const Size(900, 2400);
-          tester.view.devicePixelRatio = 1;
-          addTearDown(tester.view.reset);
-          final api = withDraft();
-          await pump(tester, api, args: create);
-          await tester.tap(find.text('出 3 道判断题'));
-          await tester.pumpAndSettle();
+        expect(find.text('出了 1 道题'), findsOneWidget);
+        expect(find.text('已采纳 1 道 · 采纳的题在题库里，可随时取消'), findsOneWidget);
+        expect(adopted(tester, 'D1'), isTrue);
+        expect(api.accepted, isEmpty, reason: 'nothing to confirm: the server adopted it when it was written');
+        // One question is shown open: the stem, the options with the answer marked, the explanation.
+        expect(find.textContaining('读写锁的特点是什么？', findRichText: true), findsWidgets);
+        expect(find.text('多个读者同时持有'), findsOneWidget);
+        expect(find.byIcon(Icons.check_circle), findsOneWidget, reason: 'only the right option is marked');
+        expect(find.textContaining('未经独立复核'), findsOneWidget);
 
-          await tester.tap(find.text('让它改改'));
-          await tester.pump();
-          final text = tester
-              .widget<TextField>(find.byKey(const ValueKey('agent-input')))
-              .controller!
-              .text;
-          expect(text, startsWith('请修改这道草稿（draft_id：D1'));
+        await tester.tap(find.byKey(const ValueKey('draft-switch-D1')));
+        await tester.pumpAndSettle();
+        expect(api.discarded, ['D1']);
+        expect(adopted(tester, 'D1'), isFalse);
+        expect(find.text('已采纳 0 道 · 采纳的题在题库里，可随时取消'), findsOneWidget);
 
-          await tester.tap(find.text('丢弃'));
-          await tester.pumpAndSettle();
-          expect(api.discarded, ['D1']);
-          expect(find.text('已丢弃'), findsOneWidget);
-        },
-      );
+        await tester.tap(find.byKey(const ValueKey('draft-switch-D1')));
+        await tester.pumpAndSettle();
+        expect(api.accepted, ['D1']);
+        expect(adopted(tester, 'D1'), isTrue);
+      });
 
-      testWidgets(
-        'a refused accept shows the reason on the card and keeps the buttons',
-        (tester) async {
-          tester.view.physicalSize = const Size(900, 2400);
-          tester.view.devicePixelRatio = 1;
-          addTearDown(tester.view.reset);
-          final api = withDraft();
-          await pump(tester, api, args: create);
-          await tester.tap(find.text('出 5 道单选题'));
-          await tester.pumpAndSettle();
-          api.decideError = AgentException('这一节讲义已经更新，这道草稿已过期', status: 400);
-          await tester.tap(find.text('采纳'));
-          await tester.pumpAndSettle();
-          expect(find.textContaining('已过期'), findsOneWidget);
-          expect(find.text('采纳'), findsOneWidget);
-        },
-      );
+      testWidgets('an older server leaves the question to the learner: the switch starts off', (tester) async {
+        final api = withDrafts([draft()]);
+        await ask(tester, api);
+        expect(adopted(tester, 'D1'), isFalse);
+        await tester.tap(find.byKey(const ValueKey('draft-switch-D1')));
+        await tester.pumpAndSettle();
+        expect(api.accepted, ['D1']);
+        expect(adopted(tester, 'D1'), isTrue);
+      });
 
-      testWidgets(
-        'tells the writer when no second model checks the questions',
-        (tester) async {
-          await pump(tester, FakeAgentApi(), args: create);
-          expect(find.textContaining('没有配置复核模型'), findsOneWidget);
-          await pump(
-            tester,
-            FakeAgentApi()
-              ..statusValue = const AgentStatus(
-                available: true,
-                model: 'm',
-                verified: true,
-              ),
-            args: create,
-          );
-          expect(find.textContaining('没有配置复核模型'), findsNothing);
-        },
-      );
+      testWidgets('a long run of questions is one card: a line each, opened one at a time, all at once on request', (tester) async {
+        final api = withDrafts([for (var i = 1; i <= 6; i++) adoptedDraft('D$i')]);
+        await ask(tester, api);
+
+        expect(find.text('出了 6 道题'), findsOneWidget);
+        expect(find.text('已采纳 6 道 · 采纳的题在题库里，可随时取消'), findsOneWidget);
+        expect(find.text('多个读者同时持有'), findsNothing, reason: 'folded: only the stems show');
+        expect(find.byType(Switch), findsNWidgets(6));
+
+        await tester.tap(find.byKey(const ValueKey('draft-row-D3')));
+        await tester.pumpAndSettle();
+        expect(find.text('多个读者同时持有'), findsOneWidget, reason: 'one question opened');
+        await tester.tap(find.byKey(const ValueKey('draft-row-D3')));
+        await tester.pumpAndSettle();
+        expect(find.text('多个读者同时持有'), findsNothing);
+
+        await tester.tap(find.byKey(const ValueKey('drafts-all')));
+        await tester.pumpAndSettle();
+        expect(api.discarded, ['D1', 'D2', 'D3', 'D4', 'D5', 'D6']);
+        expect(find.text('已采纳 0 道 · 采纳的题在题库里，可随时取消'), findsOneWidget);
+        expect(find.text('全部采纳'), findsOneWidget);
+
+        await tester.tap(find.byKey(const ValueKey('drafts-all')));
+        await tester.pumpAndSettle();
+        expect(api.accepted, ['D1', 'D2', 'D3', 'D4', 'D5', 'D6']);
+
+        await tester.tap(find.byKey(const ValueKey('drafts-header')));
+        await tester.pumpAndSettle();
+        expect(find.byType(Switch), findsNothing, reason: 'folded up to the header');
+      });
+
+      testWidgets('a refused change shows the reason and the switch goes back', (tester) async {
+        final api = withDrafts([adoptedDraft()]);
+        await ask(tester, api);
+        api.decideError = AgentException('网络不通', status: 500);
+        await tester.tap(find.byKey(const ValueKey('draft-switch-D1')));
+        await tester.pumpAndSettle();
+        expect(find.textContaining('网络不通'), findsOneWidget);
+        expect(adopted(tester, 'D1'), isTrue, reason: 'still adopted: the server did not take it back');
+      });
+
+      testWidgets('asking for a rewrite fills the box with the question id', (tester) async {
+        final api = withDrafts([adoptedDraft()]);
+        await ask(tester, api);
+        await tester.tap(find.byKey(const ValueKey('draft-revise-D1')));
+        await tester.pump();
+        final text = tester.widget<TextField>(find.byKey(const ValueKey('agent-input'))).controller!.text;
+        expect(text, startsWith('请修改这道题（draft_id：D1'));
+      });
     });
   });
 
@@ -1570,17 +1576,16 @@ void main() {
       return api;
     }
 
-    testWidgets('lists the conversations newest first, with their kind, bank and waiting drafts', (tester) async {
+    testWidgets('lists the conversations newest first, with their bank and waiting drafts', (tester) async {
       await pumpHistory(tester, withOld());
       final titles = tester.widgetList<ListTile>(find.byType(ListTile)).map((t) => (t.title as Text).data).toList();
       expect(titles, ['用这一节出 3 道单选题', '死锁的四个条件']);
       final first = tester.widget<ListTile>(find.byType(ListTile).first);
       final sub = (first.subtitle as Text).data!;
-      expect(sub, contains('出题'));
       expect(sub, contains('软件设计师（中级）'));
       expect(sub, contains('1 道草稿待处理'));
       final second = (tester.widget<ListTile>(find.byType(ListTile).last).subtitle as Text).data!;
-      expect(second, contains('问 AI'));
+      expect(second, contains('软件设计师（中级）'));
       expect(second, isNot(contains('待处理')));
     });
 
@@ -1642,12 +1647,16 @@ void main() {
       await tester.tap(find.text('用这一节出 3 道单选题'));
       await tester.pumpAndSettle();
 
-      expect(find.text('AI 出题'), findsOneWidget);
+      expect(find.text('AI 助手'), findsOneWidget);
       expect(find.text('出 3 道题'), findsOneWidget);
       expect(find.text('读取讲义「锁」'), findsOneWidget);
-      expect(find.text('采纳'), findsOneWidget, reason: 'only the card that still waits has buttons');
-      expect(find.text('已提交审核，通过后会出现在题库里'), findsOneWidget);
-      expect(find.text('已丢弃'), findsOneWidget);
+      // The three questions are one card; each switch shows where its question stands.
+      expect(find.text('出了 3 道题'), findsOneWidget);
+      expect(find.text('已采纳 1 道 · 采纳的题在题库里，可随时取消'), findsOneWidget);
+      bool adopted(String id) => tester.widget<Switch>(find.byKey(ValueKey('draft-switch-$id'))).value;
+      expect(adopted('D1'), isFalse, reason: 'it still waits for a decision');
+      expect(adopted('D2'), isTrue);
+      expect(adopted('D3'), isFalse, reason: 'thrown away');
 
       await tester.enterText(find.byKey(const ValueKey('agent-input')), '再出一道');
       await tester.pump();
@@ -1655,7 +1664,7 @@ void main() {
       await tester.pumpAndSettle();
       final req = api.requests.single;
       expect(req.conversationId, 'c-make');
-      expect(req.mode, 'create');
+      expect(req.mode, isEmpty, reason: 'a stored conversation carries on as the whole assistant');
       expect(req.message, '再出一道');
       expect(req.context.bankId, 'b1');
       expect(req.context.lessonId, 'L1');
@@ -1701,7 +1710,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('agent-new')));
       await tester.pumpAndSettle();
-      expect(find.text('可以问我讲义里的内容、你的薄弱点，或者让我出题考你。'), findsOneWidget);
+      expect(find.textContaining('可以问我讲义里的内容、你的薄弱点，也可以让我出题。'), findsOneWidget);
       await tester.tap(find.text('讲一下这一节'));
       await tester.pumpAndSettle();
       expect(api.requests, hasLength(2));
@@ -1785,7 +1794,7 @@ void main() {
         await tester.tap(find.byKey(const ValueKey('agent-send')));
         await tester.pumpAndSettle();
         final req = api.requests.single;
-        expect(req.mode, 'learn');
+        expect(req.mode, isEmpty);
         expect(req.context.questionId, 'q1');
         expect(req.context.selected, [
           2,

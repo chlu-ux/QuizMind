@@ -46,7 +46,8 @@ class AgentStatus {
   );
 }
 
-/// A question the assistant wrote that waits for the learner to accept or discard it.
+/// A question the assistant wrote. It is adopted when it is written (part of the question bank, or the
+/// review queue); the learner can take it back and adopt it again.
 class AgentDraft {
   const AgentDraft({
     required this.id,
@@ -60,6 +61,7 @@ class AgentDraft {
     required this.tags,
     required this.sourceQuote,
     required this.verified,
+    this.adopted = false,
   });
 
   final String id;
@@ -76,6 +78,10 @@ class AgentDraft {
   /// A second model answered it independently and agreed.
   final bool verified;
 
+  /// Already adopted when the server sent it. False from a server that predates adoption, and for an
+  /// old-style draft nobody decided on.
+  final bool adopted;
+
   factory AgentDraft.fromJson(Map<String, dynamic> j) => AgentDraft(
         id: (j['draft_id'] as String?) ?? '',
         lessonId: (j['lesson_id'] as String?) ?? '',
@@ -88,6 +94,7 @@ class AgentDraft {
         tags: ((j['tags'] as List?) ?? const []).map((e) => '$e').toList(),
         sourceQuote: (j['source_quote'] as String?) ?? '',
         verified: j['verified'] == true,
+        adopted: j['adopted'] == true,
       );
 }
 
@@ -112,7 +119,7 @@ class AgentContext {
 class AgentChatRequest {
   const AgentChatRequest({
     required this.conversationId,
-    required this.mode,
+    this.mode = '',
     required this.deviceId,
     required this.message,
     this.attachmentIds = const [],
@@ -122,7 +129,7 @@ class AgentChatRequest {
   /// Chosen by the app; the server keeps the conversation under it and reads the history itself.
   final String conversationId;
 
-  /// learn | create
+  /// Empty: the whole assistant. `learn` asks for the older read-only form.
   final String mode;
   final String deviceId;
   /// The new question; the earlier ones are on the server.
@@ -132,7 +139,7 @@ class AgentChatRequest {
 
   Map<String, dynamic> toJson() => {
         'conversation_id': conversationId,
-        'mode': mode,
+        if (mode.isNotEmpty) 'mode': mode,
         'device_id': deviceId,
         'message': {'text': message, 'attachment_ids': attachmentIds},
         'context': context.toJson(),

@@ -111,10 +111,9 @@ class _LessonPageState extends ConsumerState<LessonPage> {
     if (mounted) Navigator.of(context).pop();
   }
 
-  /// Opens the assistant on this section: to ask about it, or to have questions written from it.
-  void _openAgent(String mode) {
-    final args = AgentArgs(mode: mode, bankId: widget.bank.id, lessonId: widget.lessonId);
-    final text = mode == 'create' ? '用这一节出 3 道单选题' : '';
+  /// Opens the assistant on this section: to ask about it, or (with [text]) to have questions written from it.
+  void _openAgent([String text = '']) {
+    final args = AgentArgs(bankId: widget.bank.id, lessonId: widget.lessonId);
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => AgentPage(args: args, initialText: text)));
   }
 
@@ -131,13 +130,13 @@ class _LessonPageState extends ConsumerState<LessonPage> {
               key: const ValueKey('lesson-ask-ai'),
               tooltip: '问 AI',
               icon: const Icon(Icons.auto_awesome_outlined),
-              onPressed: () => _openAgent('learn'),
+              onPressed: _openAgent,
             ),
             IconButton(
               key: const ValueKey('lesson-ai-questions'),
               tooltip: '用这一节出题',
               icon: const Icon(Icons.edit_note),
-              onPressed: () => _openAgent('create'),
+              onPressed: () => _openAgent('用这一节出 3 道单选题'),
             ),
           ],
           if (lesson != null)
