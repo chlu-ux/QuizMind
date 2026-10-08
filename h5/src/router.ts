@@ -17,6 +17,8 @@ const router = createRouter({
     { path: '/wrong', component: () => import('./views/ListView.vue'), props: { kind: 'wrong' }, meta: { tabs: true } },
     { path: '/fav', component: () => import('./views/ListView.vue'), props: { kind: 'fav' }, meta: { tabs: true } },
     { path: '/settings', component: () => import('./views/SettingsView.vue'), meta: { tabs: true } },
+    { path: '/agent/history', component: () => import('./views/AgentHistoryView.vue') },
+    { path: '/agent', component: () => import('./views/AgentView.vue') },
     { path: '/quiz', component: () => import('./views/QuizView.vue') },
     { path: '/:rest(.*)*', redirect: '/' },
   ],

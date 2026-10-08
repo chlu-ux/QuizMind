@@ -1,5 +1,17 @@
 import { openDb, type Db } from '@/data/db'
 import { ApiError, type QuizApi } from '@/data/api'
+import type { AgentApi } from '@/data/agentApi'
+import {
+  AgentError,
+  draftFromJson,
+  type AgentChatRequest,
+  type AgentConversationDetail,
+  type AgentConversationPage,
+  type AgentDraft,
+  type AgentEvent,
+  type AgentStatus,
+  type StoredMessage,
+} from '@/data/agentTypes'
 import type {
   AttemptDto,
   AttemptsPage,
@@ -161,3 +173,101 @@ let dbCount = 0
 export async function freshDb(): Promise<Db> {
   return openDb(`test-${++dbCount}-${Math.random()}`)
 }
+
+export const draftJson = {
+  draft_id: 'D1',
+  lesson_id: 'L1',
+  type: 'single',
+  stem: '读写锁的特点是什么？',
+  options: ['多个读者同时持有', '只能一个读者', '写者可并行', '禁止写者'],
+  answer_index: 0,
+  explanation: '读者之间不互斥。',
+  difficulty: 2,
+  tags: ['锁'],
+  source_quote: '读写锁允许多个读者同时持有锁',
+  verified: false,
+}
+
+export const draft = (id = 'D1'): AgentDraft => draftFromJson({ ...draftJson, draft_id: id })
+
+/** A scripted assistant that records what it was asked. */
+export class FakeAgentApi implements AgentApi {
+  statusValue: AgentStatus = { available: true, model: 'm', verified: false }
+  statusError: Error | null = null
+  requests: AgentChatRequest[] = []
+  /** The events of the next answer; [holdOpen] then keeps the stream open until it is aborted. */
+  events: AgentEvent[] = []
+  holdOpen = false
+  chatError: Error | null = null
+  accepted: string[] = []
+  discarded: string[] = []
+  decideError: Error | null = null
+  /** The conversations the server keeps, by id. */
+  history = new Map<string, AgentConversationDetail>()
+  deleted: string[] = []
+  listError: Error | null = null
+
+  /** Puts a conversation on the "server", as one that was talked in before. */
+  keep(id: string, o: Partial<AgentConversationDetail> & { at?: number } = {}): AgentConversationDetail {
+    const c: AgentConversationDetail = {
+      id, mode: 'learn', title: `对话 ${id}`, bankId: '', lessonId: '', questionId: '', messages: [], ...o,
+    }
+    this.history.set(id, c)
+    ;(c as AgentConversationDetail & { at: number }).at = o.at ?? this.history.size
+    return c
+  }
+
+  async conversations(opts: { before?: number; limit?: number } = {}): Promise<AgentConversationPage> {
+    if (this.listError) throw this.listError
+    const all = [...this.history.values()] as (AgentConversationDetail & { at: number })[]
+    all.sort((a, b) => b.at - a.at)
+    const rows = all.filter((c) => !opts.before || c.at < opts.before)
+    const take = rows.slice(0, opts.limit ?? 30)
+    return {
+      items: take.map((c) => ({
+        id: c.id, mode: c.mode, title: c.title, bankId: c.bankId, lessonId: c.lessonId, questionId: c.questionId,
+        messageCount: c.messages.length,
+        pendingDrafts: c.messages.reduce((n, m) => n + m.drafts.filter((d) => d.phase === 'pending').length, 0),
+        updatedAt: c.at,
+      })),
+      hasMore: rows.length > take.length,
+    }
+  }
+  async conversation(id: string) {
+    const c = this.history.get(id)
+    if (!c) throw new AgentError('这场对话已经不存在了，可能被删除了，或服务器还不支持历史对话', 404)
+    return c
+  }
+  async deleteConversation(id: string) {
+    if (!this.history.delete(id)) throw new AgentError('not found', 404)
+    this.deleted.push(id)
+  }
+
+  async status() {
+    if (this.statusError) throw this.statusError
+    return this.statusValue
+  }
+  async *chat(request: AgentChatRequest, signal?: AbortSignal): AsyncGenerator<AgentEvent> {
+    this.requests.push(request)
+    if (this.chatError) throw this.chatError
+    for (const e of this.events) yield e
+    if (this.holdOpen) {
+      await new Promise<void>((_, reject) => {
+        if (signal?.aborted) return reject(new AgentError('已停止'))
+        signal?.addEventListener('abort', () => reject(new AgentError('已停止')))
+      })
+    }
+  }
+  async acceptDraft(id: string) {
+    if (this.decideError) throw this.decideError
+    this.accepted.push(id)
+  }
+  async discardDraft(id: string) {
+    if (this.decideError) throw this.decideError
+    this.discarded.push(id)
+  }
+}
+
+export const storedMessage = (o: Partial<StoredMessage> & Pick<StoredMessage, 'role' | 'text'>): StoredMessage => ({
+  id: 1, tools: [], drafts: [], note: '', error: '', createdAt: 0, ...o,
+})

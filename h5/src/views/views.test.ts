@@ -2,7 +2,10 @@
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import router from '@/router'
-import { getRepo } from '@/core/app'
+import { getRepo, toast } from '@/core/app'
+import { setAgentApi, setAgentToken } from '@/core/agent'
+import { AgentError } from '@/data/agentTypes'
+import { draft, FakeAgentApi, storedMessage } from '@/test-support'
 import { DEFAULT_GOALS, updateGoals } from '@/core/goals'
 import { newUlid } from '@/core/ulid'
 import type { ExamDraft, ExamRecord, Lesson, LocalQuestion } from '@/data/types'
@@ -11,6 +14,8 @@ import { pendingQuiz, startQuiz } from '@/quiz/launch'
 import ExamReviewView from './ExamReviewView.vue'
 import ExamSetupView from './ExamSetupView.vue'
 import ExamView from './ExamView.vue'
+import AgentHistoryView from './AgentHistoryView.vue'
+import AgentView from './AgentView.vue'
 import BankView from './BankView.vue'
 import BanksView from './BanksView.vue'
 import LearnView from './LearnView.vue'
@@ -894,5 +899,456 @@ describe('study text', () => {
     expect(w.find('[aria-label="讲义"]').exists()).toBe(false)
     expect(await repo.lesson(ls[0].id)).toBeTruthy()
     w.unmount()
+  })
+})
+
+describe('study assistant', () => {
+  let api: FakeAgentApi
+  const input = (w: VueWrapper) => w.find('[data-testid="agent-input"]')
+  const type = async (w: VueWrapper, text: string) => {
+    await input(w).setValue(text)
+  }
+  const sendBtn = (w: VueWrapper) => w.find('[data-testid="agent-send"]')
+  const done = { kind: 'done', stop: 'end_turn', inputTokens: 1, outputTokens: 1 } as const
+
+  beforeEach(() => {
+    localStorage.clear()
+    setAgentToken('tok')
+    api = new FakeAgentApi()
+    setAgentApi(api)
+  })
+
+  describe('AgentView', () => {
+    it('asks for a token when there is none, and cannot send', async () => {
+      setAgentToken('')
+      const w = await open('/agent?mode=learn&bank=b1', AgentView)
+      expect(w.find('[data-testid="agent-banner"]').text()).toContain('还没有填访问令牌')
+      await type(w, '你好')
+      expect(sendBtn(w).attributes('disabled')).toBeDefined()
+      await w.find('[data-testid="agent-banner"] button').trigger('click')
+      await flush()
+      expect(router.currentRoute.value.path).toBe('/settings')
+      w.unmount()
+    })
+
+    it('says so when the token is wrong, or the server has no assistant', async () => {
+      api.statusError = new AgentError('访问令牌不对或还没设置', 401)
+      let w = await open('/agent?mode=learn', AgentView)
+      expect(w.find('[data-testid="agent-banner"]').text()).toContain('访问令牌不对或还没设置')
+      expect(w.find('[data-testid="agent-banner"] button').text()).toBe('去设置')
+      w.unmount()
+
+      api.statusError = new AgentError('AI 助手还没有启用', 404)
+      w = await open('/agent?mode=learn', AgentView)
+      expect(w.find('[data-testid="agent-banner"]').text()).toContain('AI 助手还没有启用')
+      expect(w.find('[data-testid="agent-banner"] button').exists()).toBe(false)
+      w.unmount()
+    })
+
+    it('offline: explains and offers a retry, which brings it back', async () => {
+      api.statusError = new AgentError('连不上服务器，请确认地址正确并已联网')
+      const w = await open('/agent?mode=learn', AgentView)
+      expect(w.find('[data-testid="agent-banner"]').text()).toContain('连不上服务器')
+      api.statusError = null
+      await w.find('[data-testid="agent-banner"] button').trigger('click')
+      await flush()
+      expect(w.find('[data-testid="agent-banner"]').exists()).toBe(false)
+      await type(w, '你好')
+      expect(sendBtn(w).attributes('disabled')).toBeUndefined()
+      w.unmount()
+    })
+
+    it('a quick prompt asks right away; the answer and its lookups show', async () => {
+      api.events = [
+        { kind: 'tool', id: 't1', name: 'search_lessons', label: '在讲义里查找…', status: 'done' },
+        { kind: 'delta', text: '读写锁**允许**多个读者。' },
+        done,
+      ]
+      const w = await open('/agent?mode=learn&bank=b1', AgentView)
+      expect(w.text()).toContain('可以问我讲义里的内容')
+      await w.findAll('.chip.pick')[0].trigger('click')
+      await flush()
+      expect(api.requests[0].message.text).toBe('我哪里比较薄弱？')
+      expect(w.text()).toContain('在讲义里查找…')
+      expect(w.find('.bubble.bot strong').text()).toBe('允许')
+      expect(w.find('.bubble.user').text()).toBe('我哪里比较薄弱？')
+      w.unmount()
+    })
+
+    it('typing and sending clears the box; stop appears while the answer is written and keeps what came', async () => {
+      api.events = [{ kind: 'delta', text: '写到一半' }]
+      api.holdOpen = true
+      const w = await open('/agent?mode=learn', AgentView)
+      await type(w, '讲讲锁')
+      await sendBtn(w).trigger('click')
+      await flush()
+      expect((input(w).element as HTMLTextAreaElement).value).toBe('')
+      expect(w.find('[data-testid="agent-stop"]').exists()).toBe(true)
+      expect(sendBtn(w).exists()).toBe(false)
+      await w.find('[data-testid="agent-stop"]').trigger('click')
+      await flush()
+      expect(w.text()).toContain('写到一半')
+      expect(w.text()).toContain('已停止')
+      expect(w.find('[data-testid="agent-stop"]').exists()).toBe(false)
+      w.unmount()
+    })
+
+    it('leaving the page stops the answer on the server', async () => {
+      api.holdOpen = true
+      const w = await open('/agent?mode=learn', AgentView)
+      await type(w, '讲讲锁')
+      await sendBtn(w).trigger('click')
+      await flush()
+      w.unmount()
+      await flush()
+      expect(api.requests).toHaveLength(1) // and the held stream was released, or the test would hang
+    })
+
+    it('the text from the address is put in the box, not sent', async () => {
+      const w = await open('/agent?mode=learn&question=q1&selected=2&text=' + encodeURIComponent('我还是没懂，'), AgentView)
+      expect((input(w).element as HTMLTextAreaElement).value).toBe('我还是没懂，')
+      expect(api.requests).toHaveLength(0)
+      await sendBtn(w).trigger('click')
+      await flush()
+      expect(api.requests[0].context).toMatchObject({ questionId: 'q1', selected: [2] })
+      w.unmount()
+    })
+
+    it('a diagram in the answer shows as a picture, and an unsafe one as code', async () => {
+      const ns = 'xmlns="http://www.w3.org/2000/svg"'
+      api.events = [
+        { kind: 'delta', text: `流程：\n\n\`\`\`svg\n<svg ${ns} viewBox="0 0 9 9"><rect width="4" height="4"/></svg>\n\`\`\`\n\n再看：<svg ${ns}><script>alert(1)</script></svg>` },
+        done,
+      ]
+      const w = await open('/agent?mode=learn', AgentView)
+      await w.findAll('.chip.pick')[0].trigger('click')
+      await flush()
+      const imgs = w.findAll('.bubble.bot img')
+      expect(imgs).toHaveLength(1)
+      expect(imgs[0].attributes('src')).toMatch(/^data:image\/svg\+xml/)
+      expect(w.find('.bubble.bot pre').text()).toContain('<script>')
+      expect(w.find('.bubble.bot script').exists()).toBe(false)
+      w.unmount()
+    })
+
+    it('a lesson or question link opens what it points at in a sheet; one this device lacks says so', async () => {
+      const { repo, qs } = await seed(1)
+      await repo.db.put('lessons', {
+        id: `${bank}-L1`, bank_id: bank, document_id: `${bank}-d1`, document_title: '讲义', document_created_at: 1, seq: 0,
+        heading_path: '讲义 > 锁', text: '锁第一句。',
+      })
+      api.events = [
+        { kind: 'delta', text: `见[这一节](lesson:${bank}-L1)和[这道题](question:${qs[0].id})，还有[缺的](lesson:nope)、[外链](https://example.com)。` },
+        done,
+      ]
+      const w = await open('/agent?mode=learn', AgentView)
+      await w.findAll('.chip.pick')[0].trigger('click')
+      await flush()
+      const links = w.findAll('.bubble.bot a')
+      expect(links[3].attributes('target')).toBe('_blank') // an ordinary link is left to the browser
+
+      await links[0].trigger('click')
+      await flush()
+      expect(w.find('[aria-label="讲义"]').text()).toContain('锁第一句。')
+      await button(w, '关闭').trigger('click')
+
+      await links[1].trigger('click')
+      await flush()
+      const sheet = w.find('[aria-label="题目"]')
+      expect(sheet.text()).toContain(`题干 ${qs[0].id}`)
+      expect(sheet.findAll('.draft-opt.right')).toHaveLength(1)
+      expect(sheet.text()).toContain(`解析 ${qs[0].id}`)
+      await button(w, '关闭').trigger('click')
+
+      await links[2].trigger('click')
+      await flush()
+      expect(toast.text).toContain('找不到')
+      expect(router.currentRoute.value.path).toBe('/agent')
+      w.unmount()
+    })
+
+    describe('question-writing', () => {
+      const writing = async () => {
+        api.events = [{ kind: 'delta', text: '出好了：' }, { kind: 'drafts', drafts: [draft('D1')] }, done]
+        const w = await open('/agent?mode=create&bank=b1&lesson=L1', AgentView)
+        await w.findAll('.chip.pick')[0].trigger('click')
+        await flush()
+        return w
+      }
+
+      it('a draft shows as a card with the answer marked, and accepting says it went to review', async () => {
+        const w = await writing()
+        const card = w.find('[data-testid="draft-card"]')
+        expect(card.text()).toContain('读写锁的特点是什么？')
+        expect(card.text()).toContain('未经独立复核')
+        expect(card.findAll('.draft-opt.right')).toHaveLength(1)
+        expect(card.find('.draft-opt.right').text()).toContain('多个读者同时持有')
+        expect(api.requests[0]).toMatchObject({ mode: 'create', context: { bankId: 'b1', lessonId: 'L1' } })
+        await button(w, '采纳').trigger('click')
+        await flush()
+        expect(api.accepted).toEqual(['D1'])
+        expect(card.text()).toContain('已提交审核')
+        expect(card.findAll('button')).toHaveLength(0)
+        w.unmount()
+      })
+
+      it('discarding folds the card away; asking for a rewrite fills the box with the draft id', async () => {
+        const w = await writing()
+        await button(w, '让它改改').trigger('click')
+        await flush()
+        const box = (input(w).element as HTMLTextAreaElement).value
+        expect(box).toContain('draft_id：D1')
+        expect(box).toContain('读写锁的特点是什么？')
+        await button(w, '丢弃').trigger('click')
+        await flush()
+        expect(api.discarded).toEqual(['D1'])
+        expect(w.find('[data-testid="draft-card"]').text()).toContain('已丢弃')
+        w.unmount()
+      })
+
+      it('a refused accept shows the reason on the card and keeps the buttons', async () => {
+        const w = await writing()
+        api.decideError = new AgentError('这道草稿已经处理过了', 409)
+        await button(w, '采纳').trigger('click')
+        await flush()
+        expect(w.find('[data-testid="draft-card"]').text()).toContain('这道草稿已经处理过了')
+        expect(w.findAll('[data-testid="draft-card"] button')).toHaveLength(3)
+        w.unmount()
+      })
+
+      it('tells the writer when no second model checks the questions', async () => {
+        const w = await open('/agent?mode=create&bank=b1', AgentView)
+        expect(w.text()).toContain('出的题不会经过独立复核')
+        w.unmount()
+        api.statusValue = { available: true, model: 'm', verified: true }
+        const w2 = await open('/agent?mode=create&bank=b1', AgentView)
+        expect(w2.text()).not.toContain('出的题不会经过独立复核')
+        w2.unmount()
+      })
+    })
+  })
+
+  describe('history', () => {
+    const old = async () => {
+      await seed(1)
+      api.keep('c-old', { title: '死锁的四个条件', bankId: bank, at: 1, messages: [storedMessage({ role: 'user', text: '死锁？' })] })
+      api.keep('c-make', {
+        mode: 'create', title: '用这一节出 3 道单选题', bankId: bank, lessonId: 'L1', at: 2,
+        messages: [
+          storedMessage({ id: 1, role: 'user', text: '出 3 道题' }),
+          storedMessage({
+            id: 2, role: 'assistant', text: '出好了：', tools: [{ id: 't', label: '读取讲义「锁」', status: 'done' }],
+            drafts: [
+              { draft: draft('D1'), phase: 'pending' },
+              { draft: draft('D2'), phase: 'accepted' },
+              { draft: draft('D3'), phase: 'discarded' },
+            ],
+          }),
+        ],
+      })
+    }
+
+    it('lists the conversations newest first, with their kind, bank, time and waiting drafts', async () => {
+      await old()
+      const w = await open('/agent/history', AgentHistoryView)
+      const rows = w.findAll('[data-testid="history-row"]')
+      expect(rows).toHaveLength(2)
+      expect(rows[0].text()).toContain('用这一节出 3 道单选题')
+      expect(rows[0].text()).toContain('出题')
+      expect(rows[0].text()).toContain(`题库${bankSeq}`)
+      expect(rows[0].text()).toContain('1 道草稿待处理')
+      expect(rows[1].text()).toContain('死锁的四个条件')
+      expect(rows[1].text()).toContain('问 AI')
+      expect(rows[1].text()).not.toContain('草稿待处理')
+      w.unmount()
+    })
+
+    it('says so when there is nothing, no token, or the server cannot be reached (and tries again)', async () => {
+      let w = await open('/agent/history', AgentHistoryView)
+      expect(w.find('[data-testid="history-empty"]').exists()).toBe(true)
+      w.unmount()
+
+      setAgentToken('')
+      w = await open('/agent/history', AgentHistoryView)
+      expect(w.find('[data-testid="history-no-token"]').exists()).toBe(true)
+      w.unmount()
+
+      setAgentToken('tok')
+      api.keep('c-1', { title: '一场对话' })
+      api.listError = new AgentError('连不上服务器，请确认地址正确并已联网')
+      w = await open('/agent/history', AgentHistoryView)
+      expect(w.find('[data-testid="history-error"]').text()).toContain('连不上服务器')
+      api.listError = null
+      await button(w, '重试').trigger('click')
+      await flush()
+      expect(w.findAll('[data-testid="history-row"]')).toHaveLength(1)
+      w.unmount()
+    })
+
+    it('loads more when there are more than a page', async () => {
+      for (let i = 1; i <= 35; i++) api.keep(`c-${i}`, { title: `第 ${i} 场`, at: i })
+      const w = await open('/agent/history', AgentHistoryView)
+      expect(w.findAll('[data-testid="history-row"]')).toHaveLength(30)
+      await w.find('[data-testid="history-more"]').trigger('click')
+      await flush()
+      expect(w.findAll('[data-testid="history-row"]')).toHaveLength(35)
+      expect(w.find('[data-testid="history-more"]').exists()).toBe(false)
+      expect(w.findAll('[data-testid="history-row"]')[34].text()).toContain('第 1 场')
+      w.unmount()
+    })
+
+    it('deletes a conversation after asking, and keeps it when the learner says no', async () => {
+      await old()
+      const w = await open('/agent/history', AgentHistoryView)
+      const ask = vi.fn(() => false)
+      vi.stubGlobal('confirm', ask)
+      await w.findAll('[aria-label="删除对话"]')[0].trigger('click')
+      await flush()
+      expect(ask).toHaveBeenCalledWith(expect.stringContaining('1 道没处理的草稿也会被丢弃'))
+      expect(api.deleted).toEqual([])
+      expect(w.findAll('[data-testid="history-row"]')).toHaveLength(2)
+
+      vi.stubGlobal('confirm', () => true)
+      await w.findAll('[aria-label="删除对话"]')[0].trigger('click')
+      await flush()
+      expect(api.deleted).toEqual(['c-make'])
+      expect(w.findAll('[data-testid="history-row"]')).toHaveLength(1)
+      w.unmount()
+    })
+
+    it('opens a conversation in the chat page: its messages, lookups and cards as they stood, and carries on', async () => {
+      await old()
+      const h = await open('/agent/history', AgentHistoryView)
+      await h.findAll('[data-testid="history-row"] button.plain')[0].trigger('click')
+      await flush()
+      expect(router.currentRoute.value.path).toBe('/agent')
+      expect(router.currentRoute.value.query).toEqual({ conversation: 'c-make' })
+      h.unmount()
+
+      const w = await open('/agent?conversation=c-make', AgentView)
+      expect(w.find('h1').text()).toBe('AI 出题')
+      expect(w.find('.bubble.user').text()).toBe('出 3 道题')
+      expect(w.text()).toContain('读取讲义「锁」')
+      const cards = w.findAll('[data-testid="draft-card"]')
+      expect(cards).toHaveLength(3)
+      expect(cards[0].findAll('button').map((b) => b.text())).toEqual(['采纳', '让它改改', '丢弃'])
+      expect(cards[1].text()).toContain('已提交审核')
+      expect(cards[2].text()).toContain('已丢弃')
+
+      // The card that still waits can be decided, and the next question goes into the same conversation.
+      await button(w, '采纳').trigger('click')
+      await flush()
+      expect(api.accepted).toEqual(['D1'])
+      api.events = [{ kind: 'delta', text: '好' }, done]
+      await type(w, '再出一道')
+      await sendBtn(w).trigger('click')
+      await flush()
+      expect(api.requests[0]).toMatchObject({ conversationId: 'c-make', mode: 'create', message: { text: '再出一道' }, context: { bankId: bank, lessonId: 'L1' } })
+      w.unmount()
+    })
+
+    it('says so when the conversation is gone', async () => {
+      const w = await open('/agent?conversation=nope', AgentView)
+      expect(w.find('[data-testid="agent-open-error"]').text()).toContain('已经不存在')
+      w.unmount()
+    })
+
+    it('the page links to the history, and "new conversation" starts over from the same place', async () => {
+      const w = await open('/agent?mode=learn&bank=b1&lesson=L1', AgentView)
+      expect(w.find('[data-testid="agent-new"]').exists()).toBe(false) // nothing to leave yet
+      api.events = [{ kind: 'delta', text: '好' }, done]
+      await w.findAll('.chip.pick')[0].trigger('click')
+      await flush()
+      expect(w.findAll('.bubble')).toHaveLength(2)
+
+      await w.find('[data-testid="agent-new"]').trigger('click')
+      await flush()
+      expect(router.currentRoute.value.query).toEqual({ mode: 'learn', bank: 'b1', lesson: 'L1' })
+      expect(w.findAll('.bubble')).toHaveLength(0)
+      expect(w.text()).toContain('可以问我讲义里的内容')
+      await w.findAll('.chip.pick')[0].trigger('click')
+      await flush()
+      expect(api.requests).toHaveLength(2)
+      expect(api.requests[1].conversationId).not.toBe(api.requests[0].conversationId)
+
+      await w.find('[data-testid="agent-history"]').trigger('click')
+      await flush()
+      expect(router.currentRoute.value.path).toBe('/agent/history')
+      w.unmount()
+    })
+  })
+
+  describe('entry points', () => {
+    it('the bank page opens the assistant in both modes', async () => {
+      await seed(1)
+      const w = await open(`/bank/${bank}`, BankView, { id: bank })
+      await w.find('[data-testid="bank-ask-ai"]').trigger('click')
+      await flush()
+      expect(router.currentRoute.value.path).toBe('/agent')
+      expect(router.currentRoute.value.query).toEqual({ mode: 'learn', bank })
+      await router.push(`/bank/${bank}`)
+      await w.find('[data-testid="bank-ai-questions"]').trigger('click')
+      await flush()
+      expect(router.currentRoute.value.query).toEqual({ mode: 'create', bank })
+      w.unmount()
+    })
+
+    it('a section opens it on that section, with the question-writing request ready in the box', async () => {
+      const { repo } = await seed(1)
+      await repo.db.put('lessons', {
+        id: `${bank}-L1`, bank_id: bank, document_id: `${bank}-d1`, document_title: '讲义', document_created_at: 1, seq: 0,
+        heading_path: '讲义 > 锁', text: '锁第一句。',
+      })
+      const w = await open(`/bank/${bank}/learn/${bank}-L1`, LessonView, { id: bank, lessonId: `${bank}-L1` })
+      await w.find('[data-testid="lesson-ask-ai"]').trigger('click')
+      await flush()
+      expect(router.currentRoute.value.query).toEqual({ mode: 'learn', bank, lesson: `${bank}-L1` })
+      await router.push(`/bank/${bank}/learn/${bank}-L1`)
+      await w.find('[data-testid="lesson-ai-questions"]').trigger('click')
+      await flush()
+      expect(router.currentRoute.value.query).toMatchObject({ mode: 'create', lesson: `${bank}-L1`, text: '用这一节出 3 道单选题' })
+      w.unmount()
+    })
+
+    it('"追问 AI" under the explanation opens the assistant on that question, only with a token', async () => {
+      const { repo } = await seed(1)
+      await startQuiz('练习', await repo.bankQuestions(bank))
+      setAgentToken('')
+      let w = await open('/quiz', QuizView)
+      await w.findAll('.option')[0].trigger('click')
+      await button(w, '提交').trigger('click')
+      await flush()
+      expect(w.find('[data-testid="ask-ai-more"]').exists()).toBe(false)
+      w.unmount()
+
+      setAgentToken('tok')
+      await startQuiz('练习', await repo.bankQuestions(bank))
+      w = await open('/quiz', QuizView)
+      // Options are shuffled on screen; the assistant is told the index in the question itself.
+      const picked = w.findAll('.option')[0]
+      const original = ['甲', '乙', '丙', '丁'].findIndex((t) => picked.text().includes(t))
+      await picked.trigger('click')
+      await button(w, '提交').trigger('click')
+      await flush()
+      await w.find('[data-testid="ask-ai-more"]').trigger('click')
+      await flush()
+      expect(router.currentRoute.value.path).toBe('/agent')
+      expect(router.currentRoute.value.query).toEqual({
+        mode: 'learn', bank, question: `${bank}-q1`, selected: String(original), text: '我还是没懂，',
+      })
+      w.unmount()
+    })
+
+    it('the settings page keeps the access token on this device', async () => {
+      setAgentToken('')
+      const w = await open('/settings', SettingsView)
+      await w.find('[data-testid="ai-token"]').setValue('  abc123 ')
+      await w.find('[data-testid="ai-token"]').trigger('change')
+      expect(localStorage.getItem('quizmind.ai.token')).toBe('abc123')
+      await w.find('[data-testid="ai-token"]').setValue('')
+      await w.find('[data-testid="ai-token"]').trigger('change')
+      expect(localStorage.getItem('quizmind.ai.token')).toBeNull()
+      w.unmount()
+    })
   })
 })

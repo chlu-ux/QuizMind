@@ -309,3 +309,42 @@ mark { background: color-mix(in srgb, #d69e2e 40%, transparent); color: inherit;
 .lesson-actions { display: flex; flex-direction: column; gap: 10px; }
 .lesson-nav { display: flex; gap: 10px; }
 .lesson-nav .btn { flex: 1; }
+
+/* study assistant */
+.row.wrap { flex-wrap: wrap; }
+.agent { gap: 8px; padding-bottom: 12px; }
+.agent-banner {
+  display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+  background: var(--err-soft); color: var(--err); border-bottom: 1px solid var(--line);
+}
+.agent-banner .btn { min-height: 36px; padding: 0 12px; flex: none; }
+.agent-note { padding: 6px 14px; font-size: 12px; color: var(--muted); background: var(--bg); border-bottom: 1px solid var(--line); }
+.bubble { max-width: 100%; word-break: break-word; }
+.bubble.user {
+  align-self: flex-end; max-width: 85%; padding: 10px 14px; border-radius: 16px;
+  background: var(--primary-soft); white-space: pre-wrap;
+}
+.bubble.bot { align-self: stretch; padding: 4px 0; }
+.bubble.bot .tool { font-size: 13px; color: var(--muted); padding: 2px 0; }
+.bubble.bot .tool.done { opacity: 0.6; }
+.bubble.bot .tool.error { color: var(--err); }
+.chip.pick { border: 0; cursor: pointer; min-height: 36px; padding: 0 14px; font: inherit; font-size: 14px; }
+.chip.pick:disabled { opacity: 0.45; cursor: default; }
+.agent-input { align-items: flex-end; z-index: 4; }
+.agent-input .input { flex: 1; min-height: 44px; max-height: 140px; padding: 10px 12px; resize: none; }
+.draft { margin-top: 8px; }
+.draft.discarded { opacity: 0.5; }
+.draft .unverified { color: var(--err); }
+.draft-opt {
+  display: flex; align-items: flex-start; gap: 8px; padding: 8px 10px; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--surface);
+}
+.draft-opt.right { border-color: var(--ok); background: var(--ok-soft); }
+.draft-opt .letter { font-weight: 700; }
+
+/* history of assistant conversations */
+.history-row { padding: 10px 6px 10px 14px; }
+.history-row .plain { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.history-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.history-meta .chip { font-size: 12px; padding: 0 8px; }
+.history-meta .pending { color: var(--err); }

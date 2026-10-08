@@ -8,6 +8,7 @@ import { orderQuestions, type QuizOrder } from '@/quiz/session'
 import { startQuiz } from '@/quiz/launch'
 import { sequentialPosition, setSequentialPosition } from '@/quiz/position'
 import { planResume } from '@/quiz/resume'
+import { agentArgs, agentQuery } from '@/quiz/agentLinks'
 
 const props = defineProps<{ id: string }>()
 const router = useRouter()
@@ -61,6 +62,10 @@ async function start(order: QuizOrder, onlyNew: boolean, fromStart = false) {
   startQuiz(bank.value?.title ?? '刷题', ordered, startAt, false, { scope: props.id, sequential })
 }
 
+function openAgent(mode: 'learn' | 'create') {
+  void router.push({ path: '/agent', query: agentQuery(agentArgs({ mode, bankId: props.id })) })
+}
+
 async function resume() {
   if (!saved.value) return
   const repo = await getRepo()
@@ -111,6 +116,8 @@ async function resume() {
           📕 本题库错题本<template v-if="wrongCount"> · {{ wrongCount }} 题</template><template v-else> · 没有错题</template>
         </button>
         <button class="btn block" @click="router.push(`/bank/${props.id}/stats`)">📊 统计分析</button>
+        <button class="btn block" data-testid="bank-ask-ai" @click="openAgent('learn')">✨ 问 AI · 讲义、薄弱点、小测</button>
+        <button class="btn block" data-testid="bank-ai-questions" @click="openAgent('create')">✏️ AI 出题 · 依据讲义出题，由你审核</button>
       </div>
     </template>
   </main>

@@ -15,3 +15,5 @@ The server serves it at `/m/`. On a phone on the same Wi-Fi open `http://<Mac LA
 Keyboard on desktop: `1`–`4` choose, `Enter` submit / next, `J` or `→` next, `K` or `←` previous.
 
 Single-choice options are shuffled each time a quiz session starts (and stay put when you step back to a question). Judge questions keep 正确 / 错误 in a fixed order. Grading and the stored attempts always use the question's original option indexes, so shuffling never changes what the server sees; `1`–`4` pick by the position shown on screen.
+
+AI 助手：设置页「AI 助手」填后台「AI 解读」里设置的访问令牌（只存在这台设备上），之后题库页、讲义页和答题解析下会出现「问 AI」「AI 出题」「追问 AI」。设计见 `../docs/agent-design.md`。

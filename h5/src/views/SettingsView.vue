@@ -3,6 +3,7 @@ import { onMounted, ref, watch } from 'vue'
 import { dataVersion, formatTime, getRepo, runSync, settings, syncStatus, testConnection } from '@/core/app'
 import { ApiError } from '@/data/api'
 import GoalPicker from '@/components/GoalPicker.vue'
+import { agentSettings, setAgentToken } from '@/core/agent'
 import { goals, MAX_MINUTES, MAX_QUESTIONS, updateGoals } from '@/core/goals'
 
 const testing = ref(false)
@@ -58,6 +59,21 @@ async function test() {
         <input class="input time-input" type="time" :value="goals.remindAt" aria-label="提醒时间" @change="updateGoals({ remindAt: ($event.target as HTMLInputElement).value })" />
       </label>
       <p class="muted small">提醒只在打开 App 时出现：过了提醒时间、目标还没完成，首页会提示还差多少。不会在后台弹通知。</p>
+    </section>
+
+    <section class="card col">
+      <h2>AI 助手</h2>
+      <p class="muted small">在后台管理页「AI 解读」里设置的访问令牌。填写后，题库页、讲义页和答题解析里才能使用 AI 助手。只存在这台设备上。</p>
+      <input
+        class="input mono"
+        type="password"
+        autocomplete="off"
+        placeholder="访问令牌"
+        aria-label="访问令牌"
+        data-testid="ai-token"
+        :value="agentSettings.token"
+        @change="setAgentToken(($event.target as HTMLInputElement).value)"
+      />
     </section>
 
     <section class="card col">

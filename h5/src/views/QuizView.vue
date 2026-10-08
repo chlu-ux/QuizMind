@@ -10,6 +10,8 @@ import { plainText } from '@/quiz/media'
 import { setSequentialPosition } from '@/quiz/position'
 import { QuizSession } from '@/quiz/session'
 import { lessonTitle } from '@/quiz/lessons'
+import { agentSettings } from '@/core/agent'
+import { agentArgs, agentQuery } from '@/quiz/agentLinks'
 import { FLAG_REASONS, type FlagReason, type Lesson } from '@/data/types'
 
 const router = useRouter()
@@ -26,6 +28,14 @@ async function openLesson() {
   const l = id ? await (await getRepo()).lesson(id) : undefined
   if (l) lessonSheet.value = l
   else showToast('没有找到这一节讲义，同步一次试试')
+}
+
+/** Carries on with the assistant, which is told which question this is and what the learner picked. */
+function askMore() {
+  const cur = session.value
+  if (!cur) return
+  const args = agentArgs({ mode: 'learn', bankId: cur.current.bank_id, questionId: cur.current.id, selected: [...cur.selected] })
+  void router.push({ path: '/agent', query: agentQuery(args, '我还是没懂，') })
 }
 
 // Where this quiz is saved so it can be continued (a bank id); undefined for lists not worth resuming.
@@ -233,6 +243,8 @@ function retry() {
         <Md v-if="s.current.explanation" :source="s.current.explanation" />
         <blockquote v-if="s.current.source_quote">原文：{{ s.current.source_quote }}</blockquote>
         <button v-if="s.current.chunk_id && lessonIds.has(s.current.chunk_id)" class="btn" @click="openLesson">📖 看这一节讲义</button>
+        <!-- The assistant needs the access token; without one there is nothing to open. -->
+        <button v-if="agentSettings.token" class="btn" data-testid="ask-ai-more" @click="askMore">💬 追问 AI</button>
       </section>
     </main>
 
