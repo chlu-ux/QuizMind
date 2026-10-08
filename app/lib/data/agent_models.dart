@@ -22,7 +22,12 @@ class AgentException implements Exception {
 
 /// Whether the assistant can be used, from GET /agent/status.
 class AgentStatus {
-  const AgentStatus({required this.available, required this.model, required this.verified});
+  const AgentStatus({
+    required this.available,
+    required this.model,
+    required this.verified,
+    this.vision = false,
+  });
 
   final bool available;
   final String model;
@@ -30,11 +35,15 @@ class AgentStatus {
   /// A second model double-checks the questions the assistant writes.
   final bool verified;
 
+  /// The model can look at pictures, so pictures may be attached to a message.
+  final bool vision;
+
   factory AgentStatus.fromJson(Map<String, dynamic> j) => AgentStatus(
-        available: j['available'] == true,
-        model: (j['model'] as String?) ?? '',
-        verified: j['verified'] == true,
-      );
+    available: j['available'] == true,
+    model: (j['model'] as String?) ?? '',
+    verified: j['verified'] == true,
+    vision: j['vision'] == true,
+  );
 }
 
 /// A question the assistant wrote that waits for the learner to accept or discard it.
@@ -159,6 +168,8 @@ class AgentAttachment {
     this.mime = '',
     this.size = 0,
     this.chars = 0,
+    this.width = 0,
+    this.height = 0,
   });
 
   final String id;
@@ -166,6 +177,8 @@ class AgentAttachment {
 
   /// text | image
   final String kind;
+
+  bool get isImage => kind == 'image';
   final String mime;
 
   /// Bytes as uploaded.
@@ -174,6 +187,10 @@ class AgentAttachment {
   /// Text files: characters of the text.
   final int chars;
 
+  /// Pictures: pixels; 0 when the server could not read them.
+  final int width;
+  final int height;
+
   factory AgentAttachment.fromJson(Map<String, dynamic> j) => AgentAttachment(
     id: (j['id'] as String?) ?? '',
     name: (j['name'] as String?) ?? '',
@@ -181,6 +198,8 @@ class AgentAttachment {
     mime: (j['mime'] as String?) ?? '',
     size: (j['size'] as num?)?.toInt() ?? 0,
     chars: (j['chars'] as num?)?.toInt() ?? 0,
+    width: (j['width'] as num?)?.toInt() ?? 0,
+    height: (j['height'] as num?)?.toInt() ?? 0,
   );
 }
 
@@ -194,6 +213,11 @@ const agentFileExtensions = [
   '.log',
 ];
 const agentFileMaxBytes = 512 * 1024;
+
+/// Pictures: the types taken (the server judges by content), the size, and how many a conversation holds.
+const agentImageExtensions = ['.jpg', '.jpeg', '.png', '.gif', '.webp'];
+const agentImageMaxBytes = 5 * 1024 * 1024;
+const agentMaxImages = 4;
 
 /// Files in a conversation, and in one message.
 const agentMaxFiles = 8;

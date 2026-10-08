@@ -1,17 +1,30 @@
-import 'package:flutter/material.dart';
+import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/providers.dart';
 import '../../data/agent_models.dart';
 import '../quiz/quiz_media.dart';
 import 'agent_controller.dart';
+import 'agent_files.dart';
 
 /// What the learner said.
 class UserBubble extends StatelessWidget {
-  const UserBubble(this.text, {super.key, this.attachments = const []});
+  const UserBubble(
+    this.text, {
+    super.key,
+    this.attachments = const [],
+    this.localImages = const {},
+  });
 
   final String text;
 
-  /// The files this message carried, shown as tags under the words.
+  /// The files this message carried: pictures as thumbnails, the others as tags under the words.
   final List<AgentAttachment> attachments;
+
+  /// Pictures chosen on this device, by attachment id; the others are fetched to be shown.
+  final Map<String, Uint8List> localImages;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +46,24 @@ class UserBubble extends StatelessWidget {
               text,
               style: TextStyle(color: theme.colorScheme.onPrimaryContainer),
             ),
-            if (attachments.isNotEmpty)
+            if (attachments.any((a) => a.isImage))
+              Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 6,
+                  children: [
+                    for (final a in attachments)
+                      if (a.isImage)
+                        AttachedImage(
+                          key: ValueKey('agent-image-${a.id}'),
+                          attachment: a,
+                          local: localImages[a.id],
+                        ),
+                  ],
+                ),
+              ),
+            if (attachments.any((a) => !a.isImage))
               Padding(
                 padding: const EdgeInsets.only(top: 6),
                 child: Wrap(
@@ -41,21 +71,22 @@ class UserBubble extends StatelessWidget {
                   runSpacing: 4,
                   children: [
                     for (final a in attachments)
-                      Container(
-                        key: const ValueKey('agent-file-tag'),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
+                      if (!a.isImage)
+                        Container(
+                          key: const ValueKey('agent-file-tag'),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surface,
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            '📎 ${a.name}',
+                            style: theme.textTheme.labelSmall,
+                          ),
                         ),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surface,
-                          borderRadius: BorderRadius.circular(999),
-                        ),
-                        child: Text(
-                          '📎 ${a.name}',
-                          style: theme.textTheme.labelSmall,
-                        ),
-                      ),
                   ],
                 ),
               ),
@@ -65,6 +96,104 @@ class UserBubble extends StatelessWidget {
     );
   }
 }
+
+/// The bytes of a picture kept on the server, fetched with the access token. Dropped when nothing
+/// shows it.
+final agentImageProvider = FutureProvider.autoDispose.family<Uint8List, String>(
+  (ref, id) => ref.watch(agentApiProvider).attachmentBytes(id),
+);
+
+/// A picture the learner gave the assistant, as a small tile that opens it large.
+class AttachedImage extends ConsumerWidget {
+  const AttachedImage({super.key, required this.attachment, this.local});
+
+  final AgentAttachment attachment;
+
+  /// The picture's bytes when it was chosen on this device; otherwise it is fetched.
+  final Uint8List? local;
+
+  static const _side = 88.0;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final bytes = local != null
+        ? AsyncValue.data(local!)
+        : ref.watch(agentImageProvider(attachment.id));
+    return Semantics(
+      label: '查看图片 ${attachment.name}',
+      button: true,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: bytes.value == null
+            ? null
+            : () => showAgentImage(context, bytes.value!, attachment.name),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: SizedBox(
+            width: _side,
+            height: _side,
+            child: bytes.when(
+              data: (b) => Image.memory(
+                b,
+                fit: BoxFit.cover,
+                cacheWidth: 300,
+                errorBuilder: (_, _, _) => _tileNote(theme, '无法显示'),
+              ),
+              loading: () => const Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+              error: (_, _) => _tileNote(theme, '无法显示'),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _tileNote(ThemeData theme, String text) => ColoredBox(
+    color: theme.colorScheme.surface,
+    child: Center(child: Text(text, style: theme.textTheme.labelSmall)),
+  );
+}
+
+/// Shows a picture large; pinch to zoom, tap outside to close.
+Future<void> showAgentImage(
+  BuildContext context,
+  Uint8List bytes,
+  String name,
+) => showDialog<void>(
+  context: context,
+  builder: (_) => Dialog.fullscreen(
+    backgroundColor: Colors.black87,
+    child: Stack(
+      children: [
+        Positioned.fill(
+          child: InteractiveViewer(
+            key: const ValueKey('agent-image-big'),
+            child: Center(child: Image.memory(bytes, semanticLabel: name)),
+          ),
+        ),
+        SafeArea(
+          child: Align(
+            alignment: Alignment.topRight,
+            child: IconButton(
+              key: const ValueKey('agent-image-close'),
+              tooltip: '关闭',
+              color: Colors.white,
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.close),
+            ),
+          ),
+        ),
+      ],
+    ),
+  ),
+);
 
 /// One line about a lookup the assistant is doing ("在讲义里查找…"); faded once it is done.
 class ToolStatusRow extends StatelessWidget {
@@ -489,6 +618,8 @@ class AgentInputBar extends StatelessWidget {
     required this.onStop,
     this.files = const [],
     this.canAttach = false,
+    this.vision = false,
+    this.canAttachImage = false,
     this.onAttach,
     this.onRemoveFile,
   });
@@ -504,7 +635,11 @@ class AgentInputBar extends StatelessWidget {
   /// Files chosen for the next message.
   final List<PendingFile> files;
   final bool canAttach;
-  final VoidCallback? onAttach;
+
+  /// The model can look at pictures: the plus button then offers a file or a picture.
+  final bool vision;
+  final bool canAttachImage;
+  final void Function(AttachKind kind)? onAttach;
   final void Function(int key)? onRemoveFile;
 
   @override
@@ -538,12 +673,37 @@ class AgentInputBar extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  IconButton(
-                    key: const ValueKey('agent-attach'),
-                    tooltip: canAttach ? '添加 .md / .txt 等文本文件' : '文件数量到上限了',
-                    onPressed: canSend && canAttach ? onAttach : null,
-                    icon: const Icon(Icons.add_circle_outline),
-                  ),
+                  if (vision && canSend && canAttach)
+                    PopupMenuButton<AttachKind>(
+                      key: const ValueKey('agent-attach'),
+                      tooltip: '添加文件或图片',
+                      icon: const Icon(Icons.add_circle_outline),
+                      onSelected: onAttach,
+                      itemBuilder: (_) => [
+                        const PopupMenuItem(
+                          key: ValueKey('agent-attach-file'),
+                          value: AttachKind.file,
+                          child: Text('添加文件'),
+                        ),
+                        PopupMenuItem(
+                          key: const ValueKey('agent-attach-image'),
+                          value: AttachKind.image,
+                          enabled: canAttachImage,
+                          child: const Text('添加图片'),
+                        ),
+                      ],
+                    )
+                  else
+                    IconButton(
+                      key: const ValueKey('agent-attach'),
+                      tooltip: canAttach
+                          ? (vision ? '添加文件或图片' : '添加 .md / .txt 等文本文件')
+                          : '文件数量到上限了',
+                      onPressed: canSend && canAttach
+                          ? () => onAttach?.call(AttachKind.file)
+                          : null,
+                      icon: const Icon(Icons.add_circle_outline),
+                    ),
                   Expanded(
                     child: TextField(
                       key: const ValueKey('agent-input'),
@@ -616,12 +776,29 @@ class _FileRow extends StatelessWidget {
       ),
       child: Row(
         children: [
+          if (file.preview != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Image.memory(
+                  file.preview!,
+                  key: const ValueKey('agent-file-preview'),
+                  width: 36,
+                  height: 36,
+                  fit: BoxFit.cover,
+                  cacheWidth: 120,
+                  errorBuilder: (_, _, _) =>
+                      const SizedBox(width: 36, height: 36),
+                ),
+              ),
+            ),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '📎 ${file.name}',
+                  file.preview != null ? file.name : '📎 ${file.name}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),

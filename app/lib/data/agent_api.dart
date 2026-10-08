@@ -36,6 +36,9 @@ abstract class AgentApi {
   /// Removes a file that has not been sent.
   Future<void> deleteAttachment(String id);
 
+  /// The bytes of a file, to show a picture (it needs the access token, so it cannot be a plain image address).
+  Future<Uint8List> attachmentBytes(String id);
+
   /// Sends a draft to the review queue (it is not published until a reviewer approves it).
   Future<void> acceptDraft(String id);
 
@@ -150,6 +153,22 @@ class HttpAgentApi implements AgentApi {
     ),
     (_) {},
   );
+
+  @override
+  Future<Uint8List> attachmentBytes(String id) async {
+    try {
+      return await _call(
+        () => _dio.get<List<int>>(
+          '/api/v1/agent/attachments/${Uri.encodeComponent(id)}',
+          options: _options(type: ResponseType.bytes),
+        ),
+        (d) => Uint8List.fromList(d as List<int>),
+      );
+    } on AgentException catch (e) {
+      if (e.status == 404) throw AgentException('这个文件已经不存在了', status: 404);
+      rethrow;
+    }
+  }
 
   @override
   Future<void> acceptDraft(String id) =>

@@ -60,10 +60,15 @@ class _AgentPageState extends ConsumerState<AgentPage> {
     return const ['我哪里比较薄弱？', '帮我安排一下复习顺序', '出几道题考考我'];
   }
 
-  Future<void> _attach() async {
-    final picked = await ref.read(agentFilePickerProvider)();
+  /// The assistant's model can look at pictures.
+  bool get _vision => ref.read(agentStatusProvider).value?.vision ?? false;
+
+  Future<void> _attach(AttachKind kind) async {
+    final picked = await ref.read(agentFilePickerProvider)(kind);
     if (!mounted || picked.isEmpty) return;
-    await ref.read(agentControllerProvider(args).notifier).addFiles(picked);
+    await ref
+        .read(agentControllerProvider(args).notifier)
+        .addFiles(picked, vision: _vision);
   }
 
   void _send([String? text]) {
@@ -266,7 +271,11 @@ class _AgentPageState extends ConsumerState<AgentPage> {
                         itemBuilder: (context, i) {
                           final m = state.messages[i];
                           if (m.role == 'user') {
-                            return UserBubble(m.text, attachments: m.attachments);
+                            return UserBubble(
+                              m.text,
+                              attachments: m.attachments,
+                              localImages: m.localImages,
+                            );
                           }
                           return AssistantMessage(
                             key: ValueKey('msg-${m.id}'),
@@ -293,6 +302,8 @@ class _AgentPageState extends ConsumerState<AgentPage> {
                 !state.uploading,
             files: state.files,
             canAttach: state.canAttach,
+            vision: status.value?.vision ?? false,
+            canAttachImage: state.imageCount < agentMaxImages,
             onAttach: _attach,
             onRemoveFile: controller.removeFile,
             hint: ready

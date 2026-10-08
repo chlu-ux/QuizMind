@@ -47,6 +47,11 @@ const draftJson = {
 AgentDraft draft([String id = 'D1']) =>
     AgentDraft.fromJson({...draftJson, 'draft_id': id});
 
+/// A real 1x1 picture, so widgets that show one have something they can decode.
+final tinyPng = base64Decode(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+);
+
 /// A scripted assistant that records what it was asked.
 class FakeAgentApi implements AgentApi {
   AgentStatus? statusValue = const AgentStatus(
@@ -109,11 +114,24 @@ class FakeAgentApi implements AgentApi {
     if (e != null) throw e;
     final id = 'F${uploads.length + 1}';
     uploads.add((conversationId: conversationId, name: name, id: id));
-    return AgentAttachment(id: id, name: name, mime: 'text/plain', size: bytes.length, chars: bytes.length);
+    final image = RegExp(r'\.(png|jpe?g|gif|webp)$', caseSensitive: false).hasMatch(name);
+    return AgentAttachment(
+      id: id, name: name, kind: image ? 'image' : 'text', mime: image ? 'image/png' : 'text/plain',
+      size: bytes.length, chars: image ? 0 : bytes.length,
+    );
   }
 
   @override
   Future<void> deleteAttachment(String id) async => removed.add(id);
+
+  /// The pictures asked for, by id.
+  final fetched = <String>[];
+
+  @override
+  Future<Uint8List> attachmentBytes(String id) async {
+    fetched.add(id);
+    return tinyPng;
+  }
 
   @override
   Future<AgentStatus> status() async {
@@ -517,6 +535,71 @@ void main() {
         expect(c.read(agentControllerProvider(args)).files.last.error, contains('最多'));
         expect(api.uploads, hasLength(8));
       });
+
+      group('pictures', () {
+        PickedFile pic(String name, {int? size}) {
+          return PickedFile(name: name, size: size ?? tinyPng.length, read: () async => tinyPng);
+        }
+
+        test('are turned away while the model cannot look at pictures', () async {
+          final api = FakeAgentApi();
+          final c = await container(api);
+          final controller = c.read(agentControllerProvider(args).notifier);
+          await controller.addFiles([pic('a.png')]);
+          final f = c.read(agentControllerProvider(args)).files.single;
+          expect((f.isImage, f.status, f.error), (true, FileStatus.error, '当前助手模型不支持识别图片'));
+          expect(api.uploads, isEmpty);
+        });
+
+        test('go up like files, keep their bytes to show, and are sent from here', () async {
+          final api = FakeAgentApi()..events = ok;
+          final c = await container(api);
+          final controller = c.read(agentControllerProvider(args).notifier);
+          await controller.addFiles([pic('图.png'), file('n.md')], vision: true);
+          var s = c.read(agentControllerProvider(args));
+          expect(s.files.map((f) => (f.isImage, f.status)), [(true, FileStatus.ready), (false, FileStatus.ready)]);
+          expect(s.files[0].preview, tinyPng);
+          expect(s.files[1].preview, isNull);
+          expect(s.imageCount, 1);
+
+          await controller.send('这是什么');
+          expect(api.requests.single.attachmentIds, ['F1', 'F2']);
+          s = c.read(agentControllerProvider(args));
+          expect(s.messages[0].attachments.map((a) => a.isImage), [true, false]);
+          expect(s.messages[0].localImages.keys, ['F1'], reason: 'shown from the bytes at hand, not fetched');
+          expect(s.imageCount, 1, reason: 'sent pictures still count');
+        });
+
+        test('are limited in size and to four a conversation', () async {
+          final api = FakeAgentApi()..events = ok;
+          final c = await container(api);
+          final controller = c.read(agentControllerProvider(args).notifier);
+          await controller.addFiles([pic('big.png', size: 5 * 1024 * 1024 + 1)], vision: true);
+          expect(c.read(agentControllerProvider(args)).files.single.error, contains('5 MB'));
+          await controller.removeFile(c.read(agentControllerProvider(args)).files.single.key);
+
+          await controller.addFiles([for (var i = 0; i < 4; i++) pic('$i.png')], vision: true);
+          await controller.send('看');
+          await controller.addFiles([pic('e.png')], vision: true);
+          expect(c.read(agentControllerProvider(args)).files.single.error, contains('最多 4 张图片'));
+          expect(api.uploads, hasLength(4));
+        });
+
+        test('a stored conversation counts the pictures it holds', () async {
+          final api = FakeAgentApi()
+            ..keep('c1', messages: [
+              StoredMessage(
+                id: 1, role: 'user', text: '看',
+                attachments: [for (var i = 0; i < 4; i++) AgentAttachment(id: 'A$i', name: '$i.png', kind: 'image')],
+              ),
+            ]);
+          final c = await container(api);
+          const stored = AgentArgs(mode: 'learn', conversationId: 'c1');
+          c.listen(agentControllerProvider(stored), (_, _) {});
+          await c.read(agentControllerProvider(stored).notifier).open();
+          expect(c.read(agentControllerProvider(stored)).imageCount, 4);
+        });
+      });
     });
 
     group('drafts', () {
@@ -760,6 +843,32 @@ void main() {
       await api.deleteAttachment('F/1');
       expect(adapter.last!.method, 'DELETE');
       expect(adapter.last!.path, '/api/v1/agent/attachments/F%2F1');
+    });
+
+    test('reads whether the model can see; a server from before pictures cannot', () async {
+      var api = apiWith(StubAdapter((_) => json({'available': true, 'model': 'm', 'verified': true, 'vision': true})));
+      expect((await api.status()).vision, isTrue);
+      api = apiWith(StubAdapter((_) => json({'available': true, 'model': 'm', 'verified': true})));
+      expect((await api.status()).vision, isFalse);
+    });
+
+    test('fetches a picture with the token, and says so when it is gone', () async {
+      final adapter = StubAdapter((_) => ResponseBody.fromBytes(tinyPng, 200, headers: {Headers.contentTypeHeader: ['image/png']}));
+      final api = apiWith(adapter);
+      expect(await api.attachmentBytes('A/1'), tinyPng);
+      expect(adapter.last!.path, '/api/v1/agent/attachments/A%2F1');
+      expect(adapter.last!.headers['Authorization'], 'Bearer tok');
+
+      await expectLater(
+        apiWith(StubAdapter((_) => json({'error': 'not found'}, status: 404))).attachmentBytes('A1'),
+        throwsA(isA<AgentException>().having((e) => e.message, 'message', contains('不存在'))),
+      );
+    });
+
+    test('reads the size of a picture a message carried', () async {
+      final api = apiWith(StubAdapter((_) => json({'id': 'F1', 'kind': 'image', 'name': 'p.png', 'mime': 'image/png', 'size': 9, 'width': 30, 'height': 20}, status: 201)));
+      final a = await api.uploadAttachment('c1', 'p.png', tinyPng);
+      expect((a.isImage, a.width, a.height), (true, 30, 20));
     });
 
     test("an upload's refusal is shown as the server worded it; an old server is named", () async {
@@ -1164,7 +1273,12 @@ void main() {
         return PickedFile(name: name, size: bytes.length, read: () async => bytes);
       }
 
-      Override picker(List<PickedFile> files) => agentFilePickerProvider.overrideWithValue(() async => files);
+      final pickedKinds = <AttachKind>[];
+
+      Override picker(List<PickedFile> files) => agentFilePickerProvider.overrideWithValue((kind) async {
+        pickedKinds.add(kind);
+        return files;
+      });
 
       Future<void> attach(WidgetTester tester) async {
         await tester.tap(find.byKey(const ValueKey('agent-attach')));
@@ -1231,6 +1345,73 @@ void main() {
         expect(tester.widget<IconButton>(find.byKey(const ValueKey('agent-attach'))).onPressed, isNotNull);
         await attach(tester);
         expect(tester.widget<IconButton>(find.byKey(const ValueKey('agent-attach'))).onPressed, isNull);
+      });
+
+      group('pictures', () {
+        PickedFile pic(String name) => PickedFile(name: name, size: tinyPng.length, read: () async => tinyPng);
+
+        Future<void> seeing(WidgetTester tester, FakeAgentApi api, {List<PickedFile> files = const []}) async {
+          api.statusValue = const AgentStatus(available: true, model: 'm', verified: false, vision: true);
+          await pump(tester, api, overrides: [picker(files)]);
+        }
+
+        testWidgets('the plus button offers only files while the model cannot see', (tester) async {
+          pickedKinds.clear();
+          await pump(tester, FakeAgentApi(), overrides: [picker([pick('a.md')])]);
+          expect(find.byType(PopupMenuButton<AttachKind>), findsNothing);
+          await attach(tester);
+          expect(pickedKinds, [AttachKind.file]);
+        });
+
+        testWidgets('the plus button offers a file or a picture when it can', (tester) async {
+          pickedKinds.clear();
+          await seeing(tester, FakeAgentApi(), files: [pic('图.png')]);
+          await tester.tap(find.byKey(const ValueKey('agent-attach')));
+          await tester.pumpAndSettle();
+          expect(find.byKey(const ValueKey('agent-attach-file')), findsOneWidget);
+          await tester.tap(find.byKey(const ValueKey('agent-attach-image')));
+          await tester.pumpAndSettle();
+          expect(pickedKinds, [AttachKind.image]);
+          expect(find.byKey(const ValueKey('agent-file-preview')), findsOneWidget);
+        });
+
+        testWidgets('a chosen picture shows a thumbnail, goes with the question, and opens large', (tester) async {
+          final api = FakeAgentApi()..events = [const AgentDelta('好'), const AgentDone(stop: 'end_turn')];
+          await seeing(tester, api, files: [pic('图.png')]);
+          await tester.tap(find.byKey(const ValueKey('agent-attach')));
+          await tester.pumpAndSettle();
+          await tester.tap(find.byKey(const ValueKey('agent-attach-image')));
+          await tester.pumpAndSettle();
+
+          await type(tester, '这是什么');
+          await tester.tap(find.byKey(const ValueKey('agent-send')));
+          await tester.pumpAndSettle();
+          expect(api.requests.single.attachmentIds, ['F1']);
+          expect(find.byKey(const ValueKey('agent-file-tag')), findsNothing, reason: 'a picture is a thumbnail, not a tag');
+          expect(api.fetched, isEmpty, reason: 'shown from the bytes at hand');
+
+          await tester.tap(find.byKey(const ValueKey('agent-image-F1')));
+          await tester.pumpAndSettle();
+          expect(find.byKey(const ValueKey('agent-image-big')), findsOneWidget);
+          await tester.tap(find.byKey(const ValueKey('agent-image-close')));
+          await tester.pumpAndSettle();
+          expect(find.byKey(const ValueKey('agent-image-big')), findsNothing);
+        });
+
+        testWidgets('a stored conversation fetches its pictures to show them', (tester) async {
+          final api = FakeAgentApi()
+            ..keep('c1', messages: [
+              const StoredMessage(
+                id: 1, role: 'user', text: '看',
+                attachments: [AgentAttachment(id: 'A1', name: 'p.png', kind: 'image', mime: 'image/png', size: 3)],
+              ),
+              const StoredMessage(id: 2, role: 'assistant', text: '好'),
+            ]);
+          await pump(tester, api, args: const AgentArgs(mode: 'learn', conversationId: 'c1'));
+          expect(api.fetched, ['A1']);
+          expect(find.byKey(const ValueKey('agent-image-A1')), findsOneWidget);
+          expect(find.byKey(const ValueKey('agent-file-tag')), findsNothing);
+        });
       });
     });
 

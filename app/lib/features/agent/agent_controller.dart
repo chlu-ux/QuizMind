@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -80,6 +81,7 @@ class AgentMsg {
     this.error,
     this.note,
     this.attachments = const [],
+    this.localImages = const {},
   });
 
   final int id;
@@ -98,6 +100,10 @@ class AgentMsg {
   /// The files this message carried.
   final List<AgentAttachment> attachments;
 
+  /// The bytes of the pictures chosen on this device and sent from here, by attachment id; the others
+  /// are fetched from the server to be shown.
+  final Map<String, Uint8List> localImages;
+
   AgentMsg copyWith({
     String? text,
     List<ToolRow>? tools,
@@ -115,6 +121,7 @@ class AgentMsg {
     error: error ?? this.error,
     note: note ?? this.note,
     attachments: attachments,
+    localImages: localImages,
   );
 }
 
@@ -130,6 +137,8 @@ class PendingFile {
     required this.name,
     required this.size,
     required this.status,
+    this.isImage = false,
+    this.preview,
     this.attachment,
     this.error,
   });
@@ -138,10 +147,25 @@ class PendingFile {
   final String name;
   final int size;
   final FileStatus status;
+
+  /// A picture; [preview] holds its bytes to show it by while it is only on this device.
+  final bool isImage;
+  final Uint8List? preview;
   final AgentAttachment? attachment;
 
   /// Why the file was not taken.
   final String? error;
+
+  PendingFile withPreview(Uint8List bytes) => PendingFile(
+    key: key,
+    name: name,
+    size: size,
+    status: status,
+    isImage: isImage,
+    preview: bytes,
+    attachment: attachment,
+    error: error,
+  );
 
   PendingFile copyWith({
     FileStatus? status,
@@ -152,6 +176,8 @@ class PendingFile {
     name: name,
     size: size,
     status: status ?? this.status,
+    isImage: isImage,
+    preview: preview,
     attachment: attachment ?? this.attachment,
     error: error ?? this.error,
   );
@@ -199,6 +225,14 @@ class AgentState {
     for (final f in files)
       if (f.status == FileStatus.ready) f,
   ];
+
+  /// Pictures this conversation holds, sent or chosen.
+  int get imageCount =>
+      messages.fold<int>(
+        0,
+        (n, m) => n + m.attachments.where((a) => a.isImage).length,
+      ) +
+      files.where((f) => f.isImage && f.status != FileStatus.error).length;
 
   /// Files this conversation holds: the ones sent before and the ones chosen now.
   int get fileCount =>
@@ -305,15 +339,25 @@ class AgentController extends Notifier<AgentState> {
   // ---- files ----
 
   /// Why [f] cannot be taken, judged before uploading; the server checks again.
-  String _refusal(PickedFile f) {
-    final dot = f.name.lastIndexOf('.');
-    final ext = dot < 0 ? '' : f.name.substring(dot).toLowerCase();
-    if (!agentFileExtensions.contains(ext)) {
-      return '不支持这种文件，可以上传 ${agentFileExtensions.join(' ')} 文本文件';
-    }
+  String _refusal(PickedFile f, {required bool vision}) {
     if (f.size == 0) return '这个文件是空的';
-    if (f.size > agentFileMaxBytes) {
-      return '文件太大了（超过 ${agentFileMaxBytes ~/ 1024} KB），请截取需要的部分再上传';
+    if (f.isImage) {
+      if (!vision) return '当前助手模型不支持识别图片';
+      if (f.size > agentImageMaxBytes) {
+        return '图片太大了（超过 ${agentImageMaxBytes ~/ 1024 ~/ 1024} MB），请压缩或裁剪后再上传';
+      }
+      if (state.imageCount >= agentMaxImages) {
+        return '一场对话最多 $agentMaxImages 张图片';
+      }
+    } else {
+      final dot = f.name.lastIndexOf('.');
+      final ext = dot < 0 ? '' : f.name.substring(dot).toLowerCase();
+      if (!agentFileExtensions.contains(ext)) {
+        return '不支持这种文件，可以上传 ${agentFileExtensions.join(' ')} 文本文件';
+      }
+      if (f.size > agentFileMaxBytes) {
+        return '文件太大了（超过 ${agentFileMaxBytes ~/ 1024} KB），请截取需要的部分再上传';
+      }
     }
     if (!state.canAttach) {
       return '一场对话最多 $agentMaxFiles 个文件，一条消息最多带 $agentMaxFilesPerMessage 个';
@@ -328,11 +372,13 @@ class AgentController extends Notifier<AgentState> {
 
   /// Uploads [picked] for the next message. A file that is not taken stays in the list with the
   /// reason, until dismissed.
-  Future<void> addFiles(List<PickedFile> picked) async {
+  ///
+  /// Pictures are taken only when [vision] says the assistant's model can look at them.
+  Future<void> addFiles(List<PickedFile> picked, {bool vision = false}) async {
     for (final f in picked) {
       if (!ref.mounted) return;
       final key = _nextFile++;
-      final why = _refusal(f);
+      final why = _refusal(f, vision: vision);
       state = state.copyWith(
         files: [
           ...state.files,
@@ -341,6 +387,7 @@ class AgentController extends Notifier<AgentState> {
             name: f.name,
             size: f.size,
             status: why.isEmpty ? FileStatus.uploading : FileStatus.error,
+            isImage: f.isImage,
             error: why.isEmpty ? null : why,
           ),
         ],
@@ -348,6 +395,10 @@ class AgentController extends Notifier<AgentState> {
       if (why.isNotEmpty) continue;
       try {
         final bytes = await f.read();
+        // The thumbnail needs the bytes, which are in hand anyway.
+        if (f.isImage) {
+          _setFile(key, (p) => p.withPreview(bytes));
+        }
         final a = await ref
             .read(agentApiProvider)
             .uploadAttachment(_conversationId, f.name, bytes);
@@ -396,7 +447,16 @@ class AgentController extends Notifier<AgentState> {
     // Not while a stored conversation is being read, or when it could not be: its history is unknown.
     if (t.isEmpty || state.busy || state.uploading || state.opening || state.openError != null) return;
     final attachments = [for (final f in sending) f.attachment!];
-    final user = AgentMsg(id: _nextId++, role: 'user', text: t, attachments: attachments);
+    final user = AgentMsg(
+      id: _nextId++,
+      role: 'user',
+      text: t,
+      attachments: attachments,
+      localImages: {
+        for (final f in sending)
+          if (f.preview != null) f.attachment!.id: f.preview!,
+      },
+    );
     final bot = AgentMsg(id: _nextId++, role: 'assistant', streaming: true);
     state = state.copyWith(
       messages: [...state.messages, user, bot],
