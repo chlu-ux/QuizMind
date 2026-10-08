@@ -8,6 +8,22 @@ import (
 	"database/sql"
 )
 
+type AgentAttachment struct {
+	ID             string        `json:"id"`
+	ConversationID string        `json:"conversation_id"`
+	Kind           string        `json:"kind"`
+	Name           string        `json:"name"`
+	Mime           string        `json:"mime"`
+	Size           int64         `json:"size"`
+	Chars          int64         `json:"chars"`
+	Width          int64         `json:"width"`
+	Height         int64         `json:"height"`
+	Text           string        `json:"text"`
+	Data           []byte        `json:"data"`
+	MessageID      sql.NullInt64 `json:"message_id"`
+	CreatedAt      int64         `json:"created_at"`
+}
+
 type AgentConversation struct {
 	ID         string `json:"id"`
 	Mode       string `json:"mode"`

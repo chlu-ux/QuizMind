@@ -429,6 +429,55 @@ paths:
         "401": { description: missing or wrong access token }
         "404": { description: unknown conversation }
         "409": { description: the conversation is still answering a question }
+  /api/v1/agent/attachments:
+    post:
+      summary: Give the assistant a text file for a conversation
+      description: >
+        Needs the access token. The file is kept for the conversation `conversation_id`, which need not
+        exist yet (it is created with the first message), and waits to be sent: list its id in the
+        `attachment_ids` of a chat message. The assistant reads it a page at a time. Text files only
+        (`.md .markdown .txt .csv .json .log`), judged by content: UTF-8, at most 512 KB and 120000
+        characters, and the reason is in the error when a file is refused. A conversation holds at most
+        8 files and a message carries at most 4. Files nobody sent are removed after a day.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [conversation_id, file]
+              properties:
+                conversation_id: { type: string, maxLength: 64 }
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          description: kept
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AgentAttachment" }
+        "400": { description: "not accepted: wrong kind of file, not UTF-8, empty, too long, or the conversation already has 8 files" }
+        "401": { description: missing or wrong access token }
+        "413": { description: the upload is far too large }
+  /api/v1/agent/attachments/{id}:
+    get:
+      summary: The file itself
+      description: Needs the access token. Text is returned as `text/plain; charset=utf-8` whatever the file was called, with `nosniff` and a sandboxing CSP.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: the file, content: { text/plain: { schema: { type: string } } } }
+        "401": { description: missing or wrong access token }
+        "404": { description: unknown file }
+    delete:
+      summary: Remove a file that has not been sent
+      description: Needs the access token. A file a message carried goes only with its conversation.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: removed }
+        "400": { description: the file was already sent }
+        "401": { description: missing or wrong access token }
+        "404": { description: unknown file }
   /api/v1/agent/drafts:
     get:
       summary: The draft questions of a conversation that still wait for a decision
@@ -747,7 +796,11 @@ components:
           required: [text]
           properties:
             text: { type: string }
-            attachment_ids: { type: array, items: { type: string } }
+            attachment_ids:
+              type: array
+              maxItems: 4
+              items: { type: string }
+              description: "ids from `POST /agent/attachments` for this conversation, not sent before"
         messages:
           type: array
           deprecated: true
@@ -796,6 +849,18 @@ components:
               type: string
               enum: [pending, accepted, discarded]
               description: "pending: still waiting. accepted: sent to review (maybe published). discarded: thrown away, replaced, or left too long."
+    AgentAttachment:
+      type: object
+      required: [id, kind, name, mime, size]
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [text, image] }
+        name: { type: string, description: "the file's own name, for display" }
+        mime: { type: string }
+        size: { type: integer, description: bytes as uploaded }
+        chars: { type: integer, description: "text files: characters of the text" }
+        width: { type: integer }
+        height: { type: integer }
     AgentStoredMessage:
       type: object
       required: [id, role, text, tools, drafts, attachments, note, error, created_at]
@@ -813,7 +878,7 @@ components:
               label: { type: string }
               status: { type: string, enum: [running, done, error] }
         drafts: { type: array, items: { $ref: "#/components/schemas/AgentDraftState" } }
-        attachments: { type: array, items: { type: object }, description: "files the message carried (reserved)" }
+        attachments: { type: array, items: { $ref: "#/components/schemas/AgentAttachment" }, description: "files the message carried" }
         note: { type: string, description: "how the answer ended, if not simply: stopped, cut short" }
         error: { type: string }
         created_at: { type: integer }

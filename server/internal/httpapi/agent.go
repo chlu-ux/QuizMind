@@ -3,7 +3,9 @@ package httpapi
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -157,6 +159,60 @@ func (a *API) agentConversationRename(w http.ResponseWriter, r *http.Request) {
 
 func (a *API) agentConversationDelete(w http.ResponseWriter, r *http.Request) {
 	if err := a.svc.DeleteAgentConversation(r.Context(), bearer(r), chi.URLParam(r, "id")); err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// agentAttachmentUpload takes one file for a conversation: multipart fields conversation_id and file.
+func (a *API) agentAttachmentUpload(w http.ResponseWriter, r *http.Request) {
+	limit := int64(service.MaxAgentTextBytes) + 1<<20 // headroom for multipart framing
+	r.Body = http.MaxBytesReader(w, r.Body, limit)
+	if err := r.ParseMultipartForm(limit); err != nil {
+		writeError(w, http.StatusRequestEntityTooLarge, "文件太大了，请截取需要的部分再上传")
+		return
+	}
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		writeError(w, http.StatusBadRequest, `multipart field "file" is required`)
+		return
+	}
+	defer file.Close()
+	data, err := io.ReadAll(io.LimitReader(file, int64(service.MaxAgentTextBytes)+1))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "could not read upload")
+		return
+	}
+	v, err := a.svc.UploadAgentAttachment(r.Context(), bearer(r), r.FormValue("conversation_id"), header.Filename, data)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, v)
+}
+
+func (a *API) agentAttachmentGet(w http.ResponseWriter, r *http.Request) {
+	att, err := a.svc.GetAgentAttachment(r.Context(), bearer(r), chi.URLParam(r, "id"))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	body, ctype := att.Data, att.Mime
+	if att.Kind == "text" {
+		body, ctype = []byte(att.Text), "text/plain; charset=utf-8"
+	}
+	h := w.Header()
+	h.Set("Content-Type", ctype)
+	h.Set("X-Content-Type-Options", "nosniff")
+	h.Set("Content-Security-Policy", "default-src 'none'; sandbox")
+	h.Set("Cache-Control", "private, no-store")
+	h.Set("Content-Length", strconv.Itoa(len(body)))
+	_, _ = w.Write(body)
+}
+
+func (a *API) agentAttachmentDelete(w http.ResponseWriter, r *http.Request) {
+	if err := a.svc.DeleteAgentAttachment(r.Context(), bearer(r), chi.URLParam(r, "id")); err != nil {
 		a.fail(w, r, err)
 		return
 	}

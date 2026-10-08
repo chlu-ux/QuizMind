@@ -76,6 +76,7 @@ func agentTitle(text string) string {
 
 type storedChat struct {
 	id, mode string
+	files    []agent.File // the text files the assistant may read
 }
 
 // prepareStoredChat reads the conversation's history from the database and puts it, with the new
@@ -87,6 +88,10 @@ func (s *Service) prepareStoredChat(ctx context.Context, in AgentChatRequest) (A
 	}
 	if strings.TrimSpace(in.Message.Text) == "" {
 		return in, storedChat{}, invalid("message.text is required")
+	}
+	files, err := s.loadChatFiles(ctx, in.ConversationID, in.Message.AttachmentIDs)
+	if err != nil {
+		return in, storedChat{}, err
 	}
 	mode := in.Mode
 	var history []AgentMessage
@@ -102,7 +107,13 @@ func (s *Service) prepareStoredChat(ctx context.Context, in AgentChatRequest) (A
 			return in, storedChat{}, err
 		}
 		for _, r := range rows {
-			history = append(history, AgentMessage{Role: r.Role, Content: r.Text})
+			text := r.Text
+			if r.Role == "user" {
+				var ids []string
+				_ = json.Unmarshal([]byte(r.AttachmentIds), &ids)
+				text += files.fileNote(ids)
+			}
+			history = append(history, AgentMessage{Role: r.Role, Content: text})
 		}
 	case errors.Is(err, sql.ErrNoRows):
 		if mode == "" {
@@ -113,8 +124,8 @@ func (s *Service) prepareStoredChat(ctx context.Context, in AgentChatRequest) (A
 	}
 	in.Mode = mode
 	// A question whose answer never came (or came empty) is joined with the new one, so roles still alternate.
-	in.Messages = normalizeAgentHistory(append(history, AgentMessage{Role: "user", Content: in.Message.Text}))
-	return in, storedChat{id: in.ConversationID, mode: mode}, nil
+	in.Messages = normalizeAgentHistory(append(history, AgentMessage{Role: "user", Content: in.Message.Text + files.fileNote(in.Message.AttachmentIDs)}))
+	return in, storedChat{id: in.ConversationID, mode: mode, files: files.files}, nil
 }
 
 // lockAgentConversation allows one answer at a time per conversation; two would interleave in the history.
@@ -163,11 +174,25 @@ func (s *Service) saveAgentQuestion(ctx context.Context, in AgentChatRequest, mo
 		if in.Message.AttachmentIDs == nil {
 			ids = []byte("[]")
 		}
-		_, err := qs.InsertAgentMessage(ctx, store.InsertAgentMessageParams{
+		msgID, err := qs.InsertAgentMessage(ctx, store.InsertAgentMessageParams{
 			ConversationID: in.ConversationID, Role: "user", Text: in.Message.Text, Tools: "[]", DraftIds: "[]",
 			AttachmentIds: string(ids), CreatedAt: now,
 		})
-		return err
+		if err != nil {
+			return err
+		}
+		for _, id := range in.Message.AttachmentIDs {
+			n, err := qs.MarkAgentAttachmentSent(ctx, store.MarkAgentAttachmentSentParams{
+				MessageID: sql.NullInt64{Int64: msgID, Valid: true}, ID: id, ConversationID: in.ConversationID,
+			})
+			if err != nil {
+				return err
+			}
+			if n == 0 { // cleaned away, or sent by another request, since the check
+				return invalid("文件 %q 已经不能用了，请重新上传", id)
+			}
+		}
+		return nil
 	})
 }
 
@@ -263,6 +288,11 @@ func (s *Service) saveAgentAnswer(conversationID string, a *answerLog) error {
 
 // cleanAgentHistory removes what an abandoned upload or request left behind.
 func (s *Service) cleanAgentHistory(ctx context.Context) {
+	if n, err := store.New(s.DB.Write).DeleteStaleAgentAttachments(ctx, time.Now().Add(-agentUnsentFileTTL).UnixMilli()); err != nil {
+		s.Log.Warn("clean agent files", "err", err)
+	} else if n > 0 {
+		s.Log.Info("removed unsent agent files", "count", n)
+	}
 	n, err := store.New(s.DB.Write).DeleteEmptyAgentConversations(ctx, time.Now().Add(-agentEmptyConversationTTL).UnixMilli())
 	if err != nil {
 		s.Log.Warn("clean agent conversations", "err", err)

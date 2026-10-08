@@ -25,6 +25,8 @@ type Agent struct {
 	Lib  Library
 	// Drafter stores the questions the model proposes. Required for ModeCreate, unused otherwise.
 	Drafter Drafter
+	// Files reads the text of Request.Files. Without it the files are not offered to the model.
+	Files FileReader
 	// MaxRounds bounds the model calls of one request; zero means DefaultMaxRounds.
 	MaxRounds int
 	// ToolTimeout bounds one tool call; zero means 15 seconds.
@@ -48,6 +50,8 @@ type Request struct {
 	// Messages is the text history; the last one is from the user.
 	Messages []llm.Message
 	Context  Context
+	// Files are the text files of this conversation the model may read.
+	Files []File
 	// MaxTokens caps one model turn; zero uses the model's setting.
 	MaxTokens int
 }
@@ -79,6 +83,14 @@ func (a *Agent) Run(ctx context.Context, req Request, emit func(Event)) {
 	}
 	list := []*tool{toolListOutline(), toolSearchLessons(), toolGetLesson(),
 		toolSearchQuestions(), toolPickQuestions(), toolGetWeakPoints()}
+	if a.Files != nil && len(req.Files) > 0 {
+		list = append(list, toolReadAttachment(a.Files, req.Files))
+		if ft := filesText(req.Files); extra == "" {
+			extra = ft
+		} else {
+			extra += "\n\n" + ft
+		}
+	}
 	if req.Mode == ModeCreate {
 		scope := DraftScope{ConversationID: req.ConversationID, DeviceID: req.DeviceID}
 		list = append(list, toolProposeQuestions(a.Drafter, scope), toolListDrafts(a.Drafter, scope))

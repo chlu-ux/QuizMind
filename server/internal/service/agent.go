@@ -136,6 +136,10 @@ func (s *Service) StartAgentChat(ctx context.Context, token string, in AgentChat
 		answer = &answerLog{}
 	}
 	a := &agent.Agent{Conv: conv, Lib: lib}
+	if stored != nil {
+		req.Files = stored.files
+		a.Files = agentFiles{s: s, conversation: stored.id}
+	}
 	if req.Mode == agent.ModeCreate {
 		a.Drafter = agentDrafter{s: s, model: conv.Model()}
 	}
