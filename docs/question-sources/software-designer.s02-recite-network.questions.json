@@ -1,0 +1,1392 @@
+{
+ "软件设计师（中级）基础知识速记（网络与信息安全） > 2.1 网络拓扑与 OSI 七层模型": [
+  {
+   "type": "single",
+   "stem": "下列拓扑结构中，属于局域网常用拓扑的是：",
+   "options": [
+    "树型、不规则型",
+    "星型、环型、总线型",
+    "树型、星型",
+    "环型、不规则型"
+   ],
+   "answer_index": 1,
+   "explanation": "局域网常用星型、环型、总线型拓扑；广域网常用树型、不规则型。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "局域网**：**星型、环型、总线型**"
+  },
+  {
+   "type": "single",
+   "stem": "OSI 模型中，负责压缩、加密、解密和格式转换的是：",
+   "options": [
+    "应用层",
+    "会话层",
+    "表示层",
+    "传输层"
+   ],
+   "answer_index": 2,
+   "explanation": "表示层处理数据的表示形式，如压缩、加密、格式转换，典型例子 JPEG、ASCII。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "**压缩、加密、解密、格式转换**"
+  },
+  {
+   "type": "single",
+   "stem": "OSI 模型中，负责端到端可靠传输和流量控制的是：",
+   "options": [
+    "网络层",
+    "数据链路层",
+    "会话层",
+    "传输层"
+   ],
+   "answer_index": 3,
+   "explanation": "传输层提供端到端的可靠传输和流量控制，协议有 TCP、UDP。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "端到端可靠传输、流量控制"
+  },
+  {
+   "type": "single",
+   "stem": "路由器工作在 OSI 模型的：",
+   "options": [
+    "网络层",
+    "物理层",
+    "数据链路层",
+    "传输层"
+   ],
+   "answer_index": 0,
+   "explanation": "路由器根据 IP 地址进行路由选择和分组转发，工作在网络层。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "路由器 | 网络层 | 根据 IP 地址路由转发"
+  },
+  {
+   "type": "single",
+   "stem": "交换机和网桥工作在 OSI 模型的：",
+   "options": [
+    "物理层",
+    "数据链路层",
+    "网络层",
+    "应用层"
+   ],
+   "answer_index": 1,
+   "explanation": "它们根据 MAC 地址转发帧，工作在数据链路层。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "网桥、交换机 | 数据链路层 | 根据 MAC 地址转发帧"
+  },
+  {
+   "type": "single",
+   "stem": "中继器和集线器的主要功能是：",
+   "options": [
+    "根据 MAC 地址转发帧",
+    "根据 IP 地址路由转发",
+    "对信号放大整形",
+    "实现不同协议网络的互连"
+   ],
+   "answer_index": 2,
+   "explanation": "中继器、集线器工作在物理层，只做信号放大整形。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "中继器、集线器 | 物理层 | 信号放大整形"
+  },
+  {
+   "type": "single",
+   "stem": "用于不同协议网络之间互连、工作在高层的设备是：",
+   "options": [
+    "集线器",
+    "网桥",
+    "交换机",
+    "网关"
+   ],
+   "answer_index": 3,
+   "explanation": "网关工作在应用层等高层，用于不同协议网络的互连。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "网关 | 高层（应用层） | 不同协议网络互连"
+  },
+  {
+   "type": "judge",
+   "stem": "ARP、ICMP 协议属于 OSI 模型的网络层。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "OSI 第 3 层网络层的典型协议有 IP、ARP、ICMP。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "IP、ARP、ICMP、路由器"
+  },
+  {
+   "type": "judge",
+   "stem": "广域网常用的拓扑结构是星型、环型和总线型。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "星型、环型、总线型是局域网的拓扑；广域网是树型、不规则型。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "广域网**：树型、不规则型"
+  }
+ ],
+ "软件设计师（中级）基础知识速记（网络与信息安全） > 2.2 局域网、以太网与广域网协议": [
+  {
+   "type": "single",
+   "stem": "决定局域网特性的三个主要技术要素是：",
+   "options": [
+    "传输介质、拓扑结构、介质访问控制方法",
+    "传输介质、IP 地址、路由协议",
+    "拓扑结构、交换机数量、带宽",
+    "介质访问控制方法、域名、端口"
+   ],
+   "answer_index": 0,
+   "explanation": "LAN 特性由传输介质、拓扑结构和介质访问控制方法三要素决定。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "传输介质、拓扑结构、介质访问控制方法"
+  },
+  {
+   "type": "single",
+   "stem": "以太网 IEEE 802.3 使用的介质访问控制方法是：",
+   "options": [
+    "令牌传递",
+    "CSMA/CD",
+    "时分复用",
+    "CSMA/CA"
+   ],
+   "answer_index": 1,
+   "explanation": "CSMA/CD 即载波监听多路访问 / 冲突检测。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "介质访问控制：**CSMA/CD**"
+  },
+  {
+   "type": "single",
+   "stem": "IEEE 802.3u 对应的是：",
+   "options": [
+    "10Mbps 以太网",
+    "1000Mbps 千兆以太网",
+    "100Mbps 快速以太网",
+    "无线局域网"
+   ],
+   "answer_index": 2,
+   "explanation": "802.3 为 10Mbps，802.3u 为快速以太网 100Mbps，802.3z 为千兆以太网 1000Mbps。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "802.3u：快速以太网 100Mbps，双绞线"
+  },
+  {
+   "type": "single",
+   "stem": "千兆以太网的标准是：",
+   "options": [
+    "IEEE 802.3",
+    "IEEE 802.3u",
+    "IEEE 802.11",
+    "IEEE 802.3z"
+   ],
+   "answer_index": 3,
+   "explanation": "802.3z 为千兆以太网，速率 1000Mbps，介质为光纤 / 双绞线。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "802.3z：千兆以太网 1000Mbps"
+  },
+  {
+   "type": "single",
+   "stem": "ADSL 接入互联网时常用的协议是：",
+   "options": [
+    "PPPoE",
+    "PPP",
+    "帧中继",
+    "ATM"
+   ],
+   "answer_index": 0,
+   "explanation": "PPPoE 即以太网承载 PPP，ADSL 接入使用；PPP 本身用于拨号。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "PPPoE**：以太网承载 PPP，ADSL 接入用"
+  },
+  {
+   "type": "single",
+   "stem": "ATM 传输数据的基本单位是：",
+   "options": [
+    "不定长的帧",
+    "固定长度的信元",
+    "数据报",
+    "字节流"
+   ],
+   "answer_index": 1,
+   "explanation": "ATM 是异步传输模式，使用固定长度的信元；帧中继以帧为单位。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "异步传输模式，固定长度**信元**"
+  },
+  {
+   "type": "judge",
+   "stem": "局域网的 LLC 子层负责介质访问控制和帧寻址。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "LLC 子层负责逻辑链路控制；介质访问控制和帧寻址由 MAC 子层负责。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "MAC 子层**：介质访问控制、帧寻址"
+  },
+  {
+   "type": "judge",
+   "stem": "帧中继以固定长度的信元为单位传输数据。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "帧中继以帧为单位并使用统计复用；以固定长度信元传输的是 ATM。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "帧中继（FR）**：帧为单位，统计复用"
+  }
+ ],
+ "软件设计师（中级）基础知识速记（网络与信息安全） > 2.3 TCP/IP 协议族": [
+  {
+   "type": "single",
+   "stem": "TCP/IP 四层模型的应用层对应 OSI 的：",
+   "options": [
+    "仅应用层",
+    "传输层和网络层",
+    "应用层、表示层和会话层",
+    "物理层和数据链路层"
+   ],
+   "answer_index": 2,
+   "explanation": "TCP/IP 应用层 = OSI 应用 + 表示 + 会话；网络接口层 = 物理 + 数据链路。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "应用层 | 应用 + 表示 + 会话 | HTTP"
+  },
+  {
+   "type": "single",
+   "stem": "ARP 协议的功能是：",
+   "options": [
+    "把 MAC 地址解析成 IP 地址",
+    "把域名解析成 IP 地址",
+    "传送差错控制报文",
+    "把 IP 地址解析成 MAC 地址"
+   ],
+   "answer_index": 3,
+   "explanation": "ARP：IP → MAC；RARP：MAC → IP；DNS：域名 ↔ IP。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "ARP**：IP 地址 → **MAC 地址**"
+  },
+  {
+   "type": "single",
+   "stem": "RARP 协议的功能是：",
+   "options": [
+    "根据 MAC 地址获得 IP 地址",
+    "根据 IP 地址获得 MAC 地址",
+    "根据域名获得 IP 地址",
+    "为主机分配端口号"
+   ],
+   "answer_index": 0,
+   "explanation": "RARP 与 ARP 方向相反。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "RARP**：MAC 地址 → **IP 地址**"
+  },
+  {
+   "type": "single",
+   "stem": "Ping 命令使用的是哪个协议？",
+   "options": [
+    "ARP",
+    "ICMP",
+    "RARP",
+    "UDP"
+   ],
+   "answer_index": 1,
+   "explanation": "ICMP 用于差错与控制报文，Ping 就用它。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "ICMP**：差错与控制报文（Ping 用它）"
+  },
+  {
+   "type": "single",
+   "stem": "与 TCP 相比，UDP 的特点是：",
+   "options": [
+    "面向连接、可靠",
+    "有流量控制和拥塞控制",
+    "无连接、不可靠、开销小、速度快",
+    "端口号为 32 位"
+   ],
+   "answer_index": 2,
+   "explanation": "UDP 无连接、不可靠、开销小，适合视频、语音、DNS 等；TCP 面向连接、可靠，有流量和拥塞控制。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "速度 | 慢 | **快、开销小** | 流量 / 拥塞控制"
+  },
+  {
+   "type": "single",
+   "stem": "下列应用中，通常使用 UDP 传输的是：",
+   "options": [
+    "文件传输",
+    "电子邮件",
+    "网页浏览",
+    "视频与语音通信"
+   ],
+   "answer_index": 3,
+   "explanation": "TCP 用于文件传输、邮件、网页；UDP 用于视频、语音、DNS。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "用途 | 文件传输、邮件、网页 | 视频、语音、DNS"
+  },
+  {
+   "type": "single",
+   "stem": "下列协议中，属于外部网关协议 EGP 的是：",
+   "options": [
+    "BGP",
+    "RIP",
+    "OSPF",
+    "IS-IS"
+   ],
+   "answer_index": 0,
+   "explanation": "RIP、OSPF、IS-IS 是自治系统内部的 IGP；BGP 用于自治系统之间。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "外部网关协议 EGP**（自治系统之间）：BGP、BGP4"
+  },
+  {
+   "type": "judge",
+   "stem": "TCP 和 UDP 都使用 16 位端口号进行寻址。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "两者都用端口寻址，端口号 16 位。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "两者都用**端口**寻址（16 位端口号）"
+  },
+  {
+   "type": "judge",
+   "stem": "OSPF 是用于自治系统之间的外部网关协议。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "OSPF 与 RIP、IS-IS 一样属于内部网关协议 IGP，用于自治系统内部。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "内部网关协议 IGP**（自治系统内部）：RIP、OSPF、IS-IS"
+  }
+ ],
+ "软件设计师（中级）基础知识速记（网络与信息安全） > 2.4 域名、IP 地址与 DNS": [
+  {
+   "type": "single",
+   "stem": "域名“主机名.本地名.组名.顶级域名”的级别是：",
+   "options": [
+    "从左往右逐级升高",
+    "从右往左逐级升高",
+    "各级相同",
+    "与 IP 地址类别有关"
+   ],
+   "answer_index": 1,
+   "explanation": "最右边的顶级域名级别最高。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "从右往左级别升高"
+  },
+  {
+   "type": "single",
+   "stem": "顶级域名 edu 代表：",
+   "options": [
+    "政府机构",
+    "军事机构",
+    "教育机构",
+    "商业机构"
+   ],
+   "answer_index": 2,
+   "explanation": "com 商业、net 网络、org 组织、gov 政府、edu 教育、mil 军事、int 国际组织。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "gov（政府）、edu（教育）、mil（军事）"
+  },
+  {
+   "type": "single",
+   "stem": "IP 地址 192.168.1.1 属于：",
+   "options": [
+    "A 类地址",
+    "B 类地址",
+    "D 类地址",
+    "C 类地址"
+   ],
+   "answer_index": 3,
+   "explanation": "C 类首字节范围 192 ~ 223，首位特征 110。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "C 类 | 192 ~ 223 | 110"
+  },
+  {
+   "type": "single",
+   "stem": "D 类 IP 地址（224 ~ 239）用于：",
+   "options": [
+    "组播（多播）",
+    "大型网络",
+    "小型网络",
+    "保留实验"
+   ],
+   "answer_index": 0,
+   "explanation": "A 类大型网络、B 类中型网络、C 类小型网络、D 类组播、E 类保留实验。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "D 类 | 224 ~ 239 | 1110 | **组播（多播）**"
+  },
+  {
+   "type": "single",
+   "stem": "IPv6 地址的长度是：",
+   "options": [
+    "32 位",
+    "128 位",
+    "64 位",
+    "256 位"
+   ],
+   "answer_index": 1,
+   "explanation": "IPv4 为 32 位，IPv6 为 128 位，地址空间是 IPv4 的 2^96 倍。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "IPv6：**128 位**，冒分十六进制"
+  },
+  {
+   "type": "single",
+   "stem": "MAC 地址的长度是：",
+   "options": [
+    "32 位",
+    "64 位",
+    "48 位（6 字节）",
+    "128 位"
+   ],
+   "answer_index": 2,
+   "explanation": "MAC 地址是物理 / 硬件地址，48 位，由制造商分配（OUI + 扩展 ID）。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "长度 | **48 位（6 字节）** | 32 位"
+  },
+  {
+   "type": "single",
+   "stem": "DNS 的主要作用是：",
+   "options": [
+    "实现 IP 地址与 MAC 地址的转换",
+    "为主机自动分配 IP 地址",
+    "加密传输网页",
+    "实现域名与 IP 地址的相互转换"
+   ],
+   "answer_index": 3,
+   "explanation": "DNS 完成域名 ↔ IP 地址互转。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "作用：**域名 ↔ IP 地址**互转"
+  },
+  {
+   "type": "single",
+   "stem": "在 Windows 中清除本机 DNS 缓存使用的命令是：",
+   "options": [
+    "ipconfig /flushdns",
+    "ipconfig /displaydns",
+    "ipconfig /release",
+    "ipconfig /renew"
+   ],
+   "answer_index": 0,
+   "explanation": "/displaydns 显示 DNS 缓存，/release 释放 IP，/renew 更新 IP。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "ipconfig /flushdns：**清 DNS 缓存**"
+  },
+  {
+   "type": "judge",
+   "stem": "nslookup 既可测试正向解析，也可测试反向解析。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "nslookup 可测正 / 反向解析；ping、tracert 只能测正向。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "nslookup：可测正 / 反向解析"
+  },
+  {
+   "type": "judge",
+   "stem": "MAC 地址是逻辑地址，可以随网络拓扑变化而改变。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "MAC 地址是物理地址，出厂固定；可随网络变化的是 IP 地址（逻辑地址）。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "出厂固定（理论上唯一）"
+  }
+ ],
+ "软件设计师（中级）基础知识速记（网络与信息安全） > 2.5 应用层协议、电子邮件与 WWW": [
+  {
+   "type": "single",
+   "stem": "HTTP 协议默认使用的端口是：",
+   "options": [
+    "21",
+    "80",
+    "25",
+    "443"
+   ],
+   "answer_index": 1,
+   "explanation": "HTTP 80；HTTPS 443；FTP 20/21；SMTP 25；POP3 110。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "HTTP | TCP | **80** | 网页"
+  },
+  {
+   "type": "single",
+   "stem": "FTP 协议的控制连接使用的端口是：",
+   "options": [
+    "20",
+    "22",
+    "21",
+    "23"
+   ],
+   "answer_index": 2,
+   "explanation": "FTP 数据连接用 20，控制连接用 21。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "**20（数据）、21（控制）**"
+  },
+  {
+   "type": "single",
+   "stem": "SMTP 协议用于发送邮件，默认端口是：",
+   "options": [
+    "110",
+    "53",
+    "80",
+    "25"
+   ],
+   "answer_index": 3,
+   "explanation": "SMTP 25，POP3 110。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "SMTP | TCP | **25** | 发送邮件"
+  },
+  {
+   "type": "single",
+   "stem": "DNS 协议使用的传输层协议和端口是：",
+   "options": [
+    "UDP 53",
+    "TCP 53",
+    "UDP 67",
+    "TCP 80"
+   ],
+   "answer_index": 0,
+   "explanation": "DNS 基于 UDP，端口 53。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "DNS | UDP | **53** | 域名解析"
+  },
+  {
+   "type": "single",
+   "stem": "DHCP 服务器和客户机使用的 UDP 端口分别是：",
+   "options": [
+    "53 和 80",
+    "67 和 68",
+    "20 和 21",
+    "161 和 162"
+   ],
+   "answer_index": 1,
+   "explanation": "DHCP 服务器 67、客户机 68，用于自动分配 IP。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "67（服务器）、68（客户机）"
+  },
+  {
+   "type": "single",
+   "stem": "接收邮件时，邮件下载后服务器上的原件被删除，这种协议是：",
+   "options": [
+    "SMTP",
+    "IMAP4",
+    "POP3",
+    "MIME"
+   ],
+   "answer_index": 2,
+   "explanation": "POP3 下载后服务器删除；IMAP4 邮件留在服务器，可在线操作。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "POP3**：接收邮件（下载后服务器删除）"
+  },
+  {
+   "type": "single",
+   "stem": "MIME 协议的作用是：",
+   "options": [
+    "发送邮件",
+    "接收邮件并保留在服务器",
+    "对邮件加密",
+    "扩展邮件以支持多媒体附件和非 ASCII 内容"
+   ],
+   "answer_index": 3,
+   "explanation": "MIME 扩展了邮件格式，支持多媒体附件和非 ASCII 字符。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "扩展邮件，支持**多媒体附件**、非 ASCII"
+  },
+  {
+   "type": "single",
+   "stem": "在浏览器中输入 URL 到页面显示，访问过程中紧接在“DNS 解析”之后的是：",
+   "options": [
+    "建立 TCP 连接",
+    "发送 HTTP 请求",
+    "断开 TCP 连接",
+    "服务器返回响应"
+   ],
+   "answer_index": 0,
+   "explanation": "过程：输入 URL → DNS 解析 → 建立 TCP 连接 → 发请求 → 服务器响应 → 断开 TCP → 浏览器解析显示。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "输入 URL → DNS 解析 → 建立 TCP 连接 → 发请求"
+  },
+  {
+   "type": "judge",
+   "stem": "SNMP 网络管理协议使用的传输层协议是 TCP。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "SNMP 基于 UDP，端口 161。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "SNMP | UDP | 161 | 网络管理"
+  },
+  {
+   "type": "judge",
+   "stem": "HTTPS 的默认端口是 80。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "HTTPS 默认端口 443，HTTP 才是 80。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "HTTPS | TCP | **443** | 加密网页"
+  }
+ ],
+ "软件设计师（中级）基础知识速记（网络与信息安全） > 2.6 网络攻击与加密算法": [
+  {
+   "type": "single",
+   "stem": "下列攻击中，属于被动攻击的是：",
+   "options": [
+    "DDoS",
+    "流量分析",
+    "重放攻击",
+    "篡改数据"
+   ],
+   "answer_index": 1,
+   "explanation": "被动攻击只收集信息、不修改数据，如窃听、流量分析、会话拦截；DoS/DDoS、篡改、伪装、重放、SQL 注入是主动攻击。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "被动攻击 | 只收集信息，**不修改数据**，用户察觉不到 | 窃听、流量分析、会话拦截"
+  },
+  {
+   "type": "single",
+   "stem": "下列攻击中，属于主动攻击的是：",
+   "options": [
+    "窃听",
+    "流量分析",
+    "SQL 注入",
+    "会话拦截"
+   ],
+   "answer_index": 2,
+   "explanation": "SQL 注入、DoS、篡改、伪装、重放等会修改数据流或产生虚假数据流，属于主动攻击。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "DoS / DDoS、篡改、伪装、重放、SQL 注入"
+  },
+  {
+   "type": "single",
+   "stem": "SQL 注入攻击的首要目标是：",
+   "options": [
+    "使服务器拒绝服务",
+    "窃取用户浏览器缓存",
+    "覆盖堆栈执行恶意代码",
+    "获得数据库的权限"
+   ],
+   "answer_index": 3,
+   "explanation": "SQL 注入通过在输入中插入 SQL 命令，首要目标是获得数据库权限。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "首要目标是获得数据库权限"
+  },
+  {
+   "type": "single",
+   "stem": "缓冲区溢出攻击的原理是：",
+   "options": [
+    "输入超长数据覆盖堆栈，转去执行恶意代码",
+    "向服务器发送大量连接请求",
+    "伪造 IP 地址欺骗主机",
+    "猜测用户口令"
+   ],
+   "answer_index": 0,
+   "explanation": "输入超长内容覆盖堆栈，使程序转去执行恶意代码。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "输入超长覆盖堆栈，转去执行恶意代码"
+  },
+  {
+   "type": "single",
+   "stem": "网络蠕虫的特点是：",
+   "options": [
+    "寄生在正常文件中",
+    "利用网络和邮件传播，不寄生在文件中",
+    "基于远程控制，隐藏在正常程序中",
+    "只在局域网内传播"
+   ],
+   "answer_index": 1,
+   "explanation": "蠕虫不寄生文件（红色代码、尼姆达、震网）；木马是隐藏在正常程序中的后门，基于远程控制。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "利用网络和邮件传播，**不寄生文件**"
+  },
+  {
+   "type": "single",
+   "stem": "DES 属于：",
+   "options": [
+    "非对称加密算法",
+    "消息摘要算法",
+    "对称加密算法",
+    "数字签名算法"
+   ],
+   "answer_index": 2,
+   "explanation": "DES、3DES、AES、IDEA、RC5 为对称加密；RSA、DSA、ECC 为非对称；MD5、SHA 为摘要。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "DES、3DES、AES、IDEA、RC5"
+  },
+  {
+   "type": "single",
+   "stem": "下列算法中，属于非对称加密算法的是：",
+   "options": [
+    "AES",
+    "MD5",
+    "RC5",
+    "RSA"
+   ],
+   "answer_index": 3,
+   "explanation": "RSA、DSA、ECC 都是非对称（公钥）加密算法。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "RSA、DSA、ECC"
+  },
+  {
+   "type": "single",
+   "stem": "MD5 算法输出的散列值长度是：",
+   "options": [
+    "128 位",
+    "64 位",
+    "256 位",
+    "512 位"
+   ],
+   "answer_index": 0,
+   "explanation": "MD5 输出 128 位，用于完整性校验。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "MD5**：输出 128 位散列值"
+  },
+  {
+   "type": "judge",
+   "stem": "AES 是分组加密算法，支持 128、192、256 位密钥。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "AES 为对称分组加密，密钥长度 128 / 192 / 256 位。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "分组加密（对称），支持 128 / 192 / 256 位密钥"
+  },
+  {
+   "type": "judge",
+   "stem": "消息摘要算法使用密钥，并且可以由摘要还原出原文。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "消息摘要（散列）无密钥，是单向不可逆的。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "无密钥，单向不可逆"
+  }
+ ],
+ "软件设计师（中级）基础知识速记（网络与信息安全） > 2.7 认证技术、SSL、防火墙与 IDS / IPS": [
+  {
+   "type": "single",
+   "stem": "下列身份认证方式中，安全性最低的是：",
+   "options": [
+    "动态口令（OTP）",
+    "静态口令",
+    "生物认证",
+    "双因子认证（U 盾）"
+   ],
+   "answer_index": 1,
+   "explanation": "排序：生物认证 ≈ 双因子 > 动态口令（一次一密）> 静态口令（最不安全）。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "静态口令（最不安全）"
+  },
+  {
+   "type": "single",
+   "stem": "PKI 的核心元素和核心执行者分别是：",
+   "options": [
+    "数字签名和防火墙",
+    "对称密钥和 KDC",
+    "数字证书和 CA 认证中心",
+    "公钥和 IDS"
+   ],
+   "answer_index": 2,
+   "explanation": "PKI 以数字证书为核心元素，CA 是核心执行者（第三方可信机构）。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "核心元素：**数字证书**"
+  },
+  {
+   "type": "single",
+   "stem": "数字签名的过程是：",
+   "options": [
+    "发送方用接收方公钥加密，接收方用自己的私钥解密",
+    "发送方用自己的公钥加密，接收方用自己的私钥解密",
+    "双方使用同一把对称密钥",
+    "发送方用自己的私钥对消息摘要加密，接收方用发送方的公钥解密"
+   ],
+   "answer_index": 3,
+   "explanation": "私钥签名、公钥验签；功效是真实性、完整性、不可抵赖性。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "发送方用**自己的私钥**对消息摘要加密"
+  },
+  {
+   "type": "single",
+   "stem": "SSL 协议位于：",
+   "options": [
+    "传输层与应用层之间",
+    "网络层与传输层之间",
+    "物理层与数据链路层之间",
+    "应用层之上"
+   ],
+   "answer_index": 0,
+   "explanation": "SSL 位于传输层与应用层之间，基于 TCP。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "位于**传输层与应用层之间**"
+  },
+  {
+   "type": "single",
+   "stem": "HTTPS 中数据传输与密钥交换采用的方式是：",
+   "options": [
+    "非对称密钥加密数据，对称算法交换密钥",
+    "对称密钥加密数据，非对称算法交换对称密钥",
+    "全程只用对称加密",
+    "全程只用消息摘要"
+   ],
+   "answer_index": 1,
+   "explanation": "对称加密速度快用于数据，非对称加密用于安全交换对称密钥。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "用**对称密钥**加密数据，用**非对称算法**交换对称密钥"
+  },
+  {
+   "type": "single",
+   "stem": "防火墙划分的三个区域中，受保护程度由低到高依次是：",
+   "options": [
+    "内网 < DMZ < 外网",
+    "DMZ < 外网 < 内网",
+    "外网 < DMZ < 内网",
+    "外网 < 内网 < DMZ"
+   ],
+   "answer_index": 2,
+   "explanation": "DMZ 是周边非军事区，位于内外网之间。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "外网 < DMZ（周边非军事区）< 内网"
+  },
+  {
+   "type": "single",
+   "stem": "包过滤防火墙工作在：",
+   "options": [
+    "应用层",
+    "物理层",
+    "会话层",
+    "网络层"
+   ],
+   "answer_index": 3,
+   "explanation": "包过滤检查 IP / 端口，速度快、透明，但不能识别应用层内容；应用代理网关工作在应用层。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "包过滤防火墙 | 网络层"
+  },
+  {
+   "type": "single",
+   "stem": "IDS 与 IPS 的主要区别是：",
+   "options": [
+    "IDS 旁路检测只报警，IPS 串接在线并主动阻断",
+    "IDS 串接在线并阻断，IPS 旁路检测",
+    "两者都只做旁路报警",
+    "两者都不检测攻击"
+   ],
+   "answer_index": 0,
+   "explanation": "IDS 像监控摄像头，只发现和报告；IPS 像自动灭火器，检测后实时拦截。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "工作方式 | **旁路检测**，只报警 | **串接在线**，主动阻断"
+  },
+  {
+   "type": "judge",
+   "stem": "数字签名可以保证消息的真实性、完整性和不可抵赖性。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "这是数字签名的三大功效。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "三大功效：**真实性、完整性、不可抵赖性**"
+  },
+  {
+   "type": "judge",
+   "stem": "应用代理网关的检查能力强、速度快，与内外网直接通信。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "应用代理网关完全隔断内外网的直接通信，检查能力强但速度慢。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "完全隔断内外网直接通信；检查能力强，速度慢"
+  }
+ ],
+ "软件设计师（中级）基础知识速记（网络与信息安全） > 2.8 信息安全属性与保护等级": [
+  {
+   "type": "single",
+   "stem": "“信息未经授权不能被修改，并且能发现被篡改”属于信息安全的哪个属性？",
+   "options": [
+    "机密性",
+    "完整性",
+    "可用性",
+    "可控性"
+   ],
+   "answer_index": 1,
+   "explanation": "完整性强调未经授权不能修改并可发现篡改。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "未经授权不能修改，能发现被篡改"
+  },
+  {
+   "type": "single",
+   "stem": "“信息不泄露给未授权者”属于：",
+   "options": [
+    "完整性",
+    "可用性",
+    "机密性（保密性）",
+    "不可否认性"
+   ],
+   "answer_index": 2,
+   "explanation": "机密性即保密性。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "机密性（保密性） | 不泄露给未授权者"
+  },
+  {
+   "type": "single",
+   "stem": "“授权者需要时能够访问信息”属于：",
+   "options": [
+    "机密性",
+    "完整性",
+    "可控性",
+    "可用性"
+   ],
+   "answer_index": 3,
+   "explanation": "可用性：授权者在需要时可以访问信息。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "授权者需要时能访问"
+  },
+  {
+   "type": "single",
+   "stem": "“发送方不能否认自己发送过消息”体现的属性是：",
+   "options": [
+    "不可否认性（不可抵赖）",
+    "可控性",
+    "机密性",
+    "完整性"
+   ],
+   "answer_index": 0,
+   "explanation": "数字签名可提供不可抵赖性。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "发送方不能否认发送过"
+  },
+  {
+   "type": "single",
+   "stem": "计算机系统安全保护等级（GB 17859）共分几级？",
+   "options": [
+    "三级",
+    "五级",
+    "四级",
+    "六级"
+   ],
+   "answer_index": 1,
+   "explanation": "自主保护级 → 系统审计保护级 → 安全标记保护级 → 结构化保护级 → 访问验证保护级。",
+   "difficulty": 1,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "计算机系统安全保护等级（GB 17859）从低到高五级"
+  },
+  {
+   "type": "single",
+   "stem": "GB 17859 五个安全保护等级中，最高的是：",
+   "options": [
+    "自主保护级",
+    "安全标记保护级",
+    "访问验证保护级",
+    "结构化保护级"
+   ],
+   "answer_index": 2,
+   "explanation": "从低到高依次：自主保护级、系统审计保护级、安全标记保护级、结构化保护级、访问验证保护级。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "概念"
+   ],
+   "source_quote": "结构化保护级 → 访问验证保护级"
+  },
+  {
+   "type": "judge",
+   "stem": "在 GB 17859 的五个保护等级中，系统审计保护级高于安全标记保护级。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "顺序为自主保护级 < 系统审计保护级 < 安全标记保护级 < 结构化保护级 < 访问验证保护级。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "自主保护级 → 系统审计保护级 → 安全标记保护级"
+  },
+  {
+   "type": "judge",
+   "stem": "可控性是指控制信息的流向和行为。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "信息安全五属性：机密性、完整性、可用性、可控性、不可否认性。",
+   "difficulty": 2,
+   "tags": [
+    "基础知识速记",
+    "网络与信息安全",
+    "判断"
+   ],
+   "source_quote": "控制信息流向和行为"
+  }
+ ]
+}
