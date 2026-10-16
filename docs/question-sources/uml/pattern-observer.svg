@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="779" height="300" viewBox="0 0 779 300" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>观察者类图</title>
+  <rect width="779" height="300" fill="#ffffff"/>
+  <rect x="116" y="16" width="160" height="146" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="196" y="36.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">WeatherStation</text>
+  <line x1="116.0" y1="46.0" x2="276.0" y2="46.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="124" y="64" font-size="13" text-anchor="start" fill="#1f2937">-temp: float</text>
+  <text x="124" y="84" font-size="13" text-anchor="start" fill="#1f2937">-observers: List</text>
+  <line x1="116.0" y1="94.0" x2="276.0" y2="94.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="124" y="112" font-size="13" text-anchor="start" fill="#1f2937">+attach(o)</text>
+  <text x="124" y="132" font-size="13" text-anchor="start" fill="#1f2937">+setTemp(t)</text>
+  <text x="124" y="152" font-size="13" text-anchor="start" fill="#1f2937">-notifyObservers()</text>
+  <rect x="509" y="16" width="122" height="74" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="570" y="34.32" font-size="12" text-anchor="middle" fill="#6b7280">«interface»</text>
+  <text x="570" y="51.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Observer</text>
+  <line x1="509.0" y1="62.0" x2="631.0" y2="62.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="517" y="80" font-size="13" text-anchor="start" fill="#1f2937">+update(temp)</text>
+  <rect x="381" y="226" width="140" height="58" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="451" y="246.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">PhoneDisplay</text>
+  <line x1="381.0" y1="256.0" x2="521.0" y2="256.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="389" y="274" font-size="13" text-anchor="start" fill="#1f2937">+update(temp)</text>
+  <rect x="614.5" y="226" width="149" height="58" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="689" y="246.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">WindowDisplay</text>
+  <line x1="614.5" y1="256.0" x2="763.5" y2="256.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="622.5" y="274" font-size="13" text-anchor="start" fill="#1f2937">+update(temp)</text>
+  <polyline points="497.0,37.0 509.0,31.0 497.0,25.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="276.0,31.0 509.0,31.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <text x="402.5" y="27" font-size="12" text-anchor="start" fill="#1f2937">*</text>
+  <polygon points="549.7,90.0 556.7,104.0 542.7,104.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="451.0,226.0 451.0,183.3 549.7,183.3 549.7,104.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <polygon points="590.3,90.0 597.3,104.0 583.3,104.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="689.0,226.0 689.0,204.7 590.3,204.7 590.3,104.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+</svg>

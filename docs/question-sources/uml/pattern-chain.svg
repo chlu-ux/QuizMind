@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="630" height="260" viewBox="0 0 630 260" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>责任链类图</title>
+  <rect width="630" height="260" fill="#ffffff"/>
+  <rect x="301" y="16" width="130" height="106" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="366" y="36.4" font-size="15" text-anchor="middle" fill="#1f2937" font-style="italic">Handler</text>
+  <line x1="301.0" y1="46.0" x2="431.0" y2="46.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="309" y="64" font-size="13" text-anchor="start" fill="#1f2937">#next: Handler</text>
+  <line x1="301.0" y1="74.0" x2="431.0" y2="74.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="309" y="92" font-size="13" text-anchor="start" fill="#1f2937" font-style="italic">+setNext(h)</text>
+  <text x="309" y="112" font-size="13" text-anchor="start" fill="#1f2937" font-style="italic">+handle(days)</text>
+  <rect x="117.5" y="186" width="123" height="58" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="179" y="206.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">TeamLeader</text>
+  <line x1="117.5" y1="216.0" x2="240.5" y2="216.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="125.5" y="234" font-size="13" text-anchor="start" fill="#1f2937">+handle(days)</text>
+  <rect x="305" y="186" width="122" height="58" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="366" y="206.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Manager</text>
+  <line x1="305.0" y1="216.0" x2="427.0" y2="216.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="313" y="234" font-size="13" text-anchor="start" fill="#1f2937">+handle(days)</text>
+  <rect x="492" y="186" width="122" height="58" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="553" y="206.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Director</text>
+  <line x1="492.0" y1="216.0" x2="614.0" y2="216.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="500" y="234" font-size="13" text-anchor="start" fill="#1f2937">+handle(days)</text>
+  <polygon points="333.5,122.0 340.5,136.0 326.5,136.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="179.0,186.0 179.0,138.0 333.5,138.0 333.5,136.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polygon points="366.0,122.0 373.0,136.0 359.0,136.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="366.0,186.0 366.0,136.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polygon points="398.5,122.0 405.5,136.0 391.5,136.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="553.0,186.0 553.0,170.0 398.5,170.0 398.5,136.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+</svg>

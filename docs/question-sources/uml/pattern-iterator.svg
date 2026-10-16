@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="635" height="296" viewBox="0 0 635 296" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>迭代器类图</title>
+  <rect width="635" height="296" fill="#ffffff"/>
+  <rect x="93.5" y="16" width="205" height="74" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="196" y="34.32" font-size="12" text-anchor="middle" fill="#6b7280">«interface»</text>
+  <text x="196" y="51.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Container</text>
+  <line x1="93.5" y1="62.0" x2="298.5" y2="62.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="101.5" y="80" font-size="13" text-anchor="start" fill="#1f2937">+getIterator(): Iterator</text>
+  <rect x="452.5" y="16" width="167" height="94" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="536" y="34.32" font-size="12" text-anchor="middle" fill="#6b7280">«interface»</text>
+  <text x="536" y="51.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Iterator</text>
+  <line x1="452.5" y1="62.0" x2="619.5" y2="62.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="460.5" y="80" font-size="13" text-anchor="start" fill="#1f2937">+hasNext(): boolean</text>
+  <text x="460.5" y="100" font-size="13" text-anchor="start" fill="#1f2937">+next(): String</text>
+  <rect x="93.5" y="174" width="205" height="86" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="196" y="194.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">NameRepository</text>
+  <line x1="93.5" y1="204.0" x2="298.5" y2="204.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="101.5" y="222" font-size="13" text-anchor="start" fill="#1f2937">-names: String[]</text>
+  <line x1="93.5" y1="232.0" x2="298.5" y2="232.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="101.5" y="250" font-size="13" text-anchor="start" fill="#1f2937">+getIterator(): Iterator</text>
+  <rect x="452.5" y="174" width="167" height="106" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="536" y="194.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">NameIterator</text>
+  <line x1="452.5" y1="204.0" x2="619.5" y2="204.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="460.5" y="222" font-size="13" text-anchor="start" fill="#1f2937">-index: int</text>
+  <line x1="452.5" y1="232.0" x2="619.5" y2="232.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="460.5" y="250" font-size="13" text-anchor="start" fill="#1f2937">+hasNext(): boolean</text>
+  <text x="460.5" y="270" font-size="13" text-anchor="start" fill="#1f2937">+next(): String</text>
+  <polyline points="440.5,37.0 452.5,31.0 440.5,25.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="298.5,31.0 452.5,31.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <polygon points="196.0,90.0 203.0,104.0 189.0,104.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="196.0,174.0 196.0,104.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <polygon points="536.0,110.0 543.0,124.0 529.0,124.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="536.0,174.0 536.0,124.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <polyline points="440.5,195.0 452.5,189.0 440.5,183.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="298.5,189.0 452.5,189.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+</svg>

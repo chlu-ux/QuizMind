@@ -50,6 +50,58 @@ go run ./cmd/devseed -config config.yaml \
   -bank "UML 图专项" -approve -1
 ```
 
+## 下午题六：设计模式代码填空（Java / C++ 分开）
+
+下午题试题六（设计模式填空）的专项题库按语言拆成两个独立题库，各自一份讲义和题目：
+
+| 题库 | 讲义 / 题目文件 | 内容 |
+|---|---|---|
+| 软件设计师·下午题六（设计模式·Java） | `software-designer.t6-pattern-java.md` + `.questions.json`，另加 `software-designer.t6-pattern-concept.md` + `.questions.json` | T6.1 Java 语法 + 21 个设计模式的 Java 代码填空，共 72 题；加上语言无关的概念题 73 题（每个模式 3 道，加一节分类与设计原则），共 145 题 |
+| 软件设计师·下午题六（设计模式·C++） | `software-designer.t6-pattern-cpp.md` + `.questions.json` | T6.1 C++ 语法 + 21 个设计模式的 C++ 代码填空，共 69 题 |
+
+两份讲义的小节编号一致（T6.1 语法，T6.2～T6.22 为 21 个模式），每个模式的「意图」「类图角色」和「常见填空」按语言各写一份；模式描述里两种语言通用的句子在两份讲义里都有。概念题讲义由脚本生成，目前只导入 Java 库，将来做 C++ 时用 `-append` 把它再导入 C++ 库即可。题干仍然是带类图（SVG）的完整代码框架，只留一个空，选项是代码片段。设计说明、题目格式、导入时服务端校验规则的调整见 [设计文档](software-designer.t6-pattern-code.outline.md)。
+
+题目和类图由 `pattern-code/` 下的脚本从案例数据生成（案例代码都用 javac / clang++ 编译运行验证过）。导入需要 `QUIZMIND_TOKEN`（`server/run.sh` 会从 `server/.token` 读取）：
+
+```bash
+cd docs/question-sources/pattern-code && python3 build.py --check
+cd ../../../server
+go run ./cmd/devseed -config config.yaml \
+  -doc ../docs/question-sources/software-designer.t6-pattern-java.md \
+  -questions ../docs/question-sources/software-designer.t6-pattern-java.questions.json \
+  -bank "软件设计师·下午题六（设计模式·Java）" -approve -1
+go run ./cmd/devseed -config config.yaml \
+  -doc ../docs/question-sources/software-designer.t6-pattern-concept.md \
+  -questions ../docs/question-sources/software-designer.t6-pattern-concept.questions.json \
+  -bank "软件设计师·下午题六（设计模式·Java）" -append -approve -1
+go run ./cmd/devseed -config config.yaml \
+  -doc ../docs/question-sources/software-designer.t6-pattern-cpp.md \
+  -questions ../docs/question-sources/software-designer.t6-pattern-cpp.questions.json \
+  -bank "软件设计师·下午题六（设计模式·C++）" -approve -1
+```
+
+## 下午题四：算法（由 `algorithms/` 的代码改写）
+
+独立题库「软件设计师·下午题四（算法）」：把仓库根目录 `algorithms/` 下 17 个算法的 C 代码（带考点注释）改写成讲义，再按讲义出题，共 28 个小节、198 题。
+
+| 文件 | 内容 |
+|---|---|
+| `software-designer.t4-algo.md` | 讲义：T4.1 设计策略、T4.2 排序对比，之后每个算法一到两节（「思想与考点」「核心代码」），代码取自 `algorithms/*.c` 的关键片段 |
+| `software-designer.t4-algo.questions.json` | 题目，由 `algo-code/` 下的脚本生成，不要手改 |
+
+题型：概念与复杂度（单选 / 判断）、手算（快排第一趟、堆的建立、归并第几趟、背包 / LCS / 矩阵连乘 / 最短路径 / 最小生成树 / KMP 的 next 数组等，数值都用 `algorithms/` 里的代码或独立脚本核对过）、代码填空（循环边界、比较符号、递推式、递归出口，对应代码里的 `【填空】` 标记）。
+
+```bash
+cd docs/question-sources/algo-code && python3 build.py          # 重新生成题目 JSON，并按服务端规则预检
+cd ../../../server
+go run ./cmd/devseed -config config.yaml \
+  -doc ../docs/question-sources/software-designer.t4-algo.md \
+  -questions ../docs/question-sources/software-designer.t4-algo.questions.json \
+  -bank "软件设计师·下午题四（算法）" -approve -1
+```
+
+`build.py` 检查题干 / 选项长度、选项互不相同、`source_quote` 能在所属小节里原样找到、每节不超过 10 题（devseed 每块最多取 10 题）、每节不超过 1450 字（超过 1500 字会被切成两块）。题目写在 `algo-code/q1.py`～`q3.py`，用 `dsl.py` 里的 `S`（单选）、`J`（判断）、`F`（代码填空）三个函数。
+
 ## 基础知识速记题库（讲义 + 配套题目）
 
 `software-designer.s01-…` 到 `s11-…` 共 11 份、66 个小节，是把 `docs/软件设计师基础知识背诵文件.pdf`（16 页速记表）逐页对着图片转写成的 Markdown：每章一份文档、每个考点一节（`## 1.1 …`），表格保留成 Markdown 表格，PDF 里的 ⚠ 提醒写成引用块。它们既是 App「先学后练」（architecture.md §3.6）的阅读材料，也配了题目，导入独立题库「软件设计师·基础知识速记」，共 583 题（单选 495、判断 88，判断题对错各 44）。

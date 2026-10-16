@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="607" height="280" viewBox="0 0 607 280" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>外观类图</title>
+  <rect width="607" height="280" fill="#ffffff"/>
+  <rect x="56" y="16" width="110" height="58" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="111" y="36.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Client</text>
+  <line x1="56.0" y1="46.0" x2="166.0" y2="46.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="64" y="64" font-size="13" text-anchor="start" fill="#1f2937">+main()</text>
+  <rect x="275" y="16" width="182" height="126" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="366" y="36.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">HomeTheater</text>
+  <line x1="275.0" y1="46.0" x2="457.0" y2="46.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="283" y="64" font-size="13" text-anchor="start" fill="#1f2937">-projector: Projector</text>
+  <text x="283" y="84" font-size="13" text-anchor="start" fill="#1f2937">-sound: Sound</text>
+  <text x="283" y="104" font-size="13" text-anchor="start" fill="#1f2937">-player: Player</text>
+  <line x1="275.0" y1="114.0" x2="457.0" y2="114.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="283" y="132" font-size="13" text-anchor="start" fill="#1f2937">+watchMovie()</text>
+  <rect x="139" y="206" width="114" height="58" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="196" y="226.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Projector</text>
+  <line x1="139.0" y1="236.0" x2="253.0" y2="236.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="147" y="254" font-size="13" text-anchor="start" fill="#1f2937">+on()</text>
+  <rect x="311" y="206" width="110" height="58" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="366" y="226.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Sound</text>
+  <line x1="311.0" y1="236.0" x2="421.0" y2="236.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="319" y="254" font-size="13" text-anchor="start" fill="#1f2937">+on()</text>
+  <rect x="481" y="206" width="110" height="58" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="536" y="226.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Player</text>
+  <line x1="481.0" y1="236.0" x2="591.0" y2="236.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="489" y="254" font-size="13" text-anchor="start" fill="#1f2937">+play()</text>
+  <polyline points="263.0,37.0 275.0,31.0 263.0,25.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="166.0,31.0 275.0,31.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="190.0,194.0 196.0,206.0 202.0,194.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="320.5,142.0 320.5,158.0 196.0,158.0 196.0,206.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="360.0,194.0 366.0,206.0 372.0,194.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="366.0,142.0 366.0,206.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="530.0,194.0 536.0,206.0 542.0,194.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="411.5,142.0 411.5,190.0 536.0,190.0 536.0,206.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+</svg>

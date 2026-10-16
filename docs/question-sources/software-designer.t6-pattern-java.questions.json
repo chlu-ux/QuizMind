@@ -1,0 +1,1410 @@
+{
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.1 Java 的类、接口、继承与多态写法": [
+    {
+      "type": "single",
+      "stem": "Java 中，接口 B 要继承接口 A，应该写成：\n\n```java\ninterface B ______ A { }\n```\n\n空缺处应填入：",
+      "options": [
+        "implements",
+        "interface",
+        "extends",
+        "inherits"
+      ],
+      "answer_index": 2,
+      "explanation": "接口继承接口用 extends（而且可以同时继承多个接口）；类实现接口才用 implements。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "Java 语法",
+        "填空·关键字"
+      ],
+      "source_quote": "Java 中类实现接口用 implements，类继承类用 extends，接口继承接口也用 extends"
+    },
+    {
+      "type": "judge",
+      "stem": "在 Java 中，一个类可以同时实现多个接口，但只能继承一个父类。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer_index": 0,
+      "explanation": "Java 是单继承：extends 后面只能跟一个类；但 implements 后可以跟多个接口，用逗号隔开。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "Java 语法",
+        "填空·关键字"
+      ],
+      "source_quote": "一个类只能继承一个类，但可以实现多个接口"
+    },
+    {
+      "type": "single",
+      "stem": "Java 中，下面抽象类里的抽象方法缺少哪个关键字？\n\n```java\nabstract class Shape {\n    public ______ void draw();\n}\n```\n\n空缺处应填入：",
+      "options": [
+        "final",
+        "abstract",
+        "static",
+        "virtual"
+      ],
+      "answer_index": 1,
+      "explanation": "没有方法体的方法必须用 abstract 声明，包含抽象方法的类也必须声明为抽象类。Java 没有 virtual 关键字；final 表示不能被重写，与抽象矛盾。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "Java 语法",
+        "填空·关键字"
+      ],
+      "source_quote": "Java 中用 abstract 声明抽象类和抽象方法，抽象方法没有方法体"
+    },
+    {
+      "type": "single",
+      "stem": "Java 中，子类构造函数要调用父类的带参构造函数，应该写成：\n\n```java\nclass B extends A {\n    B(int x) {\n        ______(x);\n    }\n}\n```\n\n空缺处应填入：",
+      "options": [
+        "base",
+        "A",
+        "this",
+        "super"
+      ],
+      "answer_index": 3,
+      "explanation": "子类用 super(参数) 调用父类的构造函数，并且必须写在构造函数的第一行。this(x) 调用的是本类的另一个构造函数；Java 没有 base 关键字，也不能直接写类名调用。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "Java 语法",
+        "填空·关键字"
+      ],
+      "source_quote": "Java 中用 super 调用父类的构造函数和被重写的方法，子类构造函数里 super(参数) 必须写在第一行"
+    },
+    {
+      "type": "single",
+      "stem": "Java 中，要让一个方法不能被子类重写，应该用哪个关键字修饰它？",
+      "options": [
+        "final",
+        "abstract",
+        "private static",
+        "static"
+      ],
+      "answer_index": 0,
+      "explanation": "final 修饰的方法不能被子类重写，final 修饰的类不能被继承。abstract 恰好相反，要求子类实现。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "Java 语法",
+        "填空·关键字"
+      ],
+      "source_quote": "Java 中用 final 修饰的方法不能被子类重写，final 修饰的类不能被继承"
+    },
+    {
+      "type": "single",
+      "stem": "Java 的接口中声明的方法 `void f();`，默认的访问修饰符和性质是：",
+      "options": [
+        "public abstract",
+        "private",
+        "protected abstract",
+        "public final"
+      ],
+      "answer_index": 0,
+      "explanation": "接口中的方法默认是 public abstract，所以实现类里重写它时必须写 public，缩小成默认的包访问权限会编译出错。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "Java 语法",
+        "填空·关键字"
+      ],
+      "source_quote": "Java 接口中声明的方法默认是 public abstract 的"
+    },
+    {
+      "type": "single",
+      "stem": "Java 中，标注一个方法重写了父类方法、让编译器检查是否真的重写了的注解是：\n\n```java\n______\npublic String toString() { return \"x\"; }\n```",
+      "options": [
+        "@Inherit",
+        "@Override",
+        "@Abstract",
+        "@Overload"
+      ],
+      "answer_index": 1,
+      "explanation": "@Override 注解会让编译器检查该方法是否真的重写了父类（或接口）的方法，签名写错时直接报错，避免写成了一个新方法。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "Java 语法",
+        "填空·方法"
+      ],
+      "source_quote": "Java 中用 @Override 注解标注一个方法重写了父类的方法，编译器会检查是否真的重写"
+    },
+    {
+      "type": "judge",
+      "stem": "Java 中被 final 修饰的类仍然可以被其他类继承。",
+      "options": [
+        "正确",
+        "错误"
+      ],
+      "answer_index": 1,
+      "explanation": "final 修饰的类不能被继承（例如 String），final 修饰的方法不能被重写。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "Java 语法",
+        "填空·关键字"
+      ],
+      "source_quote": "final 修饰的类不能被继承"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.2 单例（Singleton）": [
+    {
+      "type": "single",
+      "stem": "某系统的全局配置对象 Config 只允许有一个实例，采用懒汉式。下面是用 Java 实现的单例模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-singleton.svg)\n\n```java\nclass Config {\n    private static Config instance;\n\n    ______ Config() { }\n\n    public static Config getInstance() {\n        if (instance == null) {\n            instance = new Config();\n        }\n        return instance;\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "private",
+        "public",
+        "abstract",
+        "protected"
+      ],
+      "answer_index": 0,
+      "explanation": "单例要禁止外部创建对象，构造函数必须是私有的，外部只能通过 getInstance() 取得唯一实例。构造函数写成 public 就失去了「只有一个实例」的保证。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "单例",
+        "填空·关键字"
+      ],
+      "source_quote": "构造函数必须是私有的，外部不能用 new 创建对象"
+    },
+    {
+      "type": "single",
+      "stem": "某系统的全局配置对象 Config 只允许有一个实例，采用懒汉式。下面是用 Java 实现的单例模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-singleton.svg)\n\n```java\nclass Config {\n    private static Config instance;\n\n    private Config() { }\n\n    public ______ Config getInstance() {\n        if (instance == null) {\n            instance = new Config();\n        }\n        return instance;\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "volatile",
+        "static",
+        "abstract",
+        "final"
+      ],
+      "answer_index": 1,
+      "explanation": "调用 getInstance() 时还没有对象，所以它必须是静态方法，通过类名 Config.getInstance() 调用；静态方法只能访问静态成员，因此 instance 也是 static。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "单例",
+        "填空·关键字"
+      ],
+      "source_quote": "获取实例的方法必须是静态方法，因为调用它时还没有对象"
+    },
+    {
+      "type": "single",
+      "stem": "某系统的全局配置对象 Config 只允许有一个实例，采用懒汉式。下面是用 Java 实现的单例模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-singleton.svg)\n\n```java\nclass Config {\n    private static Config instance;\n\n    private Config() { }\n\n    public static Config getInstance() {\n        if (instance == null) {\n            instance = ______;\n        }\n        return instance;\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "Config.getInstance()",
+        "Config",
+        "new Config()",
+        "this"
+      ],
+      "answer_index": 2,
+      "explanation": "懒汉式在第一次调用时才创建实例：instance 为 null 就 new 一个，之后直接返回。写成 Config.getInstance() 会无限递归；静态方法里没有 this。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "单例",
+        "填空·逻辑"
+      ],
+      "source_quote": "第一次调用时才用 new 创建唯一的实例，之后直接返回已有的实例"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.3 工厂方法（Factory Method）": [
+    {
+      "type": "single",
+      "stem": "日志系统需要按需创建不同的日志记录器（写文件、写控制台），用工厂方法让子类决定创建哪种记录器。下面是用 Java 实现的工厂方法模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-factory-method.svg)\n\n```java\ninterface Logger {\n    void log(String msg);\n}\n\nclass FileLogger ______ Logger {\n    public void log(String msg) {\n        System.out.println(\"[file] \" + msg);\n    }\n}\n\nclass ConsoleLogger implements Logger {\n    public void log(String msg) {\n        System.out.println(\"[console] \" + msg);\n    }\n}\n\nabstract class LoggerFactory {\n    public abstract Logger createLogger();\n\n    public void write(String msg) {\n        Logger logger = createLogger();\n        logger.log(msg);\n    }\n}\n\nclass FileLoggerFactory extends LoggerFactory {\n    public Logger createLogger() {\n        return new FileLogger();\n    }\n}\n\nclass ConsoleLoggerFactory extends LoggerFactory {\n    public Logger createLogger() {\n        return new ConsoleLogger();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "inherits",
+        "implements",
+        "extends",
+        "interface"
+      ],
+      "answer_index": 1,
+      "explanation": "Logger 是接口，类实现接口用 implements；extends 用于类继承类，或者接口继承接口。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "工厂方法",
+        "填空·关键字"
+      ],
+      "source_quote": "Java 中类实现接口用 implements，类继承类用 extends"
+    },
+    {
+      "type": "single",
+      "stem": "日志系统需要按需创建不同的日志记录器（写文件、写控制台），用工厂方法让子类决定创建哪种记录器。下面是用 Java 实现的工厂方法模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-factory-method.svg)\n\n```java\ninterface Logger {\n    void log(String msg);\n}\n\nclass FileLogger implements Logger {\n    public void log(String msg) {\n        System.out.println(\"[file] \" + msg);\n    }\n}\n\nclass ConsoleLogger implements Logger {\n    public void log(String msg) {\n        System.out.println(\"[console] \" + msg);\n    }\n}\n\nabstract class LoggerFactory {\n    public abstract ______ createLogger();\n\n    public void write(String msg) {\n        Logger logger = createLogger();\n        logger.log(msg);\n    }\n}\n\nclass FileLoggerFactory extends LoggerFactory {\n    public Logger createLogger() {\n        return new FileLogger();\n    }\n}\n\nclass ConsoleLoggerFactory extends LoggerFactory {\n    public Logger createLogger() {\n        return new ConsoleLogger();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "void",
+        "FileLogger",
+        "Logger",
+        "LoggerFactory"
+      ],
+      "answer_index": 2,
+      "explanation": "工厂方法的返回类型是抽象产品 Logger，而不是某个具体产品，这样子类才能决定创建哪一种记录器，调用方也只依赖抽象。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "工厂方法",
+        "填空·类名"
+      ],
+      "source_quote": "工厂方法的返回类型是抽象产品，子类重写它并返回具体产品"
+    },
+    {
+      "type": "single",
+      "stem": "日志系统需要按需创建不同的日志记录器（写文件、写控制台），用工厂方法让子类决定创建哪种记录器。下面是用 Java 实现的工厂方法模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-factory-method.svg)\n\n```java\ninterface Logger {\n    void log(String msg);\n}\n\nclass FileLogger implements Logger {\n    public void log(String msg) {\n        System.out.println(\"[file] \" + msg);\n    }\n}\n\nclass ConsoleLogger implements Logger {\n    public void log(String msg) {\n        System.out.println(\"[console] \" + msg);\n    }\n}\n\nabstract class LoggerFactory {\n    public abstract Logger createLogger();\n\n    public void write(String msg) {\n        Logger logger = ______;\n        logger.log(msg);\n    }\n}\n\nclass FileLoggerFactory extends LoggerFactory {\n    public Logger createLogger() {\n        return new FileLogger();\n    }\n}\n\nclass ConsoleLoggerFactory extends LoggerFactory {\n    public Logger createLogger() {\n        return new ConsoleLogger();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "new Logger()",
+        "new FileLogger()",
+        "createLogger()",
+        "LoggerFactory.createLogger()"
+      ],
+      "answer_index": 2,
+      "explanation": "write() 是父类里的通用流程，它调用工厂方法 createLogger() 取得产品，具体创建哪个类由子类重写决定。写 new FileLogger() 就把具体产品写死了；接口不能 new。",
+      "difficulty": 3,
+      "tags": [
+        "下午题六",
+        "工厂方法",
+        "填空·方法"
+      ],
+      "source_quote": "抽象工厂里的普通方法调用工厂方法获得产品，不关心具体产品是什么"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.4 抽象工厂（Abstract Factory）": [
+    {
+      "type": "single",
+      "stem": "界面库要提供 Windows 和 Mac 两种风格的按钮和文本框，同一种风格的组件必须配套使用，用抽象工厂创建「产品族」。下面是用 Java 实现的抽象工厂模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-abstract-factory.svg)\n\n```java\ninterface Button { void paint(); }\ninterface TextBox { void paint(); }\n\nclass WinButton implements Button {\n    public void paint() {\n        System.out.println(\"win button\");\n    }\n}\nclass WinTextBox implements TextBox {\n    public void paint() {\n        System.out.println(\"win textbox\");\n    }\n}\nclass MacButton implements Button {\n    public void paint() {\n        System.out.println(\"mac button\");\n    }\n}\nclass MacTextBox implements TextBox {\n    public void paint() {\n        System.out.println(\"mac textbox\");\n    }\n}\n\ninterface GUIFactory {\n    ______ createButton();\n    TextBox createTextBox();\n}\n\nclass WinFactory implements GUIFactory {\n    public Button createButton() {\n        return new WinButton();\n    }\n    public TextBox createTextBox() {\n        return new WinTextBox();\n    }\n}\n\nclass MacFactory implements GUIFactory {\n    public Button createButton() {\n        return new MacButton();\n    }\n    public TextBox createTextBox() {\n        return new MacTextBox();\n    }\n}\n\nclass Client {\n    private Button button;\n    private TextBox textBox;\n    public Client(GUIFactory factory) {\n        button = factory.createButton();\n        textBox = factory.createTextBox();\n    }\n    public void show() {\n        button.paint();\n        textBox.paint();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "GUIFactory",
+        "void",
+        "Button",
+        "WinButton"
+      ],
+      "answer_index": 2,
+      "explanation": "抽象工厂的每个创建方法返回一种抽象产品：createButton() 返回 Button。返回具体产品 WinButton 就只能创建 Windows 风格的按钮了。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "抽象工厂",
+        "填空·类名"
+      ],
+      "source_quote": "抽象工厂为每一种抽象产品声明一个创建方法，返回类型是抽象产品"
+    },
+    {
+      "type": "single",
+      "stem": "界面库要提供 Windows 和 Mac 两种风格的按钮和文本框，同一种风格的组件必须配套使用，用抽象工厂创建「产品族」。下面是用 Java 实现的抽象工厂模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-abstract-factory.svg)\n\n```java\ninterface Button { void paint(); }\ninterface TextBox { void paint(); }\n\nclass WinButton implements Button {\n    public void paint() {\n        System.out.println(\"win button\");\n    }\n}\nclass WinTextBox implements TextBox {\n    public void paint() {\n        System.out.println(\"win textbox\");\n    }\n}\nclass MacButton implements Button {\n    public void paint() {\n        System.out.println(\"mac button\");\n    }\n}\nclass MacTextBox implements TextBox {\n    public void paint() {\n        System.out.println(\"mac textbox\");\n    }\n}\n\ninterface GUIFactory {\n    Button createButton();\n    TextBox createTextBox();\n}\n\nclass WinFactory ______ GUIFactory {\n    public Button createButton() {\n        return new WinButton();\n    }\n    public TextBox createTextBox() {\n        return new WinTextBox();\n    }\n}\n\nclass MacFactory implements GUIFactory {\n    public Button createButton() {\n        return new MacButton();\n    }\n    public TextBox createTextBox() {\n        return new MacTextBox();\n    }\n}\n\nclass Client {\n    private Button button;\n    private TextBox textBox;\n    public Client(GUIFactory factory) {\n        button = factory.createButton();\n        textBox = factory.createTextBox();\n    }\n    public void show() {\n        button.paint();\n        textBox.paint();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "extends",
+        "implements",
+        "implement",
+        "inherits"
+      ],
+      "answer_index": 1,
+      "explanation": "GUIFactory 是接口，具体工厂实现它，用 implements。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "抽象工厂",
+        "填空·关键字"
+      ],
+      "source_quote": "Java 中类实现接口用 implements，类继承类用 extends"
+    },
+    {
+      "type": "single",
+      "stem": "界面库要提供 Windows 和 Mac 两种风格的按钮和文本框，同一种风格的组件必须配套使用，用抽象工厂创建「产品族」。下面是用 Java 实现的抽象工厂模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-abstract-factory.svg)\n\n```java\ninterface Button { void paint(); }\ninterface TextBox { void paint(); }\n\nclass WinButton implements Button {\n    public void paint() {\n        System.out.println(\"win button\");\n    }\n}\nclass WinTextBox implements TextBox {\n    public void paint() {\n        System.out.println(\"win textbox\");\n    }\n}\nclass MacButton implements Button {\n    public void paint() {\n        System.out.println(\"mac button\");\n    }\n}\nclass MacTextBox implements TextBox {\n    public void paint() {\n        System.out.println(\"mac textbox\");\n    }\n}\n\ninterface GUIFactory {\n    Button createButton();\n    TextBox createTextBox();\n}\n\nclass WinFactory implements GUIFactory {\n    public Button createButton() {\n        return new WinButton();\n    }\n    public TextBox createTextBox() {\n        return new WinTextBox();\n    }\n}\n\nclass MacFactory implements GUIFactory {\n    public Button createButton() {\n        return new MacButton();\n    }\n    public TextBox createTextBox() {\n        return ______;\n    }\n}\n\nclass Client {\n    private Button button;\n    private TextBox textBox;\n    public Client(GUIFactory factory) {\n        button = factory.createButton();\n        textBox = factory.createTextBox();\n    }\n    public void show() {\n        button.paint();\n        textBox.paint();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "new WinTextBox()",
+        "new TextBox()",
+        "new MacTextBox()",
+        "new MacButton()"
+      ],
+      "answer_index": 2,
+      "explanation": "具体工厂创建自己这个系列的产品：MacFactory 的 createTextBox() 返回 Mac 风格的文本框 MacTextBox。new WinTextBox() 会混入 Windows 风格，破坏产品族的一致性。",
+      "difficulty": 3,
+      "tags": [
+        "下午题六",
+        "抽象工厂",
+        "填空·逻辑"
+      ],
+      "source_quote": "一个具体工厂创建同一个产品族的全部产品，保证风格一致"
+    },
+    {
+      "type": "single",
+      "stem": "界面库要提供 Windows 和 Mac 两种风格的按钮和文本框，同一种风格的组件必须配套使用，用抽象工厂创建「产品族」。下面是用 Java 实现的抽象工厂模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-abstract-factory.svg)\n\n```java\ninterface Button { void paint(); }\ninterface TextBox { void paint(); }\n\nclass WinButton implements Button {\n    public void paint() {\n        System.out.println(\"win button\");\n    }\n}\nclass WinTextBox implements TextBox {\n    public void paint() {\n        System.out.println(\"win textbox\");\n    }\n}\nclass MacButton implements Button {\n    public void paint() {\n        System.out.println(\"mac button\");\n    }\n}\nclass MacTextBox implements TextBox {\n    public void paint() {\n        System.out.println(\"mac textbox\");\n    }\n}\n\ninterface GUIFactory {\n    Button createButton();\n    TextBox createTextBox();\n}\n\nclass WinFactory implements GUIFactory {\n    public Button createButton() {\n        return new WinButton();\n    }\n    public TextBox createTextBox() {\n        return new WinTextBox();\n    }\n}\n\nclass MacFactory implements GUIFactory {\n    public Button createButton() {\n        return new MacButton();\n    }\n    public TextBox createTextBox() {\n        return new MacTextBox();\n    }\n}\n\nclass Client {\n    private Button button;\n    private TextBox textBox;\n    public Client(______ factory) {\n        button = factory.createButton();\n        textBox = factory.createTextBox();\n    }\n    public void show() {\n        button.paint();\n        textBox.paint();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "WinFactory",
+        "Client",
+        "Button",
+        "GUIFactory"
+      ],
+      "answer_index": 3,
+      "explanation": "客户端只依赖抽象工厂 GUIFactory，传入 WinFactory 或 MacFactory 都能工作，换产品族不用改客户端代码。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "抽象工厂",
+        "填空·类名"
+      ],
+      "source_quote": "客户端只依赖抽象工厂和抽象产品，不依赖具体类"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.5 建造者（Builder）": [
+    {
+      "type": "single",
+      "stem": "组装电脑要按固定的步骤（先装 CPU，再装内存），但不同配置的零件不同，用建造者把「组装步骤」和「具体零件」分开。下面是用 Java 实现的建造者模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-builder.svg)\n\n```java\nclass Computer {\n    String cpu;\n    String memory;\n    public String toString() {\n        return cpu + \"/\" + memory;\n    }\n}\n\nabstract class Builder {\n    protected Computer computer = new Computer();\n    public abstract void buildCpu();\n    public abstract void buildMemory();\n    public Computer getResult() {\n        return computer;\n    }\n}\n\nclass GamingBuilder ______ Builder {\n    public void buildCpu() {\n        computer.cpu = \"i9\";\n    }\n    public void buildMemory() {\n        computer.memory = \"32G\";\n    }\n}\n\nclass OfficeBuilder extends Builder {\n    public void buildCpu() {\n        computer.cpu = \"i3\";\n    }\n    public void buildMemory() {\n        computer.memory = \"8G\";\n    }\n}\n\nclass Director {\n    private Builder builder;\n    public Director(Builder builder) {\n        this.builder = builder;\n    }\n    public Computer construct() {\n        builder.buildCpu();\n        builder.buildMemory();\n        return builder.getResult();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "extends",
+        "instanceof",
+        "inherits",
+        "implements"
+      ],
+      "answer_index": 0,
+      "explanation": "Builder 是抽象类，具体建造者继承它，用 extends；implements 只用于实现接口。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "建造者",
+        "填空·关键字"
+      ],
+      "source_quote": "Java 中类实现接口用 implements，类继承类用 extends"
+    },
+    {
+      "type": "single",
+      "stem": "组装电脑要按固定的步骤（先装 CPU，再装内存），但不同配置的零件不同，用建造者把「组装步骤」和「具体零件」分开。下面是用 Java 实现的建造者模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-builder.svg)\n\n```java\nclass Computer {\n    String cpu;\n    String memory;\n    public String toString() {\n        return cpu + \"/\" + memory;\n    }\n}\n\nabstract class Builder {\n    protected Computer computer = new Computer();\n    public abstract void buildCpu();\n    public abstract void buildMemory();\n    public Computer getResult() {\n        return computer;\n    }\n}\n\nclass GamingBuilder extends Builder {\n    public void buildCpu() {\n        computer.cpu = \"i9\";\n    }\n    public void buildMemory() {\n        computer.memory = \"32G\";\n    }\n}\n\nclass OfficeBuilder extends Builder {\n    public void buildCpu() {\n        computer.cpu = \"i3\";\n    }\n    public void buildMemory() {\n        computer.memory = \"8G\";\n    }\n}\n\nclass Director {\n    private Builder builder;\n    public Director(______ builder) {\n        this.builder = builder;\n    }\n    public Computer construct() {\n        builder.buildCpu();\n        builder.buildMemory();\n        return builder.getResult();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "Computer",
+        "Director",
+        "Builder",
+        "GamingBuilder"
+      ],
+      "answer_index": 2,
+      "explanation": "指挥者只依赖抽象建造者 Builder，这样传入 GamingBuilder 或 OfficeBuilder 都能用同一套构建过程得到不同的产品。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "建造者",
+        "填空·类名"
+      ],
+      "source_quote": "指挥者只依赖抽象建造者，构建的顺序由指挥者控制"
+    },
+    {
+      "type": "single",
+      "stem": "组装电脑要按固定的步骤（先装 CPU，再装内存），但不同配置的零件不同，用建造者把「组装步骤」和「具体零件」分开。下面是用 Java 实现的建造者模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-builder.svg)\n\n```java\nclass Computer {\n    String cpu;\n    String memory;\n    public String toString() {\n        return cpu + \"/\" + memory;\n    }\n}\n\nabstract class Builder {\n    protected Computer computer = new Computer();\n    public abstract void buildCpu();\n    public abstract void buildMemory();\n    public Computer getResult() {\n        return computer;\n    }\n}\n\nclass GamingBuilder extends Builder {\n    public void buildCpu() {\n        computer.cpu = \"i9\";\n    }\n    public void buildMemory() {\n        computer.memory = \"32G\";\n    }\n}\n\nclass OfficeBuilder extends Builder {\n    public void buildCpu() {\n        computer.cpu = \"i3\";\n    }\n    public void buildMemory() {\n        computer.memory = \"8G\";\n    }\n}\n\nclass Director {\n    private Builder builder;\n    public Director(Builder builder) {\n        this.builder = builder;\n    }\n    public Computer construct() {\n        builder.______();\n        builder.buildMemory();\n        return builder.getResult();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "construct",
+        "getResult",
+        "buildCpu",
+        "build"
+      ],
+      "answer_index": 2,
+      "explanation": "指挥者按固定的顺序调用建造者的步骤方法：先 buildCpu()，再 buildMemory()，最后用 getResult() 取出产品。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "建造者",
+        "填空·方法"
+      ],
+      "source_quote": "指挥者按固定的顺序调用建造者的各个步骤，最后取得产品"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.6 原型（Prototype）": [
+    {
+      "type": "single",
+      "stem": "求职者要向多家公司投递简历，每份简历只有「投递公司」不同，用原型模式复制已有的简历对象。下面是用 Java 实现的原型模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-prototype.svg)\n\n```java\nclass Resume ______ Cloneable {\n    private String name;\n    private String company;\n\n    public Resume(String name) {\n        this.name = name;\n    }\n    public void setCompany(String company) {\n        this.company = company;\n    }\n\n    public Resume clone() {\n        try {\n            return (Resume) super.clone();\n        } catch (CloneNotSupportedException e) {\n            return null;\n        }\n    }\n\n    public String toString() {\n        return name + \"@\" + company;\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "extends",
+        "abstract",
+        "throws",
+        "implements"
+      ],
+      "answer_index": 3,
+      "explanation": "Cloneable 是标记接口，类要支持克隆就必须实现它，用 implements。否则调用 Object.clone() 会抛出 CloneNotSupportedException。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "原型",
+        "填空·关键字"
+      ],
+      "source_quote": "Java 的原型模式要实现 Cloneable 接口，并调用 Object 的 clone 方法完成复制"
+    },
+    {
+      "type": "single",
+      "stem": "求职者要向多家公司投递简历，每份简历只有「投递公司」不同，用原型模式复制已有的简历对象。下面是用 Java 实现的原型模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-prototype.svg)\n\n```java\nclass Resume implements Cloneable {\n    private String name;\n    private String company;\n\n    public Resume(String name) {\n        this.name = name;\n    }\n    public void setCompany(String company) {\n        this.company = company;\n    }\n\n    public ______ clone() {\n        try {\n            return (Resume) super.clone();\n        } catch (CloneNotSupportedException e) {\n            return null;\n        }\n    }\n\n    public String toString() {\n        return name + \"@\" + company;\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "Resume",
+        "Object",
+        "void",
+        "Cloneable"
+      ],
+      "answer_index": 0,
+      "explanation": "重写 clone() 时可以把返回类型改成本类 Resume，这样调用者不用强制转换。返回 void 则得不到副本。",
+      "difficulty": 3,
+      "tags": [
+        "下午题六",
+        "原型",
+        "填空·类名"
+      ],
+      "source_quote": "原型的克隆方法返回的是原对象的副本"
+    },
+    {
+      "type": "single",
+      "stem": "求职者要向多家公司投递简历，每份简历只有「投递公司」不同，用原型模式复制已有的简历对象。下面是用 Java 实现的原型模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-prototype.svg)\n\n```java\nclass Resume implements Cloneable {\n    private String name;\n    private String company;\n\n    public Resume(String name) {\n        this.name = name;\n    }\n    public void setCompany(String company) {\n        this.company = company;\n    }\n\n    public Resume clone() {\n        try {\n            return (Resume) ______;\n        } catch (CloneNotSupportedException e) {\n            return null;\n        }\n    }\n\n    public String toString() {\n        return name + \"@\" + company;\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "this",
+        "this.clone()",
+        "super.clone()",
+        "new Resume(name)"
+      ],
+      "answer_index": 2,
+      "explanation": "super.clone() 调用 Object 的 clone()，复制出一个字段值相同的新对象，再转换成 Resume。this.clone() 会无限递归；new Resume(name) 只复制了姓名，丢了 company；this 返回的是原对象本身，不是副本。",
+      "difficulty": 3,
+      "tags": [
+        "下午题六",
+        "原型",
+        "填空·逻辑"
+      ],
+      "source_quote": "Java 的原型模式要实现 Cloneable 接口，并调用 Object 的 clone 方法完成复制"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.7 适配器（Adapter）": [
+    {
+      "type": "single",
+      "stem": "客户端只会调用打印接口 Printer 的 print 方法，但手头有一个已有的旧打印类 LegacyPrinter，它只有 printLine 方法，不能改动它的源码，用（对象）适配器让两者协同工作。下面是用 Java 实现的适配器模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-adapter.svg)\n\n```java\ninterface Printer {\n    void print(String text);\n}\n\nclass LegacyPrinter {\n    public void printLine(String line) {\n        System.out.println(\"legacy: \" + line);\n    }\n}\n\nclass Adapter ______ Printer {\n    private LegacyPrinter legacy;\n\n    public Adapter(LegacyPrinter legacy) {\n        this.legacy = legacy;\n    }\n\n    public void print(String text) {\n        legacy.printLine(text);\n    }\n}\n\nclass Client {\n    public void show(Printer p) {\n        p.print(\"hello\");\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "extends",
+        "inherits",
+        "implements",
+        "adapts"
+      ],
+      "answer_index": 2,
+      "explanation": "适配器要让客户端把它当成目标接口 Printer 使用，所以实现目标接口，用 implements。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "适配器",
+        "填空·关键字"
+      ],
+      "source_quote": "适配器实现客户端期望的目标接口，并持有被适配的对象"
+    },
+    {
+      "type": "single",
+      "stem": "客户端只会调用打印接口 Printer 的 print 方法，但手头有一个已有的旧打印类 LegacyPrinter，它只有 printLine 方法，不能改动它的源码，用（对象）适配器让两者协同工作。下面是用 Java 实现的适配器模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-adapter.svg)\n\n```java\ninterface Printer {\n    void print(String text);\n}\n\nclass LegacyPrinter {\n    public void printLine(String line) {\n        System.out.println(\"legacy: \" + line);\n    }\n}\n\nclass Adapter implements Printer {\n    private ______ legacy;\n\n    public Adapter(LegacyPrinter legacy) {\n        this.legacy = legacy;\n    }\n\n    public void print(String text) {\n        legacy.printLine(text);\n    }\n}\n\nclass Client {\n    public void show(Printer p) {\n        p.print(\"hello\");\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "LegacyPrinter",
+        "Printer",
+        "Client",
+        "Adapter"
+      ],
+      "answer_index": 0,
+      "explanation": "对象适配器通过组合持有被适配者（Adaptee）LegacyPrinter 的对象。如果类型写成 Printer，构造函数传入 LegacyPrinter 就无法赋值。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "适配器",
+        "填空·类名"
+      ],
+      "source_quote": "适配器实现客户端期望的目标接口，并持有被适配的对象"
+    },
+    {
+      "type": "single",
+      "stem": "客户端只会调用打印接口 Printer 的 print 方法，但手头有一个已有的旧打印类 LegacyPrinter，它只有 printLine 方法，不能改动它的源码，用（对象）适配器让两者协同工作。下面是用 Java 实现的适配器模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-adapter.svg)\n\n```java\ninterface Printer {\n    void print(String text);\n}\n\nclass LegacyPrinter {\n    public void printLine(String line) {\n        System.out.println(\"legacy: \" + line);\n    }\n}\n\nclass Adapter implements Printer {\n    private LegacyPrinter legacy;\n\n    public Adapter(LegacyPrinter legacy) {\n        this.legacy = legacy;\n    }\n\n    public void print(String text) {\n        legacy.______(text);\n    }\n}\n\nclass Client {\n    public void show(Printer p) {\n        p.print(\"hello\");\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "printLine",
+        "print",
+        "println",
+        "printText"
+      ],
+      "answer_index": 0,
+      "explanation": "适配器把对目标接口 print 方法的调用转换成对被适配者已有方法 printLine 的调用。LegacyPrinter 里没有 print 方法。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "适配器",
+        "填空·方法"
+      ],
+      "source_quote": "适配器在目标接口的方法里，把调用转发给被适配者已有的方法"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.8 桥接（Bridge）": [
+    {
+      "type": "single",
+      "stem": "图形有圆形、方形两种形状，颜色有红、蓝两种，两个维度各自独立变化，用桥接模式把「形状」和「颜色」分开，避免产生 2×2 个子类。下面是用 Java 实现的桥接模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-bridge.svg)\n\n```java\ninterface Color {\n    String name();\n}\n\nclass Red implements Color {\n    public String name() { return \"red\"; }\n}\nclass Blue implements Color {\n    public String name() { return \"blue\"; }\n}\n\nabstract class Shape {\n    protected ______ color;\n\n    protected Shape(Color color) {\n        this.color = color;\n    }\n\n    public abstract void draw();\n}\n\nclass Circle extends Shape {\n    public Circle(Color color) {\n        super(color);\n    }\n    public void draw() {\n        System.out.println(\"circle in \" + color.name());\n    }\n}\n\nclass Square extends Shape {\n    public Square(Color color) { super(color); }\n    public void draw() {\n        System.out.println(\"square in \" + color.name());\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "Color",
+        "Red",
+        "Shape",
+        "Circle"
+      ],
+      "answer_index": 0,
+      "explanation": "抽象部分（Shape）持有实现部分的抽象接口 Color，这就是「桥」：形状通过它使用任意一种颜色。写成具体的 Red 就只能画红色了。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "桥接",
+        "填空·类名"
+      ],
+      "source_quote": "桥接模式中抽象部分持有实现部分的抽象接口，两者通过组合连接"
+    },
+    {
+      "type": "single",
+      "stem": "图形有圆形、方形两种形状，颜色有红、蓝两种，两个维度各自独立变化，用桥接模式把「形状」和「颜色」分开，避免产生 2×2 个子类。下面是用 Java 实现的桥接模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-bridge.svg)\n\n```java\ninterface Color {\n    String name();\n}\n\nclass Red implements Color {\n    public String name() { return \"red\"; }\n}\nclass Blue implements Color {\n    public String name() { return \"blue\"; }\n}\n\nabstract class Shape {\n    protected Color color;\n\n    protected Shape(Color color) {\n        this.color = color;\n    }\n\n    public abstract void draw();\n}\n\nclass Circle ______ Shape {\n    public Circle(Color color) {\n        super(color);\n    }\n    public void draw() {\n        System.out.println(\"circle in \" + color.name());\n    }\n}\n\nclass Square extends Shape {\n    public Square(Color color) { super(color); }\n    public void draw() {\n        System.out.println(\"square in \" + color.name());\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "instanceof",
+        "extends",
+        "inherits",
+        "implements"
+      ],
+      "answer_index": 1,
+      "explanation": "Shape 是抽象类，Circle 是它的子类，类继承类用 extends。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "桥接",
+        "填空·关键字"
+      ],
+      "source_quote": "Java 中类实现接口用 implements，类继承类用 extends"
+    },
+    {
+      "type": "single",
+      "stem": "图形有圆形、方形两种形状，颜色有红、蓝两种，两个维度各自独立变化，用桥接模式把「形状」和「颜色」分开，避免产生 2×2 个子类。下面是用 Java 实现的桥接模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-bridge.svg)\n\n```java\ninterface Color {\n    String name();\n}\n\nclass Red implements Color {\n    public String name() { return \"red\"; }\n}\nclass Blue implements Color {\n    public String name() { return \"blue\"; }\n}\n\nabstract class Shape {\n    protected Color color;\n\n    protected Shape(Color color) {\n        this.color = color;\n    }\n\n    public abstract void draw();\n}\n\nclass Circle extends Shape {\n    public Circle(Color color) {\n        ______(color);\n    }\n    public void draw() {\n        System.out.println(\"circle in \" + color.name());\n    }\n}\n\nclass Square extends Shape {\n    public Square(Color color) { super(color); }\n    public void draw() {\n        System.out.println(\"square in \" + color.name());\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "super",
+        "base",
+        "this",
+        "Shape"
+      ],
+      "answer_index": 0,
+      "explanation": "子类构造函数用 super(参数) 调用父类的构造函数，并且必须写在第一行；Java 没有 base 关键字，this(color) 调用的是本类自己的构造函数，会递归。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "桥接",
+        "填空·关键字"
+      ],
+      "source_quote": "Java 的子类构造函数用 super(参数) 调用父类的构造函数"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.9 组合（Composite）": [
+    {
+      "type": "single",
+      "stem": "文件系统里的文件夹可以包含文件，也可以包含子文件夹，客户端希望用同样的方式对待单个文件和整个文件夹，用组合模式表示这种「部分—整体」的树形结构。下面是用 Java 实现的组合模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-composite.svg)\n\n```java\nimport java.util.*;\n\nabstract class Component {\n    protected String name;\n    public Component(String name) {\n        this.name = name;\n    }\n    public abstract void show(int depth);\n}\n\nclass FileItem extends Component {\n    public FileItem(String name) { super(name); }\n    public void show(int depth) {\n        System.out.println(\"-\".repeat(depth) + name);\n    }\n}\n\nclass Folder ______ Component {\n    private List<Component> children = new ArrayList<>();\n\n    public Folder(String name) { super(name); }\n    public void add(Component c) {\n        children.add(c);\n    }\n\n    public void show(int depth) {\n        System.out.println(\"-\".repeat(depth) + name);\n        for (Component c : children) {\n            c.show(depth + 2);\n        }\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "implements",
+        "extends",
+        "contains",
+        "aggregates"
+      ],
+      "answer_index": 1,
+      "explanation": "Folder（组合节点）和 FileItem（叶子节点）都是抽象构件 Component 的子类，类继承类用 extends。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "组合",
+        "填空·关键字"
+      ],
+      "source_quote": "组合模式中叶子节点和组合节点都继承同一个抽象构件"
+    },
+    {
+      "type": "single",
+      "stem": "文件系统里的文件夹可以包含文件，也可以包含子文件夹，客户端希望用同样的方式对待单个文件和整个文件夹，用组合模式表示这种「部分—整体」的树形结构。下面是用 Java 实现的组合模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-composite.svg)\n\n```java\nimport java.util.*;\n\nabstract class Component {\n    protected String name;\n    public Component(String name) {\n        this.name = name;\n    }\n    public abstract void show(int depth);\n}\n\nclass FileItem extends Component {\n    public FileItem(String name) { super(name); }\n    public void show(int depth) {\n        System.out.println(\"-\".repeat(depth) + name);\n    }\n}\n\nclass Folder extends Component {\n    private List<______> children = new ArrayList<>();\n\n    public Folder(String name) { super(name); }\n    public void add(Component c) {\n        children.add(c);\n    }\n\n    public void show(int depth) {\n        System.out.println(\"-\".repeat(depth) + name);\n        for (Component c : children) {\n            c.show(depth + 2);\n        }\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "FileItem",
+        "Folder",
+        "Object",
+        "Component"
+      ],
+      "answer_index": 3,
+      "explanation": "组合节点的子节点列表保存的是抽象构件 Component，既可以放叶子 FileItem，也可以放别的 Folder；写成 FileItem 就放不下子文件夹了。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "组合",
+        "填空·类名"
+      ],
+      "source_quote": "组合节点保存的子节点是抽象构件类型，既可以是叶子也可以是组合节点"
+    },
+    {
+      "type": "single",
+      "stem": "文件系统里的文件夹可以包含文件，也可以包含子文件夹，客户端希望用同样的方式对待单个文件和整个文件夹，用组合模式表示这种「部分—整体」的树形结构。下面是用 Java 实现的组合模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-composite.svg)\n\n```java\nimport java.util.*;\n\nabstract class Component {\n    protected String name;\n    public Component(String name) {\n        this.name = name;\n    }\n    public abstract void show(int depth);\n}\n\nclass FileItem extends Component {\n    public FileItem(String name) { super(name); }\n    public void show(int depth) {\n        System.out.println(\"-\".repeat(depth) + name);\n    }\n}\n\nclass Folder extends Component {\n    private List<Component> children = new ArrayList<>();\n\n    public Folder(String name) { super(name); }\n    public void add(Component c) {\n        children.add(c);\n    }\n\n    public void show(int depth) {\n        System.out.println(\"-\".repeat(depth) + name);\n        for (Component c : children) {\n            c.______(depth + 2);\n        }\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "show",
+        "display",
+        "draw",
+        "add"
+      ],
+      "answer_index": 0,
+      "explanation": "组合节点遍历所有子节点并调用它们的 show()；对叶子是直接显示，对 Folder 是递归地显示它的子节点。这就是「统一对待叶子和组合」。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "组合",
+        "填空·方法"
+      ],
+      "source_quote": "组合节点通过遍历子节点并调用它们的同名方法实现递归"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.10 装饰器（Decorator）": [
+    {
+      "type": "single",
+      "stem": "咖啡店的饮品可以动态地加料（牛奶、摩卡），每种加料都在原饮品的基础上增加描述和价格，用装饰器模式避免为每种组合都写一个子类。下面是用 Java 实现的装饰器模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-decorator.svg)\n\n```java\ninterface Beverage {\n    String description();\n    double cost();\n}\n\nclass Espresso implements Beverage {\n    public String description() {\n        return \"Espresso\";\n    }\n    public double cost() { return 20; }\n}\n\nabstract class CondimentDecorator ______ Beverage {\n    protected Beverage beverage;\n    public CondimentDecorator(Beverage beverage) {\n        this.beverage = beverage;\n    }\n}\n\nclass Milk extends CondimentDecorator {\n    public Milk(Beverage b) { super(b); }\n    public String description() {\n        return beverage.description() + \", Milk\";\n    }\n    public double cost() {\n        return beverage.cost() + 5;\n    }\n}\n\nclass Mocha extends CondimentDecorator {\n    public Mocha(Beverage b) { super(b); }\n    public String description() {\n        return beverage.description() + \", Mocha\";\n    }\n    public double cost() {\n        return beverage.cost() + 8;\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "implements",
+        "decorates",
+        "extends",
+        "inherits"
+      ],
+      "answer_index": 0,
+      "explanation": "装饰器要和被装饰的对象有相同的接口，才能互相替换，所以 CondimentDecorator 实现 Beverage，用 implements。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "装饰器",
+        "填空·关键字"
+      ],
+      "source_quote": "装饰器和被装饰对象实现同一个抽象构件接口，并且持有一个抽象构件的引用"
+    },
+    {
+      "type": "single",
+      "stem": "咖啡店的饮品可以动态地加料（牛奶、摩卡），每种加料都在原饮品的基础上增加描述和价格，用装饰器模式避免为每种组合都写一个子类。下面是用 Java 实现的装饰器模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-decorator.svg)\n\n```java\ninterface Beverage {\n    String description();\n    double cost();\n}\n\nclass Espresso implements Beverage {\n    public String description() {\n        return \"Espresso\";\n    }\n    public double cost() { return 20; }\n}\n\nabstract class CondimentDecorator implements Beverage {\n    protected ______ beverage;\n    public CondimentDecorator(Beverage beverage) {\n        this.beverage = beverage;\n    }\n}\n\nclass Milk extends CondimentDecorator {\n    public Milk(Beverage b) { super(b); }\n    public String description() {\n        return beverage.description() + \", Milk\";\n    }\n    public double cost() {\n        return beverage.cost() + 5;\n    }\n}\n\nclass Mocha extends CondimentDecorator {\n    public Mocha(Beverage b) { super(b); }\n    public String description() {\n        return beverage.description() + \", Mocha\";\n    }\n    public double cost() {\n        return beverage.cost() + 8;\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "Beverage",
+        "Espresso",
+        "Milk",
+        "CondimentDecorator"
+      ],
+      "answer_index": 0,
+      "explanation": "装饰器持有的是抽象构件 Beverage 的引用：它可能是 Espresso，也可能是另一个已经被装饰过的 Milk，这样才能层层嵌套。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "装饰器",
+        "填空·类名"
+      ],
+      "source_quote": "装饰器和被装饰对象实现同一个抽象构件接口，并且持有一个抽象构件的引用"
+    },
+    {
+      "type": "single",
+      "stem": "咖啡店的饮品可以动态地加料（牛奶、摩卡），每种加料都在原饮品的基础上增加描述和价格，用装饰器模式避免为每种组合都写一个子类。下面是用 Java 实现的装饰器模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-decorator.svg)\n\n```java\ninterface Beverage {\n    String description();\n    double cost();\n}\n\nclass Espresso implements Beverage {\n    public String description() {\n        return \"Espresso\";\n    }\n    public double cost() { return 20; }\n}\n\nabstract class CondimentDecorator implements Beverage {\n    protected Beverage beverage;\n    public CondimentDecorator(Beverage beverage) {\n        this.beverage = beverage;\n    }\n}\n\nclass Milk extends CondimentDecorator {\n    public Milk(Beverage b) { super(b); }\n    public String description() {\n        return beverage.description() + \", Milk\";\n    }\n    public double cost() {\n        return ______ + 5;\n    }\n}\n\nclass Mocha extends CondimentDecorator {\n    public Mocha(Beverage b) { super(b); }\n    public String description() {\n        return beverage.description() + \", Mocha\";\n    }\n    public double cost() {\n        return beverage.cost() + 8;\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "super.cost()",
+        "beverage.cost()",
+        "Beverage.cost()",
+        "cost()"
+      ],
+      "answer_index": 1,
+      "explanation": "装饰器的价格 = 被装饰对象的价格 + 自己的价格，通过持有的 beverage 引用委托调用。直接写 cost() 会无限递归；super.cost() 指向的是抽象方法，不能调用。",
+      "difficulty": 3,
+      "tags": [
+        "下午题六",
+        "装饰器",
+        "填空·逻辑"
+      ],
+      "source_quote": "装饰器在自己的方法里先调用被装饰对象的方法，再附加自己的功能"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.11 外观（Facade）": [
+    {
+      "type": "single",
+      "stem": "家庭影院由投影仪、音响、播放器等多个子系统组成，看电影要依次操作它们，用外观模式提供一个统一的高层接口 watchMovie()，客户端不用了解子系统。下面是用 Java 实现的外观模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-facade.svg)\n\n```java\nclass Projector {\n    public void on() {\n        System.out.println(\"projector on\");\n    }\n}\n\nclass Sound {\n    public void on() {\n        System.out.println(\"sound on\");\n    }\n}\n\nclass Player {\n    public void play() {\n        System.out.println(\"movie playing\");\n    }\n}\n\nclass HomeTheater {\n    private ______ projector = new Projector();\n    private Sound sound = new Sound();\n    private Player player = new Player();\n\n    public void watchMovie() {\n        projector.on();\n        sound.on();\n        player.play();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "HomeTheater",
+        "Projector",
+        "Player",
+        "Sound"
+      ],
+      "answer_index": 1,
+      "explanation": "外观类持有各个子系统对象，由它负责创建并协调子系统；客户端只和 HomeTheater 打交道。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "外观",
+        "填空·类名"
+      ],
+      "source_quote": "外观模式为一组子系统提供统一的高层接口，外观类持有各个子系统对象"
+    },
+    {
+      "type": "single",
+      "stem": "家庭影院由投影仪、音响、播放器等多个子系统组成，看电影要依次操作它们，用外观模式提供一个统一的高层接口 watchMovie()，客户端不用了解子系统。下面是用 Java 实现的外观模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-facade.svg)\n\n```java\nclass Projector {\n    public void on() {\n        System.out.println(\"projector on\");\n    }\n}\n\nclass Sound {\n    public void on() {\n        System.out.println(\"sound on\");\n    }\n}\n\nclass Player {\n    public void play() {\n        System.out.println(\"movie playing\");\n    }\n}\n\nclass HomeTheater {\n    private Projector projector = new Projector();\n    private Sound sound = new Sound();\n    private Player player = new Player();\n\n    public void watchMovie() {\n        projector.on();\n        sound.______();\n        player.play();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "off",
+        "play",
+        "on",
+        "start"
+      ],
+      "answer_index": 2,
+      "explanation": "外观的 watchMovie() 按顺序调用子系统的方法：音响是 on()，播放器才是 play()。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "外观",
+        "填空·方法"
+      ],
+      "source_quote": "外观类的方法按固定顺序调用各个子系统的方法，客户端不需要知道细节"
+    },
+    {
+      "type": "single",
+      "stem": "家庭影院由投影仪、音响、播放器等多个子系统组成，看电影要依次操作它们，用外观模式提供一个统一的高层接口 watchMovie()，客户端不用了解子系统。下面是用 Java 实现的外观模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-facade.svg)\n\n```java\nclass Projector {\n    public void on() {\n        System.out.println(\"projector on\");\n    }\n}\n\nclass Sound {\n    public void on() {\n        System.out.println(\"sound on\");\n    }\n}\n\nclass Player {\n    public void play() {\n        System.out.println(\"movie playing\");\n    }\n}\n\nclass HomeTheater {\n    private Projector projector = new Projector();\n    private Sound sound = new Sound();\n    private Player player = new Player();\n\n    public void watchMovie() {\n        projector.on();\n        sound.on();\n        player.______();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "start",
+        "on",
+        "play",
+        "run"
+      ],
+      "answer_index": 2,
+      "explanation": "外观按顺序调用子系统的方法：播放器的方法是 play()，它没有 on() 方法。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "外观",
+        "填空·方法"
+      ],
+      "source_quote": "外观类的方法按固定顺序调用各个子系统的方法，客户端不需要知道细节"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.12 代理（Proxy）": [
+    {
+      "type": "single",
+      "stem": "加载大图片很耗时，只有真正显示时才需要加载，用（虚拟）代理模式：代理对象和真实图片对象有相同的接口，第一次显示时才创建真实对象。下面是用 Java 实现的代理模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-proxy.svg)\n\n```java\ninterface Image {\n    void display();\n}\n\nclass RealImage implements Image {\n    private String file;\n    public RealImage(String file) {\n        this.file = file;\n        System.out.println(\"loading \" + file);\n    }\n    public void display() {\n        System.out.println(\"display \" + file);\n    }\n}\n\nclass ProxyImage ______ Image {\n    private String file;\n    private RealImage real;\n\n    public ProxyImage(String file) {\n        this.file = file;\n    }\n\n    public void display() {\n        if (real == null) {\n            real = new RealImage(file);\n        }\n        real.display();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "implements",
+        "proxies",
+        "extends",
+        "inherits"
+      ],
+      "answer_index": 0,
+      "explanation": "代理和真实对象实现同一个接口 Image，客户端才能不加区别地使用它们，类实现接口用 implements。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "代理",
+        "填空·关键字"
+      ],
+      "source_quote": "代理类和真实主题实现同一个抽象主题接口，代理持有真实主题的引用"
+    },
+    {
+      "type": "single",
+      "stem": "加载大图片很耗时，只有真正显示时才需要加载，用（虚拟）代理模式：代理对象和真实图片对象有相同的接口，第一次显示时才创建真实对象。下面是用 Java 实现的代理模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-proxy.svg)\n\n```java\ninterface Image {\n    void display();\n}\n\nclass RealImage implements Image {\n    private String file;\n    public RealImage(String file) {\n        this.file = file;\n        System.out.println(\"loading \" + file);\n    }\n    public void display() {\n        System.out.println(\"display \" + file);\n    }\n}\n\nclass ProxyImage implements Image {\n    private String file;\n    private RealImage real;\n\n    public ProxyImage(String file) {\n        this.file = file;\n    }\n\n    public void display() {\n        if (real == null) {\n            real = ______;\n        }\n        real.display();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "new Image(file)",
+        "new RealImage(file)",
+        "new ProxyImage(file)",
+        "this"
+      ],
+      "answer_index": 1,
+      "explanation": "代理在第一次使用时才创建真实对象，这就是延迟加载。ProxyImage 类型不能赋给 RealImage 变量；Image 是接口，不能 new。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "代理",
+        "填空·逻辑"
+      ],
+      "source_quote": "虚拟代理在第一次使用时才创建真实对象，之后复用同一个对象"
+    },
+    {
+      "type": "single",
+      "stem": "加载大图片很耗时，只有真正显示时才需要加载，用（虚拟）代理模式：代理对象和真实图片对象有相同的接口，第一次显示时才创建真实对象。下面是用 Java 实现的代理模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-proxy.svg)\n\n```java\ninterface Image {\n    void display();\n}\n\nclass RealImage implements Image {\n    private String file;\n    public RealImage(String file) {\n        this.file = file;\n        System.out.println(\"loading \" + file);\n    }\n    public void display() {\n        System.out.println(\"display \" + file);\n    }\n}\n\nclass ProxyImage implements Image {\n    private String file;\n    private RealImage real;\n\n    public ProxyImage(String file) {\n        this.file = file;\n    }\n\n    public void display() {\n        if (real == null) {\n            real = new RealImage(file);\n        }\n        real.______();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "paint",
+        "display",
+        "load",
+        "show"
+      ],
+      "answer_index": 1,
+      "explanation": "代理把请求转发给真实对象的同名方法 display()；转发之前或之后还可以增加控制逻辑（如延迟加载、权限检查）。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "代理",
+        "填空·方法"
+      ],
+      "source_quote": "代理类把客户端的请求转发给真实主题，并在转发前后做控制"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.13 策略（Strategy）": [
+    {
+      "type": "single",
+      "stem": "购物车结算时，普通用户按原价，VIP 用户打八折，以后还可能增加其他折扣算法，用策略模式把每种折扣算法封装成独立的类，运行时可以替换。下面是用 Java 实现的策略模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-strategy.svg)\n\n```java\ninterface DiscountStrategy {\n    double calculate(double price);\n}\n\nclass NormalDiscount implements DiscountStrategy {\n    public double calculate(double price) {\n        return price;\n    }\n}\n\nclass VipDiscount ______ DiscountStrategy {\n    public double calculate(double price) {\n        return price * 0.8;\n    }\n}\n\nclass Cart {\n    private DiscountStrategy strategy;\n\n    public void setStrategy(DiscountStrategy strategy) {\n        this.strategy = strategy;\n    }\n\n    public double checkout(double price) {\n        return strategy.calculate(price);\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "inherits",
+        "implements",
+        "extends",
+        "uses"
+      ],
+      "answer_index": 1,
+      "explanation": "每个具体策略都实现抽象策略接口 DiscountStrategy，类实现接口用 implements。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "策略",
+        "填空·关键字"
+      ],
+      "source_quote": "策略模式中每个具体策略都实现同一个抽象策略接口，上下文持有抽象策略的引用"
+    },
+    {
+      "type": "single",
+      "stem": "购物车结算时，普通用户按原价，VIP 用户打八折，以后还可能增加其他折扣算法，用策略模式把每种折扣算法封装成独立的类，运行时可以替换。下面是用 Java 实现的策略模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-strategy.svg)\n\n```java\ninterface DiscountStrategy {\n    double calculate(double price);\n}\n\nclass NormalDiscount implements DiscountStrategy {\n    public double calculate(double price) {\n        return price;\n    }\n}\n\nclass VipDiscount implements DiscountStrategy {\n    public double calculate(double price) {\n        return price * 0.8;\n    }\n}\n\nclass Cart {\n    private ______ strategy;\n\n    public void setStrategy(DiscountStrategy strategy) {\n        this.strategy = strategy;\n    }\n\n    public double checkout(double price) {\n        return strategy.calculate(price);\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "NormalDiscount",
+        "VipDiscount",
+        "Cart",
+        "DiscountStrategy"
+      ],
+      "answer_index": 3,
+      "explanation": "上下文（Cart）持有的是抽象策略 DiscountStrategy 的引用，这样 setStrategy 才能在运行时换成任何一种折扣算法；写成具体的 VipDiscount，就没法放入 NormalDiscount 了。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "策略",
+        "填空·类名"
+      ],
+      "source_quote": "策略模式中每个具体策略都实现同一个抽象策略接口，上下文持有抽象策略的引用"
+    },
+    {
+      "type": "single",
+      "stem": "购物车结算时，普通用户按原价，VIP 用户打八折，以后还可能增加其他折扣算法，用策略模式把每种折扣算法封装成独立的类，运行时可以替换。下面是用 Java 实现的策略模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-strategy.svg)\n\n```java\ninterface DiscountStrategy {\n    double calculate(double price);\n}\n\nclass NormalDiscount implements DiscountStrategy {\n    public double calculate(double price) {\n        return price;\n    }\n}\n\nclass VipDiscount implements DiscountStrategy {\n    public double calculate(double price) {\n        return price * 0.8;\n    }\n}\n\nclass Cart {\n    private DiscountStrategy strategy;\n\n    public void setStrategy(DiscountStrategy strategy) {\n        this.strategy = strategy;\n    }\n\n    public double checkout(double price) {\n        return strategy.______(price);\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "discount",
+        "setStrategy",
+        "calculate",
+        "checkout"
+      ],
+      "answer_index": 2,
+      "explanation": "上下文把计算工作委托给当前策略对象的算法方法 calculate()，自己并不关心具体的折扣规则。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "策略",
+        "填空·方法"
+      ],
+      "source_quote": "上下文把算法的执行委托给当前持有的策略对象，运行时可以更换策略"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.14 观察者（Observer）": [
+    {
+      "type": "single",
+      "stem": "气象站的温度变化时，要自动通知所有订阅了它的显示设备（手机、窗口），气象站不需要知道有哪些设备，用观察者模式建立一对多的依赖。下面是用 Java 实现的观察者模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-observer.svg)\n\n```java\nimport java.util.*;\n\ninterface Observer {\n    void update(float temp);\n}\n\nclass WeatherStation {\n    private List<______> observers = new ArrayList<>();\n    private float temp;\n\n    public void attach(Observer o) {\n        observers.add(o);\n    }\n\n    public void setTemp(float temp) {\n        this.temp = temp;\n        notifyObservers();\n    }\n\n    private void notifyObservers() {\n        for (Observer o : observers) {\n            o.update(temp);\n        }\n    }\n}\n\nclass PhoneDisplay implements Observer {\n    public void update(float temp) {\n        System.out.println(\"phone: \" + temp);\n    }\n}\n\nclass WindowDisplay implements Observer {\n    public void update(float temp) {\n        System.out.println(\"window: \" + temp);\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "WeatherStation",
+        "PhoneDisplay",
+        "Observer",
+        "Object"
+      ],
+      "answer_index": 2,
+      "explanation": "主题保存的是抽象观察者 Observer 的列表，手机、窗口等任何实现了 Observer 的对象都能订阅；写成 PhoneDisplay 就只能订阅手机了。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "观察者",
+        "填空·类名"
+      ],
+      "source_quote": "主题（Subject）维护一个抽象观察者的列表，状态改变时遍历列表逐个通知"
+    },
+    {
+      "type": "single",
+      "stem": "气象站的温度变化时，要自动通知所有订阅了它的显示设备（手机、窗口），气象站不需要知道有哪些设备，用观察者模式建立一对多的依赖。下面是用 Java 实现的观察者模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-observer.svg)\n\n```java\nimport java.util.*;\n\ninterface Observer {\n    void update(float temp);\n}\n\nclass WeatherStation {\n    private List<Observer> observers = new ArrayList<>();\n    private float temp;\n\n    public void attach(Observer o) {\n        observers.______(o);\n    }\n\n    public void setTemp(float temp) {\n        this.temp = temp;\n        notifyObservers();\n    }\n\n    private void notifyObservers() {\n        for (Observer o : observers) {\n            o.update(temp);\n        }\n    }\n}\n\nclass PhoneDisplay implements Observer {\n    public void update(float temp) {\n        System.out.println(\"phone: \" + temp);\n    }\n}\n\nclass WindowDisplay implements Observer {\n    public void update(float temp) {\n        System.out.println(\"window: \" + temp);\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "add",
+        "insert",
+        "push",
+        "append"
+      ],
+      "answer_index": 0,
+      "explanation": "java.util.List 添加元素的方法是 add(e)；append、push 是其他语言（或其他容器）里的名字，List 没有这样的方法。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "观察者",
+        "填空·方法"
+      ],
+      "source_quote": "主题的 attach 方法把观察者加入列表，detach 方法把观察者从列表移除"
+    },
+    {
+      "type": "single",
+      "stem": "气象站的温度变化时，要自动通知所有订阅了它的显示设备（手机、窗口），气象站不需要知道有哪些设备，用观察者模式建立一对多的依赖。下面是用 Java 实现的观察者模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-observer.svg)\n\n```java\nimport java.util.*;\n\ninterface Observer {\n    void update(float temp);\n}\n\nclass WeatherStation {\n    private List<Observer> observers = new ArrayList<>();\n    private float temp;\n\n    public void attach(Observer o) {\n        observers.add(o);\n    }\n\n    public void setTemp(float temp) {\n        this.temp = temp;\n        notifyObservers();\n    }\n\n    private void notifyObservers() {\n        for (Observer o : observers) {\n            o.______(temp);\n        }\n    }\n}\n\nclass PhoneDisplay implements Observer {\n    public void update(float temp) {\n        System.out.println(\"phone: \" + temp);\n    }\n}\n\nclass WindowDisplay implements Observer {\n    public void update(float temp) {\n        System.out.println(\"window: \" + temp);\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "refresh",
+        "notifyObservers",
+        "update",
+        "notify"
+      ],
+      "answer_index": 2,
+      "explanation": "主题通知观察者就是调用每个观察者的 update() 方法，并把新状态传过去。notifyObservers 是主题自己的方法；Object.notify() 不能带参数。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "观察者",
+        "填空·方法"
+      ],
+      "source_quote": "状态改变时，主题遍历观察者列表，调用每个观察者的 update 方法"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.15 模板方法（Template Method）": [
+    {
+      "type": "single",
+      "stem": "泡茶和冲咖啡的流程相同：烧水、冲泡、倒入杯中、加调料，只有「冲泡」和「加调料」两步不同，用模板方法在父类里固定流程，把可变的步骤留给子类实现。下面是用 Java 实现的模板方法模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-template-method.svg)\n\n```java\nabstract class Beverage {\n    public ______ void prepare() {\n        boilWater();\n        brew();\n        pourInCup();\n        addCondiments();\n    }\n\n    private void boilWater() {\n        System.out.println(\"boil water\");\n    }\n    private void pourInCup() {\n        System.out.println(\"pour in cup\");\n    }\n\n    protected abstract void brew();\n    protected abstract void addCondiments();\n}\n\nclass Tea extends Beverage {\n    protected void brew() {\n        System.out.println(\"steep tea\");\n    }\n    protected void addCondiments() {\n        System.out.println(\"add lemon\");\n    }\n}\n\nclass Coffee extends Beverage {\n    protected void brew() {\n        System.out.println(\"drip coffee\");\n    }\n    protected void addCondiments() {\n        System.out.println(\"add milk\");\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "final",
+        "static",
+        "private",
+        "abstract"
+      ],
+      "answer_index": 0,
+      "explanation": "模板方法定义了算法的骨架和步骤顺序，不允许子类修改，所以通常声明为 final。abstract 表示没有方法体；private 外部无法调用；static 方法里不能调用非静态的步骤。",
+      "difficulty": 3,
+      "tags": [
+        "下午题六",
+        "模板方法",
+        "填空·关键字"
+      ],
+      "source_quote": "模板方法是父类中定义算法骨架的普通方法，通常声明为 final，不允许子类重写"
+    },
+    {
+      "type": "single",
+      "stem": "泡茶和冲咖啡的流程相同：烧水、冲泡、倒入杯中、加调料，只有「冲泡」和「加调料」两步不同，用模板方法在父类里固定流程，把可变的步骤留给子类实现。下面是用 Java 实现的模板方法模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-template-method.svg)\n\n```java\nabstract class Beverage {\n    public final void prepare() {\n        boilWater();\n        brew();\n        pourInCup();\n        addCondiments();\n    }\n\n    private void boilWater() {\n        System.out.println(\"boil water\");\n    }\n    private void pourInCup() {\n        System.out.println(\"pour in cup\");\n    }\n\n    protected ______ void brew();\n    protected abstract void addCondiments();\n}\n\nclass Tea extends Beverage {\n    protected void brew() {\n        System.out.println(\"steep tea\");\n    }\n    protected void addCondiments() {\n        System.out.println(\"add lemon\");\n    }\n}\n\nclass Coffee extends Beverage {\n    protected void brew() {\n        System.out.println(\"drip coffee\");\n    }\n    protected void addCondiments() {\n        System.out.println(\"add milk\");\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "static",
+        "final",
+        "abstract",
+        "virtual"
+      ],
+      "answer_index": 2,
+      "explanation": "子类必须实现的步骤在父类中声明为抽象方法：abstract 修饰、没有方法体。final 的方法不能被重写；Java 没有 virtual 关键字。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "模板方法",
+        "填空·关键字"
+      ],
+      "source_quote": "父类中把需要子类实现的步骤声明为抽象方法，Java 用 abstract，C++ 用纯虚函数"
+    },
+    {
+      "type": "single",
+      "stem": "泡茶和冲咖啡的流程相同：烧水、冲泡、倒入杯中、加调料，只有「冲泡」和「加调料」两步不同，用模板方法在父类里固定流程，把可变的步骤留给子类实现。下面是用 Java 实现的模板方法模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-template-method.svg)\n\n```java\nabstract class Beverage {\n    public final void prepare() {\n        boilWater();\n        brew();\n        pourInCup();\n        addCondiments();\n    }\n\n    private void boilWater() {\n        System.out.println(\"boil water\");\n    }\n    private void pourInCup() {\n        System.out.println(\"pour in cup\");\n    }\n\n    protected abstract void brew();\n    protected abstract void addCondiments();\n}\n\nclass Tea ______ Beverage {\n    protected void brew() {\n        System.out.println(\"steep tea\");\n    }\n    protected void addCondiments() {\n        System.out.println(\"add lemon\");\n    }\n}\n\nclass Coffee extends Beverage {\n    protected void brew() {\n        System.out.println(\"drip coffee\");\n    }\n    protected void addCondiments() {\n        System.out.println(\"add milk\");\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "implements",
+        "inherits",
+        "override",
+        "extends"
+      ],
+      "answer_index": 3,
+      "explanation": "Tea 是抽象类 Beverage 的子类，类继承类用 extends。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "模板方法",
+        "填空·关键字"
+      ],
+      "source_quote": "Java 中类实现接口用 implements，类继承类用 extends"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.16 状态（State）": [
+    {
+      "type": "single",
+      "stem": "订单有「新建」和「已付款」两种状态，每种状态下对订单的处理不同，状态之间会自动转换，用状态模式把每种状态的行为封装到一个状态类里。下面是用 Java 实现的状态模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-state.svg)\n\n```java\ninterface State {\n    void handle(Order order);\n}\n\nclass NewState implements State {\n    public void handle(Order order) {\n        System.out.println(\"pay\");\n        order.setState(______);\n    }\n}\n\nclass PaidState implements State {\n    public void handle(Order order) {\n        System.out.println(\"ship\");\n    }\n}\n\nclass Order {\n    private State state = new NewState();\n\n    public void setState(State state) {\n        this.state = state;\n    }\n\n    public void next() {\n        state.handle(this);\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "new NewState()",
+        "new PaidState()",
+        "PaidState",
+        "new State()"
+      ],
+      "answer_index": 1,
+      "explanation": "状态模式的特点是由具体状态负责切换到下一个状态：NewState 处理完付款后，把订单切换到 PaidState。写成 new NewState() 状态就永远不变；State 是接口，不能 new。",
+      "difficulty": 3,
+      "tags": [
+        "下午题六",
+        "状态",
+        "填空·逻辑"
+      ],
+      "source_quote": "状态模式中状态转换由具体状态类完成：处理完后调用上下文的 setState 切换到下一个状态"
+    },
+    {
+      "type": "single",
+      "stem": "订单有「新建」和「已付款」两种状态，每种状态下对订单的处理不同，状态之间会自动转换，用状态模式把每种状态的行为封装到一个状态类里。下面是用 Java 实现的状态模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-state.svg)\n\n```java\ninterface State {\n    void handle(Order order);\n}\n\nclass NewState implements State {\n    public void handle(Order order) {\n        System.out.println(\"pay\");\n        order.setState(new PaidState());\n    }\n}\n\nclass PaidState implements State {\n    public void handle(Order order) {\n        System.out.println(\"ship\");\n    }\n}\n\nclass Order {\n    private ______ state = new NewState();\n\n    public void setState(State state) {\n        this.state = state;\n    }\n\n    public void next() {\n        state.handle(this);\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "Order",
+        "NewState",
+        "PaidState",
+        "State"
+      ],
+      "answer_index": 3,
+      "explanation": "上下文持有抽象状态 State 的引用，才能在运行时切换为任意一种具体状态；写成 NewState 就无法再设置为 PaidState。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "状态",
+        "填空·类名"
+      ],
+      "source_quote": "状态模式的上下文持有抽象状态的引用，把行为委托给当前状态对象"
+    },
+    {
+      "type": "single",
+      "stem": "订单有「新建」和「已付款」两种状态，每种状态下对订单的处理不同，状态之间会自动转换，用状态模式把每种状态的行为封装到一个状态类里。下面是用 Java 实现的状态模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-state.svg)\n\n```java\ninterface State {\n    void handle(Order order);\n}\n\nclass NewState implements State {\n    public void handle(Order order) {\n        System.out.println(\"pay\");\n        order.setState(new PaidState());\n    }\n}\n\nclass PaidState implements State {\n    public void handle(Order order) {\n        System.out.println(\"ship\");\n    }\n}\n\nclass Order {\n    private State state = new NewState();\n\n    public void setState(State state) {\n        this.state = state;\n    }\n\n    public void next() {\n        state.______(this);\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "pay",
+        "handle",
+        "setState",
+        "next"
+      ],
+      "answer_index": 1,
+      "explanation": "上下文把请求委托给当前状态对象的 handle() 方法，并把自己（this）传进去，状态类才能调用 setState 切换状态。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "状态",
+        "填空·方法"
+      ],
+      "source_quote": "状态模式的上下文持有抽象状态的引用，把行为委托给当前状态对象"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.17 命令（Command）": [
+    {
+      "type": "single",
+      "stem": "遥控器上的按钮可以绑定不同的操作（开灯、关灯），遥控器不需要知道灯是怎么工作的，用命令模式把请求封装成对象，使调用者（遥控器）和接收者（灯）解耦。下面是用 Java 实现的命令模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-command.svg)\n\n```java\ninterface Command {\n    void execute();\n}\n\nclass Light {\n    public void on() {\n        System.out.println(\"light on\");\n    }\n    public void off() {\n        System.out.println(\"light off\");\n    }\n}\n\nclass LightOnCommand ______ Command {\n    private Light light;\n    public LightOnCommand(Light light) {\n        this.light = light;\n    }\n    public void execute() { light.on(); }\n}\n\nclass LightOffCommand implements Command {\n    private Light light;\n    public LightOffCommand(Light light) {\n        this.light = light;\n    }\n    public void execute() { light.off(); }\n}\n\nclass RemoteControl {\n    private Command command;\n    public void setCommand(Command command) {\n        this.command = command;\n    }\n    public void pressButton() {\n        command.execute();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "extends",
+        "executes",
+        "inherits",
+        "implements"
+      ],
+      "answer_index": 3,
+      "explanation": "具体命令实现抽象命令接口 Command，类实现接口用 implements。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "命令",
+        "填空·关键字"
+      ],
+      "source_quote": "命令模式把请求封装成对象：抽象命令声明 execute 方法，具体命令持有接收者并在 execute 中调用它的方法"
+    },
+    {
+      "type": "single",
+      "stem": "遥控器上的按钮可以绑定不同的操作（开灯、关灯），遥控器不需要知道灯是怎么工作的，用命令模式把请求封装成对象，使调用者（遥控器）和接收者（灯）解耦。下面是用 Java 实现的命令模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-command.svg)\n\n```java\ninterface Command {\n    void execute();\n}\n\nclass Light {\n    public void on() {\n        System.out.println(\"light on\");\n    }\n    public void off() {\n        System.out.println(\"light off\");\n    }\n}\n\nclass LightOnCommand implements Command {\n    private Light light;\n    public LightOnCommand(Light light) {\n        this.light = light;\n    }\n    public void execute() { light.______(); }\n}\n\nclass LightOffCommand implements Command {\n    private Light light;\n    public LightOffCommand(Light light) {\n        this.light = light;\n    }\n    public void execute() { light.off(); }\n}\n\nclass RemoteControl {\n    private Command command;\n    public void setCommand(Command command) {\n        this.command = command;\n    }\n    public void pressButton() {\n        command.execute();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "execute",
+        "switchOn",
+        "on",
+        "off"
+      ],
+      "answer_index": 2,
+      "explanation": "LightOnCommand 的 execute() 调用接收者 Light 的 on() 方法来开灯；off() 是 LightOffCommand 用的。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "命令",
+        "填空·方法"
+      ],
+      "source_quote": "命令模式把请求封装成对象：抽象命令声明 execute 方法，具体命令持有接收者并在 execute 中调用它的方法"
+    },
+    {
+      "type": "single",
+      "stem": "遥控器上的按钮可以绑定不同的操作（开灯、关灯），遥控器不需要知道灯是怎么工作的，用命令模式把请求封装成对象，使调用者（遥控器）和接收者（灯）解耦。下面是用 Java 实现的命令模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-command.svg)\n\n```java\ninterface Command {\n    void execute();\n}\n\nclass Light {\n    public void on() {\n        System.out.println(\"light on\");\n    }\n    public void off() {\n        System.out.println(\"light off\");\n    }\n}\n\nclass LightOnCommand implements Command {\n    private Light light;\n    public LightOnCommand(Light light) {\n        this.light = light;\n    }\n    public void execute() { light.on(); }\n}\n\nclass LightOffCommand implements Command {\n    private Light light;\n    public LightOffCommand(Light light) {\n        this.light = light;\n    }\n    public void execute() { light.off(); }\n}\n\nclass RemoteControl {\n    private ______ command;\n    public void setCommand(Command command) {\n        this.command = command;\n    }\n    public void pressButton() {\n        command.execute();\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "Light",
+        "LightOnCommand",
+        "RemoteControl",
+        "Command"
+      ],
+      "answer_index": 3,
+      "explanation": "调用者（遥控器）持有抽象命令 Command 的引用，按下按钮时调用 command.execute()，不知道具体是哪个命令、哪个接收者。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "命令",
+        "填空·类名"
+      ],
+      "source_quote": "命令模式的调用者只持有抽象命令，通过 execute 触发请求，不依赖具体接收者"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.18 责任链（Chain of Responsibility）": [
+    {
+      "type": "single",
+      "stem": "请假审批：2 天以内由组长批准，5 天以内由经理批准，更长的由总监批准。申请沿着「组长 → 经理 → 总监」传递，直到有人处理，用责任链模式把处理者连成一条链。下面是用 Java 实现的责任链模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-chain.svg)\n\n```java\nabstract class Handler {\n    protected ______ next;\n\n    public void setNext(Handler next) {\n        this.next = next;\n    }\n\n    public abstract void handle(int days);\n}\n\nclass TeamLeader extends Handler {\n    public void handle(int days) {\n        if (days <= 2) {\n            System.out.println(\"leader approves \" + days);\n        } else if (next != null) {\n            next.handle(days);\n        }\n    }\n}\n\nclass Manager extends Handler {\n    public void handle(int days) {\n        if (days <= 5) {\n            System.out.println(\"manager approves \" + days);\n        } else if (next != null) {\n            next.handle(days);\n        }\n    }\n}\n\nclass Director extends Handler {\n    public void handle(int days) {\n        System.out.println(\"director approves \" + days);\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "Director",
+        "Manager",
+        "Handler",
+        "TeamLeader"
+      ],
+      "answer_index": 2,
+      "explanation": "每个处理者持有的后继是抽象处理者 Handler，这样才能把任何处理者连到链上，客户端也只需要和链头打交道。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "责任链",
+        "填空·类名"
+      ],
+      "source_quote": "责任链中每个处理者持有指向下一个抽象处理者的引用，处理不了的请求转发给后继"
+    },
+    {
+      "type": "single",
+      "stem": "请假审批：2 天以内由组长批准，5 天以内由经理批准，更长的由总监批准。申请沿着「组长 → 经理 → 总监」传递，直到有人处理，用责任链模式把处理者连成一条链。下面是用 Java 实现的责任链模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-chain.svg)\n\n```java\nabstract class Handler {\n    protected Handler next;\n\n    public void setNext(Handler next) {\n        this.next = next;\n    }\n\n    public abstract void handle(int days);\n}\n\nclass TeamLeader extends Handler {\n    public void handle(int days) {\n        if (days <= 2) {\n            System.out.println(\"leader approves \" + days);\n        } else if (next != null) {\n            ______;\n        }\n    }\n}\n\nclass Manager extends Handler {\n    public void handle(int days) {\n        if (days <= 5) {\n            System.out.println(\"manager approves \" + days);\n        } else if (next != null) {\n            next.handle(days);\n        }\n    }\n}\n\nclass Director extends Handler {\n    public void handle(int days) {\n        System.out.println(\"director approves \" + days);\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "handle(days)",
+        "next.setNext(days)",
+        "next.handle(days)",
+        "this.handle(days)"
+      ],
+      "answer_index": 2,
+      "explanation": "自己处理不了时，把请求转发给后继：next.handle(days)。直接写 handle(days) 或 this.handle(days) 是自己调用自己，会无限递归；setNext 的参数是处理者而不是天数。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "责任链",
+        "填空·逻辑"
+      ],
+      "source_quote": "责任链中每个处理者持有指向下一个抽象处理者的引用，处理不了的请求转发给后继"
+    },
+    {
+      "type": "single",
+      "stem": "请假审批：2 天以内由组长批准，5 天以内由经理批准，更长的由总监批准。申请沿着「组长 → 经理 → 总监」传递，直到有人处理，用责任链模式把处理者连成一条链。下面是用 Java 实现的责任链模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-chain.svg)\n\n```java\nabstract class Handler {\n    protected Handler next;\n\n    public void setNext(Handler next) {\n        this.next = next;\n    }\n\n    public abstract void handle(int days);\n}\n\nclass TeamLeader extends Handler {\n    public void handle(int days) {\n        if (days <= 2) {\n            System.out.println(\"leader approves \" + days);\n        } else if (next != null) {\n            next.handle(days);\n        }\n    }\n}\n\nclass Manager extends Handler {\n    public void handle(int days) {\n        if (days <= ______) {\n            System.out.println(\"manager approves \" + days);\n        } else if (next != null) {\n            next.handle(days);\n        }\n    }\n}\n\nclass Director extends Handler {\n    public void handle(int days) {\n        System.out.println(\"director approves \" + days);\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "5",
+        "3",
+        "2",
+        "7"
+      ],
+      "answer_index": 0,
+      "explanation": "经理能批 5 天以内的申请；超过 5 天的转给总监。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "责任链",
+        "填空·逻辑"
+      ],
+      "source_quote": "责任链中每个处理者只处理自己权限范围内的请求，超出范围就交给后继"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.19 迭代器（Iterator）": [
+    {
+      "type": "single",
+      "stem": "名字仓库内部用数组保存数据，客户端想依次访问每个名字，又不想知道仓库是用数组还是链表保存的，用迭代器模式提供统一的遍历接口。下面是用 Java 实现的迭代器模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-iterator.svg)\n\n```java\ninterface Iterator {\n    boolean hasNext();\n    String next();\n}\n\ninterface Container {\n    Iterator getIterator();\n}\n\nclass NameRepository implements Container {\n    private String[] names = {\"Tom\", \"Amy\", \"Bob\"};\n\n    public Iterator getIterator() {\n        return new NameIterator();\n    }\n\n    private class NameIterator ______ Iterator {\n        int index = 0;\n\n        public boolean hasNext() {\n            return index < names.length;\n        }\n\n        public String next() {\n            return hasNext() ? names[index++] : null;\n        }\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "inherits",
+        "implements",
+        "extends",
+        "iterates"
+      ],
+      "answer_index": 1,
+      "explanation": "具体迭代器实现抽象迭代器接口 Iterator，类实现接口用 implements。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "迭代器",
+        "填空·关键字"
+      ],
+      "source_quote": "迭代器模式把遍历的职责从聚合对象中分离出来，聚合对象的 getIterator 方法返回一个迭代器对象"
+    },
+    {
+      "type": "single",
+      "stem": "名字仓库内部用数组保存数据，客户端想依次访问每个名字，又不想知道仓库是用数组还是链表保存的，用迭代器模式提供统一的遍历接口。下面是用 Java 实现的迭代器模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-iterator.svg)\n\n```java\ninterface Iterator {\n    boolean hasNext();\n    String next();\n}\n\ninterface Container {\n    Iterator getIterator();\n}\n\nclass NameRepository implements Container {\n    private String[] names = {\"Tom\", \"Amy\", \"Bob\"};\n\n    public Iterator getIterator() {\n        return new NameIterator();\n    }\n\n    private class NameIterator implements Iterator {\n        int index = 0;\n\n        public boolean hasNext() {\n            return index < names.______;\n        }\n\n        public String next() {\n            return hasNext() ? names[index++] : null;\n        }\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "length",
+        "size()",
+        "size",
+        "length()"
+      ],
+      "answer_index": 0,
+      "explanation": "Java 数组的长度是属性 length，不带括号；length() 是 String 的方法，size() 是集合的方法。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "迭代器",
+        "填空·逻辑"
+      ],
+      "source_quote": "Java 数组的长度用属性 length 表示，不带括号"
+    },
+    {
+      "type": "single",
+      "stem": "名字仓库内部用数组保存数据，客户端想依次访问每个名字，又不想知道仓库是用数组还是链表保存的，用迭代器模式提供统一的遍历接口。下面是用 Java 实现的迭代器模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-iterator.svg)\n\n```java\ninterface Iterator {\n    boolean hasNext();\n    String next();\n}\n\ninterface Container {\n    Iterator getIterator();\n}\n\nclass NameRepository implements Container {\n    private String[] names = {\"Tom\", \"Amy\", \"Bob\"};\n\n    public Iterator getIterator() {\n        return new NameIterator();\n    }\n\n    private class NameIterator implements Iterator {\n        int index = 0;\n\n        public boolean hasNext() {\n            return index < names.length;\n        }\n\n        public String next() {\n            return hasNext() ? names[______] : null;\n        }\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "index--",
+        "++index",
+        "index",
+        "index++"
+      ],
+      "answer_index": 3,
+      "explanation": "next() 返回当前元素并让下标后移一位，所以用后缀 index++：先取 names[index] 再加一。++index 会先加一，跳过第一个元素；写 index 则不会前进，hasNext() 永远为真。",
+      "difficulty": 3,
+      "tags": [
+        "下午题六",
+        "迭代器",
+        "填空·逻辑"
+      ],
+      "source_quote": "迭代器的 next 方法返回当前元素，并把游标移到下一个元素"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.20 访问者（Visitor）": [
+    {
+      "type": "single",
+      "stem": "购物车里有书和水果两种商品，现在要统计总价，以后还可能增加「打印清单」等新操作，用访问者模式把对元素的操作放到访问者里，增加操作时不用修改商品类。下面是用 Java 实现的访问者模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-visitor.svg)\n\n```java\ninterface Visitor {\n    void visit(Book book);\n    void visit(Fruit fruit);\n}\n\ninterface Item {\n    void accept(Visitor visitor);\n}\n\nclass Book implements Item {\n    int price = 50;\n    public void accept(Visitor visitor) {\n        visitor.visit(______);\n    }\n}\n\nclass Fruit implements Item {\n    int price = 10;\n    public void accept(Visitor visitor) {\n        visitor.visit(this);\n    }\n}\n\nclass PriceVisitor implements Visitor {\n    int total = 0;\n    public void visit(Book book) {\n        total += book.price;\n    }\n    public void visit(Fruit fruit) {\n        total += fruit.price;\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "Book",
+        "this",
+        "book",
+        "visitor"
+      ],
+      "answer_index": 1,
+      "explanation": "元素的 accept 方法把自己（this）传给访问者的 visit 方法，这就是「双分派」：先根据元素的类型选择 accept，再根据 this 的静态类型 Book 选择 visit(Book)。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "访问者",
+        "填空·逻辑"
+      ],
+      "source_quote": "访问者模式的 accept 方法调用访问者的 visit 方法，并把元素自己（this）作为参数传入"
+    },
+    {
+      "type": "single",
+      "stem": "购物车里有书和水果两种商品，现在要统计总价，以后还可能增加「打印清单」等新操作，用访问者模式把对元素的操作放到访问者里，增加操作时不用修改商品类。下面是用 Java 实现的访问者模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-visitor.svg)\n\n```java\ninterface Visitor {\n    void visit(Book book);\n    void visit(Fruit fruit);\n}\n\ninterface Item {\n    void accept(Visitor visitor);\n}\n\nclass Book implements Item {\n    int price = 50;\n    public void accept(Visitor visitor) {\n        visitor.visit(this);\n    }\n}\n\nclass Fruit implements Item {\n    int price = 10;\n    public void accept(Visitor visitor) {\n        visitor.visit(this);\n    }\n}\n\nclass PriceVisitor ______ Visitor {\n    int total = 0;\n    public void visit(Book book) {\n        total += book.price;\n    }\n    public void visit(Fruit fruit) {\n        total += fruit.price;\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "implements",
+        "extends",
+        "inherits",
+        "visits"
+      ],
+      "answer_index": 0,
+      "explanation": "具体访问者实现抽象访问者接口 Visitor，类实现接口用 implements。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "访问者",
+        "填空·关键字"
+      ],
+      "source_quote": "Java 中类实现接口用 implements，类继承类用 extends"
+    },
+    {
+      "type": "single",
+      "stem": "购物车里有书和水果两种商品，现在要统计总价，以后还可能增加「打印清单」等新操作，用访问者模式把对元素的操作放到访问者里，增加操作时不用修改商品类。下面是用 Java 实现的访问者模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-visitor.svg)\n\n```java\ninterface Visitor {\n    void visit(Book book);\n    void visit(Fruit fruit);\n}\n\ninterface Item {\n    void accept(Visitor visitor);\n}\n\nclass Book implements Item {\n    int price = 50;\n    public void accept(Visitor visitor) {\n        visitor.visit(this);\n    }\n}\n\nclass Fruit implements Item {\n    int price = 10;\n    public void accept(Visitor visitor) {\n        visitor.visit(this);\n    }\n}\n\nclass PriceVisitor implements Visitor {\n    int total = 0;\n    public void visit(Book book) {\n        total += book.price;\n    }\n    public void visit(Fruit fruit) {\n        total += ______;\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "fruit.price",
+        "this.price",
+        "price",
+        "Fruit.price"
+      ],
+      "answer_index": 0,
+      "explanation": "visit(Fruit fruit) 要累加参数 fruit 的价格：fruit.price。访问者类里没有 price 成员，所以不能直接写 price 或 this.price；price 也不是静态成员，不能用类名访问。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "访问者",
+        "填空·逻辑"
+      ],
+      "source_quote": "访问者通过 visit 方法的参数访问元素的数据，对不同类型的元素做不同的处理"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.21 备忘录（Memento）": [
+    {
+      "type": "single",
+      "stem": "文本编辑器要支持撤销：保存编辑器某一时刻的内容，以后可以恢复，但不能破坏编辑器的封装。用备忘录模式：发起人（Editor）创建备忘录，管理者（History）只负责保管它。下面是用 Java 实现的备忘录模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-memento.svg)\n\n```java\nclass Memento {\n    private final String text;\n    public Memento(String text) {\n        this.text = text;\n    }\n    public String getText() { return text; }\n}\n\nclass Editor {\n    private String text = \"\";\n\n    public void type(String s) { text += s; }\n    public String getText() { return text; }\n\n    public Memento save() {\n        return ______;\n    }\n    public void restore(Memento m) {\n        text = m.getText();\n    }\n}\n\nclass History {\n    private Memento memento;\n    public void push(Memento m) { memento = m; }\n    public Memento pop() { return memento; }\n}\n\nclass Client {\n    public static void run() {\n        Editor editor = new Editor();\n        History history = new History();\n        editor.type(\"abc\");\n        history.push(editor.save());\n        editor.type(\"def\");\n        editor.restore(history.pop());\n        System.out.println(editor.getText());\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "new Memento()",
+        "new Memento(text)",
+        "text",
+        "this"
+      ],
+      "answer_index": 1,
+      "explanation": "备忘录由发起人创建：把发起人当前的状态（text）保存进一个新的 Memento 对象。Memento 没有无参构造函数；返回 this 或 text 的类型都不是 Memento。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "备忘录",
+        "填空·逻辑"
+      ],
+      "source_quote": "备忘录模式中发起人创建备忘录保存自己的内部状态，需要时用备忘录恢复"
+    },
+    {
+      "type": "single",
+      "stem": "文本编辑器要支持撤销：保存编辑器某一时刻的内容，以后可以恢复，但不能破坏编辑器的封装。用备忘录模式：发起人（Editor）创建备忘录，管理者（History）只负责保管它。下面是用 Java 实现的备忘录模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-memento.svg)\n\n```java\nclass Memento {\n    private final String text;\n    public Memento(String text) {\n        this.text = text;\n    }\n    public String getText() { return text; }\n}\n\nclass Editor {\n    private String text = \"\";\n\n    public void type(String s) { text += s; }\n    public String getText() { return text; }\n\n    public Memento save() {\n        return new Memento(text);\n    }\n    public void restore(______ m) {\n        text = m.getText();\n    }\n}\n\nclass History {\n    private Memento memento;\n    public void push(Memento m) { memento = m; }\n    public Memento pop() { return memento; }\n}\n\nclass Client {\n    public static void run() {\n        Editor editor = new Editor();\n        History history = new History();\n        editor.type(\"abc\");\n        history.push(editor.save());\n        editor.type(\"def\");\n        editor.restore(history.pop());\n        System.out.println(editor.getText());\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "Memento",
+        "Editor",
+        "String",
+        "History"
+      ],
+      "answer_index": 0,
+      "explanation": "恢复状态时，发起人接收一个 Memento 对象，并从中取出之前保存的状态。",
+      "difficulty": 1,
+      "tags": [
+        "下午题六",
+        "备忘录",
+        "填空·类名"
+      ],
+      "source_quote": "备忘录模式中发起人创建备忘录保存自己的内部状态，需要时用备忘录恢复"
+    },
+    {
+      "type": "single",
+      "stem": "文本编辑器要支持撤销：保存编辑器某一时刻的内容，以后可以恢复，但不能破坏编辑器的封装。用备忘录模式：发起人（Editor）创建备忘录，管理者（History）只负责保管它。下面是用 Java 实现的备忘录模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-memento.svg)\n\n```java\nclass Memento {\n    private final String text;\n    public Memento(String text) {\n        this.text = text;\n    }\n    public String getText() { return text; }\n}\n\nclass Editor {\n    private String text = \"\";\n\n    public void type(String s) { text += s; }\n    public String getText() { return text; }\n\n    public Memento save() {\n        return new Memento(text);\n    }\n    public void restore(Memento m) {\n        text = m.getText();\n    }\n}\n\nclass History {\n    private Memento memento;\n    public void push(Memento m) { memento = m; }\n    public Memento pop() { return memento; }\n}\n\nclass Client {\n    public static void run() {\n        Editor editor = new Editor();\n        History history = new History();\n        editor.type(\"abc\");\n        history.push(editor.save());\n        editor.type(\"def\");\n        editor.restore(history.______());\n        System.out.println(editor.getText());\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "pop",
+        "restore",
+        "save",
+        "push"
+      ],
+      "answer_index": 0,
+      "explanation": "管理者的 push 保存备忘录，pop 取出备忘录，把它交给发起人的 restore；管理者只保管备忘录，不查看也不修改它的内容。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "备忘录",
+        "填空·方法"
+      ],
+      "source_quote": "备忘录模式的管理者只负责保存和提供备忘录，不检查也不修改备忘录的内容"
+    }
+  ],
+  "软件设计师（中级）下午题六（设计模式代码填空·Java） > T6.22 中介者（Mediator）": [
+    {
+      "type": "single",
+      "stem": "聊天室里的用户不直接互相发消息，而是都把消息交给聊天室，由聊天室转发给其他用户，用中介者模式把多对多的复杂关系变成星形结构。下面是用 Java 实现的中介者模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-mediator.svg)\n\n```java\nimport java.util.*;\n\ninterface Mediator {\n    void send(String msg, User from);\n}\n\nclass ChatRoom implements Mediator {\n    private List<User> users = new ArrayList<>();\n\n    public void register(User u) { users.add(u); }\n\n    public void send(String msg, User from) {\n        for (User u : users) {\n            if (u != ______) {\n                u.receive(msg);\n            }\n        }\n    }\n}\n\nclass User {\n    private String name;\n    private Mediator mediator;\n\n    public User(String name, Mediator mediator) {\n        this.name = name;\n        this.mediator = mediator;\n    }\n\n    public void send(String msg) {\n        mediator.send(msg, this);\n    }\n    public void receive(String msg) {\n        System.out.println(name + \" got \" + msg);\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "null",
+        "msg",
+        "from",
+        "this"
+      ],
+      "answer_index": 2,
+      "explanation": "中介者把消息转发给除发送者以外的所有同事，所以要跳过 from。this 是聊天室本身，与 User 类型不可比较；null 会让发送者也收到自己的消息。",
+      "difficulty": 3,
+      "tags": [
+        "下午题六",
+        "中介者",
+        "填空·逻辑"
+      ],
+      "source_quote": "中介者把同事发来的消息转发给除发送者以外的其他同事"
+    },
+    {
+      "type": "single",
+      "stem": "聊天室里的用户不直接互相发消息，而是都把消息交给聊天室，由聊天室转发给其他用户，用中介者模式把多对多的复杂关系变成星形结构。下面是用 Java 实现的中介者模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-mediator.svg)\n\n```java\nimport java.util.*;\n\ninterface Mediator {\n    void send(String msg, User from);\n}\n\nclass ChatRoom implements Mediator {\n    private List<User> users = new ArrayList<>();\n\n    public void register(User u) { users.add(u); }\n\n    public void send(String msg, User from) {\n        for (User u : users) {\n            if (u != from) {\n                u.receive(msg);\n            }\n        }\n    }\n}\n\nclass User {\n    private String name;\n    private ______ mediator;\n\n    public User(String name, Mediator mediator) {\n        this.name = name;\n        this.mediator = mediator;\n    }\n\n    public void send(String msg) {\n        mediator.send(msg, this);\n    }\n    public void receive(String msg) {\n        System.out.println(name + \" got \" + msg);\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "Object",
+        "User",
+        "ChatRoom",
+        "Mediator"
+      ],
+      "answer_index": 3,
+      "explanation": "同事持有抽象中介者 Mediator 的引用，只和中介者通信，不依赖具体的聊天室类，也不认识其他用户。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "中介者",
+        "填空·类名"
+      ],
+      "source_quote": "同事对象只持有中介者的引用，通过中介者与其他同事通信，彼此互不引用"
+    },
+    {
+      "type": "single",
+      "stem": "聊天室里的用户不直接互相发消息，而是都把消息交给聊天室，由聊天室转发给其他用户，用中介者模式把多对多的复杂关系变成星形结构。下面是用 Java 实现的中介者模式，类图如下，代码中只有一处空缺。\n\n![类图](uml/pattern-mediator.svg)\n\n```java\nimport java.util.*;\n\ninterface Mediator {\n    void send(String msg, User from);\n}\n\nclass ChatRoom implements Mediator {\n    private List<User> users = new ArrayList<>();\n\n    public void register(User u) { users.add(u); }\n\n    public void send(String msg, User from) {\n        for (User u : users) {\n            if (u != from) {\n                u.receive(msg);\n            }\n        }\n    }\n}\n\nclass User {\n    private String name;\n    private Mediator mediator;\n\n    public User(String name, Mediator mediator) {\n        this.name = name;\n        this.mediator = mediator;\n    }\n\n    public void send(String msg) {\n        mediator.______(msg, this);\n    }\n    public void receive(String msg) {\n        System.out.println(name + \" got \" + msg);\n    }\n}\n```\n\n空缺处 ______ 应填入：",
+      "options": [
+        "receive",
+        "send",
+        "broadcast",
+        "register"
+      ],
+      "answer_index": 1,
+      "explanation": "用户发消息，就是调用中介者的 send(msg, this)，把自己作为发送者一起交给中介者；receive 是中介者调用用户用的。",
+      "difficulty": 2,
+      "tags": [
+        "下午题六",
+        "中介者",
+        "填空·方法"
+      ],
+      "source_quote": "同事对象只持有中介者的引用，通过中介者与其他同事通信，彼此互不引用"
+    }
+  ]
+}

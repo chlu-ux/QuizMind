@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="713" height="158" viewBox="0 0 713 158" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>备忘录类图</title>
+  <rect width="713" height="158" fill="#ffffff"/>
+  <rect x="38.5" y="16" width="145" height="126" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="111" y="36.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Editor</text>
+  <line x1="38.5" y1="46.0" x2="183.5" y2="46.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="46.5" y="64" font-size="13" text-anchor="start" fill="#1f2937">-text: String</text>
+  <line x1="38.5" y1="74.0" x2="183.5" y2="74.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="46.5" y="92" font-size="13" text-anchor="start" fill="#1f2937">+type(s)</text>
+  <text x="46.5" y="112" font-size="13" text-anchor="start" fill="#1f2937">+save(): Memento</text>
+  <text x="46.5" y="132" font-size="13" text-anchor="start" fill="#1f2937">+restore(m)</text>
+  <rect x="286" y="16" width="160" height="86" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="366" y="36.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Memento</text>
+  <line x1="286.0" y1="46.0" x2="446.0" y2="46.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="294" y="64" font-size="13" text-anchor="start" fill="#1f2937">-text: String</text>
+  <line x1="286.0" y1="74.0" x2="446.0" y2="74.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="294" y="92" font-size="13" text-anchor="start" fill="#1f2937">+getText(): String</text>
+  <rect x="545" y="16" width="152" height="106" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="621" y="36.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">History</text>
+  <line x1="545.0" y1="46.0" x2="697.0" y2="46.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="553" y="64" font-size="13" text-anchor="start" fill="#1f2937">-memento: Memento</text>
+  <line x1="545.0" y1="74.0" x2="697.0" y2="74.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="553" y="92" font-size="13" text-anchor="start" fill="#1f2937">+push(m)</text>
+  <text x="553" y="112" font-size="13" text-anchor="start" fill="#1f2937">+pop(): Memento</text>
+  <polyline points="274.0,37.0 286.0,31.0 274.0,25.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="183.5,31.0 286.0,31.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <polyline points="458.0,25.0 446.0,31.0 458.0,37.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="545.0,31.0 446.0,31.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+</svg>

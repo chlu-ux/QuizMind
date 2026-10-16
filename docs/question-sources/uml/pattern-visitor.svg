@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="656" height="296" viewBox="0 0 656 296" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>访问者类图</title>
+  <rect width="656" height="296" fill="#ffffff"/>
+  <rect x="141" y="16" width="110" height="74" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="196" y="34.32" font-size="12" text-anchor="middle" fill="#6b7280">«interface»</text>
+  <text x="196" y="51.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Item</text>
+  <line x1="141.0" y1="62.0" x2="251.0" y2="62.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="149" y="80" font-size="13" text-anchor="start" fill="#1f2937">+accept(v)</text>
+  <rect x="515" y="16" width="110" height="94" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="570" y="34.32" font-size="12" text-anchor="middle" fill="#6b7280">«interface»</text>
+  <text x="570" y="51.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Visitor</text>
+  <line x1="515.0" y1="62.0" x2="625.0" y2="62.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="523" y="80" font-size="13" text-anchor="start" fill="#1f2937">+visit(b)</text>
+  <text x="523" y="100" font-size="13" text-anchor="start" fill="#1f2937">+visit(f)</text>
+  <rect x="56" y="174" width="110" height="86" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="111" y="194.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Book</text>
+  <line x1="56.0" y1="204.0" x2="166.0" y2="204.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="64" y="222" font-size="13" text-anchor="start" fill="#1f2937">+price: int</text>
+  <line x1="56.0" y1="232.0" x2="166.0" y2="232.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="64" y="250" font-size="13" text-anchor="start" fill="#1f2937">+accept(v)</text>
+  <rect x="226" y="174" width="110" height="86" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="281" y="194.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Fruit</text>
+  <line x1="226.0" y1="204.0" x2="336.0" y2="204.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="234" y="222" font-size="13" text-anchor="start" fill="#1f2937">+price: int</text>
+  <line x1="226.0" y1="232.0" x2="336.0" y2="232.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="234" y="250" font-size="13" text-anchor="start" fill="#1f2937">+accept(v)</text>
+  <rect x="500" y="174" width="140" height="106" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="570" y="194.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">PriceVisitor</text>
+  <line x1="500.0" y1="204.0" x2="640.0" y2="204.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="508" y="222" font-size="13" text-anchor="start" fill="#1f2937">+total: int</text>
+  <line x1="500.0" y1="232.0" x2="640.0" y2="232.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="508" y="250" font-size="13" text-anchor="start" fill="#1f2937">+visit(b)</text>
+  <text x="508" y="270" font-size="13" text-anchor="start" fill="#1f2937">+visit(f)</text>
+  <polyline points="503.0,37.0 515.0,31.0 503.0,25.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="251.0,31.0 515.0,31.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <polygon points="177.7,90.0 184.7,104.0 170.7,104.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="111.0,174.0 111.0,126.0 177.7,126.0 177.7,104.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <polygon points="214.3,90.0 221.3,104.0 207.3,104.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="281.0,174.0 281.0,142.0 214.3,142.0 214.3,104.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <polygon points="570.0,110.0 577.0,124.0 563.0,124.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="570.0,174.0 570.0,124.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+</svg>

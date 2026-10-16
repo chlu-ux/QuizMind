@@ -1,0 +1,3778 @@
+{
+ "软件设计师（中级）下午题四（算法） > T4.1 四大算法设计策略": [
+  {
+   "type": "single",
+   "stem": "动态规划算法的两大基本特征是：",
+   "options": [
+    "最优子结构和重叠子问题",
+    "贪心选择性质和最优子结构",
+    "约束函数和限界函数",
+    "分解、求解和合并"
+   ],
+   "answer_index": 0,
+   "explanation": "动态规划要求问题有最优子结构，并且子问题会被反复求解（重叠子问题），所以要自底向上填表保存子问题的解。贪心选择性质是贪心法的特征。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "四大算法设计策略",
+    "概念"
+   ],
+   "source_quote": "动态规划的两大特征是最优子结构和重叠子问题"
+  },
+  {
+   "type": "single",
+   "stem": "贪心法能够得到最优解，问题必须具备的两大性质是：",
+   "options": [
+    "最优子结构和重叠子问题",
+    "贪心选择性质和最优子结构",
+    "重叠子问题和无后效性",
+    "约束函数和限界函数"
+   ],
+   "answer_index": 1,
+   "explanation": "贪心法每一步取局部最优且不回溯，所以问题必须有贪心选择性质（局部最优能导出全局最优），同时具有最优子结构。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "四大算法设计策略",
+    "概念"
+   ],
+   "source_quote": "贪心法的两大特征是贪心选择性质和最优子结构"
+  },
+  {
+   "type": "single",
+   "stem": "下列问题中，通常用动态规划而不是分治法求解的是：",
+   "options": [
+    "折半查找",
+    "快速排序",
+    "矩阵连乘",
+    "汉诺塔"
+   ],
+   "answer_index": 2,
+   "explanation": "矩阵连乘的子问题大量重叠，需要填表保存，属于动态规划；折半查找、快速排序、汉诺塔的子问题相互独立，属于分治。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "四大算法设计策略",
+    "概念"
+   ],
+   "source_quote": "属于动态规划的典型题目有 0-1 背包、最长公共子序列、矩阵连乘"
+  },
+  {
+   "type": "single",
+   "stem": "N 皇后问题通常采用的算法设计策略是：",
+   "options": [
+    "贪心法",
+    "动态规划",
+    "分治法",
+    "回溯法"
+   ],
+   "answer_index": 3,
+   "explanation": "N 皇后要在解空间树上深度优先搜索，遇到冲突就剪枝回退，这是回溯法。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "四大算法设计策略",
+    "概念"
+   ],
+   "source_quote": "属于回溯法的典型题目有 N 皇后"
+  },
+  {
+   "type": "single",
+   "stem": "哈夫曼编码、Dijkstra 最短路径、Prim 最小生成树都采用了：",
+   "options": [
+    "贪心法",
+    "分治法",
+    "动态规划",
+    "回溯法"
+   ],
+   "answer_index": 0,
+   "explanation": "这三个算法都是每一步选当前最优的对象（权值最小的两棵树、dist 最小的顶点、权值最小的边），不回头修改，属于贪心法。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "四大算法设计策略",
+    "概念"
+   ],
+   "source_quote": "属于贪心法的典型题目有部分背包、Dijkstra、Prim、Kruskal、哈夫曼编码和活动安排"
+  },
+  {
+   "type": "single",
+   "stem": "某算法的运行时间满足递归式 T(n)=2T(n/2)+Θ(n)，则其时间复杂度为：",
+   "options": [
+    "Θ(n)",
+    "Θ(n log n)",
+    "Θ(n²)",
+    "Θ(log n)"
+   ],
+   "answer_index": 1,
+   "explanation": "a=2、b=2，n 的 log_b a 次方就是 n，与 f(n)=n 同阶，由主定理得 Θ(n log n)。归并排序、最大子段和的分治解法都是这个递归式。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "四大算法设计策略",
+    "复杂度"
+   ],
+   "source_quote": "递归式 T(n)=2T(n/2)+Θ(n) 的解是 Θ(n log n)"
+  },
+  {
+   "type": "judge",
+   "stem": "分支限界法用广度优先或最小耗费优先搜索解空间树，通常用来求最优解。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "回溯法用深度优先，求所有解或可行解；分支限界法用广度优先或最小耗费优先，求最优解。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "四大算法设计策略",
+    "判断"
+   ],
+   "source_quote": "分支限界法用广度优先或最小耗费优先搜索解空间树，用来求最优解"
+  },
+  {
+   "type": "judge",
+   "stem": "贪心法在做出选择之后，如果发现不对可以回溯，修改之前的选择。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "贪心法每一步取局部最优且不回溯，这是它与回溯法、动态规划的重要区别。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "四大算法设计策略",
+    "判断"
+   ],
+   "source_quote": "每一步取局部最优且不回溯"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.2 排序算法对比": [
+  {
+   "type": "single",
+   "stem": "下列排序算法中，平均时间复杂度为 O(n²) 且是稳定排序的是：",
+   "options": [
+    "快速排序",
+    "堆排序",
+    "冒泡排序",
+    "简单选择排序"
+   ],
+   "answer_index": 2,
+   "explanation": "冒泡排序平均 O(n²)、稳定；简单选择排序平均 O(n²) 但不稳定；快速排序和堆排序平均 O(n log n) 且不稳定。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "排序算法对比",
+    "辨析"
+   ],
+   "source_quote": "稳定的排序有直接插入、冒泡、归并和基数排序"
+  },
+  {
+   "type": "single",
+   "stem": "下列排序算法中，最坏情况下时间复杂度仍为 O(n log n) 且空间复杂度为 O(1) 的是：",
+   "options": [
+    "快速排序",
+    "归并排序",
+    "直接插入排序",
+    "堆排序"
+   ],
+   "answer_index": 3,
+   "explanation": "堆排序最好、最坏、平均都是 O(n log n)，原地排序空间 O(1)。快速排序最坏 O(n²)，归并排序空间 O(n)，直接插入排序最坏 O(n²)。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "排序算法对比",
+    "复杂度"
+   ],
+   "source_quote": "堆排序最好、最坏、平均时间都是 O(n log n)，空间 O(1)"
+  },
+  {
+   "type": "single",
+   "stem": "下列排序算法中，既稳定、最坏情况下又是 O(n log n) 的是：",
+   "options": [
+    "归并排序",
+    "快速排序",
+    "堆排序",
+    "希尔排序"
+   ],
+   "answer_index": 0,
+   "explanation": "只有归并排序同时具备这两点，代价是 O(n) 的辅助空间。堆排序最坏也是 O(n log n)，但不稳定。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "排序算法对比",
+    "辨析"
+   ],
+   "source_quote": "只有归并排序同时具备稳定和最坏 O(n log n) 两个特点"
+  },
+  {
+   "type": "single",
+   "stem": "对一个基本有序的序列排序，枢轴取首元素时，下列算法中效率最低的是：",
+   "options": [
+    "直接插入排序",
+    "快速排序",
+    "带标志的冒泡排序",
+    "归并排序"
+   ],
+   "answer_index": 1,
+   "explanation": "基本有序时直接插入排序和带标志的冒泡排序接近 O(n)，归并排序仍是 O(n log n)，而首元素做枢轴的快速排序每次只划出一个元素，退化为 O(n²)。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "排序算法对比",
+    "辨析"
+   ],
+   "source_quote": "快速排序在序列已经有序或逆序、且枢轴取首元素时退化为最坏情况"
+  },
+  {
+   "type": "single",
+   "stem": "下列排序算法中，属于不稳定排序的是：",
+   "options": [
+    "直接插入排序",
+    "冒泡排序",
+    "希尔排序",
+    "归并排序"
+   ],
+   "answer_index": 2,
+   "explanation": "希尔排序按增量分组插入，相同的关键字可能被分到不同的组而改变相对次序，不稳定。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "排序算法对比",
+    "概念"
+   ],
+   "source_quote": "希尔排序是对直接插入排序的改进，时间复杂度与增量序列有关，是不稳定排序"
+  },
+  {
+   "type": "judge",
+   "stem": "基于比较的排序算法，最坏情况下时间复杂度的下界是 Ω(n log n)，不存在最坏 O(n) 的比较排序。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "n 个元素有 n! 种排列，比较排序的决策树至少有 n! 个叶子，高度至少为 log(n!)=Ω(n log n)。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "排序算法对比",
+    "判断"
+   ],
+   "source_quote": "基于比较的排序算法，最坏情况下时间复杂度的下界是 Ω(n log n)"
+  },
+  {
+   "type": "judge",
+   "stem": "简单选择排序是稳定的排序算法。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "简单选择排序每趟把最小元素与当前位置交换，可能把相同关键字的元素换到另一个相同元素的后面，是不稳定排序。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "排序算法对比",
+    "辨析"
+   ],
+   "source_quote": "稳定的排序有直接插入、冒泡、归并和基数排序，不稳定的排序有简单选择、希尔、快速和堆排序"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.3 快速排序：思想与考点": [
+  {
+   "type": "single",
+   "stem": "快速排序属于哪一类算法设计策略？",
+   "options": [
+    "动态规划",
+    "贪心法",
+    "回溯法",
+    "分治法"
+   ],
+   "answer_index": 3,
+   "explanation": "快速排序把区间划分后递归排序左右两半，子问题互相独立，不需要合并，属于分治法。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "快速排序",
+    "概念"
+   ],
+   "source_quote": "快速排序属于分治法"
+  },
+  {
+   "type": "single",
+   "stem": "快速排序在最坏情况下的时间复杂度是：",
+   "options": [
+    "O(n²)",
+    "O(n log n)",
+    "O(n)",
+    "O(log n)"
+   ],
+   "answer_index": 0,
+   "explanation": "序列有序或逆序且枢轴取首元素时，每次只划出一个元素，T(n)=T(n-1)+O(n)，结果 O(n²)。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "快速排序",
+    "复杂度"
+   ],
+   "source_quote": "最坏时间复杂度为 O(n²)"
+  },
+  {
+   "type": "single",
+   "stem": "对序列 49 38 65 97 76 13 27 49 55 4，以第一个元素 49 为枢轴做快速排序的第一趟划分（挖坑填数），结果是：",
+   "options": [
+    "4 13 27 38 49 49 55 65 76 97",
+    "4 38 27 13 49 76 97 49 55 65",
+    "4 38 65 97 76 13 27 49 55 49",
+    "13 27 4 38 49 76 97 49 55 65"
+   ],
+   "answer_index": 1,
+   "explanation": "hi 从右找到 4 填入左坑；lo 从左找到 65 填入右坑；hi 找到 27 填入；lo 找到 97 填入；hi 找到 13 填入；lo 找到 76 填入，两指针在下标 4 相遇，填入枢轴 49。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "快速排序",
+    "手算"
+   ],
+   "source_quote": "结果是 4 38 27 13 49 76 97 49 55 65，枢轴落在下标 4"
+  },
+  {
+   "type": "single",
+   "stem": "对序列 5 3 8 6 2 7 1 4，以第一个元素为枢轴做快速排序的第一趟划分（挖坑填数），结果是：",
+   "options": [
+    "3 2 1 4 5 8 6 7",
+    "4 3 1 2 5 6 7 8",
+    "4 3 1 2 5 7 6 8",
+    "2 3 1 4 5 7 6 8"
+   ],
+   "answer_index": 2,
+   "explanation": "枢轴 5：hi 找到 4 填左坑，lo 找到 8 填右坑，hi 找到 1 填左坑，lo 找到 6 填右坑，hi 找到 2 填左坑，lo 扫到下标 4 与 hi 相遇，填入 5。枢轴左边都不大于 5，右边都不小于 5，但两边并不有序。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "快速排序",
+    "手算"
+   ],
+   "source_quote": "对序列 5 3 8 6 2 7 1 4 以 5 为枢轴做第一趟划分，结果是 4 3 1 2 5 7 6 8"
+  },
+  {
+   "type": "single",
+   "stem": "非递归的快速排序用显式栈保存待排区间，为了使栈深度保持 O(log n)，压栈时应当：",
+   "options": [
+    "先压较短的区间，后压较长的区间",
+    "只压入左区间",
+    "把所有区间按下标从小到大压入",
+    "先压较长的区间，后压较短的区间"
+   ],
+   "answer_index": 3,
+   "explanation": "后压入的先出栈，所以先处理较短区间；较长区间留在栈中，每次留下的区间长度至多减半，栈中同时存在的区间数是 O(log n)。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "快速排序",
+    "概念"
+   ],
+   "source_quote": "先压较长的区间、后压较短的区间，栈深度为 O(log n)"
+  },
+  {
+   "type": "judge",
+   "stem": "快速排序是稳定的排序算法。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "划分时元素会跨过一大段区间被交换到另一侧，相同关键字的相对次序可能改变，快速排序不稳定。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "快速排序",
+    "辨析"
+   ],
+   "source_quote": "平均空间复杂度 O(log n)，最坏 O(n)，是不稳定排序"
+  },
+  {
+   "type": "judge",
+   "stem": "序列已经有序时，以首元素为枢轴的快速排序每次划分只能划出一个元素，时间退化为 O(n²)。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "有序序列中首元素就是最小值，划分后左区间为空，右区间只比原来少一个元素，共 n 层，每层 O(n)。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "快速排序",
+    "判断"
+   ],
+   "source_quote": "序列已经有序或逆序、枢轴又取首元素时，每次只划出一个元素"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.4 快速排序：核心代码": [
+  {
+   "type": "single",
+   "stem": "快速排序的一趟划分（挖坑填数），要使 hi 从右往左扫描，跳过不小于枢轴的元素，空缺处应填入：\n\n```c\nstatic int partition(int a[], int lo, int hi) {\n    int pivot = a[lo];\n    while (lo < hi) {\n        while (lo < hi && a[hi] ______ pivot) hi--;\n        a[lo] = a[hi];\n        while (lo < hi && a[lo] <= pivot) lo++;\n        a[hi] = a[lo];\n    }\n    a[lo] = pivot;\n    return lo;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    ">=",
+    "<=",
+    "<",
+    "=="
+   ],
+   "answer_index": 0,
+   "explanation": "hi 要停在第一个小于枢轴的元素上，所以遇到 >= 枢轴的元素继续左移。写成 <= 会把大于枢轴的元素误当作小数。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "快速排序",
+    "填空"
+   ],
+   "source_quote": "while (lo < hi && a[hi] >= pivot) hi--;"
+  },
+  {
+   "type": "single",
+   "stem": "快速排序一趟划分中，hi 找到小于枢轴的元素后，把它填入左边的坑，空缺处应填入：\n\n```c\nwhile (lo < hi && a[hi] >= pivot) hi--;\na[lo] = ______;\nwhile (lo < hi && a[lo] <= pivot) lo++;\na[hi] = a[lo];\n```\n\n空缺处应填入：",
+   "options": [
+    "pivot",
+    "a[hi]",
+    "a[lo + 1]",
+    "a[hi - 1]"
+   ],
+   "answer_index": 1,
+   "explanation": "挖坑填数：a[lo] 是坑，把 hi 处找到的小数填进去，hi 处就成了新的坑；之后 lo 处找到的大数再填入 a[hi]。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "快速排序",
+    "填空"
+   ],
+   "source_quote": "a[lo] = a[hi] 的赋值方向"
+  },
+  {
+   "type": "single",
+   "stem": "快速排序的递归出口是区间内元素个数不超过 1，空缺处应填入：\n\n```c\nstatic void quick_sort(int a[], int lo, int hi) {\n    if (______) return;\n    int p = partition(a, lo, hi);\n    quick_sort(a, lo, p - 1);\n    quick_sort(a, p + 1, hi);\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "lo <= hi",
+    "hi - lo > 1",
+    "lo >= hi",
+    "p == lo"
+   ],
+   "answer_index": 2,
+   "explanation": "lo >= hi 表示区间为空或只有一个元素，无需再排。写成 lo <= hi 会让正常区间直接返回，排序不会进行。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "快速排序",
+    "填空"
+   ],
+   "source_quote": "递归出口是 lo >= hi，也就是区间内元素个数不超过 1"
+  },
+  {
+   "type": "single",
+   "stem": "划分之后，枢轴已在最终位置 p，对右半部分递归排序的调用应当是：\n\n```c\nint p = partition(a, lo, hi);\nquick_sort(a, lo, p - 1);\nquick_sort(a, ______, hi);\n```\n\n空缺处应填入：",
+   "options": [
+    "p",
+    "p - 1",
+    "lo",
+    "p + 1"
+   ],
+   "answer_index": 3,
+   "explanation": "枢轴已就位不再参与，右子区间是 [p+1, hi]，左子区间是 [lo, p-1]。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "快速排序",
+    "填空"
+   ],
+   "source_quote": "递归的两个子区间是 [lo, p-1] 和 [p+1, hi]，枢轴本身不再参与"
+  },
+  {
+   "type": "judge",
+   "stem": "划分函数中，内层 while 循环如果去掉 lo < hi 条件，指针有可能越界。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "没有 lo < hi 的限制，hi 可能一直左移越过 lo 甚至数组下界，lo 也可能越过 hi。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "快速排序",
+    "判断"
+   ],
+   "source_quote": "内层 while 循环必须带 lo < hi 条件，否则指针会越界"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.5 归并排序：思想与考点": [
+  {
+   "type": "single",
+   "stem": "归并排序采用的算法设计策略是：",
+   "options": [
+    "分治法",
+    "动态规划",
+    "贪心法",
+    "回溯法"
+   ],
+   "answer_index": 0,
+   "explanation": "归并排序先一分为二，递归排序两半，再合并两个有序子序列，是分治法。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "归并排序",
+    "概念"
+   ],
+   "source_quote": "归并排序属于分治法：把序列从中间一分为二"
+  },
+  {
+   "type": "single",
+   "stem": "归并排序的空间复杂度是：",
+   "options": [
+    "O(1)",
+    "O(n)",
+    "O(log n)",
+    "O(n log n)"
+   ],
+   "answer_index": 1,
+   "explanation": "合并两个有序段需要与原序列等长的辅助数组，所以空间复杂度是 O(n)。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "归并排序",
+    "复杂度"
+   ],
+   "source_quote": "空间复杂度为 O(n)，是稳定排序"
+  },
+  {
+   "type": "single",
+   "stem": "对 n 个元素做二路归并排序，需要的归并趟数是：",
+   "options": [
+    "n",
+    "n/2",
+    "⌈log2 n⌉",
+    "n-1"
+   ],
+   "answer_index": 2,
+   "explanation": "每趟有序段长度翻倍：1、2、4、8……，达到 n 需要 ⌈log2 n⌉ 趟。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "归并排序",
+    "复杂度"
+   ],
+   "source_quote": "二路归并 n 个元素需要 ⌈log2 n⌉ 趟"
+  },
+  {
+   "type": "single",
+   "stem": "对序列 49 38 65 97 76 13 27 49 55 4 做自底向上的二路归并排序，第 1 趟结束后的序列是：",
+   "options": [
+    "38 49 65 97 13 27 49 76 4 55",
+    "13 27 38 49 49 65 76 97 4 55",
+    "38 49 97 65 13 76 27 49 4 55",
+    "38 49 65 97 13 76 27 49 4 55"
+   ],
+   "answer_index": 3,
+   "explanation": "第 1 趟把相邻两个长度为 1 的有序段合并成长度为 2 的有序段：(49 38)→38 49，(65 97) 不变，(76 13)→13 76，(27 49) 不变，(55 4)→4 55。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "归并排序",
+    "手算"
+   ],
+   "source_quote": "第 1 趟之后的序列是 38 49 65 97 13 76 27 49 4 55"
+  },
+  {
+   "type": "single",
+   "stem": "对序列 38 49 65 97 13 76 27 49 4 55 再做一趟二路归并（每个有序段长度为 2，合并成长度为 4 的有序段），得到的序列是：",
+   "options": [
+    "38 49 65 97 13 27 49 76 4 55",
+    "38 49 65 97 13 76 27 49 4 55",
+    "13 27 38 49 49 65 76 97 4 55",
+    "4 13 27 38 49 49 55 65 76 97"
+   ],
+   "answer_index": 0,
+   "explanation": "合并 (38 49) 与 (65 97) 得 38 49 65 97；合并 (13 76) 与 (27 49) 得 13 27 49 76；最后的 (4 55) 没有可配对的段，保持不变。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "归并排序",
+    "手算"
+   ],
+   "source_quote": "同一序列的第 2 趟之后是 38 49 65 97 13 27 49 76 4 55"
+  },
+  {
+   "type": "single",
+   "stem": "合并两个长度分别为 m 和 n 的有序表，最多需要比较的次数是：",
+   "options": [
+    "m+n",
+    "m+n-1",
+    "max(m,n)",
+    "min(m,n)"
+   ],
+   "answer_index": 1,
+   "explanation": "每次比较都会输出一个元素，直到其中一个表输出完；最坏情况下最后一个元素才与另一表比较完，共 m+n-1 次。最好情况是一个表的元素全部小于另一表，比较 min(m,n) 次。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "归并排序",
+    "复杂度"
+   ],
+   "source_quote": "比较次数最少为 min(m,n)，最多为 m+n-1"
+  },
+  {
+   "type": "judge",
+   "stem": "合并时，如果左右两段的队首元素相等，先取右段的元素也不影响归并排序的稳定性。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "稳定性要求相等元素保持原来的先后次序，左段元素原本在右段之前，所以相等时必须先取左段的元素。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "归并排序",
+    "辨析"
+   ],
+   "source_quote": "合并时左右两段的队首元素相等，先取左段的元素，这样才能保证稳定性"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.6 归并排序：核心代码": [
+  {
+   "type": "single",
+   "stem": "要使归并排序保持稳定，合并两个有序段时比较队首元素，空缺处应填入：\n\n```c\nstatic void merge(int a[], int tmp[], int lo, int mid, int hi) {\n    int i = lo, j = mid + 1, k = lo;\n    while (i <= mid && j <= hi) tmp[k++] = (a[i] ______ a[j]) ? a[i++] : a[j++];\n    while (i <= mid) tmp[k++] = a[i++];\n    while (j <= hi)  tmp[k++] = a[j++];\n    for (k = lo; k <= hi; k++) a[k] = tmp[k];\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "<",
+    ">=",
+    "<=",
+    ">"
+   ],
+   "answer_index": 2,
+   "explanation": "相等时取左段（a[i]），保证稳定，所以条件是 a[i] <= a[j]。用 < 虽然也能排序，但相等时会先取右段，破坏稳定性；>= 和 > 会得到降序。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "归并排序",
+    "填空"
+   ],
+   "source_quote": "while (i <= mid && j <= hi) tmp[k++] = (a[i] <= a[j]) ? a[i++] : a[j++];"
+  },
+  {
+   "type": "single",
+   "stem": "归并排序中，计算中点并避免 lo + hi 溢出的写法是：\n\n```c\nstatic void merge_sort(int a[], int tmp[], int lo, int hi) {\n    if (lo >= hi) return;\n    int mid = lo + ______;\n    merge_sort(a, tmp, lo, mid);\n    merge_sort(a, tmp, mid + 1, hi);\n    merge(a, tmp, lo, mid, hi);\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "(hi + lo) / 2",
+    "hi / 2",
+    "(hi - lo) * 2",
+    "(hi - lo) / 2"
+   ],
+   "answer_index": 3,
+   "explanation": "lo + (hi - lo) / 2 与 (lo + hi) / 2 数学上相等，但前者不会在 lo + hi 超出整数范围时溢出。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "归并排序",
+    "填空"
+   ],
+   "source_quote": "int mid = lo + (hi - lo) / 2;"
+  },
+  {
+   "type": "single",
+   "stem": "归并排序在递归排好左右两半之后，需要把它们合并，空缺处应填入：\n\n```c\nmerge_sort(a, tmp, lo, mid);\nmerge_sort(a, tmp, mid + 1, hi);\n______;\n```\n\n空缺处应填入：",
+   "options": [
+    "merge(a, tmp, lo, mid, hi)",
+    "merge(a, tmp, lo, mid + 1, hi)",
+    "merge(a, tmp, lo, hi, mid)",
+    "merge(a, tmp, 0, mid, hi)"
+   ],
+   "answer_index": 0,
+   "explanation": "merge 的参数是 (lo, mid, hi)：左段 [lo, mid]，右段 [mid+1, hi]。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "归并排序",
+    "填空"
+   ],
+   "source_quote": "merge(a, tmp, lo, mid, hi);"
+  },
+  {
+   "type": "single",
+   "stem": "自底向上的非递归归并排序中，每一趟之后有序段的长度 w 要翻倍，空缺处应填入：\n\n```c\nfor (int w = 1; w < n; ______)\n    for (int lo = 0; lo < n - w; lo += 2 * w) {\n        int mid = lo + w - 1;\n        int hi = (lo + 2 * w - 1 < n) ? lo + 2 * w - 1 : n - 1;\n        merge(a, tmp, lo, mid, hi);\n    }\n```\n\n空缺处应填入：",
+   "options": [
+    "w++",
+    "w *= 2",
+    "w += 2",
+    "w /= 2"
+   ],
+   "answer_index": 1,
+   "explanation": "段长依次为 1、2、4、8……，每趟翻倍，共 ⌈log2 n⌉ 趟。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "归并排序",
+    "填空"
+   ],
+   "source_quote": "自底向上的非递归写法"
+  },
+  {
+   "type": "single",
+   "stem": "自底向上归并时，最后一个右段可能不足 w 个元素，右端点 hi 的上界应取：\n\n```c\nfor (int lo = 0; lo < n - w; lo += 2 * w) {\n    int mid = lo + w - 1;\n    int hi = (lo + 2 * w - 1 < n) ? lo + 2 * w - 1 : ______;\n    merge(a, tmp, lo, mid, hi);\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "n",
+    "w",
+    "n - 1",
+    "lo + w"
+   ],
+   "answer_index": 2,
+   "explanation": "数组最大下标是 n-1，右段不足 w 个时只能合并到 n-1。取 n 会越界。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "归并排序",
+    "填空"
+   ],
+   "source_quote": "非递归版中最后一个右段可能不足 w 个元素，所以 hi 要取 n-1"
+  },
+  {
+   "type": "judge",
+   "stem": "自底向上的非递归归并排序中，最后一个右段可能不足 w 个元素，此时 hi 要取 n-1。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "lo < n-w 保证右段至少有一个元素，但右段长度可能小于 w，所以右端点取 min(lo+2w-1, n-1)。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "归并排序",
+    "判断"
+   ],
+   "source_quote": "非递归版中最后一个右段可能不足 w 个元素，所以 hi 要取 n-1"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.7 堆排序：思想与考点": [
+  {
+   "type": "single",
+   "stem": "用数组顺序存储完全二叉树（下标从 1 开始），结点 i 的左孩子和右孩子的下标分别是：",
+   "options": [
+    "2i+1 和 2i+2",
+    "i/2 和 i/2+1",
+    "2i-1 和 2i",
+    "2i 和 2i+1"
+   ],
+   "answer_index": 3,
+   "explanation": "下标从 1 开始：左孩子 2i，右孩子 2i+1，父结点 ⌊i/2⌋。下标从 0 开始时才是 2i+1 和 2i+2。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "堆排序",
+    "概念"
+   ],
+   "source_quote": "下标从 1 开始时，左孩子是 2i，右孩子是 2i+1，父结点是 i/2"
+  },
+  {
+   "type": "single",
+   "stem": "下标从 0 开始存储的堆中，结点 i（i>0）的父结点下标是：",
+   "options": [
+    "(i-1)/2",
+    "i/2",
+    "(i+1)/2",
+    "2i+1"
+   ],
+   "answer_index": 0,
+   "explanation": "从 0 开始时，左孩子 2i+1、右孩子 2i+2，反过来父结点是 ⌊(i-1)/2⌋。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "堆排序",
+    "概念"
+   ],
+   "source_quote": "下标从 0 开始时，结点 i 的左孩子是 2i+1，右孩子是 2i+2，父结点是 (i-1)/2"
+  },
+  {
+   "type": "single",
+   "stem": "n 个元素的堆（下标从 0 开始），最后一个非叶子结点的下标是：",
+   "options": [
+    "n/2",
+    "n/2-1",
+    "n/2+1",
+    "n-1"
+   ],
+   "answer_index": 1,
+   "explanation": "最后一个结点 n-1 的父结点是 ⌊(n-2)/2⌋ = n/2-1（整数除法）。建堆就从这个结点开始倒序向前调整。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "堆排序",
+    "概念"
+   ],
+   "source_quote": "从 0 开始是 n/2-1"
+  },
+  {
+   "type": "single",
+   "stem": "堆排序中，把 n 个元素建成初始堆的时间复杂度是：",
+   "options": [
+    "O(n log n)",
+    "O(log n)",
+    "O(n)",
+    "O(n²)"
+   ],
+   "answer_index": 2,
+   "explanation": "大部分结点在靠近叶子的层，下沉距离很短，累加起来是 O(n)。整个堆排序是 O(n log n)，主要来自后面 n-1 次取堆顶。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "堆排序",
+    "复杂度"
+   ],
+   "source_quote": "建堆的时间复杂度是 O(n)"
+  },
+  {
+   "type": "single",
+   "stem": "对序列 49 38 65 97 76 13 27 49 55 4 建大顶堆，得到的数组是：",
+   "options": [
+    "97 76 65 49 55 13 27 49 38 4",
+    "97 76 65 55 49 13 27 38 49 4",
+    "97 55 65 76 49 13 27 49 38 4",
+    "97 76 65 55 49 13 27 49 38 4"
+   ],
+   "answer_index": 3,
+   "explanation": "从下标 4（n/2-1）倒序下沉：下标 4、3、2 已满足堆序；下标 1 的 38 与较大孩子 97 交换，再与 55 交换，落到下标 8，得 49 97 65 55 76 13 27 49 38 4；下标 0 的 49 与 97 交换，再与较大孩子 76 交换，落到下标 4。最终为 97 76 65 55 49 13 27 49 38 4。",
+   "difficulty": 4,
+   "tags": [
+    "下午题四",
+    "堆排序",
+    "手算"
+   ],
+   "source_quote": "得到的数组是 97 76 65 55 49 13 27 49 38 4"
+  },
+  {
+   "type": "single",
+   "stem": "对大顶堆 97 76 65 55 49 13 27 49 38 4，把堆顶与堆尾交换，再对剩余 9 个元素向下调整，前 9 个元素依次是：",
+   "options": [
+    "76 55 65 49 49 13 27 4 38",
+    "76 55 65 49 49 13 27 38 4",
+    "55 76 65 49 49 13 27 4 38",
+    "4 76 65 55 49 13 27 49 38"
+   ],
+   "answer_index": 0,
+   "explanation": "交换后堆顶为 4：与较大孩子 76 交换，再与 55 交换，再与较大孩子 49（下标 7）交换，4 落到下标 7。结果 76 55 65 49 49 13 27 4 38。",
+   "difficulty": 4,
+   "tags": [
+    "下午题四",
+    "堆排序",
+    "手算"
+   ],
+   "source_quote": "对这个大顶堆做第一次交换并调整后，前 9 个元素是 76 55 65 49 49 13 27 4 38"
+  },
+  {
+   "type": "judge",
+   "stem": "升序排序应当用小顶堆，降序排序应当用大顶堆。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "升序排序每次把堆顶的最大值换到末尾，所以用大顶堆；降序排序用小顶堆。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "堆排序",
+    "判断"
+   ],
+   "source_quote": "升序排序用大顶堆，降序排序用小顶堆"
+  },
+  {
+   "type": "judge",
+   "stem": "堆排序适合用链式存储实现，因为它不需要随机访问元素。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "堆依靠下标计算孩子和父结点（2i、2i+1），需要随机访问，所以适合顺序存储，不适合链式存储。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "堆排序",
+    "判断"
+   ],
+   "source_quote": "堆排序不适合链式存储，适合求 Top-K"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.8 堆排序：核心代码": [
+  {
+   "type": "single",
+   "stem": "堆的向下调整中，下标从 0 开始，结点 i 的左孩子下标是：\n\n```c\nstatic void sift_down(int a[], int i, int n) {\n    int x = a[i];\n    for (int child = ______; child < n; child = 2 * i + 1) {\n        if (child + 1 < n && a[child + 1] > a[child]) child++;\n        if (a[child] <= x) break;\n        a[i] = a[child];\n        i = child;\n    }\n    a[i] = x;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "2 * i",
+    "2 * i + 1",
+    "2 * i + 2",
+    "i / 2"
+   ],
+   "answer_index": 1,
+   "explanation": "下标从 0 开始，左孩子是 2i+1，右孩子是 2i+2。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "堆排序",
+    "填空"
+   ],
+   "source_quote": "for (int child = 2 * i + 1; child < n; child = 2 * i + 1) {"
+  },
+  {
+   "type": "single",
+   "stem": "向下调整时，要选出左右孩子中较大者（大顶堆），空缺处应填入：\n\n```c\nfor (int child = 2 * i + 1; child < n; child = 2 * i + 1) {\n    if (child + 1 < n && a[child + 1] ______ a[child]) child++;\n    if (a[child] <= x) break;\n    a[i] = a[child];\n    i = child;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "<",
+    "==",
+    ">",
+    "!="
+   ],
+   "answer_index": 2,
+   "explanation": "右孩子比左孩子大时，child 指向右孩子。写成 < 会选出较小的孩子，破坏大顶堆。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "堆排序",
+    "填空"
+   ],
+   "source_quote": "if (child + 1 < n && a[child + 1] > a[child]) child++;"
+  },
+  {
+   "type": "single",
+   "stem": "堆排序先建初始堆，要从最后一个非叶子结点开始倒序向下调整，空缺处应填入：\n\n```c\nstatic void heap_sort(int a[], int n) {\n    for (int i = ______; i >= 0; i--) sift_down(a, i, n);\n    for (int end = n - 1; end > 0; end--) {\n        int t = a[0]; a[0] = a[end]; a[end] = t;\n        sift_down(a, 0, end);\n    }\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "n / 2",
+    "n - 1",
+    "n / 2 + 1",
+    "n / 2 - 1"
+   ],
+   "answer_index": 3,
+   "explanation": "下标从 0 开始时，最后一个非叶子结点是 n/2-1。n/2 及以后的结点都是叶子，不需要调整。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "堆排序",
+    "填空"
+   ],
+   "source_quote": "for (int i = n / 2 - 1; i >= 0; i--) sift_down(a, i, n);"
+  },
+  {
+   "type": "single",
+   "stem": "堆排序把堆顶与堆尾交换之后，堆的长度缩小，对堆顶重新调整，空缺处应填入：\n\n```c\nfor (int end = n - 1; end > 0; end--) {\n    int t = a[0]; a[0] = a[end]; a[end] = t;\n    sift_down(a, 0, ______);\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "end",
+    "n",
+    "end + 1",
+    "end - 1"
+   ],
+   "answer_index": 0,
+   "explanation": "交换后下标 end 处已是排好的最大值，堆只剩下标 0 到 end-1，共 end 个元素，所以堆长度传 end。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "堆排序",
+    "填空"
+   ],
+   "source_quote": "sift_down(a, 0, end);"
+  },
+  {
+   "type": "single",
+   "stem": "sift_down 中先判断 child + 1 < n 再比较 a[child + 1] 与 a[child]，其目的是：",
+   "options": [
+    "保证左孩子一定存在",
+    "防止右孩子不存在时数组越界",
+    "保证选出的是较小的孩子",
+    "减少比较次数使复杂度降为 O(n)"
+   ],
+   "answer_index": 1,
+   "explanation": "当结点只有左孩子时，child+1 就等于堆长度 n，访问 a[child+1] 会越界，所以必须先判断。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "堆排序",
+    "概念"
+   ],
+   "source_quote": "选左右孩子中较大者时要先判断 child + 1 < n，防止越界"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.9 折半查找": [
+  {
+   "type": "single",
+   "stem": "折半查找要求线性表：",
+   "options": [
+    "链式存储且有序",
+    "顺序存储且无序",
+    "顺序存储且有序",
+    "链式存储且无序"
+   ],
+   "answer_index": 2,
+   "explanation": "折半查找需要按下标 O(1) 取中间元素，所以必须顺序存储；还要求关键字有序，才能判断该往哪半边找。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "折半查找",
+    "概念"
+   ],
+   "source_quote": "折半查找要求顺序存储且关键字有序，链表不适用"
+  },
+  {
+   "type": "single",
+   "stem": "对 n 个元素的有序表折半查找，最坏情况下的比较次数为：",
+   "options": [
+    "n",
+    "⌈n/2⌉",
+    "⌊log2 n⌋-1",
+    "⌊log2 n⌋+1"
+   ],
+   "answer_index": 3,
+   "explanation": "每次比较区间减半，最多比较 ⌊log2 n⌋+1 次，也就是判定树的高度。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "折半查找",
+    "复杂度"
+   ],
+   "source_quote": "最多比较 ⌊log2 n⌋+1 次"
+  },
+  {
+   "type": "single",
+   "stem": "对有序表 5 13 19 21 37 56 64 75 80 88 92 折半查找（mid 取 (lo+hi)/2 向下取整），查找关键字 92 需要比较的次数是：",
+   "options": [
+    "4",
+    "3",
+    "5",
+    "11"
+   ],
+   "answer_index": 0,
+   "explanation": "下标 0..10：mid=5（56）→ lo=6；mid=8（80）→ lo=9；mid=9（88）→ lo=10；mid=10（92）命中，共比较 4 次。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "折半查找",
+    "手算"
+   ],
+   "source_quote": "查找 92 需要比较 4 次，查找 21 需要比较 3 次"
+  },
+  {
+   "type": "single",
+   "stem": "有序表 5 13 19 21 37 56 64 75 80 88 92，折半查找（mid 向下取整）等概率时成功查找的平均查找长度是：",
+   "options": [
+    "32/11",
+    "33/11",
+    "34/11",
+    "36/11"
+   ],
+   "answer_index": 1,
+   "explanation": "判定树各层元素个数为 1、2、4、4，总比较次数 1×1+2×2+3×4+4×4=33，平均 33/11。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "折半查找",
+    "手算"
+   ],
+   "source_quote": "平均查找长度为 33/11"
+  },
+  {
+   "type": "single",
+   "stem": "折半查找迭代版的循环条件应当是（区间只剩一个元素时也要继续查找）：\n\n```c\nint lo = 0, hi = n - 1;\nwhile (______) {\n    int mid = lo + (hi - lo) / 2;\n    if (a[mid] == key) return mid;\n    if (a[mid] < key) lo = mid + 1;\n    else hi = mid - 1;\n}\nreturn -1;\n```\n\n空缺处应填入：",
+   "options": [
+    "lo < hi",
+    "lo != hi",
+    "lo <= hi",
+    "lo >= hi"
+   ],
+   "answer_index": 2,
+   "explanation": "区间 [lo, hi] 仍含有元素的条件是 lo <= hi。写成 lo < hi 会漏掉只剩一个元素的区间。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "折半查找",
+    "填空"
+   ],
+   "source_quote": "循环条件是 lo <= hi，写成 lo < hi 会漏掉只剩一个元素的区间"
+  },
+  {
+   "type": "single",
+   "stem": "折半查找中，a[mid] 小于 key 时应当到右半区间继续查找，空缺处应填入：\n\n```c\nif (a[mid] == key) return mid;\nif (a[mid] < key) lo = ______;\nelse hi = mid - 1;\n```\n\n空缺处应填入：",
+   "options": [
+    "mid",
+    "mid - 1",
+    "hi",
+    "mid + 1"
+   ],
+   "answer_index": 3,
+   "explanation": "a[mid] 已比较过且小于 key，所以新区间从 mid+1 开始；写成 mid 可能死循环。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "折半查找",
+    "填空"
+   ],
+   "source_quote": "缩小区间时必须写 lo = mid + 1 和 hi = mid - 1，少加减 1 可能死循环"
+  },
+  {
+   "type": "judge",
+   "stem": "折半查找的判定树是近似平衡的二叉树，查找某个元素的比较次数等于它在判定树上的层数。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "根是第一次比较的 mid，每深入一层多比较一次，所以比较次数等于结点所在的层数。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "折半查找",
+    "判断"
+   ],
+   "source_quote": "比较次数等于元素在判定树上的层数"
+  },
+  {
+   "type": "single",
+   "stem": "下列查找方法中，平均查找长度与表长无关（平均 O(1)）的是：",
+   "options": [
+    "哈希查找",
+    "折半查找",
+    "顺序查找",
+    "二叉排序树查找"
+   ],
+   "answer_index": 0,
+   "explanation": "哈希查找通过哈希函数直接定位，平均 O(1)；折半查找 O(log n)，顺序查找 O(n)，二叉排序树平均 O(log n)、最坏 O(n)。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "折半查找",
+    "辨析"
+   ],
+   "source_quote": "哈希查找平均 O(1)"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.10 0-1 背包：思想与考点": [
+  {
+   "type": "single",
+   "stem": "下列方法中，能保证求出 0-1 背包问题的最优解，且时间复杂度为 O(n·C) 的是：",
+   "options": [
+    "按单位价值从大到小的贪心",
+    "动态规划",
+    "按重量从小到大的贪心",
+    "按价值从大到小的贪心"
+   ],
+   "answer_index": 1,
+   "explanation": "0-1 背包的三种常见贪心策略都不能保证最优；动态规划按 (物品, 容量) 填表，时间 O(n·C)。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "0-1 背包",
+    "复杂度"
+   ],
+   "source_quote": "时间复杂度和空间复杂度都是 O(n·C)"
+  },
+  {
+   "type": "single",
+   "stem": "0-1 背包的动态规划中，当 c >= w[i] 时，dp[i][c] 等于：",
+   "options": [
+    "max(dp[i-1][c], dp[i][c-w[i]] + v[i])",
+    "dp[i-1][c-w[i]] + v[i]",
+    "max(dp[i-1][c], dp[i-1][c-w[i]] + v[i])",
+    "max(dp[i-1][c-1], dp[i-1][c-w[i]] + v[i])"
+   ],
+   "answer_index": 2,
+   "explanation": "要么不装第 i 个物品，价值 dp[i-1][c]；要么装它，价值是剩余容量 c-w[i] 在前 i-1 个物品中的最优值加 v[i]。写成 dp[i][c-w[i]] 会允许同一物品重复装入（完全背包）。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "0-1 背包",
+    "概念"
+   ],
+   "source_quote": "装得下时 dp[i][c] = max(dp[i-1][c], dp[i-1][c-w[i]] + v[i])"
+  },
+  {
+   "type": "single",
+   "stem": "用一维数组优化 0-1 背包的空间时，对容量 c 的遍历顺序必须是：",
+   "options": [
+    "从小到大",
+    "任意顺序均可",
+    "先偶数后奇数",
+    "从大到小"
+   ],
+   "answer_index": 3,
+   "explanation": "从大到小遍历才能保证 f[c-w[i]] 还是上一轮（前 i-1 个物品）的值；从小到大会使同一物品被重复装入。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "0-1 背包",
+    "概念"
+   ],
+   "source_quote": "容量 c 必须从大到小逆序遍历，否则同一物品会被重复装入"
+  },
+  {
+   "type": "single",
+   "stem": "三件物品（重量,价值）为 (10,60)、(20,100)、(30,120)，背包容量 50，0-1 背包的最大价值是：",
+   "options": [
+    "220",
+    "160",
+    "240",
+    "280"
+   ],
+   "answer_index": 0,
+   "explanation": "选第 2、3 件：重量 20+30=50，价值 100+120=220。240 是部分背包（可拆分）的结果。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "0-1 背包",
+    "手算"
+   ],
+   "source_quote": "容量 50，最大价值为 220，选第 2、3 件"
+  },
+  {
+   "type": "single",
+   "stem": "四件物品重量为 2、3、4、5，价值为 3、4、5、6，背包容量 8，0-1 背包的最大价值是：",
+   "options": [
+    "9",
+    "10",
+    "11",
+    "12"
+   ],
+   "answer_index": 1,
+   "explanation": "选重量 3 和 5 的两件，价值 4+6=10。其他组合：2+4（8）、3+4（9）、2+3（7）、2+5（9）等都小于 10。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "0-1 背包",
+    "手算"
+   ],
+   "source_quote": "最大价值为 10，dp[4][8] = 10"
+  },
+  {
+   "type": "single",
+   "stem": "在 0-1 背包的 dp 表回溯中，判断第 i 个物品被选中的条件是：",
+   "options": [
+    "dp[i][c] == dp[i-1][c]",
+    "dp[i][c] > v[i]",
+    "dp[i][c] != dp[i-1][c]",
+    "dp[i][c] == dp[i][c-1]"
+   ],
+   "answer_index": 2,
+   "explanation": "如果装入第 i 个物品使价值变大，dp[i][c] 就不等于 dp[i-1][c]；此时选中它，容量扣减 w[i]，继续看 dp[i-1][c-w[i]]。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "0-1 背包",
+    "概念"
+   ],
+   "source_quote": "若 dp[i][c] 不等于 dp[i-1][c]，说明第 i 个物品被选中"
+  },
+  {
+   "type": "single",
+   "stem": "用回溯法求解 0-1 背包问题，其解空间树是：",
+   "options": [
+    "排列树",
+    "二叉排序树",
+    "哈夫曼树",
+    "子集树"
+   ],
+   "answer_index": 3,
+   "explanation": "每个物品只有装与不装两种选择，n 个物品共 2^n 个叶子，是子集树。N 皇后、旅行商问题才是排列树。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "0-1 背包",
+    "概念"
+   ],
+   "source_quote": "回溯法解 0-1 背包的解空间树是子集树，每个物品有装和不装两个分支"
+  },
+  {
+   "type": "judge",
+   "stem": "不带备忘录的纯递归求解 0-1 背包，时间复杂度是 O(2^n) 的指数级。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "每个物品都有装和不装两个分支，且大量子问题被重复计算；加上备忘录后每个 (i, c) 只算一次，降为 O(n·C)。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "0-1 背包",
+    "复杂度"
+   ],
+   "source_quote": "不带备忘录的纯递归是指数级 O(2^n)"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.11 0-1 背包：核心代码": [
+  {
+   "type": "single",
+   "stem": "0-1 背包的二维填表中，装入第 i 个物品时的价值应当是：\n\n```c\nfor (int i = 1; i <= N; i++)\n    for (int c = 0; c <= C; c++) {\n        dp[i][c] = dp[i - 1][c];\n        if (c >= w[i] && dp[i - 1][c - w[i]] + v[i] > dp[i][c])\n            dp[i][c] = ______;\n    }\n```\n\n空缺处应填入：",
+   "options": [
+    "dp[i - 1][c - w[i]] + v[i]",
+    "dp[i][c - w[i]] + v[i]",
+    "dp[i - 1][c] + v[i]",
+    "dp[i - 1][c - v[i]] + w[i]"
+   ],
+   "answer_index": 0,
+   "explanation": "装入第 i 个物品后，剩余容量 c-w[i] 只能用前 i-1 个物品填，所以是 dp[i-1][c-w[i]]，再加上 v[i]。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "0-1 背包",
+    "填空"
+   ],
+   "source_quote": "dp[i][c] = dp[i - 1][c - w[i]] + v[i];"
+  },
+  {
+   "type": "single",
+   "stem": "从 dp 表回溯构造所选物品，选中第 i 个物品之后，剩余容量应当减去：\n\n```c\nint c = C;\nfor (int i = N; i >= 1; i--)\n    if (dp[i][c] != dp[i - 1][c]) {\n        c -= ______;\n    }\n```\n\n空缺处应填入：",
+   "options": [
+    "v[i]",
+    "w[i]",
+    "1",
+    "dp[i][c]"
+   ],
+   "answer_index": 1,
+   "explanation": "容量与重量对应，选中物品 i 后剩余容量减少 w[i]。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "0-1 背包",
+    "填空"
+   ],
+   "source_quote": "if (dp[i][c] != dp[i - 1][c]) {"
+  },
+  {
+   "type": "single",
+   "stem": "0-1 背包用一维数组 f 优化空间，容量 c 的循环起点应当是：\n\n```c\nfor (int i = 1; i <= n; i++)\n    for (int c = ______; c >= w[i]; c--)\n        if (f[c - w[i]] + v[i] > f[c]) f[c] = f[c - w[i]] + v[i];\n```\n\n空缺处应填入：",
+   "options": [
+    "0",
+    "w[i]",
+    "cap",
+    "n"
+   ],
+   "answer_index": 2,
+   "explanation": "必须从大容量 cap 往下到 w[i]，逆序遍历才能保证每个物品只被装入一次。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "0-1 背包",
+    "填空"
+   ],
+   "source_quote": "for (int c = cap; c >= w[i]; c--)"
+  },
+  {
+   "type": "single",
+   "stem": "0-1 背包的备忘录递归中，装入第 i 个物品后，递归求解的剩余容量应当是：\n\n```c\nint best = knap_memo(w, v, i - 1, c);\nif (c >= w[i]) {\n    int t = knap_memo(w, v, i - 1, ______) + v[i];\n    if (t > best) best = t;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "c",
+    "c - v[i]",
+    "c + w[i]",
+    "c - w[i]"
+   ],
+   "answer_index": 3,
+   "explanation": "装入第 i 个物品占用 w[i] 的容量，剩余容量是 c-w[i]。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "0-1 背包",
+    "填空"
+   ],
+   "source_quote": "int t = knap_memo(w, v, i - 1, c - w[i]) + v[i];"
+  },
+  {
+   "type": "single",
+   "stem": "备忘录数组 kmemo 的所有元素初值设为 -1，目的是：",
+   "options": [
+    "标记该子问题还没有计算过",
+    "表示背包已经装满",
+    "表示物品价值为负",
+    "保证数组下标不越界"
+   ],
+   "answer_index": 0,
+   "explanation": "子问题的最优值可能为 0，所以不能用 0 表示“未计算”，用不可能出现的 -1 做标记。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "0-1 背包",
+    "概念"
+   ],
+   "source_quote": "备忘录数组初值设为 -1 表示该子问题还没有计算过"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.12 部分背包与贪心法": [
+  {
+   "type": "single",
+   "stem": "部分背包问题的最优算法是：",
+   "options": [
+    "按重量从小到大依次装入",
+    "按单位重量价值从大到小依次装入，最后一件装不下时取一部分",
+    "按价值从大到小依次装入",
+    "按剩余容量从大到小重新排序后装入"
+   ],
+   "answer_index": 1,
+   "explanation": "物品可拆分时，每单位容量都应当装进价值密度最高的物品，所以按 v/w 降序，是贪心法。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "部分背包与贪心法",
+    "概念"
+   ],
+   "source_quote": "按单位重量价值 v/w 从大到小排序，依次整件装入"
+  },
+  {
+   "type": "single",
+   "stem": "物品 (10,60)、(20,100)、(30,120)，背包容量 50，部分背包（物品可拆分）的最大价值是：",
+   "options": [
+    "220",
+    "160",
+    "240",
+    "280"
+   ],
+   "answer_index": 2,
+   "explanation": "单位价值 6、5、4：整件装前两件（重量 30，价值 160），剩余容量 20 取第三件的 20/30，价值 80，合计 240。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "部分背包与贪心法",
+    "手算"
+   ],
+   "source_quote": "部分背包的最大价值为 240"
+  },
+  {
+   "type": "single",
+   "stem": "物品 (10,60)、(20,100)、(30,120)，背包容量 50，若照搬“按单位价值贪心”去解 0-1 背包（装不下就跳过），得到的价值是：",
+   "options": [
+    "220",
+    "240",
+    "180",
+    "160"
+   ],
+   "answer_index": 3,
+   "explanation": "贪心先装前两件（价值 160，重量 30），第三件重 30 装不下，只得 160；而最优解是装第 2、3 件得 220。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "部分背包与贪心法",
+    "手算"
+   ],
+   "source_quote": "同一组数据照搬贪心去做 0-1 背包，只能装下前两件，价值 160，而最优解是 220"
+  },
+  {
+   "type": "judge",
+   "stem": "0-1 背包问题也可以用按单位价值的贪心策略得到最优解。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "贪心策略对 0-1 背包不成立（例如 (10,60)、(20,100)、(30,120)，容量 50，贪心得 160，最优是 220），必须用动态规划。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "部分背包与贪心法",
+    "判断"
+   ],
+   "source_quote": "所以 0-1 背包不能用贪心法"
+  },
+  {
+   "type": "single",
+   "stem": "部分背包的贪心算法，时间复杂度主要由哪一步决定？",
+   "options": [
+    "按单位价值排序",
+    "逐件装入",
+    "计算剩余容量",
+    "拆分最后一件物品"
+   ],
+   "answer_index": 0,
+   "explanation": "排序是 O(n log n)，之后的一次扫描只有 O(n)。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "部分背包与贪心法",
+    "复杂度"
+   ],
+   "source_quote": "部分背包的时间复杂度由排序决定，为 O(n log n)"
+  },
+  {
+   "type": "single",
+   "stem": "按单位价值降序排序的比较函数（qsort 的比较函数，返回负数表示 a 排在 b 前）应当返回：\n\n```c\nstatic int cmp(const void *x, const void *y) {\n    const Item *a = x, *b = y;\n    double ra = a->v / a->w, rb = b->v / b->w;\n    return ______;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "(ra > rb) - (ra < rb)",
+    "(ra < rb) - (ra > rb)",
+    "ra < rb",
+    "(ra == rb)"
+   ],
+   "answer_index": 1,
+   "explanation": "ra 较大时 (ra < rb) - (ra > rb) 为 -1，a 排在前面，实现降序；调换两项会变成升序。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "部分背包与贪心法",
+    "填空"
+   ],
+   "source_quote": "return (ra < rb) - (ra > rb);"
+  },
+  {
+   "type": "single",
+   "stem": "装不下整件物品时，按剩余容量 cap 比例取一部分，增加的价值应当是：\n\n```c\n} else {\n    total += items[i].v * (______);\n    cap = 0;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "items[i].w / cap",
+    "cap",
+    "cap / items[i].w",
+    "cap * items[i].w"
+   ],
+   "answer_index": 2,
+   "explanation": "取走的比例是 cap / w，价值按比例为 v * (cap / w)。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "部分背包与贪心法",
+    "填空"
+   ],
+   "source_quote": "total += items[i].v * (cap / items[i].w);"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.13 最长公共子序列 LCS": [
+  {
+   "type": "single",
+   "stem": "最长公共子序列与最长公共子串的区别是：",
+   "options": [
+    "子序列必须连续，子串可以不连续",
+    "两者没有区别，只是叫法不同",
+    "子序列必须在两个串中位置相同",
+    "子序列不要求元素连续，子串必须连续"
+   ],
+   "answer_index": 3,
+   "explanation": "子序列只要求保持相对顺序，可以不连续；子串必须是连续的一段。LCS 是子序列。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "最长公共子序列 LCS",
+    "辨析"
+   ],
+   "source_quote": "子序列不要求连续，子串必须连续"
+  },
+  {
+   "type": "single",
+   "stem": "LCS 的动态规划递推式中，当 x[i] != y[j] 时，c[i][j] 等于：",
+   "options": [
+    "max(c[i-1][j], c[i][j-1])",
+    "c[i-1][j-1]",
+    "c[i-1][j-1] + 1",
+    "min(c[i-1][j], c[i][j-1])"
+   ],
+   "answer_index": 0,
+   "explanation": "最后一个字符不同，则至少有一个不在 LCS 中，去掉 x 的最后一个或 y 的最后一个，取较大的一个。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最长公共子序列 LCS",
+    "概念"
+   ],
+   "source_quote": "否则为 max(c[i-1][j], c[i][j-1])"
+  },
+  {
+   "type": "single",
+   "stem": "X=ABCBDAB，Y=BDCABA，它们的最长公共子序列的长度是：",
+   "options": [
+    "3",
+    "4",
+    "5",
+    "6"
+   ],
+   "answer_index": 1,
+   "explanation": "LCS 例如 BCBA、BDAB 或 BCAB，长度都是 4。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最长公共子序列 LCS",
+    "手算"
+   ],
+   "source_quote": "X=ABCBDAB 与 Y=BDCABA 的 LCS 长度为 4"
+  },
+  {
+   "type": "single",
+   "stem": "设 X=ABCD，Y=ACBD，它们的最长公共子序列的长度是：",
+   "options": [
+    "2",
+    "4",
+    "3",
+    "1"
+   ],
+   "answer_index": 2,
+   "explanation": "公共子序列 ACD（或 ABD）长度为 3；X 与 Y 不相同，所以不可能是 4。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最长公共子序列 LCS",
+    "手算"
+   ],
+   "source_quote": "对 X=ABCD 和 Y=ACBD，LCS 长度为 3"
+  },
+  {
+   "type": "single",
+   "stem": "对 X=ABCBDAB 和 Y=BDCABA 填 LCS 表，c[4][5]（X 的前 4 个字符 ABCB 与 Y 的前 5 个字符 BDCAB 的 LCS 长度）的值是：",
+   "options": [
+    "2",
+    "4",
+    "1",
+    "3"
+   ],
+   "answer_index": 3,
+   "explanation": "ABCB 与 BDCAB 有公共子序列 BCB（B、C、B 在两个串中都按这个顺序出现），长度为 3，没有更长的。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "最长公共子序列 LCS",
+    "手算"
+   ],
+   "source_quote": "对 X=ABCBDAB 和 Y=BDCABA 填表，c[4][5] = 3，c[7][6] = 4"
+  },
+  {
+   "type": "single",
+   "stem": "LCS 动态规划算法的时间复杂度是（m、n 为两个串的长度）：",
+   "options": [
+    "O(m·n)",
+    "O(m+n)",
+    "O(2^m)",
+    "O(m·n²)"
+   ],
+   "answer_index": 0,
+   "explanation": "要填一张 (m+1)×(n+1) 的表，每格 O(1)。暴力枚举子序列才是指数级。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "最长公共子序列 LCS",
+    "复杂度"
+   ],
+   "source_quote": "时间复杂度和空间复杂度都是 O(m·n)"
+  },
+  {
+   "type": "single",
+   "stem": "LCS 填表时，当 x[i-1] 与 y[j-1] 相等，c[i][j] 应当等于：\n\n```c\nfor (int i = 1; i <= m; i++)\n    for (int j = 1; j <= n; j++) {\n        if (x[i - 1] == y[j - 1])\n            c[i][j] = ______;\n        else\n            c[i][j] = c[i - 1][j] >= c[i][j - 1] ? c[i - 1][j] : c[i][j - 1];\n    }\n```\n\n空缺处应填入：",
+   "options": [
+    "c[i - 1][j] + 1",
+    "c[i - 1][j - 1] + 1",
+    "c[i][j - 1] + 1",
+    "c[i - 1][j - 1]"
+   ],
+   "answer_index": 1,
+   "explanation": "两个字符相等，它们成为 LCS 的最后一个字符，LCS 长度等于去掉这两个字符后的 LCS（左上角）加 1。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最长公共子序列 LCS",
+    "填空"
+   ],
+   "source_quote": "c[i][j] = c[i - 1][j - 1] + 1;"
+  },
+  {
+   "type": "single",
+   "stem": "LCS 的备忘录递归中，递归的边界条件（任一个串为空）应当写成：\n\n```c\nstatic int lcs_memo(int i, int j) {\n    if (______) return 0;\n    if (memo[i][j] >= 0) return memo[i][j];\n    ...\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "i == 0 && j == 0",
+    "i < 0 || j < 0",
+    "i == 0 || j == 0",
+    "i == 1 || j == 1"
+   ],
+   "answer_index": 2,
+   "explanation": "只要有一个串为空，公共子序列长度就是 0，所以用“或”。写成“与”会漏掉只有一个为空的情形。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最长公共子序列 LCS",
+    "填空"
+   ],
+   "source_quote": "备忘录递归写法的边界是 if (i == 0 || j == 0) return 0"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.14 矩阵连乘": [
+  {
+   "type": "single",
+   "stem": "p×q 的矩阵与 q×r 的矩阵相乘，需要的标量乘法次数是：",
+   "options": [
+    "p·q+q·r",
+    "p·r",
+    "(p+q)·r",
+    "p·q·r"
+   ],
+   "answer_index": 3,
+   "explanation": "结果矩阵有 p×r 个元素，每个元素要做 q 次乘法，共 p·q·r 次。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "矩阵连乘",
+    "概念"
+   ],
+   "source_quote": "需要 p·q·r 次标量乘法"
+  },
+  {
+   "type": "single",
+   "stem": "A(10×100)、B(100×5)、C(5×50) 三个矩阵相乘，按 (AB)C 的顺序需要的标量乘法次数是：",
+   "options": [
+    "7500",
+    "75000",
+    "5000",
+    "12500"
+   ],
+   "answer_index": 0,
+   "explanation": "AB 需要 10×100×5=5000 次，结果是 10×5；再乘 C 需要 10×5×50=2500 次，合计 7500。A(BC) 则需要 75000 次。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "矩阵连乘",
+    "手算"
+   ],
+   "source_quote": "(AB)C 需要 7500 次乘法"
+  },
+  {
+   "type": "single",
+   "stem": "矩阵 A_i 的维度是 p[i-1]×p[i]。计算 A_i…A_j 时在断点 k 处断开，最后一次合并两个子结果的代价是：",
+   "options": [
+    "p[i]·p[k]·p[j]",
+    "p[i-1]·p[k]·p[j]",
+    "p[i-1]·p[k+1]·p[j]",
+    "p[i-1]·p[i]·p[j]"
+   ],
+   "answer_index": 1,
+   "explanation": "左子结果是 p[i-1]×p[k]，右子结果是 p[k]×p[j]，两者相乘需要 p[i-1]·p[k]·p[j] 次。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "矩阵连乘",
+    "概念"
+   ],
+   "source_quote": "m[i][j] = min(m[i][k] + m[k+1][j] + p[i-1]·p[k]·p[j])，k 取 i 到 j-1"
+  },
+  {
+   "type": "single",
+   "stem": "矩阵连乘动态规划算法的填表顺序是：",
+   "options": [
+    "按行从上到下、每行从左到右",
+    "按列从左到右、每列从上到下",
+    "按链长从小到大（按对角线）",
+    "从 m[1][n] 开始向外填"
+   ],
+   "answer_index": 2,
+   "explanation": "m[i][j] 依赖更短的子链 m[i][k] 和 m[k+1][j]，所以必须先算短链再算长链。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "矩阵连乘",
+    "概念"
+   ],
+   "source_quote": "填表顺序按链长从小到大，也就是按对角线填"
+  },
+  {
+   "type": "single",
+   "stem": "6 个矩阵的维度数组 p = 30 35 15 5 10 20 25，最少需要的标量乘法次数是：",
+   "options": [
+    "15750",
+    "11875",
+    "10500",
+    "15125"
+   ],
+   "answer_index": 3,
+   "explanation": "这是经典例子，最优括号化为 ((A1(A2A3))((A4A5)A6))，共 15125 次。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "矩阵连乘",
+    "手算"
+   ],
+   "source_quote": "最少需要 15125 次标量乘法"
+  },
+  {
+   "type": "single",
+   "stem": "三个矩阵的维度数组 p = 10 30 5 60，最少需要的标量乘法次数是：",
+   "options": [
+    "4500",
+    "27000",
+    "9000",
+    "1500"
+   ],
+   "answer_index": 0,
+   "explanation": "(A1A2)A3：10×30×5 + 10×5×60 = 1500+3000 = 4500；A1(A2A3)：30×5×60 + 10×30×60 = 27000。取较小者。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "矩阵连乘",
+    "手算"
+   ],
+   "source_quote": "最少需要 4500 次标量乘法"
+  },
+  {
+   "type": "single",
+   "stem": "矩阵连乘动态规划算法的时间复杂度和空间复杂度分别是：",
+   "options": [
+    "O(n²) 和 O(n)",
+    "O(n³) 和 O(n²)",
+    "O(n³) 和 O(n³)",
+    "O(2^n) 和 O(n²)"
+   ],
+   "answer_index": 1,
+   "explanation": "三重循环（链长、起点、断点）各 O(n)，表 m、s 都是 n×n。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "矩阵连乘",
+    "复杂度"
+   ],
+   "source_quote": "时间复杂度 O(n³)，空间复杂度 O(n²)"
+  },
+  {
+   "type": "single",
+   "stem": "矩阵连乘的填表中，链长为 len、起点为 i 的子链，其终点 j 应当是：\n\n```c\nfor (int len = 2; len <= N; len++)\n    for (int i = 1; i + len - 1 <= N; i++) {\n        int j = ______;\n        m[i][j] = 1 << 30;\n        ...\n    }\n```\n\n空缺处应填入：",
+   "options": [
+    "i + len",
+    "i + len + 1",
+    "i + len - 1",
+    "len - i + 1"
+   ],
+   "answer_index": 2,
+   "explanation": "从 i 开始长度为 len 的子链包含 A_i … A_{i+len-1}，终点是 i+len-1。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "矩阵连乘",
+    "填空"
+   ],
+   "source_quote": "int j = i + len - 1;"
+  },
+  {
+   "type": "single",
+   "stem": "矩阵连乘中，在断点 k 处断开的总代价应当是：\n\n```c\nfor (int k = i; k < j; k++) {\n    int cost = m[i][k] + ______ + p[i - 1] * p[k] * p[j];\n    if (cost < m[i][j]) { m[i][j] = cost; s[i][j] = k; }\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "m[k][j]",
+    "m[i][k + 1]",
+    "m[k + 1][i]",
+    "m[k + 1][j]"
+   ],
+   "answer_index": 3,
+   "explanation": "断开后左段是 A_i…A_k，右段是 A_{k+1}…A_j，所以代价是 m[i][k] + m[k+1][j] + 合并代价。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "矩阵连乘",
+    "填空"
+   ],
+   "source_quote": "int cost = m[i][k] + m[k + 1][j] + p[i - 1] * p[k] * p[j];"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.15 Dijkstra 单源最短路径": [
+  {
+   "type": "single",
+   "stem": "Dijkstra 算法采用的算法设计策略是：",
+   "options": [
+    "贪心法",
+    "动态规划",
+    "分治法",
+    "回溯法"
+   ],
+   "answer_index": 0,
+   "explanation": "每轮从未确定的顶点中选 dist 最小的加入集合，之后不再修改，是贪心。Floyd 才是动态规划。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "Dijkstra 单源最短路径",
+    "概念"
+   ],
+   "source_quote": "Dijkstra 属于贪心法"
+  },
+  {
+   "type": "single",
+   "stem": "Dijkstra 算法要求图中的边权：",
+   "options": [
+    "为正整数",
+    "非负",
+    "可以有负权边，但不能有负权回路",
+    "互不相同"
+   ],
+   "answer_index": 1,
+   "explanation": "有负权边时，已确定的顶点的最短距离可能被后面的路径改小，贪心性质不成立。负权边要用 Bellman-Ford。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "Dijkstra 单源最短路径",
+    "概念"
+   ],
+   "source_quote": "边权必须非负，有负权边时要用 Bellman-Ford"
+  },
+  {
+   "type": "single",
+   "stem": "用邻接矩阵实现的 Dijkstra 算法，时间复杂度为：",
+   "options": [
+    "O(n)",
+    "O(n³)",
+    "O(n²)",
+    "O(n log n)"
+   ],
+   "answer_index": 2,
+   "explanation": "n-1 轮，每轮选最小顶点 O(n)、松弛 O(n)，共 O(n²)。邻接表加堆是 O((n+e) log n)。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "Dijkstra 单源最短路径",
+    "复杂度"
+   ],
+   "source_quote": "用邻接矩阵实现的时间复杂度是 O(n²)"
+  },
+  {
+   "type": "single",
+   "stem": "Dijkstra 算法中，顶点 u 刚加入集合后，对未确定顶点 v 进行松弛的条件是：",
+   "options": [
+    "dist[u] + g[u][v] > dist[v]",
+    "dist[u] < dist[v]",
+    "g[u][v] < dist[u]",
+    "dist[u] + g[u][v] < dist[v]"
+   ],
+   "answer_index": 3,
+   "explanation": "经 u 中转到 v 的距离更短才更新，并记录前驱 prev[v] = u。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "Dijkstra 单源最短路径",
+    "概念"
+   ],
+   "source_quote": "松弛条件是 dist[u] + g[u][v] < dist[v]"
+  },
+  {
+   "type": "single",
+   "stem": "无向图有边 (0,1)=7、(0,2)=9、(0,5)=14、(1,2)=10、(1,3)=15、(2,3)=11、(2,5)=2、(3,4)=6、(4,5)=9。从顶点 0 到顶点 4 的最短路径长度是：",
+   "options": [
+    "20",
+    "18",
+    "22",
+    "23"
+   ],
+   "answer_index": 0,
+   "explanation": "最短路径是 0→2→5→4：9+2+9=20。另一条 0→5→4 为 14+9=23，0→1→3→4 为 7+15+6=28，0→2→3→4 为 9+11+6=26。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "Dijkstra 单源最短路径",
+    "手算"
+   ],
+   "source_quote": "到顶点 4 的最短路径是 0→2→5→4"
+  },
+  {
+   "type": "single",
+   "stem": "对无向图 (0,1)=7、(0,2)=9、(0,5)=14、(1,2)=10、(1,3)=15、(2,3)=11、(2,5)=2、(3,4)=6、(4,5)=9，从顶点 0 出发运行 Dijkstra 算法，先后加入集合 S 的前两个顶点（不含源点）依次是：",
+   "options": [
+    "2、1",
+    "1、2",
+    "1、5",
+    "2、5"
+   ],
+   "answer_index": 1,
+   "explanation": "初始 dist：顶点 1 为 7、顶点 2 为 9、顶点 5 为 14。先选最小的 1（7）；松弛后顶点 2 仍是 9、顶点 5 是 14，再选 2（9）。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "Dijkstra 单源最短路径",
+    "手算"
+   ],
+   "source_quote": "顶点加入集合 S 的顺序是按最短距离从小到大的"
+  },
+  {
+   "type": "single",
+   "stem": "Dijkstra 算法与 Prim 算法的主要区别是：",
+   "options": [
+    "Dijkstra 比较到树内任一点的最小边权，Prim 比较到源点的累计距离",
+    "Dijkstra 属于动态规划，Prim 属于贪心",
+    "Dijkstra 比较到源点的累计距离，Prim 比较到树内任一点的最小边权",
+    "Dijkstra 只能用于有向图，Prim 只能用于无向图"
+   ],
+   "answer_index": 2,
+   "explanation": "两者结构很像，都是“每次选离集合最近的顶点”。区别在于“近”的含义：Dijkstra 是 dist（累计距离），Prim 是 lowcost（单条边权）。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "Dijkstra 单源最短路径",
+    "辨析"
+   ],
+   "source_quote": "Prim 比较到树内任一点的最小边权，Dijkstra 比较到源点的累计距离"
+  },
+  {
+   "type": "single",
+   "stem": "Dijkstra 算法每轮从未确定的顶点中选出 dist 最小者 u，空缺处应填入：\n\n```c\nint u = -1;\nfor (int i = 0; i < N; i++)\n    if (!done[i] && (u == -1 || dist[i] < ______)) u = i;\ndone[u] = 1;\n```\n\n空缺处应填入：",
+   "options": [
+    "dist[i]",
+    "dist[src]",
+    "done[u]",
+    "dist[u]"
+   ],
+   "answer_index": 3,
+   "explanation": "u 保存当前最小者的下标，新的候选 i 只有 dist[i] < dist[u] 时才替换。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "Dijkstra 单源最短路径",
+    "填空"
+   ],
+   "source_quote": "if (!done[i] && (u == -1 || dist[i] < dist[u])) u = i;"
+  },
+  {
+   "type": "single",
+   "stem": "Dijkstra 算法松弛成功后，除了更新 dist[v]，还要记录前驱，空缺处应填入：\n\n```c\nif (!done[v] && g[u][v] < INF && dist[u] + g[u][v] < dist[v]) {\n    dist[v] = dist[u] + g[u][v];\n    prev[v] = ______;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "u",
+    "v",
+    "src",
+    "dist[u]"
+   ],
+   "answer_index": 0,
+   "explanation": "v 是经由 u 到达的，所以前驱是 u；沿 prev 数组从终点回溯就能还原路径。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "Dijkstra 单源最短路径",
+    "填空"
+   ],
+   "source_quote": "松弛成功时更新 dist[v] 并记录前驱 prev[v] = u"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.16 Floyd 多源最短路径": [
+  {
+   "type": "single",
+   "stem": "Floyd 算法采用的算法设计策略是：",
+   "options": [
+    "贪心法",
+    "动态规划",
+    "分治法",
+    "回溯法"
+   ],
+   "answer_index": 1,
+   "explanation": "Floyd 用 d_k[i][j] 表示只允许经过前 k 个顶点中转时的最短距离，由 d_{k-1} 递推，是动态规划。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "Floyd 多源最短路径",
+    "概念"
+   ],
+   "source_quote": "Floyd 求任意两点之间的最短路径，属于动态规划"
+  },
+  {
+   "type": "single",
+   "stem": "Floyd 算法的时间复杂度是：",
+   "options": [
+    "O(n²)",
+    "O(n log n)",
+    "O(n³)",
+    "O(2^n)"
+   ],
+   "answer_index": 2,
+   "explanation": "k、i、j 三重循环，每重 n 次。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "Floyd 多源最短路径",
+    "复杂度"
+   ],
+   "source_quote": "Floyd 的时间复杂度是 O(n³)，空间复杂度是 O(n²)"
+  },
+  {
+   "type": "single",
+   "stem": "Floyd 算法的三重循环中，必须放在最外层的循环变量是：",
+   "options": [
+    "起点 i",
+    "终点 j",
+    "三者顺序无关",
+    "中转点 k"
+   ],
+   "answer_index": 3,
+   "explanation": "d_k 依赖 d_{k-1}，k 表示允许使用的中转点范围，必须由外层逐步扩大。把 k 放在内层会得到错误结果。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "Floyd 多源最短路径",
+    "概念"
+   ],
+   "source_quote": "三重循环中 k 必须放在最外层，把 k 放在内层会得到错误的结果"
+  },
+  {
+   "type": "single",
+   "stem": "Floyd 算法中，经中转点 k 比直接走更短时才更新，比较符号应当是：\n\n```c\nfor (int k = 0; k < N; k++)\n    for (int i = 0; i < N; i++)\n        for (int j = 0; j < N; j++)\n            if (d[i][k] + d[k][j] ______ d[i][j])\n                d[i][j] = d[i][k] + d[k][j];\n```\n\n空缺处应填入：",
+   "options": [
+    "<",
+    ">",
+    "==",
+    "!="
+   ],
+   "answer_index": 0,
+   "explanation": "新路径更短才更新。写成 > 会保留更长的路径。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "Floyd 多源最短路径",
+    "填空"
+   ],
+   "source_quote": "if (d[i][k] + d[k][j] < d[i][j])"
+  },
+  {
+   "type": "single",
+   "stem": "有向图四个顶点 0~3，边 0→1 权 5、0→3 权 10、1→2 权 3、2→3 权 1。Floyd 算法求得的 d[0][3] 是：",
+   "options": [
+    "10",
+    "9",
+    "8",
+    "4"
+   ],
+   "answer_index": 1,
+   "explanation": "0→1→2→3 的长度是 5+3+1=9，小于直接边 0→3 的 10。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "Floyd 多源最短路径",
+    "手算"
+   ],
+   "source_quote": "Floyd 之后 d[0][3] = 9"
+  },
+  {
+   "type": "judge",
+   "stem": "Floyd 算法允许图中有负权边，但不能有负权回路。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "没有负权回路时，最短路径不会重复经过同一个顶点，递推有意义；有负权回路则最短路径无下界。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "Floyd 多源最短路径",
+    "判断"
+   ],
+   "source_quote": "Floyd 允许有负权边，但不能有负权回路"
+  },
+  {
+   "type": "single",
+   "stem": "把 Floyd 算法中的加法和取最小分别换成逻辑与和逻辑或，得到的是：",
+   "options": [
+    "Dijkstra 算法",
+    "Kruskal 算法",
+    "Warshall 传递闭包算法",
+    "KMP 算法"
+   ],
+   "answer_index": 2,
+   "explanation": "传递闭包只关心 i 到 j 是否可达：d[i][j] = d[i][j] || (d[i][k] && d[k][j])。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "Floyd 多源最短路径",
+    "概念"
+   ],
+   "source_quote": "就是求传递闭包的 Warshall 算法"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.17 最小生成树：思想与考点": [
+  {
+   "type": "single",
+   "stem": "n 个顶点的连通无向图，其生成树的边数是：",
+   "options": [
+    "n",
+    "n+1",
+    "n(n-1)/2",
+    "n-1"
+   ],
+   "answer_index": 3,
+   "explanation": "生成树包含全部顶点且无回路，恰好 n-1 条边。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "最小生成树",
+    "概念"
+   ],
+   "source_quote": "生成树包含全部 n 个顶点和恰好 n-1 条边，没有回路"
+  },
+  {
+   "type": "single",
+   "stem": "Prim 算法（邻接矩阵实现）的时间复杂度是 O(n²)，与边数无关，因此更适合：",
+   "options": [
+    "稠密图",
+    "稀疏图",
+    "有向图",
+    "森林"
+   ],
+   "answer_index": 0,
+   "explanation": "边很多时 Kruskal 的排序代价 O(e log e) 偏大，Prim 的 O(n²) 更划算；边很少时反过来。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "最小生成树",
+    "概念"
+   ],
+   "source_quote": "与边数无关，适合稠密图"
+  },
+  {
+   "type": "single",
+   "stem": "Kruskal 算法判断一条边加入后是否会形成回路，常用的数据结构是：",
+   "options": [
+    "优先队列",
+    "并查集",
+    "栈",
+    "哈希表"
+   ],
+   "answer_index": 1,
+   "explanation": "两个端点在并查集中根相同，说明已经连通，再加这条边会成环。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "最小生成树",
+    "概念"
+   ],
+   "source_quote": "Kruskal 用并查集判断两个端点是否已经连通"
+  },
+  {
+   "type": "single",
+   "stem": "Kruskal 算法的时间复杂度是 O(e log e)，主要来自：",
+   "options": [
+    "并查集的合并",
+    "遍历所有顶点",
+    "对边按权值排序",
+    "构造邻接矩阵"
+   ],
+   "answer_index": 2,
+   "explanation": "排序是 O(e log e)，并查集操作近似 O(1)。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最小生成树",
+    "复杂度"
+   ],
+   "source_quote": "时间复杂度是 O(e log e)，适合稀疏图"
+  },
+  {
+   "type": "single",
+   "stem": "无向图有边 (0,1)=7、(0,2)=9、(0,5)=14、(1,2)=10、(1,3)=15、(2,3)=11、(2,5)=2、(3,4)=6、(4,5)=9，其最小生成树的权值之和是：",
+   "options": [
+    "31",
+    "35",
+    "38",
+    "33"
+   ],
+   "answer_index": 3,
+   "explanation": "最小生成树含 5 条边：(2,5)=2、(3,4)=6、(0,1)=7、(0,2)=9、(4,5)=9，合计 33。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "最小生成树",
+    "手算"
+   ],
+   "source_quote": "最小生成树的权值为 33"
+  },
+  {
+   "type": "single",
+   "stem": "对无向图 (0,1)=7、(0,2)=9、(0,5)=14、(1,2)=10、(1,3)=15、(2,3)=11、(2,5)=2、(3,4)=6、(4,5)=9，从顶点 0 出发用 Prim 算法，依次选中的边是：",
+   "options": [
+    "(0,1)、(0,2)、(2,5)、(5,4)、(4,3)",
+    "(2,5)、(3,4)、(0,1)、(0,2)、(4,5)",
+    "(0,1)、(1,2)、(2,5)、(5,4)、(4,3)",
+    "(0,1)、(0,2)、(0,5)、(5,4)、(4,3)"
+   ],
+   "answer_index": 0,
+   "explanation": "树={0}：最小边 (0,1)=7；树={0,1}：最小边 (0,2)=9；树={0,1,2}：(2,5)=2；树加 5 后：(5,4)=9；最后 (4,3)=6。",
+   "difficulty": 4,
+   "tags": [
+    "下午题四",
+    "最小生成树",
+    "手算"
+   ],
+   "source_quote": "Prim 选边的顺序是 (0,1)、(0,2)、(2,5)、(5,4)、(4,3)"
+  },
+  {
+   "type": "single",
+   "stem": "对无向图 (0,1)=7、(0,2)=9、(0,5)=14、(1,2)=10、(1,3)=15、(2,3)=11、(2,5)=2、(3,4)=6、(4,5)=9，用 Kruskal 算法，第一条被选中的边是：",
+   "options": [
+    "(0,1)",
+    "(2,5)",
+    "(3,4)",
+    "(0,2)"
+   ],
+   "answer_index": 1,
+   "explanation": "Kruskal 把边按权值升序考察，权值最小的是 (2,5)=2。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最小生成树",
+    "手算"
+   ],
+   "source_quote": "Kruskal 第一条选的边是 (2,5)"
+  },
+  {
+   "type": "judge",
+   "stem": "最小生成树的形状不一定唯一，但当所有边权互不相同时，最小生成树是唯一的。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "存在权值相同的边时，可能有多棵权值相同的最小生成树；边权互异时每一步的最小边唯一，所以树唯一。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最小生成树",
+    "判断"
+   ],
+   "source_quote": "若所有边权互不相同，则最小生成树唯一"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.18 最小生成树：核心代码": [
+  {
+   "type": "single",
+   "stem": "Prim 算法每轮从树外顶点中选出 lowcost 最小者 k，空缺处应填入：\n\n```c\nint k = -1;\nfor (int i = 1; i < N; i++)\n    if (lowcost[i] != 0 && (k == -1 || lowcost[i] < ______)) k = i;\n```\n\n空缺处应填入：",
+   "options": [
+    "lowcost[0]",
+    "closest[k]",
+    "lowcost[k]",
+    "g[k][i]"
+   ],
+   "answer_index": 2,
+   "explanation": "k 是当前最小者的下标，候选 i 必须比它更小才替换。lowcost[i] != 0 保证只在树外顶点中选择。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最小生成树",
+    "填空"
+   ],
+   "source_quote": "if (lowcost[i] != 0 && (k == -1 || lowcost[i] < lowcost[k])) k = i;"
+  },
+  {
+   "type": "single",
+   "stem": "Prim 算法中，顶点 k 加入树之后更新树外顶点 i 的 lowcost，空缺处应填入：\n\n```c\nlowcost[k] = 0;\nfor (int i = 1; i < N; i++)\n    if (lowcost[i] != 0 && g[k][i] < ______) {\n        lowcost[i] = g[k][i];\n        closest[i] = k;\n    }\n```\n\n空缺处应填入：",
+   "options": [
+    "lowcost[k]",
+    "g[0][i]",
+    "INF",
+    "lowcost[i]"
+   ],
+   "answer_index": 3,
+   "explanation": "如果 k 到 i 的边比 i 当前到树的最小边更短，就更新 lowcost[i]，并记下最近的树内顶点是 k。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最小生成树",
+    "填空"
+   ],
+   "source_quote": "if (lowcost[i] != 0 && g[k][i] < lowcost[i]) {"
+  },
+  {
+   "type": "single",
+   "stem": "Kruskal 算法中，考察一条边时，若它的两个端点已经连通，应当舍弃，空缺处应填入：\n\n```c\nint ru = find(parent, edges[i].u), rv = find(parent, edges[i].v);\nif (______) continue;\nparent[ru] = rv;\n```\n\n空缺处应填入：",
+   "options": [
+    "ru == rv",
+    "ru != rv",
+    "ru < rv",
+    "edges[i].u == edges[i].v"
+   ],
+   "answer_index": 0,
+   "explanation": "两端点所在集合的根相同，说明已经在同一个连通分量里，再加这条边就会成环。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "最小生成树",
+    "填空"
+   ],
+   "source_quote": "if (ru == rv) continue;"
+  },
+  {
+   "type": "single",
+   "stem": "Kruskal 算法选中一条边之后，要合并两个端点所在的连通分量，空缺处应填入：\n\n```c\nif (ru == rv) continue;\nparent[ru] = ______;\ntotal += edges[i].w;\npicked++;\n```\n\n空缺处应填入：",
+   "options": [
+    "ru",
+    "rv",
+    "i",
+    "picked"
+   ],
+   "answer_index": 1,
+   "explanation": "让根 ru 的父结点指向根 rv，两个集合就合并成一个了。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "最小生成树",
+    "填空"
+   ],
+   "source_quote": "选中一条边之后用 parent[ru] = rv 合并两个连通分量"
+  },
+  {
+   "type": "single",
+   "stem": "Prim 算法的实现中，lowcost[i] 等于 0 表示：",
+   "options": [
+    "顶点 i 与树之间没有边",
+    "顶点 i 是起点",
+    "顶点 i 已经在树中",
+    "边 (closest[i], i) 的权值为 0"
+   ],
+   "answer_index": 2,
+   "explanation": "代码用 lowcost[i] = 0 作为“已入树”标记；没有边用 INF 表示。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "最小生成树",
+    "概念"
+   ],
+   "source_quote": "Prim 中 lowcost[i] 等于 0 表示顶点 i 已经在树中"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.19 哈夫曼编码：思想与考点": [
+  {
+   "type": "single",
+   "stem": "哈夫曼树（最优二叉树）是指：",
+   "options": [
+    "高度最小的二叉树",
+    "所有叶子在同一层的二叉树",
+    "结点总数最少的二叉树",
+    "带权路径长度 WPL 最小的二叉树"
+   ],
+   "answer_index": 3,
+   "explanation": "WPL 是各叶子权值乘以其路径长度之和；使 WPL 最小的树叫哈夫曼树，权值大的叶子离根近。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "哈夫曼编码",
+    "概念"
+   ],
+   "source_quote": "WPL 最小的二叉树叫哈夫曼树"
+  },
+  {
+   "type": "single",
+   "stem": "具有 n 个叶子结点的哈夫曼树，结点总数是：",
+   "options": [
+    "2n-1",
+    "2n",
+    "2n+1",
+    "n+1"
+   ],
+   "answer_index": 0,
+   "explanation": "哈夫曼树没有度为 1 的结点，度为 2 的结点有 n-1 个，所以总数是 n + (n-1) = 2n-1。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "哈夫曼编码",
+    "计算"
+   ],
+   "source_quote": "n 个叶子的哈夫曼树共有 2n-1 个结点"
+  },
+  {
+   "type": "single",
+   "stem": "具有 8 个叶子结点的哈夫曼树中，度为 2 的结点个数是：",
+   "options": [
+    "8",
+    "7",
+    "6",
+    "15"
+   ],
+   "answer_index": 1,
+   "explanation": "二叉树中 n0 = n2 + 1，所以 n2 = 8 - 1 = 7；哈夫曼树没有度为 1 的结点。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "哈夫曼编码",
+    "计算"
+   ],
+   "source_quote": "度为 0 的 n 个，度为 2 的 n-1 个，没有度为 1 的结点"
+  },
+  {
+   "type": "single",
+   "stem": "六个字符 a、b、c、d、e、f 的出现频率为 45、13、12、16、9、5，构造哈夫曼树后的带权路径长度 WPL 为：",
+   "options": [
+    "200",
+    "240",
+    "224",
+    "256"
+   ],
+   "answer_index": 2,
+   "explanation": "合并顺序：5+9=14，12+13=25，14+16=30，25+30=55，45+55=100。内部结点权值之和 14+25+30+55+100=224。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "哈夫曼编码",
+    "手算"
+   ],
+   "source_quote": "WPL 为 224，其中 a 的编码长度为 1"
+  },
+  {
+   "type": "single",
+   "stem": "下列关于哈夫曼编码的说法中，正确的是：",
+   "options": [
+    "它是等长编码",
+    "出现频率高的字符编码更长",
+    "同一组权值对应的哈夫曼树是唯一的",
+    "它是前缀码，译码没有歧义"
+   ],
+   "answer_index": 3,
+   "explanation": "哈夫曼编码任一编码都不是另一编码的前缀，可以无歧义译码；频率高的字符编码短；左右子树可互换，所以树和编码不唯一。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "哈夫曼编码",
+    "辨析"
+   ],
+   "source_quote": "哈夫曼编码是前缀码，任一字符的编码都不是另一字符编码的前缀"
+  },
+  {
+   "type": "single",
+   "stem": "同一组权值构造的哈夫曼树，一定唯一的是：",
+   "options": [
+    "带权路径长度 WPL",
+    "树的形状",
+    "每个字符的编码",
+    "左右子树的位置"
+   ],
+   "answer_index": 0,
+   "explanation": "左右子树互换、权值相同时选择不同都会得到不同的树和编码，但 WPL 总是最小值，唯一。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "哈夫曼编码",
+    "辨析"
+   ],
+   "source_quote": "哈夫曼树不唯一，编码也不唯一，但 WPL 唯一"
+  },
+  {
+   "type": "judge",
+   "stem": "哈夫曼树的带权路径长度 WPL 等于所有非叶子结点的权值之和。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "每个内部结点的权值是它下面所有叶子权值之和，每个叶子权值被其路径上的每个内部结点累计一次，正好是权值乘路径长度。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "哈夫曼编码",
+    "判断"
+   ],
+   "source_quote": "WPL 也等于所有内部（非叶子）结点的权值之和"
+  },
+  {
+   "type": "single",
+   "stem": "用线性查找选取最小的两棵树来构造哈夫曼树，时间复杂度是 O(n²)；改用下列哪种数据结构可以降到 O(n log n)？",
+   "options": [
+    "并查集",
+    "小顶堆",
+    "栈",
+    "哈希表"
+   ],
+   "answer_index": 1,
+   "explanation": "每次需要取出并合并权值最小的两个元素，再插入新元素，这正是优先队列（小顶堆）的操作。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "哈夫曼编码",
+    "复杂度"
+   ],
+   "source_quote": "用小顶堆可以优化到 O(n log n)"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.20 哈夫曼编码：核心代码": [
+  {
+   "type": "single",
+   "stem": "构造哈夫曼树时，只能在尚无父结点的结点中选取权值最小者，空缺处应填入：\n\n```c\nstatic int select_min(const Node t[], int upto) {\n    int k = -1;\n    for (int i = 0; i < upto; i++)\n        if (t[i].parent == ______ && (k == -1 || t[i].weight < t[k].weight)) k = i;\n    return k;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "0",
+    "i",
+    "-1",
+    "N"
+   ],
+   "answer_index": 2,
+   "explanation": "初始化时每个结点的 parent 都是 -1，表示还没被合并；被合并后 parent 指向新结点，不会再被选中。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "哈夫曼编码",
+    "填空"
+   ],
+   "source_quote": "if (t[i].parent == -1 && (k == -1 || t[i].weight < t[k].weight)) k = i;"
+  },
+  {
+   "type": "single",
+   "stem": "合并两个权值最小的结点 a、b 产生新结点 i，新结点的权值应当是：\n\n```c\nt[i].lchild = a;\nt[i].rchild = b;\nt[i].weight = ______;\n```\n\n空缺处应填入：",
+   "options": [
+    "t[a].weight * t[b].weight",
+    "t[a].weight",
+    "t[b].weight - t[a].weight",
+    "t[a].weight + t[b].weight"
+   ],
+   "answer_index": 3,
+   "explanation": "新根的权值是两棵子树根权值之和。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "哈夫曼编码",
+    "填空"
+   ],
+   "source_quote": "t[i].weight = t[a].weight + t[b].weight;"
+  },
+  {
+   "type": "single",
+   "stem": "求叶子 i 的哈夫曼编码时，沿叶子到根的路径向上走，循环变量的更新应当是：\n\n```c\nfor (int c = i; t[c].parent != -1; c = ______)\n    code[len++] = (t[t[c].parent].lchild == c) ? '0' : '1';\n```\n\n空缺处应填入：",
+   "options": [
+    "t[c].parent",
+    "t[c].lchild",
+    "t[c].rchild",
+    "c + 1"
+   ],
+   "answer_index": 0,
+   "explanation": "沿 parent 指针一路向上走到根（根的 parent 是 -1），每一步记下当前结点是父结点的左孩子还是右孩子。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "哈夫曼编码",
+    "填空"
+   ],
+   "source_quote": "for (int c = i; t[c].parent != -1; c = t[c].parent)"
+  },
+  {
+   "type": "single",
+   "stem": "计算带权路径长度时，每个叶子对 WPL 的贡献是：\n\n```c\nfor (int i = 0; i < N; i++) {\n    ...\n    wpl += ______;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "w[i] + len",
+    "w[i] * len",
+    "len",
+    "w[i]"
+   ],
+   "answer_index": 1,
+   "explanation": "WPL 是权值乘以路径长度（编码长度）之和。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "哈夫曼编码",
+    "填空"
+   ],
+   "source_quote": "wpl += w[i] * len;"
+  },
+  {
+   "type": "single",
+   "stem": "求哈夫曼编码时，沿叶子到根的路径记录得到的 0/1 串是逆序的，所以需要：",
+   "options": [
+    "直接使用，不需要处理",
+    "把 0 和 1 互换",
+    "反转后才是从根到叶子的编码",
+    "按字典序排序"
+   ],
+   "answer_index": 2,
+   "explanation": "从叶子往根走时先记录最靠近叶子的一位，而编码是从根到叶子读的，所以要把得到的串反转。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "哈夫曼编码",
+    "概念"
+   ],
+   "source_quote": "从叶子往根走得到的是逆序编码，需要反转后才是从根到叶子的编码"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.21 N 皇后：思想与考点": [
+  {
+   "type": "single",
+   "stem": "N 皇后问题通常用什么方法求解？",
+   "options": [
+    "贪心法",
+    "分治法",
+    "动态规划",
+    "回溯法"
+   ],
+   "answer_index": 3,
+   "explanation": "逐行放置皇后，冲突就退回上一行换位置，是深度优先搜索加剪枝，即回溯法。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "N 皇后",
+    "概念"
+   ],
+   "source_quote": "N 皇后用回溯法求解，回溯法就是深度优先搜索加剪枝"
+  },
+  {
+   "type": "single",
+   "stem": "N 皇后中，x[r] 表示第 r 行皇后所在的列，第 i 行与第 r 行的皇后在同一对角线上的条件是：",
+   "options": [
+    "|x[i]-x[r]| == r-i",
+    "x[i] == x[r]",
+    "x[i]+x[r] == r",
+    "x[i]-x[r] == 1"
+   ],
+   "answer_index": 0,
+   "explanation": "同一对角线上两个格子的行差等于列差的绝对值。x[i] == x[r] 是同列。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "N 皇后",
+    "概念"
+   ],
+   "source_quote": "在同一对角线的条件是 |x[i]-x[r]| == r-i"
+  },
+  {
+   "type": "single",
+   "stem": "8 皇后问题共有多少个解（不去掉旋转和对称）？",
+   "options": [
+    "12",
+    "92",
+    "64",
+    "40"
+   ],
+   "answer_index": 1,
+   "explanation": "8 皇后共 92 个解，去掉旋转和对称后是 12 个基本解；7 皇后有 40 个解。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "N 皇后",
+    "概念"
+   ],
+   "source_quote": "8 皇后共有 92 个解"
+  },
+  {
+   "type": "single",
+   "stem": "下列关于 N 皇后解的个数的说法中，正确的是：",
+   "options": [
+    "n=3 时有 1 个解",
+    "n=4 时无解",
+    "n=4 时有 2 个解，n=2 和 n=3 无解",
+    "n=2 时有 2 个解"
+   ],
+   "answer_index": 2,
+   "explanation": "n=1 有 1 个解；n=2、3 无法放下；n=4 有 2 个解（互为镜像）。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "N 皇后",
+    "概念"
+   ],
+   "source_quote": "4 皇后有 2 个解，n=2 和 n=3 无解"
+  },
+  {
+   "type": "single",
+   "stem": "N 皇后问题的解空间树是：",
+   "options": [
+    "子集树",
+    "二叉排序树",
+    "哈夫曼树",
+    "排列树"
+   ],
+   "answer_index": 3,
+   "explanation": "每行放一个皇后，列号构成 1..n 的一个排列，叶子数是 n!，是排列树；0-1 背包才是子集树。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "N 皇后",
+    "概念"
+   ],
+   "source_quote": "0-1 背包是子集树，N 皇后和旅行商问题是排列树"
+  },
+  {
+   "type": "single",
+   "stem": "回溯法与分支限界法的主要区别是：",
+   "options": [
+    "回溯法用深度优先搜索求所有解或可行解，分支限界法用广度优先或最小耗费优先搜索求最优解",
+    "回溯法用广度优先搜索，分支限界法用深度优先搜索",
+    "两者都用深度优先搜索，只是剪枝函数不同",
+    "回溯法只能求最优解，分支限界法只能求可行解"
+   ],
+   "answer_index": 0,
+   "explanation": "回溯法 DFS，目标通常是所有解或一个可行解；分支限界法 BFS 或最小耗费优先，目标通常是最优解。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "N 皇后",
+    "辨析"
+   ],
+   "source_quote": "回溯法求所有解或可行解，用深度优先；分支限界法求最优解，用广度优先或最小耗费优先"
+  },
+  {
+   "type": "single",
+   "stem": "下列问题中，不属于典型回溯问题的是：",
+   "options": [
+    "图的 m 着色",
+    "最长公共子序列",
+    "哈密顿回路",
+    "子集和"
+   ],
+   "answer_index": 1,
+   "explanation": "最长公共子序列用动态规划求解；图着色、哈密顿回路、子集和、迷宫、数独都是回溯法的典型问题。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "N 皇后",
+    "辨析"
+   ],
+   "source_quote": "其他典型回溯问题有图的 m 着色、哈密顿回路、0-1 背包、子集和、迷宫和数独"
+  },
+  {
+   "type": "judge",
+   "stem": "非递归回溯与递归回溯搜索的是同一棵解空间树，只是用 r 的增减代替了函数的递归调用与返回。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "非递归版用变量 r 表示当前行：找到可放的列就 r++ 进入下一行，所有列都试完就 r-- 回到上一行，对应递归的调用和返回。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "N 皇后",
+    "判断"
+   ],
+   "source_quote": "本行有可放的列就前进 r++，本行所有列都试完就回溯 r--"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.22 N 皇后：核心代码": [
+  {
+   "type": "single",
+   "stem": "N 皇后的约束函数中，判断第 i 行与第 r 行的皇后是否在同一对角线，空缺处应填入：\n\n```c\nstatic int place_ok(int r) {\n    for (int i = 0; i < r; i++)\n        if (x[i] == x[r] || abs(x[i] - x[r]) == ______) return 0;\n    return 1;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "r + i",
+    "i",
+    "r - i",
+    "r"
+   ],
+   "answer_index": 2,
+   "explanation": "同一对角线上两个皇后的列差的绝对值等于行差 r-i。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "N 皇后",
+    "填空"
+   ],
+   "source_quote": "if (x[i] == x[r] || abs(x[i] - x[r]) == r - i) return 0;"
+  },
+  {
+   "type": "single",
+   "stem": "N 皇后递归回溯的递归出口（前 n 行都已放好，得到一个解）是：\n\n```c\nstatic void backtrack(int r) {\n    if (______) {\n        count++;\n        return;\n    }\n    for (int c = 0; c < n; c++) {\n        x[r] = c;\n        if (place_ok(r)) backtrack(r + 1);\n    }\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "r == n - 1",
+    "r > n",
+    "r == 0",
+    "r == n"
+   ],
+   "answer_index": 3,
+   "explanation": "行号从 0 开始，r == n 表示第 0 到 n-1 行都已放好。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "N 皇后",
+    "填空"
+   ],
+   "source_quote": "递归出口是 r == n，表示前 n 行都已放好，得到一个解"
+  },
+  {
+   "type": "single",
+   "stem": "N 皇后递归回溯中，当前行的皇后位置可行时，应当继续处理下一行，空缺处应填入：\n\n```c\nfor (int c = 0; c < n; c++) {\n    x[r] = c;\n    if (place_ok(r)) ______;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "backtrack(r + 1)",
+    "backtrack(r)",
+    "backtrack(r - 1)",
+    "backtrack(c + 1)"
+   ],
+   "answer_index": 0,
+   "explanation": "可行才进入下一行 r+1；不可行就跳过，循环自动尝试下一列，这就是剪枝与回溯。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "N 皇后",
+    "填空"
+   ],
+   "source_quote": "可行才递归进入下一行，不可行就剪枝"
+  },
+  {
+   "type": "single",
+   "stem": "N 皇后的非递归回溯，外层循环在搜索结束前一直继续，循环条件应当是：\n\n```c\nint cnt = 0, r = 0;\nx[0] = -1;\nwhile (______) {\n    x[r]++;\n    ...\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "r < n",
+    "r >= 0",
+    "r > 0",
+    "x[r] < n"
+   ],
+   "answer_index": 1,
+   "explanation": "r 退到 -1 说明第 0 行的所有列也都试完了，搜索结束。r > 0 会漏掉第 0 行的后续列。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "N 皇后",
+    "填空"
+   ],
+   "source_quote": "非递归版中 r 小于 0 说明第 0 行也已试完，搜索结束"
+  },
+  {
+   "type": "single",
+   "stem": "非递归回溯进入下一行时，要把下一行已试的列重置为：\n\n```c\nif (x[r] < n) {\n    if (r == n - 1) cnt++;\n    else x[++r] = ______;\n} else {\n    r--;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "0",
+    "n",
+    "-1",
+    "x[r]"
+   ],
+   "answer_index": 2,
+   "explanation": "循环开头先执行 x[r]++，所以新行的初值应设为 -1，这样第一次试的是第 0 列。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "N 皇后",
+    "填空"
+   ],
+   "source_quote": "非递归版进入下一行时要把下一行的列重置为 -1，表示还没有试过任何列"
+  },
+  {
+   "type": "single",
+   "stem": "非递归回溯中，当前行所有列都试完仍无处可放，应当回到上一行，空缺处应填入：\n\n```c\nif (x[r] < n) {\n    if (r == n - 1) cnt++;\n    else x[++r] = -1;\n} else {\n    ______;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "r++",
+    "r = 0",
+    "x[r] = 0",
+    "r--"
+   ],
+   "answer_index": 3,
+   "explanation": "回溯就是退回上一行，让上一行换下一列继续试。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "N 皇后",
+    "填空"
+   ],
+   "source_quote": "while (x[r] < n && !place_ok(r)) x[r]++;"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.23 活动安排问题": [
+  {
+   "type": "single",
+   "stem": "活动安排问题的最优贪心策略是：",
+   "options": [
+    "按结束时间升序排序，依次选择与已选活动相容的活动",
+    "按开始时间升序排序，依次选择相容的活动",
+    "按持续时间升序排序，依次选择相容的活动",
+    "按开始时间降序排序，依次选择相容的活动"
+   ],
+   "answer_index": 0,
+   "explanation": "结束得最早的活动给后面的活动留下的时间最多。按开始时间或持续时间选择都能举出反例。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "活动安排问题",
+    "概念"
+   ],
+   "source_quote": "活动安排用贪心法：按结束时间升序排序"
+  },
+  {
+   "type": "single",
+   "stem": "活动安排问题中，活动 i 与上一个已选活动相容的条件是（last_end 为上一个已选活动的结束时间）：",
+   "options": [
+    "s[i] > last_end",
+    "s[i] >= last_end",
+    "f[i] >= last_end",
+    "f[i] <= last_end"
+   ],
+   "answer_index": 1,
+   "explanation": "活动区间是半开区间 [s, f)，首尾相接（开始时间等于上一个结束时间）也算相容。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "活动安排问题",
+    "概念"
+   ],
+   "source_quote": "相容的判断条件是 s[i] >= last_end"
+  },
+  {
+   "type": "single",
+   "stem": "活动已按结束时间排好序，贪心选择算法的时间复杂度是：",
+   "options": [
+    "O(n log n)",
+    "O(n²)",
+    "O(n)",
+    "O(1)"
+   ],
+   "answer_index": 2,
+   "explanation": "只需扫描一遍。如果还没排序，则加上排序 O(n log n)，总体 O(n log n)。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "活动安排问题",
+    "复杂度"
+   ],
+   "source_quote": "排序之后一次扫描是 O(n)"
+  },
+  {
+   "type": "single",
+   "stem": "11 个活动已按结束时间排好，开始时间为 1 3 0 5 3 5 6 8 8 2 12，结束时间为 4 5 6 7 9 9 10 11 12 14 16，最多可以安排的活动个数是：",
+   "options": [
+    "3",
+    "5",
+    "6",
+    "4"
+   ],
+   "answer_index": 3,
+   "explanation": "依次选 [1,4)、[5,7)、[8,11)、[12,16)，共 4 个。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "活动安排问题",
+    "手算"
+   ],
+   "source_quote": "最多可以安排 4 个活动"
+  },
+  {
+   "type": "judge",
+   "stem": "按持续时间最短优先选择活动，同样可以保证得到最优解。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 1,
+   "explanation": "反例：[1,5)、[4,6)、[5,9)。持续时间最短的是 [4,6)，选了它就不能再选另外两个，只得 1 个；最优是 [1,5) 和 [5,9) 共 2 个。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "活动安排问题",
+    "判断"
+   ],
+   "source_quote": "按开始时间最早或按持续时间最短来选都不能保证最优"
+  },
+  {
+   "type": "single",
+   "stem": "活动安排的贪心选择中，判断活动 i 是否与已选活动相容，空缺处应填入：\n\n```c\nint chosen[N], cnt = 0, last_end = 0;\nfor (int i = 0; i < N; i++)\n    if (s[i] ______ last_end) {\n        chosen[cnt++] = i;\n        last_end = f[i];\n    }\n```\n\n空缺处应填入：",
+   "options": [
+    ">=",
+    ">",
+    "<=",
+    "<"
+   ],
+   "answer_index": 0,
+   "explanation": "开始时间不早于上一个已选活动的结束时间才相容；写成 > 会漏掉首尾相接的活动。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "活动安排问题",
+    "填空"
+   ],
+   "source_quote": "if (s[i] >= last_end) {"
+  },
+  {
+   "type": "single",
+   "stem": "活动安排的递归写法中，跳过与上一个已选活动 k 不相容的活动，循环条件应当是：\n\n```c\nint m = k + 1;\nint last_end = (k < 0) ? 0 : f[k];\nwhile (m < n && s[m] ______ last_end) m++;\nif (m >= n) return cnt;\n```\n\n空缺处应填入：",
+   "options": [
+    ">=",
+    "<",
+    "<=",
+    ">"
+   ],
+   "answer_index": 1,
+   "explanation": "开始时间早于 last_end 说明与 k 重叠，应跳过；s[m] == last_end 是相容的，不能跳过，所以不能用 <=。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "活动安排问题",
+    "填空"
+   ],
+   "source_quote": "while (m < n && s[m] < last_end) m++;"
+  },
+  {
+   "type": "single",
+   "stem": "活动安排的递归写法中，选中活动 m 之后，继续递归时“上一个已选活动”应当是：\n\n```c\nchosen[cnt++] = m;\nreturn rec_select(s, f, ______, n, chosen, cnt);\n```\n\n空缺处应填入：",
+   "options": [
+    "k",
+    "m + 1",
+    "m",
+    "n"
+   ],
+   "answer_index": 2,
+   "explanation": "新的“上一个已选活动”就是刚选中的 m。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "活动安排问题",
+    "填空"
+   ],
+   "source_quote": "递归写法以上一个已选活动 k 为参数"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.24 KMP 模式匹配：思想与考点": [
+  {
+   "type": "single",
+   "stem": "KMP 算法的时间复杂度是（n、m 分别为主串、模式串的长度）：",
+   "options": [
+    "O(n·m)",
+    "O(n)",
+    "O(m²)",
+    "O(n+m)"
+   ],
+   "answer_index": 3,
+   "explanation": "求 next 数组 O(m)，匹配过程主串指针不回溯，O(n)，合计 O(n+m)。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "KMP 模式匹配",
+    "复杂度"
+   ],
+   "source_quote": "KMP 在失配时主串指针不回溯，只让模式串指针回退，时间复杂度为 O(n+m)"
+  },
+  {
+   "type": "single",
+   "stem": "KMP 算法与朴素匹配算法的根本区别是：",
+   "options": [
+    "失配时主串指针不回溯",
+    "失配时模式串指针不回溯",
+    "KMP 要求主串有序",
+    "KMP 不需要对模式串预处理"
+   ],
+   "answer_index": 0,
+   "explanation": "朴素匹配失配时主串回退到本次起点的下一位；KMP 利用 next 数组只回退模式串指针。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "KMP 模式匹配",
+    "概念"
+   ],
+   "source_quote": "KMP 在失配时主串指针不回溯，只让模式串指针回退"
+  },
+  {
+   "type": "single",
+   "stem": "模式串 ababaa 的 next 数组（下标从 1 开始，next[1]=0）是：",
+   "options": [
+    "0 0 1 2 3 4",
+    "0 1 1 2 3 4",
+    "0 1 1 2 3 3",
+    "0 1 2 3 4 5"
+   ],
+   "answer_index": 1,
+   "explanation": "next[j] 等于 P1…P(j-1) 的最长相等前后缀长度加 1：j=2→1，j=3（a）→1，j=4（ab）→2，j=5（aba）→3，j=6（abab）→4。",
+   "difficulty": 4,
+   "tags": [
+    "下午题四",
+    "KMP 模式匹配",
+    "手算"
+   ],
+   "source_quote": "模式串 ababaa 的 next 数组是 0 1 1 2 3 4"
+  },
+  {
+   "type": "single",
+   "stem": "模式串 ABCDABD 的 next 数组（下标从 1 开始，next[1]=0）是：",
+   "options": [
+    "0 0 0 0 1 2 0",
+    "0 1 1 1 2 3 4",
+    "0 1 1 1 1 2 3",
+    "0 1 2 3 1 2 3"
+   ],
+   "answer_index": 2,
+   "explanation": "next[6] 对应前缀 ABCDA，最长相等前后缀 A 长度 1，所以是 2；next[7] 对应 ABCDAB，前后缀 AB 长度 2，所以是 3。",
+   "difficulty": 4,
+   "tags": [
+    "下午题四",
+    "KMP 模式匹配",
+    "手算"
+   ],
+   "source_quote": "教材 next 数组是 0 1 1 1 1 2 3"
+  },
+  {
+   "type": "single",
+   "stem": "模式串 ABCDABD 的失败函数 pi（下标从 0 开始，pi[i] 是 P[0..i] 的最长相等真前缀与真后缀的长度）是：",
+   "options": [
+    "0 1 1 1 1 2 3",
+    "0 0 0 0 1 2 3",
+    "1 0 0 0 1 2 0",
+    "0 0 0 0 1 2 0"
+   ],
+   "answer_index": 3,
+   "explanation": "P[0..4]=ABCDA 的前后缀 A 长度 1；P[0..5]=ABCDAB 的 AB 长度 2；P[0..6]=ABCDABD 没有相等的前后缀，为 0。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "KMP 模式匹配",
+    "手算"
+   ],
+   "source_quote": "模式串 ABCDABD 的 pi 数组是 0 0 0 0 1 2 0"
+  },
+  {
+   "type": "single",
+   "stem": "教材中的 next[j]（下标从 1 起）与失败函数 pi（下标从 0 起）的关系是（j≥2）：",
+   "options": [
+    "next[j] = pi[j-2] + 1",
+    "next[j] = pi[j-1]",
+    "next[j] = pi[j] + 1",
+    "next[j] = pi[j-2] - 1"
+   ],
+   "answer_index": 0,
+   "explanation": "next[j] 只看 P1…P(j-1)，对应 pi[j-2]；教材又多加了 1，所以相差整体右移一位再加 1。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "KMP 模式匹配",
+    "概念"
+   ],
+   "source_quote": "两种定义的关系是 next[j] = pi[j-2] + 1，其中 j 大于等于 2"
+  },
+  {
+   "type": "single",
+   "stem": "在主串 BBC ABCDAB ABCDABCDABDE 中查找 ABCDABD，首次出现的下标（从 0 开始）是：",
+   "options": [
+    "11",
+    "15",
+    "4",
+    "19"
+   ],
+   "answer_index": 1,
+   "explanation": "BBC␣ 占 4 个字符，ABCDAB␣ 占 7 个，所以第二个 ABCDAB 起点在 11，从那里的 ABCDABCDABDE 中，ABCDABD 出现在 11+4=15。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "KMP 模式匹配",
+    "手算"
+   ],
+   "source_quote": "首次出现的下标是 15"
+  },
+  {
+   "type": "judge",
+   "stem": "朴素匹配算法在最坏情况下的时间复杂度是 O(n·m)。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "例如主串 aaaa…ab、模式串 aaab，每个起点几乎都要比较到模式串末尾才失配。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "KMP 模式匹配",
+    "复杂度"
+   ],
+   "source_quote": "最坏时间复杂度为 O(n·m)"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.25 KMP 模式匹配：核心代码": [
+  {
+   "type": "single",
+   "stem": "求失败函数 pi 时，失配后 k 应当回退到：\n\n```c\nfor (int i = 1, k = 0; i < m; i++) {\n    while (k > 0 && p[i] != p[k]) k = ______;\n    if (p[i] == p[k]) k++;\n    pi[i] = k;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "pi[k]",
+    "k - 1",
+    "pi[k - 1]",
+    "0"
+   ],
+   "answer_index": 2,
+   "explanation": "失配时要找当前前缀的“次长相等前后缀”，它的长度正是 pi[k-1]。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "KMP 模式匹配",
+    "填空"
+   ],
+   "source_quote": "while (k > 0 && p[i] != p[k]) k = pi[k - 1];"
+  },
+  {
+   "type": "single",
+   "stem": "求失败函数 pi 时，p[i] 与 p[k] 匹配，则相等前后缀的长度应当：\n\n```c\nwhile (k > 0 && p[i] != p[k]) k = pi[k - 1];\nif (p[i] == p[k]) ______;\npi[i] = k;\n```\n\n空缺处应填入：",
+   "options": [
+    "k--",
+    "k = i",
+    "i++",
+    "k++"
+   ],
+   "answer_index": 3,
+   "explanation": "前后缀各多匹配一个字符，长度加 1。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "KMP 模式匹配",
+    "填空"
+   ],
+   "source_quote": "求 pi 数组时，失配就让 k 回退到 pi[k-1]，匹配则 k 加 1"
+  },
+  {
+   "type": "single",
+   "stem": "KMP 匹配成功（k == m）时，模式串在主串中的起点下标（从 0 开始）是：\n\n```c\nfor (int i = 0, k = 0; i < n; i++) {\n    while (k > 0 && t[i] != p[k]) k = pi[k - 1];\n    if (t[i] == p[k]) k++;\n    if (k == m) return ______;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "i - m + 1",
+    "i - m",
+    "i",
+    "i + 1"
+   ],
+   "answer_index": 0,
+   "explanation": "i 指向匹配段的最后一个字符，往回数 m 个字符，起点是 i-m+1。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "KMP 模式匹配",
+    "填空"
+   ],
+   "source_quote": "k == m 表示模式串全部匹配，起点下标为 i-m+1"
+  },
+  {
+   "type": "single",
+   "stem": "教材写法的 KMP 匹配循环中，失配后模式串指针 j 应当回退到：\n\n```c\nint i = 1, j = 1;\nwhile (i <= n && j <= m) {\n    if (j == 0 || t[i - 1] == p[j - 1]) { i++; j++; }\n    else j = ______;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "next[j - 1]",
+    "next[j]",
+    "j - 1",
+    "0"
+   ],
+   "answer_index": 1,
+   "explanation": "教材的 next[j] 就是失配后模式串应当继续比较的位置。next[j] 为 0 时，下一轮循环会让 i、j 同时前进。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "KMP 模式匹配",
+    "填空"
+   ],
+   "source_quote": "else j = next[j];"
+  },
+  {
+   "type": "single",
+   "stem": "教材写法的 KMP 匹配循环中，两个指针同时前进的条件是字符相等，或者：\n\n```c\nwhile (i <= n && j <= m) {\n    if (______ || t[i - 1] == p[j - 1]) { i++; j++; }\n    else j = next[j];\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "j == 1",
+    "i == 0",
+    "j == 0",
+    "j == m"
+   ],
+   "answer_index": 2,
+   "explanation": "j 退到 0 表示模式串第一个字符就失配，此时主串前进一位、模式串从头（j=1）开始。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "KMP 模式匹配",
+    "填空"
+   ],
+   "source_quote": "教材写法中 j == 0 或字符相等时，i 和 j 同时前进"
+  },
+  {
+   "type": "single",
+   "stem": "朴素匹配算法在失配时，主串指针 i 应当回退到：\n\n```c\nwhile (i < n && j < m) {\n    if (t[i] == p[j]) { i++; j++; }\n    else { i = ______; j = 0; }\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "i - j",
+    "i + 1",
+    "i",
+    "i - j + 1"
+   ],
+   "answer_index": 3,
+   "explanation": "i-j 是本次匹配的起点，下一次从起点的下一位开始，所以是 i-j+1。KMP 就是为了避免这种回退。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "KMP 模式匹配",
+    "填空"
+   ],
+   "source_quote": "else { i = i - j + 1; j = 0; }"
+  },
+  {
+   "type": "single",
+   "stem": "KMP 匹配循环 for (int i = 0, k = 0; i < n; i++) 中，主串下标 i 的变化特点是：",
+   "options": [
+    "只增不减",
+    "失配时回退到 i-k+1",
+    "失配时回退到 0",
+    "每次增加 k"
+   ],
+   "answer_index": 0,
+   "explanation": "失配时只修改 k（模式串指针），i 每轮自增一次，这是 KMP 与朴素匹配的区别。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "KMP 模式匹配",
+    "概念"
+   ],
+   "source_quote": "KMP 匹配时 i 只增不减，主串指针不回溯"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.26 最大子段和：思想与考点": [
+  {
+   "type": "single",
+   "stem": "序列 -2 11 -4 13 -5 -2 的最大子段和是：",
+   "options": [
+    "24",
+    "20",
+    "13",
+    "11"
+   ],
+   "answer_index": 1,
+   "explanation": "子段 11 -4 13 的和是 20，是最大的。24 是 11+13 但它们之间的 -4 不能跳过。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "最大子段和",
+    "手算"
+   ],
+   "source_quote": "序列 -2 11 -4 13 -5 -2 的最大子段和为 20"
+  },
+  {
+   "type": "single",
+   "stem": "最大子段和的分治解法中，跨越中点的最大子段和等于：",
+   "options": [
+    "左半的最大子段和 + 右半的最大子段和",
+    "左半全部元素之和 + 右半全部元素之和",
+    "左半以 mid 结尾的最大和 + 右半以 mid+1 开头的最大和",
+    "max(左半最大子段和, 右半最大子段和)"
+   ],
+   "answer_index": 2,
+   "explanation": "跨越中点的子段必须连续，它由左半的一个后缀和右半的一个前缀拼成，各自取最大。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "最大子段和",
+    "概念"
+   ],
+   "source_quote": "跨越中点的最大子段和，等于左半中以 mid 结尾的最大和加上右半中以 mid+1 开头的最大和"
+  },
+  {
+   "type": "single",
+   "stem": "最大子段和的分治算法，时间复杂度是：",
+   "options": [
+    "Θ(n)",
+    "Θ(n²)",
+    "Θ(n³)",
+    "Θ(n log n)"
+   ],
+   "answer_index": 3,
+   "explanation": "递归式 T(n)=2T(n/2)+Θ(n)，由主定理得 Θ(n log n)。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最大子段和",
+    "复杂度"
+   ],
+   "source_quote": "分治解法的递归式是 T(n)=2T(n/2)+Θ(n)，由主定理得 Θ(n log n)"
+  },
+  {
+   "type": "single",
+   "stem": "最大子段和的动态规划解法中，设 b[j] 为以 a[j] 结尾的最大子段和，则 b[j] 等于：",
+   "options": [
+    "max(b[j-1], 0) + a[j]",
+    "b[j-1] + a[j]",
+    "max(b[j-1], a[j-1]) + a[j]",
+    "min(b[j-1], 0) + a[j]"
+   ],
+   "answer_index": 0,
+   "explanation": "如果以 a[j-1] 结尾的最大和为负，接上它只会更小，不如从 a[j] 重新开始。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最大子段和",
+    "概念"
+   ],
+   "source_quote": "b[j] = max(b[j-1], 0) + a[j]"
+  },
+  {
+   "type": "single",
+   "stem": "枚举所有子段并对每个子段重新累加求最大子段和，时间复杂度是：",
+   "options": [
+    "O(n²)",
+    "O(n³)",
+    "O(n log n)",
+    "O(n)"
+   ],
+   "answer_index": 1,
+   "explanation": "起点、终点各 O(n)，累加又是 O(n)，共 O(n³)；增量累加省掉最内层，降到 O(n²)。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "最大子段和",
+    "复杂度"
+   ],
+   "source_quote": "暴力枚举所有子段并重新累加是 O(n³)"
+  },
+  {
+   "type": "single",
+   "stem": "序列 1 -2 3 10 -4 7 2 -5 的最大子段和是：",
+   "options": [
+    "16",
+    "20",
+    "18",
+    "14"
+   ],
+   "answer_index": 2,
+   "explanation": "子段 3 10 -4 7 2 的和是 3+10-4+7+2=18。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最大子段和",
+    "手算"
+   ],
+   "source_quote": "最大子段和是 18，对应子段 3 10 -4 7 2"
+  },
+  {
+   "type": "single",
+   "stem": "最大子段和动态规划解法的空间复杂度是：",
+   "options": [
+    "O(n)",
+    "O(n²)",
+    "O(log n)",
+    "O(1)"
+   ],
+   "answer_index": 3,
+   "explanation": "b[j] 只依赖 b[j-1]，用一个变量滚动保存即可。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "最大子段和",
+    "复杂度"
+   ],
+   "source_quote": "只需一个变量滚动保存 b，空间复杂度是 O(1)"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.27 最大子段和：核心代码": [
+  {
+   "type": "single",
+   "stem": "最大子段和分治算法的递归出口是区间只有一个元素，元素为负数时按空子段处理，空缺处应填入：\n\n```c\nstatic int divide(const int a[], int lo, int hi) {\n    if (lo == hi) return a[lo] > 0 ? a[lo] : ______;\n    ...\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "0",
+    "-1",
+    "a[lo]",
+    "1"
+   ],
+   "answer_index": 0,
+   "explanation": "约定全为负数时最大子段和为 0（取空子段）。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "最大子段和",
+    "填空"
+   ],
+   "source_quote": "分治出口是单个元素，元素为负数时按 0 处理"
+  },
+  {
+   "type": "single",
+   "stem": "最大子段和分治算法的合并步骤，取三种情形中的最大者，空缺处应填入：\n\n```c\nint left  = divide(a, lo, mid);\nint right = divide(a, mid + 1, hi);\n...\nreturn max3(left, right, ______);\n```\n\n空缺处应填入：",
+   "options": [
+    "best1",
+    "best1 + best2",
+    "best2",
+    "s1 + s2"
+   ],
+   "answer_index": 1,
+   "explanation": "best1 是左半以 mid 结尾的最大和，best2 是右半以 mid+1 开头的最大和，两者相加是跨越中点的最大子段和。s1、s2 是整段的和，不一定最大。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最大子段和",
+    "填空"
+   ],
+   "source_quote": "return max3(left, right, best1 + best2);"
+  },
+  {
+   "type": "single",
+   "stem": "最大子段和动态规划解法中，b 表示以 a[j] 结尾的最大子段和，递推语句应当是：\n\n```c\nint best = 0, b = 0;\nfor (int j = 0; j < n; j++) {\n    b = (b > 0 ? b : 0) + ______;\n    if (b > best) best = b;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "a[j - 1]",
+    "b",
+    "a[j]",
+    "best"
+   ],
+   "answer_index": 2,
+   "explanation": "前面的和为负就舍弃，然后加上当前元素 a[j]。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "最大子段和",
+    "填空"
+   ],
+   "source_quote": "前面累积的和不为正时就舍弃它，从 a[j] 重新开始"
+  },
+  {
+   "type": "single",
+   "stem": "最大子段和动态规划解法中，更新全局最大值的语句应当是：\n\n```c\nfor (int j = 0; j < n; j++) {\n    b = (b > 0 ? b : 0) + a[j];\n    if (______) best = b;\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "b > 0",
+    "b < best",
+    "j == n - 1",
+    "b > best"
+   ],
+   "answer_index": 3,
+   "explanation": "最大子段不一定以最后一个元素结尾，所以每轮都要和 best 比较，取较大者。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最大子段和",
+    "填空"
+   ],
+   "source_quote": "最大值不一定出现在最后一个 b 上，所以要在循环中不断更新 best"
+  },
+  {
+   "type": "single",
+   "stem": "O(n²) 的最大子段和解法中，固定起点 i，内层循环的起点应当是：\n\n```c\nfor (int i = 0; i < n; i++) {\n    int s = 0;\n    for (int j = ______; j < n; j++) {\n        s += a[j];\n        if (s > best) best = s;\n    }\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "i",
+    "0",
+    "i + 1",
+    "n - 1"
+   ],
+   "answer_index": 0,
+   "explanation": "子段从 i 开始，终点 j 从 i 到 n-1，s 是 a[i..j] 的和。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "最大子段和",
+    "填空"
+   ],
+   "source_quote": "O(n^2)：固定起点 i，向右增量累加"
+  },
+  {
+   "type": "judge",
+   "stem": "在最大子段和的分治解法中，只有一个元素且为负数时，按约定返回 0，表示取空子段。",
+   "options": [
+    "正确",
+    "错误"
+   ],
+   "answer_index": 0,
+   "explanation": "全为负数时最大子段和约定为 0；这样合并时 best1、best2 初值 0 也保持一致。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "最大子段和",
+    "判断"
+   ],
+   "source_quote": "分治出口是单个元素，元素为负数时按 0 处理"
+  }
+ ],
+ "软件设计师（中级）下午题四（算法） > T4.28 汉诺塔": [
+  {
+   "type": "single",
+   "stem": "n 个盘子的汉诺塔，最少移动次数是：",
+   "options": [
+    "2^n",
+    "2^n - 1",
+    "n²",
+    "2n - 1"
+   ],
+   "answer_index": 1,
+   "explanation": "T(n) = 2T(n-1) + 1，T(0) = 0，解得 T(n) = 2^n - 1。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "汉诺塔",
+    "复杂度"
+   ],
+   "source_quote": "解得 T(n) = 2^n - 1，是指数级"
+  },
+  {
+   "type": "single",
+   "stem": "汉诺塔的移动次数 T(n) 满足的递推式是：",
+   "options": [
+    "T(n) = T(n-1) + 1",
+    "T(n) = 2T(n-1)",
+    "T(n) = 2T(n-1) + 1",
+    "T(n) = T(n-1) + T(n-2)"
+   ],
+   "answer_index": 2,
+   "explanation": "移动 n-1 个盘子两次，加上移动最大盘子一次。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "汉诺塔",
+    "复杂度"
+   ],
+   "source_quote": "移动次数满足 T(n) = 2T(n-1) + 1"
+  },
+  {
+   "type": "single",
+   "stem": "4 个盘子的汉诺塔需要移动的次数是：",
+   "options": [
+    "7",
+    "16",
+    "31",
+    "15"
+   ],
+   "answer_index": 3,
+   "explanation": "2^4 - 1 = 15。7 是 3 个盘子，31 是 5 个盘子。",
+   "difficulty": 1,
+   "tags": [
+    "下午题四",
+    "汉诺塔",
+    "计算"
+   ],
+   "source_quote": "4 个盘子需要移动 15 次"
+  },
+  {
+   "type": "single",
+   "stem": "汉诺塔递归算法中，第一步把上面 n-1 个盘子从 from 移到 via，借助 to，空缺处应填入：\n\n```c\nstatic void hanoi(int n, char from, char via, char to) {\n    if (n == 0) return;\n    hanoi(n - 1, from, ______, via);\n    printf(\"move disk %d: %c -> %c\\n\", n, from, to);\n    hanoi(n - 1, via, from, to);\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "to",
+    "via",
+    "from",
+    "n"
+   ],
+   "answer_index": 0,
+   "explanation": "函数的参数顺序是 (n, from, via, to)。本次递归要把盘子从 from 移到 via，借助 to，所以第三个参数（辅助柱）填 to，第四个参数（目标柱）填 via。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "汉诺塔",
+    "填空"
+   ],
+   "source_quote": "第一次递归把 via 和 to 互换角色"
+  },
+  {
+   "type": "single",
+   "stem": "汉诺塔递归算法中，最后一步把 n-1 个盘子从 via 移到 to，借助 from，空缺处应填入：\n\n```c\nstatic void hanoi(int n, char from, char via, char to) {\n    if (n == 0) return;\n    hanoi(n - 1, from, to, via);\n    printf(\"move disk %d: %c -> %c\\n\", n, from, to);\n    hanoi(n - 1, ______, from, to);\n}\n```\n\n空缺处应填入：",
+   "options": [
+    "from",
+    "via",
+    "to",
+    "n"
+   ],
+   "answer_index": 1,
+   "explanation": "本次递归的起点是 via，辅助柱是 from，目标柱是 to，所以第二个参数（起点）填 via。",
+   "difficulty": 3,
+   "tags": [
+    "下午题四",
+    "汉诺塔",
+    "填空"
+   ],
+   "source_quote": "第二次递归把 from 和 via 互换角色"
+  },
+  {
+   "type": "single",
+   "stem": "汉诺塔递归算法的空间复杂度（递归深度）是：",
+   "options": [
+    "O(1)",
+    "O(2^n)",
+    "O(n)",
+    "O(n²)"
+   ],
+   "answer_index": 2,
+   "explanation": "递归每次把盘子数减 1，最深 n 层；总移动次数 2^n-1 是时间。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "汉诺塔",
+    "复杂度"
+   ],
+   "source_quote": "递归深度是 n，空间复杂度是 O(n)"
+  },
+  {
+   "type": "single",
+   "stem": "汉诺塔问题不适合用动态规划求解，原因是：",
+   "options": [
+    "子问题的规模不能缩小",
+    "解空间太小",
+    "问题不具有递归结构",
+    "子问题没有重叠"
+   ],
+   "answer_index": 3,
+   "explanation": "动态规划针对重叠子问题保存解以避免重复计算；汉诺塔每个子问题只出现一次，直接递归（分治）即可。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "汉诺塔",
+    "辨析"
+   ],
+   "source_quote": "汉诺塔的子问题没有重叠，属于分治 / 递归，不适合用动态规划"
+  },
+  {
+   "type": "single",
+   "stem": "非递归汉诺塔用栈保存待办任务，压栈的顺序应当是：",
+   "options": [
+    "先压第三步，再压移动最大盘，最后压第一步",
+    "先压第一步，再压移动最大盘，最后压第三步",
+    "先压移动最大盘，再压第一步，最后压第三步",
+    "只压第一步和第三步"
+   ],
+   "answer_index": 0,
+   "explanation": "栈是后进先出：想先执行第一步，就必须最后压入它。",
+   "difficulty": 2,
+   "tags": [
+    "下午题四",
+    "汉诺塔",
+    "概念"
+   ],
+   "source_quote": "压栈顺序是先压第三步，再压移动最大盘，最后压第一步，这样出栈时第一步最先执行"
+  }
+ ]
+}

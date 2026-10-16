@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="635" height="328" viewBox="0 0 635 328" font-family="PingFang SC, Microsoft YaHei, Noto Sans CJK SC, sans-serif">
+  <title>中介者类图</title>
+  <rect width="635" height="328" fill="#ffffff"/>
+  <rect x="123.5" y="16" width="145" height="74" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="196" y="34.32" font-size="12" text-anchor="middle" fill="#6b7280">«interface»</text>
+  <text x="196" y="51.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">Mediator</text>
+  <line x1="123.5" y1="62.0" x2="268.5" y2="62.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="131.5" y="80" font-size="13" text-anchor="start" fill="#1f2937">+send(msg, from)</text>
+  <rect x="452.5" y="16" width="167" height="126" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="536" y="36.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">User</text>
+  <line x1="452.5" y1="46.0" x2="619.5" y2="46.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="460.5" y="64" font-size="13" text-anchor="start" fill="#1f2937">-name: String</text>
+  <text x="460.5" y="84" font-size="13" text-anchor="start" fill="#1f2937">-mediator: Mediator</text>
+  <line x1="452.5" y1="94.0" x2="619.5" y2="94.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="460.5" y="112" font-size="13" text-anchor="start" fill="#1f2937">+send(msg)</text>
+  <text x="460.5" y="132" font-size="13" text-anchor="start" fill="#1f2937">+receive(msg)</text>
+  <rect x="123.5" y="206" width="145" height="106" rx="0" fill="#fffdf0" stroke="#374151" stroke-width="1.5"/>
+  <text x="196" y="226.4" font-size="15" text-anchor="middle" fill="#1f2937" font-weight="bold">ChatRoom</text>
+  <line x1="123.5" y1="236.0" x2="268.5" y2="236.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="131.5" y="254" font-size="13" text-anchor="start" fill="#1f2937">-users: List</text>
+  <line x1="123.5" y1="264.0" x2="268.5" y2="264.0" stroke="#374151" stroke-width="1.5"/>
+  <text x="131.5" y="282" font-size="13" text-anchor="start" fill="#1f2937">+register(u)</text>
+  <text x="131.5" y="302" font-size="13" text-anchor="start" fill="#1f2937">+send(msg, from)</text>
+  <polygon points="196.0,90.0 203.0,104.0 189.0,104.0" fill="#ffffff" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="171.8,206.0 171.8,163.3 196.0,163.3 196.0,104.0" fill="none" stroke="#374151" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <polyline points="280.5,25.0 268.5,31.0 280.5,37.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="452.5,31.0 268.5,31.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="542.0,154.0 536.0,142.0 530.0,154.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <polyline points="220.2,206.0 220.2,184.7 536.0,184.7 536.0,142.0" fill="none" stroke="#374151" stroke-width="1.5"/>
+  <text x="388.083" y="180.667" font-size="12" text-anchor="start" fill="#1f2937">*</text>
+</svg>
