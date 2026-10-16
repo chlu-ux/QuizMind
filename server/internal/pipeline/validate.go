@@ -38,13 +38,14 @@ type ValidQuestion struct {
 }
 
 const (
-	minStemRunes    = 6
-	maxStemRunes    = 300
-	maxOptionRunes  = 200
-	maxExplainRunes = 800
-	minQuoteRunes   = 8 // measured after normalisation
-	maxTags         = 3
-	maxTagRunes     = 20
+	minStemRunes     = 6
+	maxStemRunes     = 300
+	maxCodeStemRunes = 2000 // a stem with a fenced code block (code-completion questions) may be longer
+	maxOptionRunes   = 200
+	maxExplainRunes  = 800
+	minQuoteRunes    = 8 // measured after normalisation
+	maxTags          = 3
+	maxTagRunes      = 20
 )
 
 var (
@@ -70,8 +71,12 @@ func ValidateQuestion(g GeneratedQuestion, chunkText string) (ValidQuestion, err
 		Difficulty:  g.Difficulty,
 	}
 
-	if n := utf8.RuneCountInString(v.Stem); n < minStemRunes || n > maxStemRunes {
-		return v, fmt.Errorf("stem length %d outside %d..%d", n, minStemRunes, maxStemRunes)
+	maxStem := maxStemRunes
+	if strings.Contains(v.Stem, "```") {
+		maxStem = maxCodeStemRunes
+	}
+	if n := utf8.RuneCountInString(v.Stem); n < minStemRunes || n > maxStem {
+		return v, fmt.Errorf("stem length %d outside %d..%d", n, minStemRunes, maxStem)
 	}
 	if contextualStem.MatchString(v.Stem) {
 		return v, fmt.Errorf("stem refers to the source text instead of standing alone")
@@ -133,7 +138,7 @@ func cleanSingleOptions(raw []string) ([]string, error) {
 		if isCatchAll(o) {
 			return nil, fmt.Errorf("option %d is a catch-all (%q)", i, o)
 		}
-		key := Normalize(o)
+		key := optionKey(o)
 		if key == "" || seen[key] {
 			return nil, fmt.Errorf("option %d duplicates another option", i)
 		}
@@ -141,6 +146,26 @@ func cleanSingleOptions(raw []string) ([]string, error) {
 		out = append(out, o)
 	}
 	return out, nil
+}
+
+// codeSymbols mark an option as a piece of code, where `a.b`, `a->b` and `a::b` (or `p*`, `p&`, `p`) are different
+// answers although Normalize, which keeps only letters and digits, would make them equal.
+const codeSymbols = "<>=:*&[]{}()+-/\\@#%^|~;"
+
+var (
+	identifier   = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
+	memberAccess = regexp.MustCompile(`[A-Za-z0-9_]\.[A-Za-z_]`)
+)
+
+// optionKey is what two options are compared by within one question. Prose options are compared by Normalize;
+// code options (symbols, a bare identifier, a.b) keep their symbols and case (`Fruit.price` and `fruit.price`, `Book`
+// and `book` differ) and only ignore whitespace.
+func optionKey(o string) string {
+	f := norm.NFKC.String(o)
+	if strings.ContainsAny(f, codeSymbols) || identifier.MatchString(strings.TrimSpace(f)) || memberAccess.MatchString(f) {
+		return strings.Join(strings.Fields(f), "")
+	}
+	return Normalize(o)
 }
 
 func cleanTags(raw []string) []string {

@@ -1,5 +1,7 @@
 package pipeline
 
+import "strings"
+
 // Existing describes a question already in the bank.
 type Existing struct {
 	ID      string
@@ -16,6 +18,7 @@ type Existing struct {
 // their stems are similar and they share at least half of their options. The
 // second rule catches a reworded option; requiring shared options keeps generic
 // stems ("which statement is correct?") from colliding with unrelated questions.
+// Two questions whose stems both hold a code block are only compared exactly.
 type Deduper struct {
 	threshold float64
 	hashes    map[string]string
@@ -24,6 +27,7 @@ type Deduper struct {
 
 type dedupeEntry struct {
 	id        string
+	code      bool // the stem holds a code block
 	textGrams map[string]struct{}
 	stemGrams map[string]struct{}
 	options   map[string]struct{}
@@ -46,6 +50,11 @@ func (d *Deduper) Check(id string, q ValidQuestion) (string, bool) {
 	}
 	cand := newEntry(id, q.Stem, q.Options)
 	for _, e := range d.entries {
+		if cand.code && e.code {
+			// Code-completion questions on the same snippet differ only in where the blank is, which text
+			// similarity cannot see; only exact duplicates (the hash above) count.
+			continue
+		}
 		if jaccard(cand.textGrams, e.textGrams) >= d.threshold {
 			return e.id, true
 		}
@@ -71,6 +80,7 @@ func newEntry(id, stem string, options []string) dedupeEntry {
 	}
 	return dedupeEntry{
 		id:        id,
+		code:      strings.Contains(stem, "```"),
 		textGrams: trigrams(DedupeText(stem, options)),
 		stemGrams: trigrams(Normalize(stem)),
 		options:   opts,

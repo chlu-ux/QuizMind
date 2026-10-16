@@ -38,3 +38,17 @@ func TestDeduper_GenericStemWithDifferentOptionsIsNotDuplicate(t *testing.T) {
 	_, dup = d.Check("b", vq("下列说法正确的是", "TCP 是面向连接的协议", "UDP 提供可靠传输", "IP 负责端口复用", "ARP 解析域名"))
 	assert.False(t, dup, "same stem, unrelated options")
 }
+
+func TestDeduper_CodeQuestionsOnTheSameSnippetAreNotNearDuplicates(t *testing.T) {
+	snippet := func(blank string) string {
+		return "下面是单例模式的实现，空缺处应填入：\n```java\nclass Config {\n    " + blank + " Config() { }\n    public static Config getInstance() { return instance; }\n}\n```"
+	}
+	d := NewDeduper(nil, 0.8)
+	_, dup := d.Check("a", vq(snippet("______"), "private", "public", "protected", "abstract"))
+	assert.False(t, dup)
+	_, dup = d.Check("b", vq(snippet("private"), "private", "public", "protected", "static"))
+	assert.False(t, dup, "same code, different blank")
+	id, dup := d.Check("c", vq(snippet("______"), "private", "public", "protected", "abstract"))
+	assert.True(t, dup, "an exact duplicate is still caught")
+	assert.Equal(t, "a", id)
+}

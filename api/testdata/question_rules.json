@@ -240,6 +240,27 @@
    "error": "stem length"
   },
   {
+   "name": "a long stem is allowed with a code block",
+   "question": {
+    "type": "single",
+    "stem": "补全代码：\n```c\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n```\n空白处应填什么？",
+    "options": [
+     "多个读者可以同时持有读锁",
+     "同一时刻只允许一个读者",
+     "写者可以与读者并行执行",
+     "读写锁不允许写者进入"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": ""
+  },
+  {
    "name": "three options",
    "question": {
     "type": "single",
@@ -363,6 +384,48 @@
     "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
    },
    "error": "duplicates another option"
+  },
+  {
+   "name": "code options keep their symbols",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "p->x",
+     "s.x",
+     "p.x",
+     "*p.x"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": ""
+  },
+  {
+   "name": "code options keep their case",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "Book",
+     "book",
+     "BOOK",
+     "bOOK"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": ""
   },
   {
    "name": "an answer index out of range",

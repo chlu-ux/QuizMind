@@ -1,6 +1,7 @@
 package pipeline
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -113,4 +114,52 @@ func TestContentHash_OrderInsensitiveOptionsButStemSensitive(t *testing.T) {
 	assert.Equal(t, a, b, "punctuation and option order do not matter")
 	c := ContentHash("另一个题干内容", []string{"甲", "乙", "丙", "丁"})
 	assert.NotEqual(t, a, c)
+}
+
+func TestValidate_CodeStemMayBeLongerThanPlainStem(t *testing.T) {
+	long := strings.Repeat("x", 400)
+
+	g := goodSingle()
+	g.Stem = "读写锁的实现如下，空缺处应填什么？\n" + long
+	_, err := ValidateQuestion(g, chunk)
+	assert.Error(t, err, "a plain stem stays capped at 300 characters")
+
+	g.Stem = "读写锁的实现如下，空缺处应填什么？\n```java\n" + long + "\n```"
+	_, err = ValidateQuestion(g, chunk)
+	assert.NoError(t, err, "a stem with a code block gets the larger cap")
+
+	g.Stem = "读写锁的实现如下，空缺处应填什么？\n```java\n" + strings.Repeat("x", 2100) + "\n```"
+	_, err = ValidateQuestion(g, chunk)
+	assert.Error(t, err, "even a code stem has a cap")
+}
+
+func TestValidate_CodeOptionsDifferingOnlyInSymbolsAreDistinct(t *testing.T) {
+	g := goodSingle()
+	g.Options = []string{"Config.instance", "Config->instance", "Config::instance", "instance"}
+	_, err := ValidateQuestion(g, chunk)
+	assert.NoError(t, err)
+
+	g.Options = []string{"Logger", "Logger*", "Logger&", "void"}
+	_, err = ValidateQuestion(g, chunk)
+	assert.NoError(t, err)
+
+	g.Options = []string{"index++", "++index", "index--", "index"}
+	_, err = ValidateQuestion(g, chunk)
+	assert.NoError(t, err)
+
+	g.Options = []string{"Config::instance", "Config :: instance", "config::instance", "instance"}
+	_, err = ValidateQuestion(g, chunk)
+	assert.Error(t, err, "spacing alone does not make a code option different")
+
+	g.Options = []string{"Fruit.price", "fruit.price", "price", "this.price"}
+	_, err = ValidateQuestion(g, chunk)
+	assert.NoError(t, err, "code is case-sensitive")
+
+	g.Options = []string{"Book", "book", "this", "visitor"}
+	_, err = ValidateQuestion(g, chunk)
+	assert.NoError(t, err, "bare identifiers are case-sensitive")
+
+	g.Options = []string{"写者可以与读者并行", "写者可以与读者并行。", "多个读者可同时持有锁", "同一时刻只有一个读者"}
+	_, err = ValidateQuestion(g, chunk)
+	assert.Error(t, err, "prose options are still compared by letters and digits")
 }
