@@ -40,9 +40,7 @@ type SpecLimits struct {
 // BuildSpec describes the assistant. The tools that need a file or a database are left out: an app
 // has the library on the device, but not the files of a server-side conversation.
 func BuildSpec() Spec {
-	list := []*tool{toolListOutline(), toolSearchLessons(), toolGetLesson(),
-		toolSearchQuestions(), toolPickQuestions(), toolGetWeakPoints(),
-		toolProposeQuestions(nil, DraftScope{}), toolListDrafts(nil, DraftScope{})}
+	list := append(readTools(), toolProposeQuestions(nil, DraftScope{}), toolListDrafts(nil, DraftScope{}))
 	s := Spec{
 		Prompt: stablePrompt + "\n\n" + createPrompt,
 		Limits: SpecLimits{MaxRounds: DefaultMaxRounds, MaxProposePerCall: MaxProposePerCall,

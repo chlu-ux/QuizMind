@@ -7,6 +7,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../database.dart';
+import '../progress.dart';
 
 class AgentBank {
   const AgentBank(this.id, this.title);
@@ -63,9 +64,41 @@ class AgentQuestion {
 }
 
 class AgentAttempt {
-  const AgentAttempt(this.questionId, this.correct);
+  const AgentAttempt(this.questionId, this.correct,
+      {this.at = 0, this.selected = const [], this.durationMs = 0, this.reviewMs = 0});
+
   final String questionId;
   final bool correct;
+
+  /// When it was answered (ms).
+  final int at;
+
+  /// The options picked.
+  final List<int> selected;
+
+  /// Time from showing the question to answering it, and time spent on it afterwards (explanation); 0 when unknown.
+  final int durationMs;
+  final int reviewMs;
+}
+
+/// What the learner keeps per question: the wrong book, favorites and the review schedule. Only questions
+/// the learner has touched have one.
+class AgentState {
+  const AgentState(this.questionId, {this.dueAt = 0, this.favorite = false, this.wrongCount = 0, this.streak = 0});
+
+  final String questionId;
+
+  /// When a scheduled review falls due (ms); 0 when nothing is scheduled. No app schedules reviews yet, so
+  /// today the wrong book is what marks a question for review.
+  final int dueAt;
+  final bool favorite;
+  final int wrongCount;
+
+  /// Right answers in a row since the last miss.
+  final int streak;
+
+  /// Missed at least once and not yet answered right twice in a row.
+  bool get inWrongBook => wrongCount > 0 && streak < ProgressRecord.clearStreak;
 }
 
 abstract class AgentLibrary {
@@ -78,6 +111,12 @@ abstract class AgentLibrary {
 
   /// Every answer given, from any device, oldest first.
   Future<List<AgentAttempt>> attempts();
+
+  /// The per-question state of every question the learner has touched.
+  Future<List<AgentState>> states();
+
+  /// The AI explanation kept for a question; empty when there is none.
+  Future<String> note(String questionId);
 }
 
 class DbAgentLibrary implements AgentLibrary {
@@ -133,6 +172,42 @@ class DbAgentLibrary implements AgentLibrary {
   @override
   Future<List<AgentAttempt>> attempts() async {
     final rows = await (db.select(db.attempts)..orderBy([(a) => OrderingTerm.asc(a.answeredAt)])).get();
-    return [for (final a in rows) AgentAttempt(a.questionId, a.isCorrect)];
+    return [
+      for (final a in rows)
+        AgentAttempt(
+          a.questionId,
+          a.isCorrect,
+          at: a.answeredAt,
+          selected: _ints(a.answerJson),
+          durationMs: a.durationMs ?? 0,
+          reviewMs: a.reviewMs ?? 0,
+        ),
+    ];
+  }
+
+  @override
+  Future<List<AgentState>> states() async => [
+        for (final s in await db.select(db.questionStates).get())
+          AgentState(
+            s.questionId,
+            dueAt: s.dueAt ?? 0,
+            favorite: s.favorite,
+            wrongCount: s.wrongCount,
+            streak: ProgressRecord.decode(s.fsrsJson).streak,
+          ),
+      ];
+
+  @override
+  Future<String> note(String questionId) async {
+    final row = await (db.select(db.aiNotes)..where((n) => n.questionId.equals(questionId))).getSingleOrNull();
+    return row?.content ?? '';
+  }
+}
+
+List<int> _ints(String raw) {
+  try {
+    return [for (final x in jsonDecode(raw) as List) (x as num).toInt()];
+  } catch (_) {
+    return const [];
   }
 }

@@ -111,7 +111,7 @@
 | 出题校验 | `pipeline.ValidateQuestion`（题型、选项数、`source_quote` 必须能在原文里原样找到、不含"以上都对"等） | `propose_questions` 对每道题再校验一遍，**不信任模型** |
 | 去重 | `pipeline.Deduper`（精确哈希 + 字符三元组 Jaccard）、`ListLiveQuestionsByBank` | 同一题库内去重，草稿之间也去重 |
 | 入库与审核 | `question` 表、`needs_review → published` 流转、`transition()`、同步 `sync_seq` | 草稿用 `draft` 状态（`question.status` 的 CHECK 里本来就有），采纳后变 `needs_review` |
-| 作答记录 | `attempt`、`question_state` 表（客户端同步上来） | 工具 `get_weak_points` |
+| 作答记录 | `attempt`、`question_state`、`ai_note` 表（客户端同步上来） | 工具 `get_weak_points` / `get_due_reviews` / `get_study_stats` / `get_question_detail` |
 | 模型层 | `llm.Registry`（按角色取 client）、`llm.Guard`（并发、速率、每日预算、调用日志）、Anthropic 官方 SDK | 新增"多轮 + 工具 + 流式"接口，复用 Guard 的限额和日志 |
 | 访问令牌 | `app_setting.ai.app_token`、`checkAppToken` | 助手接口鉴权 |
 | 流式渲染 | Flutter：`QuizMarkdown` + `AiExplainCard`；H5：`Md.vue` | 助手回答的渲染 |
@@ -125,7 +125,8 @@
 ```
  Flutter 对话页 ─┐                                  ┌─ search_lessons / get_lesson / list_outline
                  │  POST /api/v1/agent/chat (SSE)   ├─ search_questions / pick_questions
- H5 对话页 ──────┤  Authorization: Bearer <令牌>    ├─ get_weak_points
+ H5 对话页 ──────┤  Authorization: Bearer <令牌>    ├─ get_weak_points / get_due_reviews
+                 │                                  ├─ get_study_stats / get_question_detail
                  ▼                                  └─ propose_questions / list_drafts (仅出题模式)
         ┌──────────────────────┐   工具调用   ┌──────────────────────┐
         │ httpapi: agent 处理器 │────────────▶│ internal/agent        │
@@ -154,7 +155,7 @@
 | | `learn` 学习 | `create` 出题 |
 |---|---|---|
 | 入口 | 讲义页"问 AI"、答题后"追问"、题库页"问 AI" | 题库页"AI 出题"、讲义页"用这一节出题" |
-| 工具 | `list_outline` `search_lessons` `get_lesson` `search_questions` `pick_questions` `get_weak_points` | 学习模式的全部，外加 `propose_questions` `list_drafts` |
+| 工具 | `list_outline` `search_lessons` `get_lesson` `search_questions` `pick_questions` `get_weak_points` `get_due_reviews` `get_study_stats` `get_question_detail` | 学习模式的全部，外加 `propose_questions` `list_drafts` |
 | 写入 | 无 | 只能创建草稿 |
 | 提示词 | 讲解为主，回答要引用讲义小节 | 先确认范围和要求，再出题；每题必须挂在一节讲义上 |
 
@@ -198,6 +199,7 @@ server/internal/
     tools.go               # 工具注册、参数校验、结果截断
     tool_lessons.go        # list_outline / search_lessons / get_lesson
     tool_questions.go      # search_questions / pick_questions / get_weak_points
+    tool_review.go         # get_due_reviews / get_study_stats / get_question_detail
     tool_propose.go        # propose_questions / list_drafts
     prompt.go + prompts/   # 系统提示词（embed）
     events.go              # SSE 事件类型
@@ -298,6 +300,9 @@ for round := 1 .. maxRounds(8):
 | `search_questions` | `query?`, `lesson_id?`, `bank_id?`, `limit≤10` | 已发布题目：`question_id`、题干、选项、标准答案、解析、该题的作答统计 | 查"已有的题"，避免重复出题，也用来举例 |
 | `pick_questions` | `lesson_id?`, `bank_id?`, `weak?`, `count≤10` | 从已发布题里挑出的题（不含答案，答案在用户作答后另给） | "出几道小测"直接用审核过的现成题，比临时生成可靠 |
 | `get_weak_points` | `bank_id?`, `limit≤10` | 薄弱题和薄弱小节：近 5 次作答的错误数、按小节聚合的正确率 | 算法与客户端一致：近 5 次，先验错误率 0.25、权重 4 个回答（见 H5 `stats.ts` 的 `WEAK_*`） |
+| `get_due_reviews` | `bank_id?`, `limit≤15` | 该复习的题：`question_id`、`reason`（`wrong_book` / `scheduled`）、答错次数、当前连对数、逾期天数；另有总数和按小节的分布 | 错题本 = 答错过且还没连续答对 2 次（与客户端 `inWrongBook` 一致，连对数取自 `question_state.fsrs` 里 `{streak}`）。`due_at` 目前没有客户端写入（FSRS 未做），所以现在主要是错题本；将来有了 `due_at` 到期的排在最前 |
+| `get_study_stats` | `bank_id?`, `days≤90`（默认 7） | 整体进度（做过多少题、最近一次答对多少、错题本数）、连续学习天数、区间内和今天的作答数 / 正确率 / 学习分钟、按天明细（只列有作答的天） | 学习时长的口径与客户端统计一致：答题用时封顶 2 分钟、答后阅读封顶 3 分钟；"天"按助手所在时钟的自然日（服务器上是服务器时区） |
+| `get_question_detail` | `question_id` | 一道题的完整信息：题干、选项、标准答案、解析（≤1500 字）、所在小节，以及用户的作答历史（最近 5 次）、常选错的选项、收藏、是否在错题本、已有的 AI 解析（≤1500 字） | 用户追问某道题时用；**会返回标准答案**，提示词要求用户没作答前不要直接透露 |
 | `list_drafts` | — | 本对话已有的草稿：`draft_id`、题干、选项、答案、状态 | 仅出题模式；客户端只带文字历史，草稿内容要靠它取回 |
 | `propose_questions` | 见 §6.5 | 逐题的结果 | 仅出题模式 |
 

@@ -81,7 +81,7 @@ class LocalAgent {
     final stored = await store.history(req.conversationId);
     final history = [for (final m in stored) LlmMessage.text(m.role, m.text)];
 
-    final env = ToolEnv(library, c.bankId);
+    final env = ToolEnv(library, c.bankId, clock: _clock);
     final extra = await _contextText(env, c);
     final drafter = LocalDrafter(store: store, env: env, conversationId: req.conversationId, spec: spec);
     final tools = ToolSet(env, drafter: drafter, maxResult: spec.maxToolResult);

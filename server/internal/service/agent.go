@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -342,7 +343,31 @@ func (l agentLibrary) Attempts(ctx context.Context) ([]agent.Attempt, error) {
 	}
 	out := make([]agent.Attempt, 0, len(rows))
 	for _, r := range rows {
-		out = append(out, agent.Attempt{QuestionID: r.QuestionID, Correct: r.IsCorrect != 0, At: r.AnsweredAt})
+		a := agent.Attempt{QuestionID: r.QuestionID, Correct: r.IsCorrect != 0, At: r.AnsweredAt,
+			DurationMs: r.DurationMs.Int64, ReviewMs: r.ReviewMs.Int64, Selected: []int{}}
+		_ = json.Unmarshal([]byte(r.Answer), &a.Selected)
+		out = append(out, a)
 	}
 	return out, nil
+}
+
+func (l agentLibrary) States(ctx context.Context) ([]agent.QState, error) {
+	rows, err := l.s.reader().ListAgentStates(ctx)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]agent.QState, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, agent.QState{QuestionID: r.QuestionID, DueAt: r.DueAt.Int64, Favorite: r.Favorite != 0,
+			WrongCount: int(r.WrongCount), Streak: agent.StreakOf(r.Fsrs.String)})
+	}
+	return out, nil
+}
+
+func (l agentLibrary) Note(ctx context.Context, questionID string) (string, error) {
+	content, err := l.s.reader().GetAgentNote(ctx, questionID)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", nil
+	}
+	return content, err
 }

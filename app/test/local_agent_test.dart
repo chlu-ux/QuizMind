@@ -49,11 +49,17 @@ Map<String, dynamic> proposalJson(ProposedQuestion q) => {
       'source_quote': q.sourceQuote,
     };
 
+/// The moment the tools think it is.
+final testNow = DateTime(2026, 10, 8, 12);
+const hour = Duration(hours: 1);
+const day = Duration(days: 1);
+int msAgo(Duration d) => testNow.subtract(d).millisecondsSinceEpoch;
+
 LocalAgentSpec testSpec({double dedupe = 0.8, int maxRounds = 8}) => LocalAgentSpec(
       version: 'v1',
       prompt: '你是助手',
       tools: [
-        for (final n in ['list_outline', 'search_lessons', 'get_lesson', 'search_questions', 'pick_questions', 'get_weak_points', 'propose_questions', 'list_drafts'])
+        for (final n in ['list_outline', 'search_lessons', 'get_lesson', 'search_questions', 'pick_questions', 'get_weak_points', 'get_due_reviews', 'get_study_stats', 'get_question_detail', 'propose_questions', 'list_drafts'])
           AgentToolSpec(name: n, description: n, inputSchema: {'type': 'object', 'properties': {}}),
       ],
       model: const AgentModelConfig(baseUrl: 'https://llm.example/anthropic', apiKey: 'sk-x', model: 'm-1'),
@@ -62,11 +68,19 @@ LocalAgentSpec testSpec({double dedupe = 0.8, int maxRounds = 8}) => LocalAgentS
     );
 
 class MemLibrary implements AgentLibrary {
-  MemLibrary({this.lessonList = const [], this.questionList = const [], this.attemptList = const []});
+  MemLibrary({
+    this.lessonList = const [],
+    this.questionList = const [],
+    this.attemptList = const [],
+    this.stateList = const [],
+    this.notes = const {},
+  });
 
   final List<AgentLesson> lessonList;
   final List<AgentQuestion> questionList;
   final List<AgentAttempt> attemptList;
+  final List<AgentState> stateList;
+  final Map<String, String> notes;
 
   @override
   Future<List<AgentBank>> banks() async => const [AgentBank('b1', '题库')];
@@ -76,6 +90,10 @@ class MemLibrary implements AgentLibrary {
   Future<List<AgentQuestion>> questions() async => questionList;
   @override
   Future<List<AgentAttempt>> attempts() async => attemptList;
+  @override
+  Future<List<AgentState>> states() async => stateList;
+  @override
+  Future<String> note(String questionId) async => notes[questionId] ?? '';
 }
 
 AgentLesson lesson(String id, String title, String text, {String doc = 'd1'}) => AgentLesson(
@@ -261,8 +279,34 @@ void main() {
       expect(searchTerms('  ，。 '), isEmpty);
     });
 
-    ToolSet tools({List<AgentLesson>? lessons, List<AgentQuestion>? questions, List<AgentAttempt>? attempts, String bank = ''}) =>
-        ToolSet(ToolEnv(MemLibrary(lessonList: lessons ?? [], questionList: questions ?? [], attemptList: attempts ?? []), bank), random: math.Random(1));
+    ToolSet tools({
+      List<AgentLesson>? lessons,
+      List<AgentQuestion>? questions,
+      List<AgentAttempt>? attempts,
+      List<AgentState>? states,
+      Map<String, String>? notes,
+      String bank = '',
+    }) =>
+        ToolSet(
+          ToolEnv(
+            MemLibrary(
+              lessonList: lessons ?? [],
+              questionList: questions ?? [],
+              attemptList: attempts ?? [],
+              stateList: states ?? [],
+              notes: notes ?? {},
+            ),
+            bank,
+            clock: () => testNow,
+          ),
+          random: math.Random(1),
+        );
+
+    Future<Map<String, dynamic>> run(ToolSet t, String name, [Map<String, dynamic> args = const {}]) async {
+      final (out, err) = await t.execute(name, args);
+      expect(err, isFalse, reason: out);
+      return jsonDecode(out) as Map<String, dynamic>;
+    }
 
     test('search_lessons ranks heading hits above body hits and marks what it showed as known', () async {
       final t = tools(lessons: [
@@ -332,6 +376,140 @@ void main() {
       ]);
       final none = jsonDecode((await tools().execute('get_weak_points', {})).$1) as Map;
       expect(none['note'], '还没有足够的作答记录，看不出薄弱点。');
+    });
+
+    test('get_due_reviews lists the wrong book and the reviews that are due, the due ones first', () async {
+      final qs = [aq('q1', lessonId: 'L2'), aq('q2', lessonId: 'L2'), aq('q3', lessonId: 'L3')];
+      final t = tools(
+        lessons: [lesson('L2', '乙', 'y'), lesson('L3', '丙', 'z')],
+        questions: qs,
+        attempts: [
+          AgentAttempt('q1', false, at: msAgo(day * 3)),
+          AgentAttempt('q1', false, at: msAgo(day * 2)),
+          AgentAttempt('q1', true, at: msAgo(day)),
+          for (var i = 3; i > 0; i--) AgentAttempt('q3', false, at: msAgo(day * i)),
+        ],
+        states: [
+          const AgentState('q1', wrongCount: 2, streak: 0),
+          AgentState('q2', wrongCount: 1, streak: 2, dueAt: msAgo(day * 3)), // out of the wrong book, but a review is due
+          const AgentState('q3', wrongCount: 3, streak: 1),
+          const AgentState('gone', wrongCount: 5), // a question that is no longer there
+        ],
+      );
+      final j = await run(t, 'get_due_reviews');
+      expect(j['due_count'], 3);
+      expect(j['wrong_book_count'], 2, reason: 'q2 answered right twice in a row has left the wrong book');
+      expect(j['scheduled_count'], 1);
+      final items = j['questions'] as List;
+      expect([for (final q in items) q['question_id']], ['q2', 'q3', 'q1']);
+      expect(items[0]['reason'], 'scheduled');
+      expect(items[0]['overdue_days'], 3);
+      expect(items[1]['reason'], 'wrong_book');
+      expect((j['lessons'] as List).first, {'lesson_id': 'L2', 'path': '讲义 > 乙', 'count': 2});
+      expect(t.env.known('q3'), isTrue);
+      expect(await t.label('get_due_reviews', {}), '查看待复习的题');
+    });
+
+    test('get_due_reviews says so when there is nothing to review, and only looks at the bank asked for', () async {
+      final qs = [aq('q1')];
+      final states = [const AgentState('q1', wrongCount: 1, streak: 2), const AgentState('q2', favorite: true)];
+      final j = await run(tools(questions: qs, states: states), 'get_due_reviews');
+      expect(j['due_count'], 0);
+      expect(j['note'], contains('暂时没有需要复习的题'));
+
+      final other = await run(tools(questions: qs, states: [const AgentState('q1', wrongCount: 1)]), 'get_due_reviews', {'bank_id': 'b2'});
+      expect(other['due_count'], 0);
+    });
+
+    test('get_study_stats counts days, study time and the streak like the apps do', () async {
+      final qs = [aq('q1'), aq('q2'), aq('q3')];
+      final t = tools(questions: qs, states: const [AgentState('q3', wrongCount: 1)], attempts: [
+        AgentAttempt('q1', false, at: msAgo(day * 10), durationMs: 5000),
+        AgentAttempt('q1', true, at: msAgo(day), durationMs: 20000),
+        AgentAttempt('q2', true, at: msAgo(hour * 2), durationMs: 30000, reviewMs: 60000),
+        AgentAttempt('q3', false, at: msAgo(hour), durationMs: 600000, reviewMs: 600000), // capped at 2 + 3 minutes
+        AgentAttempt('zz', true, at: msAgo(hour)), // not a published question
+      ]);
+      final j = await run(t, 'get_study_stats');
+      expect(j['bank_questions'], 3);
+      expect(j['answered_questions'], 3);
+      expect(j['coverage_percent'], 100);
+      expect(j['latest_correct'], 2, reason: 'q1 and q2 were right last; q3 was wrong');
+      expect(j['wrong_book'], 1);
+      expect(j['streak_days'], 2, reason: 'today and yesterday');
+      expect(j['overall']['attempts'], 4);
+      expect(j['period_days'], 7);
+      expect(j['period'], {'attempts': 3, 'correct': 2, 'accuracy_percent': 67, 'active_days': 2, 'study_minutes': 7});
+      expect(j['today'], {'attempts': 2, 'correct': 1, 'study_minutes': 7}, reason: '(30+60)s plus 2+3 minutes of the capped one');
+      expect((j['daily'] as List).length, 2);
+
+      final month = await run(t, 'get_study_stats', {'days': 30});
+      expect(month['period']['attempts'], 4);
+      expect(month['period']['active_days'], 3);
+    });
+
+    test('get_study_stats keeps a streak alive until today is over, and says when nothing was answered', () async {
+      final qs = [aq('q1')];
+      final j = await run(
+        tools(questions: qs, attempts: [
+          AgentAttempt('q1', true, at: msAgo(day)),
+          AgentAttempt('q1', true, at: msAgo(day * 2)),
+          AgentAttempt('q1', true, at: msAgo(day * 4)),
+        ]),
+        'get_study_stats',
+      );
+      expect(j['streak_days'], 2, reason: 'nothing yet today, but yesterday and the day before count');
+      expect(j['today']['attempts'], 0);
+      expect((await run(tools(questions: qs), 'get_study_stats'))['note'], '还没有作答记录。');
+    });
+
+    test('get_question_detail gives the answer and how the learner did on the question', () async {
+      final t = tools(
+        lessons: [lesson('L1', '甲', 'x')],
+        questions: [aq('q1'), aq('q2')],
+        attempts: [
+          AgentAttempt('q1', false, at: msAgo(day * 3), selected: const [2], durationMs: 8000),
+          AgentAttempt('q1', false, at: msAgo(day * 2), selected: const [2]),
+          AgentAttempt('q1', false, at: msAgo(day), selected: const [0]),
+          AgentAttempt('q1', true, at: msAgo(hour), selected: const [1]),
+          AgentAttempt('q2', true, at: msAgo(hour), selected: const [1]),
+        ],
+        states: [AgentState('q1', favorite: true, wrongCount: 3, streak: 1, dueAt: msAgo(day * -2))],
+        notes: {'q1': '这一题的要点'},
+      );
+      final j = await run(t, 'get_question_detail', {'question_id': 'q1'});
+      expect(j['answer_index'], [1]);
+      expect(j['explanation'], '解析');
+      expect(j['lesson_id'], 'L1');
+      expect(j['lesson_path'], '讲义 > 甲');
+      expect(j['favorite'], isTrue);
+      expect(j['in_wrong_book'], isTrue, reason: 'missed 3 times and only 1 right in a row');
+      expect(j['review_due'], '2026-10-10');
+      expect(j['ai_note'], '这一题的要点');
+      final mine = j['mine'] as Map;
+      expect(mine['attempts'], 4);
+      expect(mine['correct'], 1);
+      expect((mine['recent'] as List).first['correct'], isTrue, reason: 'newest first');
+      expect((mine['recent'] as List).last['seconds'], 8);
+      expect(mine['wrong_picks'], [
+        {'option_index': 2, 'text': '丙', 'times': 2},
+        {'option_index': 0, 'text': '甲', 'times': 1},
+      ]);
+      expect(t.env.known('q1'), isTrue);
+      expect(await t.label('get_question_detail', {'question_id': 'q1'}), '查看题目详情');
+    });
+
+    test('get_question_detail for a question never answered, and for one that does not exist', () async {
+      final t = tools(questions: [aq('q2')]);
+      final j = await run(t, 'get_question_detail', {'question_id': 'q2'});
+      expect(j['mine']['attempts'], 0);
+      expect(j.containsKey('favorite'), isFalse, reason: 'a question the learner never touched has no state');
+      expect(j.containsKey('ai_note'), isFalse);
+
+      final (e, isErr) = await t.execute('get_question_detail', {'question_id': 'nope'});
+      expect(isErr, isTrue);
+      expect(e, contains('没有 id 为 "nope" 的题'));
+      expect((await t.execute('get_question_detail', {})).$2, isTrue);
     });
 
     test('list_outline shows progress per section, and only chapters when there are too many', () async {
@@ -485,6 +663,33 @@ void main() {
     AgentChatRequest request(String text, {String conv = 'c1', List<AgentHistoryMessage> history = const [], AgentContext context = const AgentContext()}) =>
         AgentChatRequest(conversationId: conv, deviceId: 'dev', message: text, history: history, context: context);
 
+    test('the library on the device reads answers with their times, the wrong book with its streak, and AI notes', () async {
+      await db.into(db.attempts).insert(AttemptsCompanion.insert(
+          id: 'a1', questionId: 'q1', deviceId: 'dev', answerJson: '[2]', isCorrect: false, durationMs: const Value(8000), reviewMs: const Value(15000), answeredAt: 2000));
+      await db.into(db.attempts).insert(
+          AttemptsCompanion.insert(id: 'a0', questionId: 'q1', deviceId: 'dev', answerJson: 'broken', isCorrect: true, answeredAt: 1000));
+      await db.into(db.questionStates).insert(QuestionStatesCompanion.insert(
+          questionId: 'q1', fsrsJson: const Value('{"v":1,"streak":1,"last":2000}'), dueAt: const Value(5000), favorite: const Value(true), wrongCount: const Value(2), updatedAt: 1));
+      await db.into(db.questionStates).insert(QuestionStatesCompanion.insert(questionId: 'q2', updatedAt: 1));
+      await db.into(db.aiNotes).insert(AiNotesCompanion.insert(questionId: 'q1', content: '要点', updatedAt: 1));
+
+      final lib = DbAgentLibrary(db);
+      final attempts = await lib.attempts();
+      expect([for (final a in attempts) a.at], [1000, 2000], reason: 'oldest first');
+      expect(attempts[0].selected, isEmpty, reason: 'an unreadable answer is no answer');
+      expect((attempts[0].durationMs, attempts[0].reviewMs), (0, 0));
+      expect(attempts[1].selected, [2]);
+      expect((attempts[1].durationMs, attempts[1].reviewMs, attempts[1].correct), (8000, 15000, false));
+
+      final states = {for (final s in await lib.states()) s.questionId: s};
+      expect((states['q1']!.streak, states['q1']!.dueAt, states['q1']!.favorite, states['q1']!.wrongCount), (1, 5000, true, 2));
+      expect(states['q1']!.inWrongBook, isTrue);
+      expect((states['q2']!.streak, states['q2']!.dueAt, states['q2']!.inWrongBook), (0, 0, false));
+
+      expect(await lib.note('q1'), '要点');
+      expect(await lib.note('q2'), '');
+    });
+
     test('answers by looking things up, writes a question into the bank, and keeps the conversation', () async {
       final llm = ScriptedLlm((n, msgs) => switch (n) {
             0 => call('t1', 'search_lessons', {'query': '读写锁'}, text: '我先查一下。'),
@@ -523,7 +728,7 @@ void main() {
       expect(secondTurn.text, contains('"lesson_id":"L1"'));
       expect(llm.systems.first[0], '你是助手');
       expect(llm.systems.first[1], matches(RegExp(r'^当前模式：学习与出题。今天是 \d{4}年\d{1,2}月\d{1,2}日。')));
-      expect(llm.toolCounts.first, 8);
+      expect(llm.toolCounts.first, 11);
 
       // The conversation is kept for the history page, with its card.
       final saved = (await store.conversation('c1'))!;
@@ -622,7 +827,7 @@ void main() {
     test('out of rounds, the model is asked once more without tools; a refusal, a failure and a stop are told', () async {
       final llm = ScriptedLlm((n, msgs) => n < 2 ? call('t$n', 'list_outline', {}) : say('只能先答到这里'));
       final events = await drain(agent(llm, spec: LocalAgentSpec.fromJson({...testSpec().toJson(), 'limits': {'max_rounds': 2}})).run(request('讲讲')));
-      expect(llm.toolCounts, [8, 8, 0]);
+      expect(llm.toolCounts, [11, 11, 0]);
       expect(llm.calls.last.last.blocks.last.text, contains('请不要再调用工具'));
       expect(events.last, isA<AgentDone>().having((d) => d.stop, 'stop', 'max_rounds'));
       expect((await store.conversation('c1'))!.messages.last.note, '查了很多资料，只能先答到这里');
@@ -931,7 +1136,7 @@ void main() {
       var r = await service().run();
       expect(r.agentSpecUpdated, isTrue);
       expect(specs.spec!.model.apiKey, 'sk-x');
-      expect(specs.spec!.tools.length, 8);
+      expect(specs.spec!.tools.length, 11);
       expect(specs.spec!.prompt, '你是助手');
       r = await service().run();
       expect(r.agentSpecUpdated, isFalse, reason: 'unchanged');

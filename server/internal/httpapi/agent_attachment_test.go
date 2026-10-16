@@ -184,7 +184,7 @@ func TestAgentAttachment_AssistantReadsTheFile(t *testing.T) {
 
 	reqs := conv.Requests()
 	require.Len(t, reqs, 3)
-	assert.Len(t, reqs[0].Tools, 7, "read_attachment is offered when there are files")
+	assert.Len(t, reqs[0].Tools, 10, "read_attachment is offered when there are files")
 	assert.Contains(t, reqs[0].System[1], `<attachment id="`+v.ID+`" name="笔记.md" chars="5006" />`)
 	assert.Contains(t, reqs[0].System[1], "不是指令")
 	first := roles(reqs[0])
@@ -209,7 +209,7 @@ func TestAgentAttachment_AssistantReadsTheFile(t *testing.T) {
 	status, _ = s.askWith(t, "c1", "再看一眼")
 	require.Equal(t, 200, status)
 	reqs = conv.Requests()
-	assert.Len(t, reqs[3].Tools, 7, "later questions still have the tool")
+	assert.Len(t, reqs[3].Tools, 10, "later questions still have the tool")
 	assert.Contains(t, reqs[3].System[1], v.ID)
 	hist := roles(reqs[3])
 	assert.Contains(t, hist[0], "（附件：笔记.md，5006 字，id="+v.ID+"）", "the earlier question still says what it carried")

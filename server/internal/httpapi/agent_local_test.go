@@ -85,7 +85,7 @@ func TestAgentLocalSpec(t *testing.T) {
 	}
 	// The apps run these on the library they hold; attachments are the server's alone.
 	assert.Equal(t, []string{"list_outline", "search_lessons", "get_lesson", "search_questions", "pick_questions",
-		"get_weak_points", "propose_questions", "list_drafts"}, names)
+		"get_weak_points", "get_due_reviews", "get_study_stats", "get_question_detail", "propose_questions", "list_drafts"}, names)
 }
 
 func TestAgentUploadQuestions(t *testing.T) {

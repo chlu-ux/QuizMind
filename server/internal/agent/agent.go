@@ -79,14 +79,13 @@ func (a *Agent) Run(ctx context.Context, req Request, emit func(Event)) {
 
 	emit(Start{ConversationID: req.ConversationID})
 
-	e := newEnv(a.Lib, req.Context.BankID)
+	e := newEnv(a.Lib, req.Context.BankID, now)
 	extra, err := a.contextText(ctx, e, req.Context)
 	if err != nil {
 		emit(Error{Code: "internal", Message: "读取资料失败，请稍后再试。"})
 		return
 	}
-	list := []*tool{toolListOutline(), toolSearchLessons(), toolGetLesson(),
-		toolSearchQuestions(), toolPickQuestions(), toolGetWeakPoints()}
+	list := readTools()
 	addExtra := func(t string) {
 		if extra == "" {
 			extra = t

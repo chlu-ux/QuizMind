@@ -54,6 +54,18 @@ func (q *Queries) GetAgentDraft(ctx context.Context, questionID string) (GetAgen
 	return i, err
 }
 
+const getAgentNote = `-- name: GetAgentNote :one
+SELECT content FROM ai_note WHERE question_id = ?
+`
+
+// The AI explanation kept for a question, for the assistant's question-detail tool.
+func (q *Queries) GetAgentNote(ctx context.Context, questionID string) (string, error) {
+	row := q.db.QueryRowContext(ctx, getAgentNote, questionID)
+	var content string
+	err := row.Scan(&content)
+	return content, err
+}
+
 const insertAgentDraft = `-- name: InsertAgentDraft :exec
 INSERT INTO agent_draft (question_id, conversation_id, lesson_id, device_id, verified, created_at)
 VALUES (?, ?, ?, ?, ?, ?)
@@ -213,14 +225,59 @@ func (q *Queries) ListAgentQuestions(ctx context.Context) ([]ListAgentQuestionsR
 	return items, nil
 }
 
+const listAgentStates = `-- name: ListAgentStates :many
+SELECT question_id, fsrs, due_at, favorite, wrong_count FROM question_state
+`
+
+type ListAgentStatesRow struct {
+	QuestionID string         `json:"question_id"`
+	Fsrs       sql.NullString `json:"fsrs"`
+	DueAt      sql.NullInt64  `json:"due_at"`
+	Favorite   int64          `json:"favorite"`
+	WrongCount int64          `json:"wrong_count"`
+}
+
+// The learner's per-question state (wrong book, favorites, review schedule), for the assistant's review tools.
+func (q *Queries) ListAgentStates(ctx context.Context) ([]ListAgentStatesRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAgentStates)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAgentStatesRow{}
+	for rows.Next() {
+		var i ListAgentStatesRow
+		if err := rows.Scan(
+			&i.QuestionID,
+			&i.Fsrs,
+			&i.DueAt,
+			&i.Favorite,
+			&i.WrongCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listAttemptOutcomes = `-- name: ListAttemptOutcomes :many
-SELECT question_id, is_correct, answered_at FROM attempt ORDER BY answered_at, id
+SELECT question_id, is_correct, answered_at, answer, duration_ms, review_ms FROM attempt ORDER BY answered_at, id
 `
 
 type ListAttemptOutcomesRow struct {
-	QuestionID string `json:"question_id"`
-	IsCorrect  int64  `json:"is_correct"`
-	AnsweredAt int64  `json:"answered_at"`
+	QuestionID string        `json:"question_id"`
+	IsCorrect  int64         `json:"is_correct"`
+	AnsweredAt int64         `json:"answered_at"`
+	Answer     string        `json:"answer"`
+	DurationMs sql.NullInt64 `json:"duration_ms"`
+	ReviewMs   sql.NullInt64 `json:"review_ms"`
 }
 
 // Every answer ever given, oldest first, for the assistant's progress and weak-point tools.
@@ -233,7 +290,14 @@ func (q *Queries) ListAttemptOutcomes(ctx context.Context) ([]ListAttemptOutcome
 	items := []ListAttemptOutcomesRow{}
 	for rows.Next() {
 		var i ListAttemptOutcomesRow
-		if err := rows.Scan(&i.QuestionID, &i.IsCorrect, &i.AnsweredAt); err != nil {
+		if err := rows.Scan(
+			&i.QuestionID,
+			&i.IsCorrect,
+			&i.AnsweredAt,
+			&i.Answer,
+			&i.DurationMs,
+			&i.ReviewMs,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

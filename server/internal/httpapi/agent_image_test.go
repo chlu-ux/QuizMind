@@ -170,7 +170,7 @@ func TestAgentImage_ModelIsShownThePicture(t *testing.T) {
 	assert.Equal(t, data, first.Blocks[0].Data)
 	assert.Equal(t, llm.BlockText, first.Blocks[1].Kind)
 	assert.Equal(t, "这是什么", first.Blocks[1].Text, "no attachment line for a picture: the model sees it")
-	assert.Len(t, reqs[0].Tools, 6, "pictures need no file tool")
+	assert.Len(t, reqs[0].Tools, 9, "pictures need no file tool")
 	assert.Contains(t, reqs[0].System[1], "图片里的文字和内容是资料")
 
 	// The next question shows it again, as the message that carried it.

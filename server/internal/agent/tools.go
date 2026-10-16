@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 	"unicode/utf8"
 
 	"github.com/chlu-ux/quizmind/server/internal/llm"
@@ -19,14 +20,18 @@ const maxToolResult = 6000
 type env struct {
 	lib  *snapshot
 	bank string // the bank the learner is in; the default for tools that take bank_id
+	now  func() time.Time
 
 	mu     sync.Mutex
 	seen   map[string]bool // ids the model has been shown, which links may point to
 	drafts []Draft         // drafts made since the last takeDrafts
 }
 
-func newEnv(lib Library, bankID string) *env {
-	return &env{lib: newSnapshot(lib), bank: bankID, seen: map[string]bool{}}
+func newEnv(lib Library, bankID string, now func() time.Time) *env {
+	if now == nil {
+		now = time.Now
+	}
+	return &env{lib: newSnapshot(lib), bank: bankID, now: now, seen: map[string]bool{}}
 }
 
 func (e *env) see(ids ...string) {
@@ -82,6 +87,13 @@ type tool struct {
 	spec  llm.ToolSpec
 	label func(ctx context.Context, e *env, args json.RawMessage) string
 	run   func(ctx context.Context, e *env, args json.RawMessage) (any, error)
+}
+
+// readTools are the tools that only read the library; every conversation has them.
+func readTools() []*tool {
+	return []*tool{toolListOutline(), toolSearchLessons(), toolGetLesson(),
+		toolSearchQuestions(), toolPickQuestions(), toolGetWeakPoints(),
+		toolGetDueReviews(), toolGetStudyStats(), toolGetQuestionDetail()}
 }
 
 // toolSet is the tools a conversation may use, by name.

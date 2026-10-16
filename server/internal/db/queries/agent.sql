@@ -7,7 +7,15 @@ ORDER BY created_at, id;
 
 -- name: ListAttemptOutcomes :many
 -- Every answer ever given, oldest first, for the assistant's progress and weak-point tools.
-SELECT question_id, is_correct, answered_at FROM attempt ORDER BY answered_at, id;
+SELECT question_id, is_correct, answered_at, answer, duration_ms, review_ms FROM attempt ORDER BY answered_at, id;
+
+-- name: ListAgentStates :many
+-- The learner's per-question state (wrong book, favorites, review schedule), for the assistant's review tools.
+SELECT question_id, fsrs, due_at, favorite, wrong_count FROM question_state;
+
+-- name: GetAgentNote :one
+-- The AI explanation kept for a question, for the assistant's question-detail tool.
+SELECT content FROM ai_note WHERE question_id = ?;
 
 -- name: InsertAgentDraft :exec
 INSERT INTO agent_draft (question_id, conversation_id, lesson_id, device_id, verified, created_at)

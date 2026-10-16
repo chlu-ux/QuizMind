@@ -21,12 +21,16 @@ type memLib struct {
 	lessons   []agent.Lesson
 	questions []agent.Question
 	attempts  []agent.Attempt
+	states    []agent.QState
+	notes     map[string]string
 }
 
 func (m *memLib) Banks(context.Context) ([]agent.Bank, error)         { return m.banks, nil }
 func (m *memLib) Lessons(context.Context) ([]agent.Lesson, error)     { return m.lessons, nil }
 func (m *memLib) Questions(context.Context) ([]agent.Question, error) { return m.questions, nil }
 func (m *memLib) Attempts(context.Context) ([]agent.Attempt, error)   { return m.attempts, nil }
+func (m *memLib) States(context.Context) ([]agent.QState, error)      { return m.states, nil }
+func (m *memLib) Note(_ context.Context, id string) (string, error)   { return m.notes[id], nil }
 
 func testLib() *memLib {
 	return &memLib{
@@ -48,9 +52,9 @@ func testLib() *memLib {
 				Options: []string{"对", "错"}, Answer: []int{0}, Explanation: "范式的目的之一。"},
 		},
 		attempts: []agent.Attempt{
-			{"Q1", false, 1}, {"Q1", false, 2}, {"Q1", true, 3},
-			{"Q2", true, 4},
-			{"Q3", false, 5}, {"Q3", false, 6}, {"Q3", false, 7},
+			{QuestionID: "Q1", Correct: false, At: 1, Selected: []int{1}}, {QuestionID: "Q1", Correct: false, At: 2, Selected: []int{1}}, {QuestionID: "Q1", Correct: true, At: 3, Selected: []int{0}},
+			{QuestionID: "Q2", Correct: true, At: 4, Selected: []int{0}},
+			{QuestionID: "Q3", Correct: false, At: 5, Selected: []int{1}}, {QuestionID: "Q3", Correct: false, At: 6, Selected: []int{1}}, {QuestionID: "Q3", Correct: false, At: 7, Selected: []int{1}},
 		},
 	}
 }
@@ -138,7 +142,7 @@ func TestRun_LookupThenAnswerWithCheckedLinks(t *testing.T) {
 	// The model saw the first tool's result before its second call, and the lesson text was wrapped.
 	reqs := conv.Requests()
 	require.Len(t, reqs, 3)
-	assert.Len(t, reqs[0].Tools, 6)
+	assert.Len(t, reqs[0].Tools, 9)
 	assert.Contains(t, toolResults(reqs[1])[0].Text, `"lesson_id":"L2"`)
 	assert.Contains(t, toolResults(reqs[2])[1].Text, `<lesson id="L2"`)
 	assert.Contains(t, reqs[0].System[1], "2026年10月8日")

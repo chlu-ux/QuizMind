@@ -171,11 +171,14 @@ class Snapshot {
   Future<List<AgentLesson>>? _lessons;
   Future<List<AgentQuestion>>? _questions;
   Future<List<AgentAttempt>>? _attempts;
+  Future<List<AgentState>>? _states;
   Map<String, AgentLesson>? _byId;
 
   Future<List<AgentBank>> banks() => _banks ??= _lib.banks();
   Future<List<AgentQuestion>> questions() => _questions ??= _lib.questions();
   Future<List<AgentAttempt>> attempts() => _attempts ??= _lib.attempts();
+  Future<List<AgentState>> states() => _states ??= _lib.states();
+  Future<String> note(String questionId) => _lib.note(questionId);
   Future<List<AgentLesson>> lessons() => _lessons ??= _lib.lessons();
 
   Future<AgentLesson?> lesson(String id) async {
@@ -187,10 +190,15 @@ class Snapshot {
 /// What one conversation's tools share: the library, the bank the learner is in, and the ids the
 /// assistant has seen (it may only link to those).
 class ToolEnv {
-  ToolEnv(AgentLibrary library, this.bank) : lib = Snapshot(library);
+  ToolEnv(AgentLibrary library, this.bank, {DateTime Function()? clock})
+      : lib = Snapshot(library),
+        now = clock ?? DateTime.now;
 
   final Snapshot lib;
   final String bank;
+
+  /// The current time, for the tools that talk about today and what is overdue.
+  final DateTime Function() now;
   final _seen = <String>{};
   final drafts = <AgentDraft>[];
 
@@ -277,6 +285,9 @@ class ToolSet {
     'search_questions',
     'pick_questions',
     'get_weak_points',
+    'get_due_reviews',
+    'get_study_stats',
+    'get_question_detail',
   ];
 
   bool has(String name) => _readOnly.contains(name) || (drafter != null && (name == 'propose_questions' || name == 'list_drafts'));
@@ -300,6 +311,12 @@ class ToolSet {
         return '挑选题目';
       case 'get_weak_points':
         return '分析薄弱点';
+      case 'get_due_reviews':
+        return '查看待复习的题';
+      case 'get_study_stats':
+        return '统计学习情况';
+      case 'get_question_detail':
+        return '查看题目详情';
       case 'propose_questions':
         return '生成题目草稿';
       case 'list_drafts':
@@ -336,6 +353,9 @@ class ToolSet {
         'search_questions' => _searchQuestions(a),
         'pick_questions' => _pickQuestions(a),
         'get_weak_points' => _getWeakPoints(a),
+        'get_due_reviews' => _getDueReviews(a),
+        'get_study_stats' => _getStudyStats(a),
+        'get_question_detail' => _getQuestionDetail(a),
         'propose_questions' => _propose(a),
         'list_drafts' => _listDrafts(),
         _ => throw ToolArgError('没有名为 "$name" 的工具'),
@@ -587,6 +607,253 @@ class ToolSet {
       ],
     };
     if (weakQs.isEmpty && top.isEmpty) res['note'] = '还没有足够的作答记录，看不出薄弱点。';
+    return res;
+  }
+
+  // ---- review and progress ----
+
+  Map<String, AgentQuestion> _bankQuestions(List<AgentQuestion> qs, String bank) =>
+      {for (final q in qs) if (bank.isEmpty || q.bankId == bank) q.id: q};
+
+  Future<Object?> _getDueReviews(ToolArgs a) async {
+    final questions = await env.lib.questions();
+    final states = await env.lib.states();
+    final stats = questionStats(await env.lib.attempts());
+    final byId = _bankQuestions(questions, env.bankOrDefault(_str(a, 'bank_id')));
+    final limit = clampLimit(_int(a, 'limit'), 8, 15);
+    final nowMs = env.now().millisecondsSinceEpoch;
+
+    final items = <({AgentQuestion q, AgentState s, bool scheduled})>[];
+    var wrongBook = 0, scheduledN = 0;
+    for (final s in states) {
+      final q = byId[s.questionId];
+      if (q == null) continue;
+      final scheduled = s.dueAt > 0 && s.dueAt <= nowMs;
+      final wrong = s.inWrongBook;
+      if (wrong) wrongBook++;
+      if (scheduled) scheduledN++;
+      if (wrong || scheduled) items.add((q: q, s: s, scheduled: scheduled));
+    }
+    (double, int) weak(AgentQuestion q) {
+      final st = stats[q.id];
+      return st == null ? (0, 0) : (st.weakScore, st.recentWrong);
+    }
+
+    // A review that is due first (the longest overdue first), then the questions missed most recently.
+    items.sort((x, y) {
+      if (x.scheduled != y.scheduled) return x.scheduled ? -1 : 1;
+      if (x.scheduled && x.s.dueAt != y.s.dueAt) return x.s.dueAt.compareTo(y.s.dueAt);
+      final (sx, wx) = weak(x.q);
+      final (sy, wy) = weak(y.q);
+      if (sx != sy) return sy.compareTo(sx);
+      if (wx != wy) return wy.compareTo(wx);
+      if (x.s.wrongCount != y.s.wrongCount) return y.s.wrongCount.compareTo(x.s.wrongCount);
+      return x.q.id.compareTo(y.q.id);
+    });
+
+    const dayMs = 24 * 60 * 60 * 1000;
+    final qs = <Map<String, dynamic>>[];
+    final perLesson = <String, int>{};
+    for (final it in items) {
+      if (it.q.lessonId.isNotEmpty) perLesson[it.q.lessonId] = (perLesson[it.q.lessonId] ?? 0) + 1;
+      if (qs.length == limit) continue;
+      final overdue = it.scheduled ? (nowMs - it.s.dueAt) ~/ dayMs : 0;
+      env.see([it.q.id, it.q.lessonId]);
+      qs.add({
+        'question_id': it.q.id,
+        if (it.q.lessonId.isNotEmpty) 'lesson_id': it.q.lessonId,
+        'stem': clip(it.q.stem, 80),
+        'reason': it.scheduled ? 'scheduled' : 'wrong_book',
+        'wrong_count': it.s.wrongCount,
+        'streak': it.s.streak,
+        'recent_wrong': stats[it.q.id]?.recentWrong ?? 0,
+        if (overdue > 0) 'overdue_days': overdue,
+      });
+    }
+    final ls = <({String id, String path, int count})>[];
+    for (final e in perLesson.entries) {
+      final l = await env.lib.lesson(e.key);
+      if (l == null) continue;
+      ls.add((id: e.key, path: l.headingPath, count: e.value));
+    }
+    ls.sort((x, y) => x.count != y.count ? y.count.compareTo(x.count) : x.id.compareTo(y.id));
+    final top = ls.length > limit ? ls.sublist(0, limit) : ls;
+    env.see([for (final l in top) l.id]);
+    final res = <String, dynamic>{
+      'due_count': items.length,
+      'wrong_book_count': wrongBook,
+      'scheduled_count': scheduledN,
+      'questions': qs,
+      'lessons': [
+        for (final l in top) {'lesson_id': l.id, 'path': l.path, 'count': l.count},
+      ],
+    };
+    if (items.isEmpty) {
+      res['note'] = '错题本是空的，也没有到期的复习，暂时没有需要复习的题。';
+    } else if (items.length > qs.length) {
+      res['note'] = '只列了最紧迫的几道；想看更多可以加大 limit，或带 bank_id 缩小范围。';
+    }
+    return res;
+  }
+
+  // The study totals count an answer's time as the apps do (stats.dart): the time to answer and the time
+  // spent reading afterwards, each capped.
+  static const _maxAttemptMs = 2 * 60 * 1000;
+  static const _maxReviewMs = 3 * 60 * 1000;
+
+  static int _capMs(int v, int limit) => v < 0 ? 0 : (v > limit ? limit : v);
+  static int _studyMs(AgentAttempt a) => _capMs(a.durationMs, _maxAttemptMs) + _capMs(a.reviewMs, _maxReviewMs);
+  static int _percent(int part, int whole) => whole == 0 ? 0 : (part * 100 / whole).round();
+  static int _minutes(int ms) => (ms + 30 * 1000) ~/ (60 * 1000);
+
+  static String _two(int n) => n < 10 ? '0$n' : '$n';
+  static String _dayKey(DateTime t) => '${t.year}-${_two(t.month)}-${_two(t.day)}';
+
+  Future<Object?> _getStudyStats(ToolArgs a) async {
+    final questions = await env.lib.questions();
+    final attempts = await env.lib.attempts();
+    final states = await env.lib.states();
+    final byId = _bankQuestions(questions, env.bankOrDefault(_str(a, 'bank_id')));
+    final days = clampLimit(_int(a, 'days'), 7, 90);
+
+    // Days are local calendar days, as the apps' statistics are.
+    final now = env.now();
+    DateTime dayStart(int back) => DateTime(now.year, now.month, now.day - back);
+    final today = _dayKey(dayStart(0));
+    final periodFrom = _dayKey(dayStart(days - 1));
+
+    final total = [0, 0]; // attempts, correct
+    final period = [0, 0, 0]; // attempts, correct, ms
+    final perDay = <String, List<int>>{};
+    final active = <String>{};
+    final latest = <String, bool>{};
+    for (final at in attempts) {
+      if (!byId.containsKey(at.questionId)) continue;
+      total[0]++;
+      if (at.correct) total[1]++;
+      latest[at.questionId] = at.correct;
+      final day = _dayKey(DateTime.fromMillisecondsSinceEpoch(at.at));
+      active.add(day);
+      if (day.compareTo(periodFrom) < 0 || day.compareTo(today) > 0) continue;
+      for (final t in [period, perDay.putIfAbsent(day, () => [0, 0, 0])]) {
+        t[0]++;
+        t[2] += _studyMs(at);
+        if (at.correct) t[1]++;
+      }
+    }
+    var streak = 0;
+    var back = active.contains(today) ? 0 : 1;
+    while (active.contains(_dayKey(dayStart(back)))) {
+      streak++;
+      back++;
+    }
+
+    final wrongBook = states.where((s) => byId.containsKey(s.questionId) && s.inWrongBook).length;
+    final todayT = perDay[today] ?? const [0, 0, 0];
+    final daily = <Map<String, dynamic>>[];
+    for (var b = days - 1; b >= 0; b--) {
+      final t = dayStart(b);
+      final d = perDay[_dayKey(t)];
+      if (d == null) continue;
+      daily.add({'date': '${_two(t.month)}-${_two(t.day)}', 'attempts': d[0], 'correct': d[1], 'accuracy_percent': _percent(d[1], d[0])});
+    }
+    final res = <String, dynamic>{
+      'bank_questions': byId.length,
+      'answered_questions': latest.length,
+      'coverage_percent': _percent(latest.length, byId.length),
+      'latest_correct': latest.values.where((ok) => ok).length,
+      'wrong_book': wrongBook,
+      'overall': {'attempts': total[0], 'correct': total[1], 'accuracy_percent': _percent(total[1], total[0])},
+      'streak_days': streak,
+      'period_days': days,
+      'period': {
+        'attempts': period[0],
+        'correct': period[1],
+        'accuracy_percent': _percent(period[1], period[0]),
+        'active_days': daily.length,
+        'study_minutes': _minutes(period[2]),
+      },
+      'today': {'attempts': todayT[0], 'correct': todayT[1], 'study_minutes': _minutes(todayT[2])},
+      'daily': daily,
+    };
+    if (total[0] == 0) res['note'] = '还没有作答记录。';
+    return res;
+  }
+
+  Future<Object?> _getQuestionDetail(ToolArgs a) async {
+    final id = _str(a, 'question_id');
+    final questions = await env.lib.questions();
+    final i = questions.indexWhere((q) => q.id == id);
+    if (i < 0) throw ToolArgError('没有 id 为 "$id" 的题，请用 search_questions 取得 question_id');
+    final q = questions[i];
+    final attempts = await env.lib.attempts();
+    final states = await env.lib.states();
+    final note = await env.lib.note(q.id);
+    env.see([q.id, q.lessonId]);
+
+    final mine = [for (final at in attempts) if (at.questionId == q.id) at];
+    var correct = 0;
+    final misses = <int, int>{};
+    for (final at in mine) {
+      if (at.correct) {
+        correct++;
+        continue;
+      }
+      for (final o in at.selected) {
+        misses[o] = (misses[o] ?? 0) + 1;
+      }
+    }
+    String when(int ms) {
+      final t = DateTime.fromMillisecondsSinceEpoch(ms);
+      return '${_dayKey(t)} ${_two(t.hour)}:${_two(t.minute)}';
+    }
+
+    final recent = <Map<String, dynamic>>[];
+    for (var k = mine.length - 1; k >= 0 && recent.length < 5; k--) {
+      final at = mine[k];
+      final seconds = (_capMs(at.durationMs, _maxAttemptMs) + 500) ~/ 1000;
+      recent.add({'at': when(at.at), 'correct': at.correct, 'picked': at.selected, if (seconds > 0) 'seconds': seconds});
+    }
+    final picks = misses.entries.toList()
+      ..sort((x, y) => x.value != y.value ? y.value.compareTo(x.value) : x.key.compareTo(y.key));
+
+    final res = <String, dynamic>{
+      'question_id': q.id,
+      'type': q.type,
+      'difficulty': q.difficulty,
+      'stem': q.stem,
+      'options': q.options,
+      'answer_index': q.answer,
+      'explanation': clip(q.explanation, 1500),
+      'mine': {
+        'attempts': mine.length,
+        'correct': correct,
+        'recent': recent,
+        'wrong_picks': [
+          for (final p in picks)
+            {
+              'option_index': p.key,
+              'text': p.key >= 0 && p.key < q.options.length ? clip(q.options[p.key], 40) : '',
+              'times': p.value,
+            },
+        ],
+      },
+    };
+    if (q.lessonId.isNotEmpty) {
+      res['lesson_id'] = q.lessonId;
+      final l = await env.lib.lesson(q.lessonId);
+      if (l != null) res['lesson_path'] = l.headingPath;
+    }
+    for (final s in states) {
+      if (s.questionId != q.id) continue;
+      res['favorite'] = s.favorite;
+      res['in_wrong_book'] = s.inWrongBook;
+      res['wrong_count'] = s.wrongCount;
+      res['streak'] = s.streak;
+      if (s.dueAt > 0) res['review_due'] = _dayKey(DateTime.fromMillisecondsSinceEpoch(s.dueAt));
+      break;
+    }
+    if (note.isNotEmpty) res['ai_note'] = clip(note, 1500);
     return res;
   }
 
