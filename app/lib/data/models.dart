@@ -413,6 +413,7 @@ class AiConfig {
 class AiUsage {
   const AiUsage({
     required this.id,
+    this.role = 'explain',
     required this.model,
     required this.createdAt,
     this.questionId = '',
@@ -427,6 +428,10 @@ class AiUsage {
   });
 
   final String id;
+
+  /// What the call was for: `explain` (an AI explanation, [questionId] is the question) or `agent` (the
+  /// assistant, [questionId] is the conversation).
+  final String role;
   final String questionId;
   final String deviceId;
   final String model;
@@ -447,6 +452,7 @@ class AiUsage {
 
   factory AiUsage.fromJson(Map<String, dynamic> j) => AiUsage(
         id: j['id'] as String,
+        role: (j['role'] as String?) ?? 'explain',
         questionId: (j['question_id'] as String?) ?? '',
         deviceId: (j['device_id'] as String?) ?? '',
         model: (j['model'] as String?) ?? '',
@@ -462,6 +468,7 @@ class AiUsage {
 
   Map<String, dynamic> toJson() => {
         'id': id,
+        'role': role,
         'question_id': questionId,
         'device_id': deviceId,
         'model': model,

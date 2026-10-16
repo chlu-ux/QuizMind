@@ -144,7 +144,17 @@ class _AgentPageState extends ConsumerState<AgentPage> {
     }
     return status.when(
       loading: () => null,
-      data: (s) => s.available ? null : AgentBanner(message: 'AI 助手暂时不可用'),
+      data: (s) => s.local
+          ? AgentBanner(
+              key: const ValueKey('agent-local-banner'),
+              info: true,
+              message: '连不上服务器，正在用本机助手回答（离线）。出的题会先放进本机题库，联网同步后上传到服务器。',
+              actionLabel: '重试',
+              onAction: () => ref.invalidate(agentStatusProvider),
+            )
+          : s.available
+          ? null
+          : AgentBanner(message: 'AI 助手暂时不可用'),
       error: (e, _) {
         final code = e is AgentException ? e.status : null;
         if (code == 401) {

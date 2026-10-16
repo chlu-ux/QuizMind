@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import 'local_agent/agent_spec.dart';
 import 'models.dart';
 
 /// Thrown for any failed call; [message] is safe to show to the user.
@@ -54,6 +55,87 @@ abstract class QuizApi {
   /// Tells the server what AI explanations cost (token counts), with the same access token. Servers older
   /// than the feature answer 404; 400 means a record was refused.
   Future<void> uploadAiUsage(List<AiUsage> usage, {required String token});
+
+  /// What the assistant needs to run on this device when the server is out of reach (instructions, tools,
+  /// the model's address and key). 401 = wrong token; 404 = the server has no assistant (or predates it).
+  Future<LocalAgentSpec> agentLocalSpec({required String token});
+
+  /// Sends the questions the assistant wrote on this device, one answer per question in order. 404: a server
+  /// from before this existed.
+  Future<List<AgentUploadResult>> uploadAgentQuestions(List<AgentUpload> questions, {required String token});
+
+  /// Tells the server the learner took a question of the assistant back (or adopted it again).
+  Future<void> decideAgentQuestion(String id, {required bool adopt, required String token});
+}
+
+/// A question the assistant wrote on this device, as it is sent to the server. The id is the question's
+/// id from now on.
+class AgentUpload {
+  const AgentUpload({
+    required this.id,
+    required this.lessonId,
+    required this.conversationId,
+    required this.deviceId,
+    required this.model,
+    required this.type,
+    required this.stem,
+    required this.options,
+    required this.answerIndex,
+    required this.explanation,
+    required this.difficulty,
+    required this.tags,
+    required this.sourceQuote,
+  });
+
+  final String id;
+  final String lessonId;
+  final String conversationId;
+  final String deviceId;
+  final String model;
+  final String type;
+  final String stem;
+  final List<String> options;
+  final int answerIndex;
+  final String explanation;
+  final int difficulty;
+  final List<String> tags;
+  final String sourceQuote;
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'lesson_id': lessonId,
+        'conversation_id': conversationId,
+        'device_id': deviceId,
+        'model': model,
+        'type': type,
+        'stem': stem,
+        'options': options,
+        'answer_index': answerIndex,
+        'explanation': explanation,
+        'difficulty': difficulty,
+        'tags': tags,
+        'source_quote': sourceQuote,
+      };
+}
+
+/// What the server did with one uploaded question: [ok] with the [status] it has there, or refused with a
+/// reason for the learner.
+class AgentUploadResult {
+  const AgentUploadResult({required this.id, required this.ok, this.status = '', this.error = ''});
+
+  final String id;
+  final bool ok;
+
+  /// published | needs_review | rejected
+  final String status;
+  final String error;
+
+  factory AgentUploadResult.fromJson(Map<String, dynamic> j) => AgentUploadResult(
+        id: (j['id'] as String?) ?? '',
+        ok: j['ok'] == true,
+        status: (j['status'] as String?) ?? '',
+        error: (j['error'] as String?) ?? '',
+      );
 }
 
 class HttpQuizApi implements QuizApi {
@@ -180,6 +262,34 @@ class HttpQuizApi implements QuizApi {
         () => _dio.post(
           '/api/v1/ai/usage',
           data: usage.map((u) => u.toJson()).toList(),
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        ),
+        (_) {},
+      );
+
+  @override
+  Future<LocalAgentSpec> agentLocalSpec({required String token}) => _call(
+        () => _dio.get('/api/v1/agent/local-spec', options: Options(headers: {'Authorization': 'Bearer $token'})),
+        (d) => LocalAgentSpec.fromJson(d as Map<String, dynamic>),
+      );
+
+  @override
+  Future<List<AgentUploadResult>> uploadAgentQuestions(List<AgentUpload> questions, {required String token}) => _call(
+        () => _dio.post(
+          '/api/v1/agent/questions',
+          data: {'questions': [for (final q in questions) q.toJson()]},
+          options: Options(headers: {'Authorization': 'Bearer $token'}),
+        ),
+        (d) => [
+          for (final r in ((d as Map<String, dynamic>)['results'] as List? ?? const []))
+            AgentUploadResult.fromJson(r as Map<String, dynamic>),
+        ],
+      );
+
+  @override
+  Future<void> decideAgentQuestion(String id, {required bool adopt, required String token}) => _call(
+        () => _dio.post(
+          '/api/v1/agent/drafts/${Uri.encodeComponent(id)}/${adopt ? 'accept' : 'discard'}',
           options: Options(headers: {'Authorization': 'Bearer $token'}),
         ),
         (_) {},

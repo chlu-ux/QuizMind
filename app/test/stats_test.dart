@@ -6,6 +6,9 @@ import 'package:quizmind_app/data/stats.dart';
 Question q(String id, {String type = 'single', int difficulty = 2, List<String> tags = const []}) => Question(
       id: id,
       bankId: 'b1',
+      localState: '',
+      localNote: '',
+      agentConv: '',
       type: type,
       stem: id,
       optionsJson: '["A","B","C","D"]',

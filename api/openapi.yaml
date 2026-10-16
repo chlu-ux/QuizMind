@@ -310,6 +310,61 @@ paths:
               schema: { $ref: "#/components/schemas/AgentStatus" }
         "401": { description: missing or wrong access token }
         "404": { description: the assistant is not configured }
+  /api/v1/agent/local-spec:
+    get:
+      summary: What an app needs to run the assistant itself when the server cannot be reached
+      description: |
+        Needs the access token (see `/agent/status`). The apps fetch this at sync and keep it, so the
+        assistant also works away from the server: the app calls the model directly (the Anthropic
+        Messages protocol, `POST {model.base_url}/v1/messages`), runs the tools on the library it keeps,
+        and sends the questions the assistant wrote to `POST /agent/questions` at the next sync. Like
+        `/ai/config` this hands out the provider's API key. `version` changes whenever the instructions,
+        the tools or the limits change. The tools that need a server-side conversation (files) are
+        left out.
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AgentLocalSpec" }
+        "401": { description: missing or wrong access token }
+        "404": { description: no Anthropic-protocol model is bound to the assistant role }
+  /api/v1/agent/questions:
+    post:
+      summary: Upload questions the assistant wrote on a device that could not reach the server
+      description: |
+        Needs the access token. The server does not trust them: each question goes through the checks
+        a question of the server's own assistant meets (the rules, duplicates of the whole bank, the
+        independent reviewer when one is bound) and is stored adopted, with the id the device chose, so
+        `/agent/drafts/{id}/accept|discard` and the next sync refer to the same row. Sending a question
+        again is harmless and reports its outcome (a question the learner took back stays taken back).
+        Results are in request order.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [questions]
+              properties:
+                questions:
+                  type: array
+                  minItems: 1
+                  maxItems: 20
+                  items: { $ref: "#/components/schemas/AgentQuestionUpload" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  results:
+                    type: array
+                    items: { $ref: "#/components/schemas/AgentQuestionResult" }
+        "400": { description: invalid request }
+        "401": { description: missing or wrong access token }
   /api/v1/agent/chat:
     post:
       summary: Ask the study assistant; the answer arrives as a stream of server-sent events
@@ -757,7 +812,14 @@ components:
       required: [id, model, created_at]
       properties:
         id: { type: string, maxLength: 64, description: "chosen by the app (ULID); makes a resend harmless" }
-        question_id: { type: string, description: "the question that was explained, if any" }
+        role:
+          type: string
+          enum: [explain, agent]
+          default: explain
+          description: >
+            what the call was for: an AI explanation, or the assistant running on the device
+            (`agent`, whose `question_id` is the conversation id)
+        question_id: { type: string, description: "the question that was explained, or for `agent` the conversation" }
         device_id: { type: string }
         model: { type: string }
         input_tokens: { type: integer, minimum: 0 }
@@ -775,6 +837,65 @@ components:
       properties:
         accepted: { type: integer }
         ignored: { type: integer }
+    AgentLocalSpec:
+      type: object
+      required: [version, prompt, tools, limits, model, dedupe_threshold]
+      properties:
+        version: { type: string }
+        prompt: { type: string, description: "the stable system text of the whole assistant" }
+        tools:
+          type: array
+          items:
+            type: object
+            required: [name, description, input_schema]
+            properties:
+              name: { type: string }
+              description: { type: string }
+              input_schema: { type: object, description: "JSON Schema of the tool's input" }
+        limits:
+          type: object
+          properties:
+            max_rounds: { type: integer }
+            max_propose_per_call: { type: integer }
+            max_drafts_per_chat: { type: integer }
+            max_tool_result: { type: integer, description: "characters of a tool's result the model is given" }
+            wrap_up_nudge: { type: string, description: "said to the model when its tool budget is spent" }
+        model:
+          type: object
+          properties:
+            base_url: { type: string }
+            api_key: { type: string }
+            model: { type: string }
+            max_tokens: { type: integer }
+            effort: { type: string }
+            vision: { type: boolean }
+        dedupe_threshold: { type: number, description: "trigram similarity above which a question duplicates another" }
+    AgentQuestionUpload:
+      type: object
+      required: [id, lesson_id, conversation_id, type, stem, options, answer_index, explanation, source_quote]
+      properties:
+        id: { type: string, maxLength: 64, description: "chosen by the device (ULID); the question's id from now on" }
+        lesson_id: { type: string }
+        conversation_id: { type: string }
+        device_id: { type: string }
+        model: { type: string, description: "the model that wrote it" }
+        type: { type: string, enum: [single, judge] }
+        stem: { type: string }
+        options: { type: array, items: { type: string } }
+        answer_index: { type: integer }
+        explanation: { type: string }
+        difficulty: { type: integer }
+        tags: { type: array, items: { type: string } }
+        source_quote: { type: string }
+    AgentQuestionResult:
+      type: object
+      required: [id, ok, verified]
+      properties:
+        id: { type: string }
+        ok: { type: boolean }
+        status: { type: string, description: "the question's status on the server: published, needs_review or rejected" }
+        verified: { type: boolean, description: "a second model answered it independently and agreed" }
+        error: { type: string, description: "why it was refused, for the learner" }
     AgentStatus:
       type: object
       required: [available, model, verified, vision]

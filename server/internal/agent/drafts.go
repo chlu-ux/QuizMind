@@ -24,6 +24,8 @@ type ProposedQuestion struct {
 	SourceQuote string   `json:"source_quote"`
 	// Replaces is the draft_id of an earlier draft of this conversation this question takes the place of.
 	Replaces string `json:"replaces"`
+	// ClientID is the id an app gave the question when it wrote it offline; empty means the server picks one.
+	ClientID string `json:"-"`
 }
 
 // Draft is a question that passed every check. It is adopted at once; the learner can take it back.

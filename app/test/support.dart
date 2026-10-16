@@ -8,6 +8,7 @@ import 'package:quizmind_app/core/providers.dart';
 import 'package:quizmind_app/core/settings.dart';
 import 'package:quizmind_app/data/api.dart';
 import 'package:quizmind_app/data/database.dart';
+import 'package:quizmind_app/data/local_agent/agent_spec.dart';
 import 'package:quizmind_app/data/models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -217,6 +218,50 @@ class FakeApi implements QuizApi {
     if (token != aiToken) throw ApiException('missing or invalid access token', status: 401);
     usageBatches.add(usage);
     uploadedUsage.addAll(usage);
+  }
+
+  /// What the server hands out for the assistant on a device; null = no assistant (404).
+  LocalAgentSpec? agentSpec;
+
+  /// The questions devices uploaded, and how the server answers: by default every question is taken and
+  /// published; [agentRefusals] maps a question id to the reason it is refused, [agentStatus] to the status
+  /// it ends up with. [agentUploadStatus] makes the endpoint answer with that HTTP status (404 = an older server).
+  final List<AgentUpload> uploadedAgentQuestions = [];
+  final Map<String, String> agentRefusals = {};
+  final Map<String, String> agentStatus = {};
+  int? agentUploadStatus;
+
+  /// The decisions devices sent about questions of the assistant: id → adopted.
+  final Map<String, bool> agentDecisions = {};
+
+  @override
+  Future<LocalAgentSpec> agentLocalSpec({required String token}) async {
+    _maybeFail();
+    if (token != aiToken) throw ApiException('missing or invalid access token', status: 401);
+    final spec = agentSpec;
+    if (spec == null) throw ApiException('not found', status: 404);
+    return spec;
+  }
+
+  @override
+  Future<List<AgentUploadResult>> uploadAgentQuestions(List<AgentUpload> questions, {required String token}) async {
+    _maybeFail();
+    final status = agentUploadStatus;
+    if (status != null) throw ApiException('refused', status: status);
+    if (token != aiToken) throw ApiException('missing or invalid access token', status: 401);
+    uploadedAgentQuestions.addAll(questions);
+    return [
+      for (final q in questions)
+        agentRefusals.containsKey(q.id)
+            ? AgentUploadResult(id: q.id, ok: false, error: agentRefusals[q.id]!)
+            : AgentUploadResult(id: q.id, ok: true, status: agentStatus[q.id] ?? 'published'),
+    ];
+  }
+
+  @override
+  Future<void> decideAgentQuestion(String id, {required bool adopt, required String token}) async {
+    _maybeFail();
+    agentDecisions[id] = adopt;
   }
 
   /// The study text the server holds; [lessonsVersion] changes whenever a test changes it.

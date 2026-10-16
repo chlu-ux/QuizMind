@@ -132,7 +132,10 @@ func (d agentDrafter) Propose(ctx context.Context, scope agent.DraftScope, lesso
 			}
 			continue
 		}
-		id := newID()
+		id := pq.ClientID
+		if id == "" {
+			id = newID()
+		}
 		if other, dup := dedupe.Check(id, v); dup {
 			fail("与已有题目重复（%s），请换一个考点或角度", other)
 			continue

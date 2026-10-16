@@ -1,0 +1,715 @@
+{
+ "comment": "Cases both the server (Go) and the apps (Dart) must agree on: the rules a question written by the assistant must meet. See server/internal/pipeline/rules_golden_test.go and app/test/local_agent_test.dart.",
+ "lesson": "读写锁是一种同步机制。读写锁允许多个读者同时持有锁，但写者必须独占整个资源。因此读多写少的场景适合使用它。Ｃ语言中的结构体用 p->x 或 s.x 访问成员。",
+ "validate": [
+  {
+   "name": "a good question",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "多个读者可以同时持有读锁",
+     "同一时刻只允许一个读者",
+     "写者可以与读者并行执行",
+     "读写锁不允许写者进入"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "",
+   "options": [
+    "多个读者可以同时持有读锁",
+    "同一时刻只允许一个读者",
+    "写者可以与读者并行执行",
+    "读写锁不允许写者进入"
+   ],
+   "tags": [
+    "锁"
+   ],
+   "difficulty": 2
+  },
+  {
+   "name": "labels are stripped from options",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "A. 多个读者可以同时持有读锁",
+     "B、同一时刻只允许一个读者",
+     "c) 写者可以与读者并行执行",
+     "D：读写锁不允许写者进入"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "",
+   "options": [
+    "多个读者可以同时持有读锁",
+    "同一时刻只允许一个读者",
+    "写者可以与读者并行执行",
+    "读写锁不允许写者进入"
+   ]
+  },
+  {
+   "name": "difficulty out of range becomes 3",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "多个读者可以同时持有读锁",
+     "同一时刻只允许一个读者",
+     "写者可以与读者并行执行",
+     "读写锁不允许写者进入"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 9,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "",
+   "difficulty": 3
+  },
+  {
+   "name": "only three tags of at most 20 characters are kept",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "多个读者可以同时持有读锁",
+     "同一时刻只允许一个读者",
+     "写者可以与读者并行执行",
+     "读写锁不允许写者进入"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "一",
+     "",
+     "二",
+     "三",
+     "四",
+     "这个标签实在是太长了太长了太长了太长了太长了"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "",
+   "tags": [
+    "一",
+    "二",
+    "三"
+   ]
+  },
+  {
+   "name": "full-width forms in the quote still match",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "多个读者可以同时持有读锁",
+     "同一时刻只允许一个读者",
+     "写者可以与读者并行执行",
+     "读写锁不允许写者进入"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁,但写者必须独占整个资源."
+   },
+   "error": ""
+  },
+  {
+   "name": "a quote that is not in the lesson",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "多个读者可以同时持有读锁",
+     "同一时刻只允许一个读者",
+     "写者可以与读者并行执行",
+     "读写锁不允许写者进入"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "这句话在讲义里根本不存在，是模型编出来的"
+   },
+   "error": "source_quote not found"
+  },
+  {
+   "name": "a quote that is too short",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "多个读者可以同时持有读锁",
+     "同一时刻只允许一个读者",
+     "写者可以与读者并行执行",
+     "读写锁不允许写者进入"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁"
+   },
+   "error": "source_quote too short"
+  },
+  {
+   "name": "a stem that points at the text",
+   "question": {
+    "type": "single",
+    "stem": "根据上文，读写锁是什么？",
+    "options": [
+     "多个读者可以同时持有读锁",
+     "同一时刻只允许一个读者",
+     "写者可以与读者并行执行",
+     "读写锁不允许写者进入"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "stem refers to the source text"
+  },
+  {
+   "name": "a stem that is too short",
+   "question": {
+    "type": "single",
+    "stem": "读写锁？",
+    "options": [
+     "多个读者可以同时持有读锁",
+     "同一时刻只允许一个读者",
+     "写者可以与读者并行执行",
+     "读写锁不允许写者进入"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "stem length"
+  },
+  {
+   "name": "a stem that is too long",
+   "question": {
+    "type": "single",
+    "stem": "长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长长",
+    "options": [
+     "多个读者可以同时持有读锁",
+     "同一时刻只允许一个读者",
+     "写者可以与读者并行执行",
+     "读写锁不允许写者进入"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "stem length"
+  },
+  {
+   "name": "three options",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "甲甲",
+     "乙乙",
+     "丙丙"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "exactly 4 options"
+  },
+  {
+   "name": "an empty option",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "甲甲",
+     "乙乙",
+     "丙丙",
+     "  "
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "option 3 is empty"
+  },
+  {
+   "name": "an option that is too long",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "甲甲",
+     "乙乙",
+     "丙丙",
+     "丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁丁"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "option 3 longer than"
+  },
+  {
+   "name": "a catch-all option",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "以上都对",
+     "乙乙乙",
+     "丙丙丙",
+     "丁丁丁"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "catch-all"
+  },
+  {
+   "name": "a catch-all option with letters",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "甲甲甲",
+     "乙乙乙",
+     "A和B",
+     "丁丁丁"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "catch-all"
+  },
+  {
+   "name": "two options that differ only in punctuation",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "同一个选项",
+     "同一个选项。",
+     "丙丙丙",
+     "丁丁丁"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "duplicates another option"
+  },
+  {
+   "name": "an answer index out of range",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "多个读者可以同时持有读锁",
+     "同一时刻只允许一个读者",
+     "写者可以与读者并行执行",
+     "读写锁不允许写者进入"
+    ],
+    "answer_index": 4,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "out of range"
+  },
+  {
+   "name": "a negative answer index",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "多个读者可以同时持有读锁",
+     "同一时刻只允许一个读者",
+     "写者可以与读者并行执行",
+     "读写锁不允许写者进入"
+    ],
+    "answer_index": -1,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "out of range"
+  },
+  {
+   "name": "a judge question",
+   "question": {
+    "type": "judge",
+    "stem": "读写锁允许多个读者同时持有锁。",
+    "options": [],
+    "answer_index": 1,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "",
+   "options": [
+    "正确",
+    "错误"
+   ]
+  },
+  {
+   "name": "a judge answer that is neither",
+   "question": {
+    "type": "judge",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [],
+    "answer_index": 2,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "judge answer_index must be 0 or 1"
+  },
+  {
+   "name": "an unknown type",
+   "question": {
+    "type": "essay",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "多个读者可以同时持有读锁",
+     "同一时刻只允许一个读者",
+     "写者可以与读者并行执行",
+     "读写锁不允许写者进入"
+    ],
+    "answer_index": 0,
+    "explanation": "读写锁允许多个读者同时持有锁。",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "unsupported question type"
+  },
+  {
+   "name": "an explanation that is too long",
+   "question": {
+    "type": "single",
+    "stem": "关于读写锁的并发特性，下列哪项描述是正确的？",
+    "options": [
+     "多个读者可以同时持有读锁",
+     "同一时刻只允许一个读者",
+     "写者可以与读者并行执行",
+     "读写锁不允许写者进入"
+    ],
+    "answer_index": 0,
+    "explanation": "解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解解",
+    "difficulty": 2,
+    "tags": [
+     "锁"
+    ],
+    "source_quote": "读写锁允许多个读者同时持有锁，但写者必须独占整个资源。"
+   },
+   "error": "explanation longer"
+  }
+ ],
+ "dedupe": [
+  {
+   "name": "the same question",
+   "threshold": 0.8,
+   "existing": [
+    {
+     "stem": "读写锁允许多个读者同时持有锁吗",
+     "options": [
+      "允许",
+      "不允许",
+      "视情况",
+      "未知"
+     ]
+    }
+   ],
+   "candidate": {
+    "stem": "读写锁允许多个读者同时持有锁吗",
+    "options": [
+     "允许",
+     "不允许",
+     "视情况",
+     "未知"
+    ]
+   },
+   "duplicate": true
+  },
+  {
+   "name": "the stem has different punctuation and one option differs",
+   "threshold": 0.8,
+   "existing": [
+    {
+     "stem": "读写锁允许多个读者同时持有锁吗",
+     "options": [
+      "允许",
+      "不允许",
+      "视情况",
+      "未知"
+     ]
+    }
+   ],
+   "candidate": {
+    "stem": "读写锁允许多个读者同时持有锁吗？",
+    "options": [
+     "允许",
+     "不允许",
+     "视情况",
+     "不清楚"
+    ]
+   },
+   "duplicate": true
+  },
+  {
+   "name": "an unrelated question",
+   "threshold": 0.8,
+   "existing": [
+    {
+     "stem": "读写锁允许多个读者同时持有锁吗",
+     "options": [
+      "允许",
+      "不允许",
+      "视情况",
+      "未知"
+     ]
+    }
+   ],
+   "candidate": {
+    "stem": "互斥锁在同一时刻允许几个线程进入临界区",
+    "options": [
+     "一个",
+     "两个",
+     "任意个",
+     "零个"
+    ]
+   },
+   "duplicate": false
+  },
+  {
+   "name": "a generic stem with unrelated options",
+   "threshold": 0.8,
+   "existing": [
+    {
+     "stem": "下列说法正确的是",
+     "options": [
+      "读写锁允许多个读者",
+      "互斥锁允许多个写者",
+      "自旋锁会睡眠",
+      "信号量只能为一"
+     ]
+    }
+   ],
+   "candidate": {
+    "stem": "下列说法正确的是",
+    "options": [
+     "TCP 是面向连接的协议",
+     "UDP 提供可靠传输",
+     "IP 负责端口复用",
+     "ARP 解析域名"
+    ]
+   },
+   "duplicate": false
+  },
+  {
+   "name": "options in another order are the same question",
+   "threshold": 0.8,
+   "existing": [
+    {
+     "stem": "读写锁允许多个读者同时持有锁吗",
+     "options": [
+      "允许",
+      "不允许",
+      "视情况",
+      "未知"
+     ]
+    }
+   ],
+   "candidate": {
+    "stem": "读写锁允许多个读者同时持有锁吗",
+    "options": [
+     "未知",
+     "视情况",
+     "不允许",
+     "允许"
+    ]
+   },
+   "duplicate": true
+  },
+  {
+   "name": "two code questions are only compared exactly",
+   "threshold": 0.8,
+   "existing": [
+    {
+     "stem": "补全代码：\n```c\nint x = ?;\n```\n空白处应填什么？",
+     "options": [
+      "0",
+      "1",
+      "2",
+      "3"
+     ]
+    }
+   ],
+   "candidate": {
+    "stem": "补全代码：\n```c\nint x = ?;\n```\n空白处应该填入什么？",
+    "options": [
+     "0",
+     "1",
+     "2",
+     "4"
+    ]
+   },
+   "duplicate": false
+  },
+  {
+   "name": "two code questions that are the same",
+   "threshold": 0.8,
+   "existing": [
+    {
+     "stem": "补全代码：\n```c\nint x = ?;\n```\n空白处应填什么？",
+     "options": [
+      "0",
+      "1",
+      "2",
+      "3"
+     ]
+    }
+   ],
+   "candidate": {
+    "stem": "补全代码：\n```c\nint x = ?;\n```\n空白处应填什么？",
+    "options": [
+     "0",
+     "1",
+     "2",
+     "3"
+    ]
+   },
+   "duplicate": true
+  },
+  {
+   "name": "a looser threshold catches a reworded question",
+   "threshold": 0.5,
+   "existing": [
+    {
+     "stem": "读写锁允许多个读者同时持有锁吗",
+     "options": [
+      "允许",
+      "不允许",
+      "视情况",
+      "未知"
+     ]
+    }
+   ],
+   "candidate": {
+    "stem": "读写锁是否允许多个读者同时持有锁",
+    "options": [
+     "允许",
+     "不允许",
+     "视情况",
+     "不清楚"
+    ]
+   },
+   "duplicate": true
+  },
+  {
+   "name": "a stricter threshold lets a reworded question through",
+   "threshold": 0.95,
+   "existing": [
+    {
+     "stem": "读写锁允许多个读者同时持有锁吗",
+     "options": [
+      "允许",
+      "不允许",
+      "视情况",
+      "未知"
+     ]
+    }
+   ],
+   "candidate": {
+    "stem": "读写锁是否允许多个读者同时持有锁",
+    "options": [
+     "允许",
+     "不允许",
+     "视情况",
+     "不清楚"
+    ]
+   },
+   "duplicate": false
+  }
+ ]
+}

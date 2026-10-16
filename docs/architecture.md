@@ -696,6 +696,7 @@ POST /api/v1/agent/drafts/{id}/discard          → { id, status }
 - **独立复核**：绑定了 `validator` 角色模型时，每道草稿入库前先让它不看答案做一遍，不一致的拒绝；没绑定则草稿标注「未经独立复核」。
 - **鉴权与限额**：用「AI 解读」页里设置的那个访问令牌（`Authorization: Bearer`），同一个令牌管理 `/ai/config`、`/ai/usage` 和 `/agent/*`；没有绑定助手模型时 `/agent/status` 为 404。每台设备（请求里的 `device_id`）同时至多 2 个对话（429）；一次对话最长 3 分钟；助手的每一轮模型调用都计入每日 token 预算。
 - **用量**：每轮调用写 `llm_call_log`（`role = agent`、`source = server`），`ref_id` 是对话 id；后台用量页的明细在「题目」一列显示「对话 xxxxxx」。
+- **连不上服务器时**（第 10 期，仅 Flutter，见 [`agent-offline.md`](agent-offline.md)）：手机用 `GET /agent/local-spec`（提示词、工具、模型地址和 Key，随同步保存）自己跑同一个对话循环，工具在本机的讲义 / 题库 / 作答记录上执行；出的题先进本机题库，下次同步经 `POST /agent/questions` 上传，服务端重新检查后按助手出的题处理。校验与查重规则在 Go 和 Dart 里各有一份，共用 `api/testdata/question_rules.json` 的用例。
 - **客户端**：令牌在设置页填写（Flutter：设置 → AI 解读；H5：设置 → AI 助手，存 `localStorage`）；入口有 Flutter 底部导航中间的「AI」页（第一次点开才创建，切走保留对话）、题库页的「AI 助手」、讲义页（问这一节、用这一节出题）、答题解析下的「追问 AI」（后者需要已填令牌）；对话页顶栏有「历史」和「新对话」，除 AI 页外入口一律开新对话。一批题在对话里折成一张卡片，每题一行带采纳开关。H5 用 `fetch` 读取 `ReadableStream`（`EventSource` 不能 POST、不能带请求头）；点击回答里的引用，H5 在底部面板里显示讲义小节或题目，不离开对话页，对话不会因此丢失。
 
 ## 8. API 概览

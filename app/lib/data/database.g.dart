@@ -500,6 +500,42 @@ class $QuestionsTable extends Questions
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _localStateMeta = const VerificationMeta(
+    'localState',
+  );
+  @override
+  late final GeneratedColumn<String> localState = GeneratedColumn<String>(
+    'local_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _localNoteMeta = const VerificationMeta(
+    'localNote',
+  );
+  @override
+  late final GeneratedColumn<String> localNote = GeneratedColumn<String>(
+    'local_note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _agentConvMeta = const VerificationMeta(
+    'agentConv',
+  );
+  @override
+  late final GeneratedColumn<String> agentConv = GeneratedColumn<String>(
+    'agent_conv',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -518,6 +554,9 @@ class $QuestionsTable extends Questions
     chunkId,
     syncSeq,
     hidden,
+    localState,
+    localNote,
+    agentConv,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -653,6 +692,24 @@ class $QuestionsTable extends Questions
         hidden.isAcceptableOrUnknown(data['hidden']!, _hiddenMeta),
       );
     }
+    if (data.containsKey('local_state')) {
+      context.handle(
+        _localStateMeta,
+        localState.isAcceptableOrUnknown(data['local_state']!, _localStateMeta),
+      );
+    }
+    if (data.containsKey('local_note')) {
+      context.handle(
+        _localNoteMeta,
+        localNote.isAcceptableOrUnknown(data['local_note']!, _localNoteMeta),
+      );
+    }
+    if (data.containsKey('agent_conv')) {
+      context.handle(
+        _agentConvMeta,
+        agentConv.isAcceptableOrUnknown(data['agent_conv']!, _agentConvMeta),
+      );
+    }
     return context;
   }
 
@@ -726,6 +783,18 @@ class $QuestionsTable extends Questions
         DriftSqlType.bool,
         data['${effectivePrefix}hidden'],
       )!,
+      localState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_state'],
+      )!,
+      localNote: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_note'],
+      )!,
+      agentConv: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}agent_conv'],
+      )!,
     );
   }
 
@@ -758,6 +827,16 @@ class Question extends DataClass implements Insertable<Question> {
   final String chunkId;
   final int syncSeq;
   final bool hidden;
+
+  /// A question the assistant wrote on this device while the server was out of reach. '' for every question
+  /// the server knows; `pending` waits to be uploaded (it is part of the bank here meanwhile, its [syncSeq]
+  /// is 0); `refused` was turned down by the server's checks (hidden, the reason is in [localNote]). The
+  /// next sync that brings the question back from the server clears it.
+  final String localState;
+  final String localNote;
+
+  /// The assistant conversation that wrote the question, for the ones written on this device.
+  final String agentConv;
   const Question({
     required this.id,
     required this.bankId,
@@ -775,6 +854,9 @@ class Question extends DataClass implements Insertable<Question> {
     required this.chunkId,
     required this.syncSeq,
     required this.hidden,
+    required this.localState,
+    required this.localNote,
+    required this.agentConv,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -795,6 +877,9 @@ class Question extends DataClass implements Insertable<Question> {
     map['chunk_id'] = Variable<String>(chunkId);
     map['sync_seq'] = Variable<int>(syncSeq);
     map['hidden'] = Variable<bool>(hidden);
+    map['local_state'] = Variable<String>(localState);
+    map['local_note'] = Variable<String>(localNote);
+    map['agent_conv'] = Variable<String>(agentConv);
     return map;
   }
 
@@ -816,6 +901,9 @@ class Question extends DataClass implements Insertable<Question> {
       chunkId: Value(chunkId),
       syncSeq: Value(syncSeq),
       hidden: Value(hidden),
+      localState: Value(localState),
+      localNote: Value(localNote),
+      agentConv: Value(agentConv),
     );
   }
 
@@ -841,6 +929,9 @@ class Question extends DataClass implements Insertable<Question> {
       chunkId: serializer.fromJson<String>(json['chunkId']),
       syncSeq: serializer.fromJson<int>(json['syncSeq']),
       hidden: serializer.fromJson<bool>(json['hidden']),
+      localState: serializer.fromJson<String>(json['localState']),
+      localNote: serializer.fromJson<String>(json['localNote']),
+      agentConv: serializer.fromJson<String>(json['agentConv']),
     );
   }
   @override
@@ -863,6 +954,9 @@ class Question extends DataClass implements Insertable<Question> {
       'chunkId': serializer.toJson<String>(chunkId),
       'syncSeq': serializer.toJson<int>(syncSeq),
       'hidden': serializer.toJson<bool>(hidden),
+      'localState': serializer.toJson<String>(localState),
+      'localNote': serializer.toJson<String>(localNote),
+      'agentConv': serializer.toJson<String>(agentConv),
     };
   }
 
@@ -883,6 +977,9 @@ class Question extends DataClass implements Insertable<Question> {
     String? chunkId,
     int? syncSeq,
     bool? hidden,
+    String? localState,
+    String? localNote,
+    String? agentConv,
   }) => Question(
     id: id ?? this.id,
     bankId: bankId ?? this.bankId,
@@ -900,6 +997,9 @@ class Question extends DataClass implements Insertable<Question> {
     chunkId: chunkId ?? this.chunkId,
     syncSeq: syncSeq ?? this.syncSeq,
     hidden: hidden ?? this.hidden,
+    localState: localState ?? this.localState,
+    localNote: localNote ?? this.localNote,
+    agentConv: agentConv ?? this.agentConv,
   );
   Question copyWithCompanion(QuestionsCompanion data) {
     return Question(
@@ -935,6 +1035,11 @@ class Question extends DataClass implements Insertable<Question> {
       chunkId: data.chunkId.present ? data.chunkId.value : this.chunkId,
       syncSeq: data.syncSeq.present ? data.syncSeq.value : this.syncSeq,
       hidden: data.hidden.present ? data.hidden.value : this.hidden,
+      localState: data.localState.present
+          ? data.localState.value
+          : this.localState,
+      localNote: data.localNote.present ? data.localNote.value : this.localNote,
+      agentConv: data.agentConv.present ? data.agentConv.value : this.agentConv,
     );
   }
 
@@ -956,7 +1061,10 @@ class Question extends DataClass implements Insertable<Question> {
           ..write('documentOrder: $documentOrder, ')
           ..write('chunkId: $chunkId, ')
           ..write('syncSeq: $syncSeq, ')
-          ..write('hidden: $hidden')
+          ..write('hidden: $hidden, ')
+          ..write('localState: $localState, ')
+          ..write('localNote: $localNote, ')
+          ..write('agentConv: $agentConv')
           ..write(')'))
         .toString();
   }
@@ -979,6 +1087,9 @@ class Question extends DataClass implements Insertable<Question> {
     chunkId,
     syncSeq,
     hidden,
+    localState,
+    localNote,
+    agentConv,
   );
   @override
   bool operator ==(Object other) =>
@@ -999,7 +1110,10 @@ class Question extends DataClass implements Insertable<Question> {
           other.documentOrder == this.documentOrder &&
           other.chunkId == this.chunkId &&
           other.syncSeq == this.syncSeq &&
-          other.hidden == this.hidden);
+          other.hidden == this.hidden &&
+          other.localState == this.localState &&
+          other.localNote == this.localNote &&
+          other.agentConv == this.agentConv);
 }
 
 class QuestionsCompanion extends UpdateCompanion<Question> {
@@ -1019,6 +1133,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
   final Value<String> chunkId;
   final Value<int> syncSeq;
   final Value<bool> hidden;
+  final Value<String> localState;
+  final Value<String> localNote;
+  final Value<String> agentConv;
   final Value<int> rowid;
   const QuestionsCompanion({
     this.id = const Value.absent(),
@@ -1037,6 +1154,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
     this.chunkId = const Value.absent(),
     this.syncSeq = const Value.absent(),
     this.hidden = const Value.absent(),
+    this.localState = const Value.absent(),
+    this.localNote = const Value.absent(),
+    this.agentConv = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   QuestionsCompanion.insert({
@@ -1056,6 +1176,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
     this.chunkId = const Value.absent(),
     required int syncSeq,
     this.hidden = const Value.absent(),
+    this.localState = const Value.absent(),
+    this.localNote = const Value.absent(),
+    this.agentConv = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        bankId = Value(bankId),
@@ -1081,6 +1204,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
     Expression<String>? chunkId,
     Expression<int>? syncSeq,
     Expression<bool>? hidden,
+    Expression<String>? localState,
+    Expression<String>? localNote,
+    Expression<String>? agentConv,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1100,6 +1226,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
       if (chunkId != null) 'chunk_id': chunkId,
       if (syncSeq != null) 'sync_seq': syncSeq,
       if (hidden != null) 'hidden': hidden,
+      if (localState != null) 'local_state': localState,
+      if (localNote != null) 'local_note': localNote,
+      if (agentConv != null) 'agent_conv': agentConv,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1121,6 +1250,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
     Value<String>? chunkId,
     Value<int>? syncSeq,
     Value<bool>? hidden,
+    Value<String>? localState,
+    Value<String>? localNote,
+    Value<String>? agentConv,
     Value<int>? rowid,
   }) {
     return QuestionsCompanion(
@@ -1140,6 +1272,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
       chunkId: chunkId ?? this.chunkId,
       syncSeq: syncSeq ?? this.syncSeq,
       hidden: hidden ?? this.hidden,
+      localState: localState ?? this.localState,
+      localNote: localNote ?? this.localNote,
+      agentConv: agentConv ?? this.agentConv,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1195,6 +1330,15 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
     if (hidden.present) {
       map['hidden'] = Variable<bool>(hidden.value);
     }
+    if (localState.present) {
+      map['local_state'] = Variable<String>(localState.value);
+    }
+    if (localNote.present) {
+      map['local_note'] = Variable<String>(localNote.value);
+    }
+    if (agentConv.present) {
+      map['agent_conv'] = Variable<String>(agentConv.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1220,6 +1364,9 @@ class QuestionsCompanion extends UpdateCompanion<Question> {
           ..write('chunkId: $chunkId, ')
           ..write('syncSeq: $syncSeq, ')
           ..write('hidden: $hidden, ')
+          ..write('localState: $localState, ')
+          ..write('localNote: $localNote, ')
+          ..write('agentConv: $agentConv, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -5060,6 +5207,1044 @@ class LessonReadsCompanion extends UpdateCompanion<LessonRead> {
   }
 }
 
+class $AgentConversationsTable extends AgentConversations
+    with TableInfo<$AgentConversationsTable, AgentConversation> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AgentConversationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modeMeta = const VerificationMeta('mode');
+  @override
+  late final GeneratedColumn<String> mode = GeneratedColumn<String>(
+    'mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _bankIdMeta = const VerificationMeta('bankId');
+  @override
+  late final GeneratedColumn<String> bankId = GeneratedColumn<String>(
+    'bank_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _lessonIdMeta = const VerificationMeta(
+    'lessonId',
+  );
+  @override
+  late final GeneratedColumn<String> lessonId = GeneratedColumn<String>(
+    'lesson_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _questionIdMeta = const VerificationMeta(
+    'questionId',
+  );
+  @override
+  late final GeneratedColumn<String> questionId = GeneratedColumn<String>(
+    'question_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAt = GeneratedColumn<int>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    mode,
+    title,
+    bankId,
+    lessonId,
+    questionId,
+    createdAt,
+    updatedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'agent_conversations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AgentConversation> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('mode')) {
+      context.handle(
+        _modeMeta,
+        mode.isAcceptableOrUnknown(data['mode']!, _modeMeta),
+      );
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    }
+    if (data.containsKey('bank_id')) {
+      context.handle(
+        _bankIdMeta,
+        bankId.isAcceptableOrUnknown(data['bank_id']!, _bankIdMeta),
+      );
+    }
+    if (data.containsKey('lesson_id')) {
+      context.handle(
+        _lessonIdMeta,
+        lessonId.isAcceptableOrUnknown(data['lesson_id']!, _lessonIdMeta),
+      );
+    }
+    if (data.containsKey('question_id')) {
+      context.handle(
+        _questionIdMeta,
+        questionId.isAcceptableOrUnknown(data['question_id']!, _questionIdMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AgentConversation map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AgentConversation(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      mode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mode'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      bankId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}bank_id'],
+      )!,
+      lessonId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lesson_id'],
+      )!,
+      questionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}question_id'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at'],
+      )!,
+    );
+  }
+
+  @override
+  $AgentConversationsTable createAlias(String alias) {
+    return $AgentConversationsTable(attachedDatabase, alias);
+  }
+}
+
+class AgentConversation extends DataClass
+    implements Insertable<AgentConversation> {
+  final String id;
+  final String mode;
+  final String title;
+  final String bankId;
+  final String lessonId;
+  final String questionId;
+  final int createdAt;
+  final int updatedAt;
+  const AgentConversation({
+    required this.id,
+    required this.mode,
+    required this.title,
+    required this.bankId,
+    required this.lessonId,
+    required this.questionId,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['mode'] = Variable<String>(mode);
+    map['title'] = Variable<String>(title);
+    map['bank_id'] = Variable<String>(bankId);
+    map['lesson_id'] = Variable<String>(lessonId);
+    map['question_id'] = Variable<String>(questionId);
+    map['created_at'] = Variable<int>(createdAt);
+    map['updated_at'] = Variable<int>(updatedAt);
+    return map;
+  }
+
+  AgentConversationsCompanion toCompanion(bool nullToAbsent) {
+    return AgentConversationsCompanion(
+      id: Value(id),
+      mode: Value(mode),
+      title: Value(title),
+      bankId: Value(bankId),
+      lessonId: Value(lessonId),
+      questionId: Value(questionId),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory AgentConversation.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AgentConversation(
+      id: serializer.fromJson<String>(json['id']),
+      mode: serializer.fromJson<String>(json['mode']),
+      title: serializer.fromJson<String>(json['title']),
+      bankId: serializer.fromJson<String>(json['bankId']),
+      lessonId: serializer.fromJson<String>(json['lessonId']),
+      questionId: serializer.fromJson<String>(json['questionId']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+      updatedAt: serializer.fromJson<int>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'mode': serializer.toJson<String>(mode),
+      'title': serializer.toJson<String>(title),
+      'bankId': serializer.toJson<String>(bankId),
+      'lessonId': serializer.toJson<String>(lessonId),
+      'questionId': serializer.toJson<String>(questionId),
+      'createdAt': serializer.toJson<int>(createdAt),
+      'updatedAt': serializer.toJson<int>(updatedAt),
+    };
+  }
+
+  AgentConversation copyWith({
+    String? id,
+    String? mode,
+    String? title,
+    String? bankId,
+    String? lessonId,
+    String? questionId,
+    int? createdAt,
+    int? updatedAt,
+  }) => AgentConversation(
+    id: id ?? this.id,
+    mode: mode ?? this.mode,
+    title: title ?? this.title,
+    bankId: bankId ?? this.bankId,
+    lessonId: lessonId ?? this.lessonId,
+    questionId: questionId ?? this.questionId,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+  );
+  AgentConversation copyWithCompanion(AgentConversationsCompanion data) {
+    return AgentConversation(
+      id: data.id.present ? data.id.value : this.id,
+      mode: data.mode.present ? data.mode.value : this.mode,
+      title: data.title.present ? data.title.value : this.title,
+      bankId: data.bankId.present ? data.bankId.value : this.bankId,
+      lessonId: data.lessonId.present ? data.lessonId.value : this.lessonId,
+      questionId: data.questionId.present
+          ? data.questionId.value
+          : this.questionId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentConversation(')
+          ..write('id: $id, ')
+          ..write('mode: $mode, ')
+          ..write('title: $title, ')
+          ..write('bankId: $bankId, ')
+          ..write('lessonId: $lessonId, ')
+          ..write('questionId: $questionId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    mode,
+    title,
+    bankId,
+    lessonId,
+    questionId,
+    createdAt,
+    updatedAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AgentConversation &&
+          other.id == this.id &&
+          other.mode == this.mode &&
+          other.title == this.title &&
+          other.bankId == this.bankId &&
+          other.lessonId == this.lessonId &&
+          other.questionId == this.questionId &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class AgentConversationsCompanion extends UpdateCompanion<AgentConversation> {
+  final Value<String> id;
+  final Value<String> mode;
+  final Value<String> title;
+  final Value<String> bankId;
+  final Value<String> lessonId;
+  final Value<String> questionId;
+  final Value<int> createdAt;
+  final Value<int> updatedAt;
+  final Value<int> rowid;
+  const AgentConversationsCompanion({
+    this.id = const Value.absent(),
+    this.mode = const Value.absent(),
+    this.title = const Value.absent(),
+    this.bankId = const Value.absent(),
+    this.lessonId = const Value.absent(),
+    this.questionId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AgentConversationsCompanion.insert({
+    required String id,
+    this.mode = const Value.absent(),
+    this.title = const Value.absent(),
+    this.bankId = const Value.absent(),
+    this.lessonId = const Value.absent(),
+    this.questionId = const Value.absent(),
+    required int createdAt,
+    required int updatedAt,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       createdAt = Value(createdAt),
+       updatedAt = Value(updatedAt);
+  static Insertable<AgentConversation> custom({
+    Expression<String>? id,
+    Expression<String>? mode,
+    Expression<String>? title,
+    Expression<String>? bankId,
+    Expression<String>? lessonId,
+    Expression<String>? questionId,
+    Expression<int>? createdAt,
+    Expression<int>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (mode != null) 'mode': mode,
+      if (title != null) 'title': title,
+      if (bankId != null) 'bank_id': bankId,
+      if (lessonId != null) 'lesson_id': lessonId,
+      if (questionId != null) 'question_id': questionId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AgentConversationsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? mode,
+    Value<String>? title,
+    Value<String>? bankId,
+    Value<String>? lessonId,
+    Value<String>? questionId,
+    Value<int>? createdAt,
+    Value<int>? updatedAt,
+    Value<int>? rowid,
+  }) {
+    return AgentConversationsCompanion(
+      id: id ?? this.id,
+      mode: mode ?? this.mode,
+      title: title ?? this.title,
+      bankId: bankId ?? this.bankId,
+      lessonId: lessonId ?? this.lessonId,
+      questionId: questionId ?? this.questionId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (mode.present) {
+      map['mode'] = Variable<String>(mode.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (bankId.present) {
+      map['bank_id'] = Variable<String>(bankId.value);
+    }
+    if (lessonId.present) {
+      map['lesson_id'] = Variable<String>(lessonId.value);
+    }
+    if (questionId.present) {
+      map['question_id'] = Variable<String>(questionId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<int>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentConversationsCompanion(')
+          ..write('id: $id, ')
+          ..write('mode: $mode, ')
+          ..write('title: $title, ')
+          ..write('bankId: $bankId, ')
+          ..write('lessonId: $lessonId, ')
+          ..write('questionId: $questionId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AgentMessagesTable extends AgentMessages
+    with TableInfo<$AgentMessagesTable, AgentMessage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AgentMessagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+    'id',
+    aliasedName,
+    false,
+    hasAutoIncrement: true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'PRIMARY KEY AUTOINCREMENT',
+    ),
+  );
+  static const VerificationMeta _conversationIdMeta = const VerificationMeta(
+    'conversationId',
+  );
+  @override
+  late final GeneratedColumn<String> conversationId = GeneratedColumn<String>(
+    'conversation_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumn<String> role = GeneratedColumn<String>(
+    'role',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _toolsJsonMeta = const VerificationMeta(
+    'toolsJson',
+  );
+  @override
+  late final GeneratedColumn<String> toolsJson = GeneratedColumn<String>(
+    'tools_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _draftsJsonMeta = const VerificationMeta(
+    'draftsJson',
+  );
+  @override
+  late final GeneratedColumn<String> draftsJson = GeneratedColumn<String>(
+    'drafts_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _errorMeta = const VerificationMeta('error');
+  @override
+  late final GeneratedColumn<String> error = GeneratedColumn<String>(
+    'error',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<int> createdAt = GeneratedColumn<int>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    conversationId,
+    role,
+    body,
+    toolsJson,
+    draftsJson,
+    note,
+    error,
+    createdAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'agent_messages';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AgentMessage> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('conversation_id')) {
+      context.handle(
+        _conversationIdMeta,
+        conversationId.isAcceptableOrUnknown(
+          data['conversation_id']!,
+          _conversationIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_conversationIdMeta);
+    }
+    if (data.containsKey('role')) {
+      context.handle(
+        _roleMeta,
+        role.isAcceptableOrUnknown(data['role']!, _roleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_roleMeta);
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    }
+    if (data.containsKey('tools_json')) {
+      context.handle(
+        _toolsJsonMeta,
+        toolsJson.isAcceptableOrUnknown(data['tools_json']!, _toolsJsonMeta),
+      );
+    }
+    if (data.containsKey('drafts_json')) {
+      context.handle(
+        _draftsJsonMeta,
+        draftsJson.isAcceptableOrUnknown(data['drafts_json']!, _draftsJsonMeta),
+      );
+    }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
+    if (data.containsKey('error')) {
+      context.handle(
+        _errorMeta,
+        error.isAcceptableOrUnknown(data['error']!, _errorMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  AgentMessage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AgentMessage(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}id'],
+      )!,
+      conversationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}conversation_id'],
+      )!,
+      role: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}role'],
+      )!,
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+      toolsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tools_json'],
+      )!,
+      draftsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}drafts_json'],
+      )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      )!,
+      error: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error'],
+      )!,
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at'],
+      )!,
+    );
+  }
+
+  @override
+  $AgentMessagesTable createAlias(String alias) {
+    return $AgentMessagesTable(attachedDatabase, alias);
+  }
+}
+
+class AgentMessage extends DataClass implements Insertable<AgentMessage> {
+  final int id;
+  final String conversationId;
+  final String role;
+  final String body;
+  final String toolsJson;
+  final String draftsJson;
+  final String note;
+  final String error;
+  final int createdAt;
+  const AgentMessage({
+    required this.id,
+    required this.conversationId,
+    required this.role,
+    required this.body,
+    required this.toolsJson,
+    required this.draftsJson,
+    required this.note,
+    required this.error,
+    required this.createdAt,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['conversation_id'] = Variable<String>(conversationId);
+    map['role'] = Variable<String>(role);
+    map['body'] = Variable<String>(body);
+    map['tools_json'] = Variable<String>(toolsJson);
+    map['drafts_json'] = Variable<String>(draftsJson);
+    map['note'] = Variable<String>(note);
+    map['error'] = Variable<String>(error);
+    map['created_at'] = Variable<int>(createdAt);
+    return map;
+  }
+
+  AgentMessagesCompanion toCompanion(bool nullToAbsent) {
+    return AgentMessagesCompanion(
+      id: Value(id),
+      conversationId: Value(conversationId),
+      role: Value(role),
+      body: Value(body),
+      toolsJson: Value(toolsJson),
+      draftsJson: Value(draftsJson),
+      note: Value(note),
+      error: Value(error),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory AgentMessage.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AgentMessage(
+      id: serializer.fromJson<int>(json['id']),
+      conversationId: serializer.fromJson<String>(json['conversationId']),
+      role: serializer.fromJson<String>(json['role']),
+      body: serializer.fromJson<String>(json['body']),
+      toolsJson: serializer.fromJson<String>(json['toolsJson']),
+      draftsJson: serializer.fromJson<String>(json['draftsJson']),
+      note: serializer.fromJson<String>(json['note']),
+      error: serializer.fromJson<String>(json['error']),
+      createdAt: serializer.fromJson<int>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'conversationId': serializer.toJson<String>(conversationId),
+      'role': serializer.toJson<String>(role),
+      'body': serializer.toJson<String>(body),
+      'toolsJson': serializer.toJson<String>(toolsJson),
+      'draftsJson': serializer.toJson<String>(draftsJson),
+      'note': serializer.toJson<String>(note),
+      'error': serializer.toJson<String>(error),
+      'createdAt': serializer.toJson<int>(createdAt),
+    };
+  }
+
+  AgentMessage copyWith({
+    int? id,
+    String? conversationId,
+    String? role,
+    String? body,
+    String? toolsJson,
+    String? draftsJson,
+    String? note,
+    String? error,
+    int? createdAt,
+  }) => AgentMessage(
+    id: id ?? this.id,
+    conversationId: conversationId ?? this.conversationId,
+    role: role ?? this.role,
+    body: body ?? this.body,
+    toolsJson: toolsJson ?? this.toolsJson,
+    draftsJson: draftsJson ?? this.draftsJson,
+    note: note ?? this.note,
+    error: error ?? this.error,
+    createdAt: createdAt ?? this.createdAt,
+  );
+  AgentMessage copyWithCompanion(AgentMessagesCompanion data) {
+    return AgentMessage(
+      id: data.id.present ? data.id.value : this.id,
+      conversationId: data.conversationId.present
+          ? data.conversationId.value
+          : this.conversationId,
+      role: data.role.present ? data.role.value : this.role,
+      body: data.body.present ? data.body.value : this.body,
+      toolsJson: data.toolsJson.present ? data.toolsJson.value : this.toolsJson,
+      draftsJson: data.draftsJson.present
+          ? data.draftsJson.value
+          : this.draftsJson,
+      note: data.note.present ? data.note.value : this.note,
+      error: data.error.present ? data.error.value : this.error,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentMessage(')
+          ..write('id: $id, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('role: $role, ')
+          ..write('body: $body, ')
+          ..write('toolsJson: $toolsJson, ')
+          ..write('draftsJson: $draftsJson, ')
+          ..write('note: $note, ')
+          ..write('error: $error, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    conversationId,
+    role,
+    body,
+    toolsJson,
+    draftsJson,
+    note,
+    error,
+    createdAt,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AgentMessage &&
+          other.id == this.id &&
+          other.conversationId == this.conversationId &&
+          other.role == this.role &&
+          other.body == this.body &&
+          other.toolsJson == this.toolsJson &&
+          other.draftsJson == this.draftsJson &&
+          other.note == this.note &&
+          other.error == this.error &&
+          other.createdAt == this.createdAt);
+}
+
+class AgentMessagesCompanion extends UpdateCompanion<AgentMessage> {
+  final Value<int> id;
+  final Value<String> conversationId;
+  final Value<String> role;
+  final Value<String> body;
+  final Value<String> toolsJson;
+  final Value<String> draftsJson;
+  final Value<String> note;
+  final Value<String> error;
+  final Value<int> createdAt;
+  const AgentMessagesCompanion({
+    this.id = const Value.absent(),
+    this.conversationId = const Value.absent(),
+    this.role = const Value.absent(),
+    this.body = const Value.absent(),
+    this.toolsJson = const Value.absent(),
+    this.draftsJson = const Value.absent(),
+    this.note = const Value.absent(),
+    this.error = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  AgentMessagesCompanion.insert({
+    this.id = const Value.absent(),
+    required String conversationId,
+    required String role,
+    this.body = const Value.absent(),
+    this.toolsJson = const Value.absent(),
+    this.draftsJson = const Value.absent(),
+    this.note = const Value.absent(),
+    this.error = const Value.absent(),
+    required int createdAt,
+  }) : conversationId = Value(conversationId),
+       role = Value(role),
+       createdAt = Value(createdAt);
+  static Insertable<AgentMessage> custom({
+    Expression<int>? id,
+    Expression<String>? conversationId,
+    Expression<String>? role,
+    Expression<String>? body,
+    Expression<String>? toolsJson,
+    Expression<String>? draftsJson,
+    Expression<String>? note,
+    Expression<String>? error,
+    Expression<int>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (conversationId != null) 'conversation_id': conversationId,
+      if (role != null) 'role': role,
+      if (body != null) 'body': body,
+      if (toolsJson != null) 'tools_json': toolsJson,
+      if (draftsJson != null) 'drafts_json': draftsJson,
+      if (note != null) 'note': note,
+      if (error != null) 'error': error,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  AgentMessagesCompanion copyWith({
+    Value<int>? id,
+    Value<String>? conversationId,
+    Value<String>? role,
+    Value<String>? body,
+    Value<String>? toolsJson,
+    Value<String>? draftsJson,
+    Value<String>? note,
+    Value<String>? error,
+    Value<int>? createdAt,
+  }) {
+    return AgentMessagesCompanion(
+      id: id ?? this.id,
+      conversationId: conversationId ?? this.conversationId,
+      role: role ?? this.role,
+      body: body ?? this.body,
+      toolsJson: toolsJson ?? this.toolsJson,
+      draftsJson: draftsJson ?? this.draftsJson,
+      note: note ?? this.note,
+      error: error ?? this.error,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (conversationId.present) {
+      map['conversation_id'] = Variable<String>(conversationId.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(role.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (toolsJson.present) {
+      map['tools_json'] = Variable<String>(toolsJson.value);
+    }
+    if (draftsJson.present) {
+      map['drafts_json'] = Variable<String>(draftsJson.value);
+    }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
+    if (error.present) {
+      map['error'] = Variable<String>(error.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<int>(createdAt.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AgentMessagesCompanion(')
+          ..write('id: $id, ')
+          ..write('conversationId: $conversationId, ')
+          ..write('role: $role, ')
+          ..write('body: $body, ')
+          ..write('toolsJson: $toolsJson, ')
+          ..write('draftsJson: $draftsJson, ')
+          ..write('note: $note, ')
+          ..write('error: $error, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -5074,6 +6259,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $AiNotesTable aiNotes = $AiNotesTable(this);
   late final $LessonsTable lessons = $LessonsTable(this);
   late final $LessonReadsTable lessonReads = $LessonReadsTable(this);
+  late final $AgentConversationsTable agentConversations =
+      $AgentConversationsTable(this);
+  late final $AgentMessagesTable agentMessages = $AgentMessagesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -5090,6 +6278,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     aiNotes,
     lessons,
     lessonReads,
+    agentConversations,
+    agentMessages,
   ];
 }
 
@@ -5295,6 +6485,9 @@ typedef $$QuestionsTableCreateCompanionBuilder = QuestionsCompanion Function({
   Value<String> chunkId,
   required int syncSeq,
   Value<bool> hidden,
+  Value<String> localState,
+  Value<String> localNote,
+  Value<String> agentConv,
   Value<int> rowid,
 });
 typedef $$QuestionsTableUpdateCompanionBuilder = QuestionsCompanion Function({
@@ -5314,6 +6507,9 @@ typedef $$QuestionsTableUpdateCompanionBuilder = QuestionsCompanion Function({
   Value<String> chunkId,
   Value<int> syncSeq,
   Value<bool> hidden,
+  Value<String> localState,
+  Value<String> localNote,
+  Value<String> agentConv,
   Value<int> rowid,
 });
 
@@ -5403,6 +6599,21 @@ class $$QuestionsTableFilterComposer
 
   ColumnFilters<bool> get hidden => $composableBuilder(
     column: $table.hidden,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localState => $composableBuilder(
+    column: $table.localState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localNote => $composableBuilder(
+    column: $table.localNote,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get agentConv => $composableBuilder(
+    column: $table.agentConv,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -5495,6 +6706,21 @@ class $$QuestionsTableOrderingComposer
     column: $table.hidden,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get localState => $composableBuilder(
+    column: $table.localState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get localNote => $composableBuilder(
+    column: $table.localNote,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get agentConv => $composableBuilder(
+    column: $table.agentConv,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$QuestionsTableAnnotationComposer
@@ -5569,6 +6795,17 @@ class $$QuestionsTableAnnotationComposer
 
   GeneratedColumn<bool> get hidden =>
       $composableBuilder(column: $table.hidden, builder: (column) => column);
+
+  GeneratedColumn<String> get localState => $composableBuilder(
+    column: $table.localState,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get localNote =>
+      $composableBuilder(column: $table.localNote, builder: (column) => column);
+
+  GeneratedColumn<String> get agentConv =>
+      $composableBuilder(column: $table.agentConv, builder: (column) => column);
 }
 
 class $$QuestionsTableTableManager
@@ -5615,6 +6852,9 @@ class $$QuestionsTableTableManager
                 Value<String> chunkId = const Value.absent(),
                 Value<int> syncSeq = const Value.absent(),
                 Value<bool> hidden = const Value.absent(),
+                Value<String> localState = const Value.absent(),
+                Value<String> localNote = const Value.absent(),
+                Value<String> agentConv = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuestionsCompanion(
                 id: id,
@@ -5633,6 +6873,9 @@ class $$QuestionsTableTableManager
                 chunkId: chunkId,
                 syncSeq: syncSeq,
                 hidden: hidden,
+                localState: localState,
+                localNote: localNote,
+                agentConv: agentConv,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -5653,6 +6896,9 @@ class $$QuestionsTableTableManager
                 Value<String> chunkId = const Value.absent(),
                 required int syncSeq,
                 Value<bool> hidden = const Value.absent(),
+                Value<String> localState = const Value.absent(),
+                Value<String> localNote = const Value.absent(),
+                Value<String> agentConv = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => QuestionsCompanion.insert(
                 id: id,
@@ -5671,6 +6917,9 @@ class $$QuestionsTableTableManager
                 chunkId: chunkId,
                 syncSeq: syncSeq,
                 hidden: hidden,
+                localState: localState,
+                localNote: localNote,
+                agentConv: agentConv,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -7779,6 +9028,572 @@ typedef $$LessonReadsTableProcessedTableManager =
       LessonRead,
       PrefetchHooks Function()
     >;
+typedef $$AgentConversationsTableCreateCompanionBuilder =
+    AgentConversationsCompanion Function({
+      required String id,
+      Value<String> mode,
+      Value<String> title,
+      Value<String> bankId,
+      Value<String> lessonId,
+      Value<String> questionId,
+      required int createdAt,
+      required int updatedAt,
+      Value<int> rowid,
+    });
+typedef $$AgentConversationsTableUpdateCompanionBuilder =
+    AgentConversationsCompanion Function({
+      Value<String> id,
+      Value<String> mode,
+      Value<String> title,
+      Value<String> bankId,
+      Value<String> lessonId,
+      Value<String> questionId,
+      Value<int> createdAt,
+      Value<int> updatedAt,
+      Value<int> rowid,
+    });
+
+class $$AgentConversationsTableFilterComposer
+    extends Composer<_$AppDatabase, $AgentConversationsTable> {
+  $$AgentConversationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mode => $composableBuilder(
+    column: $table.mode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get bankId => $composableBuilder(
+    column: $table.bankId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get lessonId => $composableBuilder(
+    column: $table.lessonId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get questionId => $composableBuilder(
+    column: $table.questionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AgentConversationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AgentConversationsTable> {
+  $$AgentConversationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mode => $composableBuilder(
+    column: $table.mode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get bankId => $composableBuilder(
+    column: $table.bankId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get lessonId => $composableBuilder(
+    column: $table.lessonId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get questionId => $composableBuilder(
+    column: $table.questionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AgentConversationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AgentConversationsTable> {
+  $$AgentConversationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get mode =>
+      $composableBuilder(column: $table.mode, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get bankId =>
+      $composableBuilder(column: $table.bankId, builder: (column) => column);
+
+  GeneratedColumn<String> get lessonId =>
+      $composableBuilder(column: $table.lessonId, builder: (column) => column);
+
+  GeneratedColumn<String> get questionId => $composableBuilder(
+    column: $table.questionId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$AgentConversationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AgentConversationsTable,
+          AgentConversation,
+          $$AgentConversationsTableFilterComposer,
+          $$AgentConversationsTableOrderingComposer,
+          $$AgentConversationsTableAnnotationComposer,
+          $$AgentConversationsTableCreateCompanionBuilder,
+          $$AgentConversationsTableUpdateCompanionBuilder,
+          (
+            AgentConversation,
+            BaseReferences<
+              _$AppDatabase,
+              $AgentConversationsTable,
+              AgentConversation
+            >,
+          ),
+          AgentConversation,
+          PrefetchHooks Function()
+        > {
+  $$AgentConversationsTableTableManager(
+    _$AppDatabase db,
+    $AgentConversationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AgentConversationsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AgentConversationsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AgentConversationsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> mode = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> bankId = const Value.absent(),
+                Value<String> lessonId = const Value.absent(),
+                Value<String> questionId = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+                Value<int> updatedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AgentConversationsCompanion(
+                id: id,
+                mode: mode,
+                title: title,
+                bankId: bankId,
+                lessonId: lessonId,
+                questionId: questionId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<String> mode = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> bankId = const Value.absent(),
+                Value<String> lessonId = const Value.absent(),
+                Value<String> questionId = const Value.absent(),
+                required int createdAt,
+                required int updatedAt,
+                Value<int> rowid = const Value.absent(),
+              }) => AgentConversationsCompanion.insert(
+                id: id,
+                mode: mode,
+                title: title,
+                bankId: bankId,
+                lessonId: lessonId,
+                questionId: questionId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$AgentConversationsTable, AgentConversation>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $AgentConversationsTable,
+                    AgentConversation
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AgentConversationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AgentConversationsTable,
+      AgentConversation,
+      $$AgentConversationsTableFilterComposer,
+      $$AgentConversationsTableOrderingComposer,
+      $$AgentConversationsTableAnnotationComposer,
+      $$AgentConversationsTableCreateCompanionBuilder,
+      $$AgentConversationsTableUpdateCompanionBuilder,
+      (
+        AgentConversation,
+        BaseReferences<
+          _$AppDatabase,
+          $AgentConversationsTable,
+          AgentConversation
+        >,
+      ),
+      AgentConversation,
+      PrefetchHooks Function()
+    >;
+typedef $$AgentMessagesTableCreateCompanionBuilder =
+    AgentMessagesCompanion Function({
+      Value<int> id,
+      required String conversationId,
+      required String role,
+      Value<String> body,
+      Value<String> toolsJson,
+      Value<String> draftsJson,
+      Value<String> note,
+      Value<String> error,
+      required int createdAt,
+    });
+typedef $$AgentMessagesTableUpdateCompanionBuilder =
+    AgentMessagesCompanion Function({
+      Value<int> id,
+      Value<String> conversationId,
+      Value<String> role,
+      Value<String> body,
+      Value<String> toolsJson,
+      Value<String> draftsJson,
+      Value<String> note,
+      Value<String> error,
+      Value<int> createdAt,
+    });
+
+class $$AgentMessagesTableFilterComposer
+    extends Composer<_$AppDatabase, $AgentMessagesTable> {
+  $$AgentMessagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get toolsJson => $composableBuilder(
+    column: $table.toolsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get draftsJson => $composableBuilder(
+    column: $table.draftsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get error => $composableBuilder(
+    column: $table.error,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AgentMessagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $AgentMessagesTable> {
+  $$AgentMessagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get role => $composableBuilder(
+    column: $table.role,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get toolsJson => $composableBuilder(
+    column: $table.toolsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get draftsJson => $composableBuilder(
+    column: $table.draftsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get error => $composableBuilder(
+    column: $table.error,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AgentMessagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AgentMessagesTable> {
+  $$AgentMessagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get conversationId => $composableBuilder(
+    column: $table.conversationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get role =>
+      $composableBuilder(column: $table.role, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<String> get toolsJson =>
+      $composableBuilder(column: $table.toolsJson, builder: (column) => column);
+
+  GeneratedColumn<String> get draftsJson => $composableBuilder(
+    column: $table.draftsJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<String> get error =>
+      $composableBuilder(column: $table.error, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+}
+
+class $$AgentMessagesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AgentMessagesTable,
+          AgentMessage,
+          $$AgentMessagesTableFilterComposer,
+          $$AgentMessagesTableOrderingComposer,
+          $$AgentMessagesTableAnnotationComposer,
+          $$AgentMessagesTableCreateCompanionBuilder,
+          $$AgentMessagesTableUpdateCompanionBuilder,
+          (
+            AgentMessage,
+            BaseReferences<_$AppDatabase, $AgentMessagesTable, AgentMessage>,
+          ),
+          AgentMessage,
+          PrefetchHooks Function()
+        > {
+  $$AgentMessagesTableTableManager(_$AppDatabase db, $AgentMessagesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AgentMessagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AgentMessagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AgentMessagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                Value<String> conversationId = const Value.absent(),
+                Value<String> role = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<String> toolsJson = const Value.absent(),
+                Value<String> draftsJson = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                Value<String> error = const Value.absent(),
+                Value<int> createdAt = const Value.absent(),
+              }) => AgentMessagesCompanion(
+                id: id,
+                conversationId: conversationId,
+                role: role,
+                body: body,
+                toolsJson: toolsJson,
+                draftsJson: draftsJson,
+                note: note,
+                error: error,
+                createdAt: createdAt,
+              ),
+          createCompanionCallback:
+              ({
+                Value<int> id = const Value.absent(),
+                required String conversationId,
+                required String role,
+                Value<String> body = const Value.absent(),
+                Value<String> toolsJson = const Value.absent(),
+                Value<String> draftsJson = const Value.absent(),
+                Value<String> note = const Value.absent(),
+                Value<String> error = const Value.absent(),
+                required int createdAt,
+              }) => AgentMessagesCompanion.insert(
+                id: id,
+                conversationId: conversationId,
+                role: role,
+                body: body,
+                toolsJson: toolsJson,
+                draftsJson: draftsJson,
+                note: note,
+                error: error,
+                createdAt: createdAt,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$AgentMessagesTable, AgentMessage>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $AgentMessagesTable,
+                    AgentMessage
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AgentMessagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AgentMessagesTable,
+      AgentMessage,
+      $$AgentMessagesTableFilterComposer,
+      $$AgentMessagesTableOrderingComposer,
+      $$AgentMessagesTableAnnotationComposer,
+      $$AgentMessagesTableCreateCompanionBuilder,
+      $$AgentMessagesTableUpdateCompanionBuilder,
+      (
+        AgentMessage,
+        BaseReferences<_$AppDatabase, $AgentMessagesTable, AgentMessage>,
+      ),
+      AgentMessage,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -7805,4 +9620,8 @@ class $AppDatabaseManager {
       $$LessonsTableTableManager(_db, _db.lessons);
   $$LessonReadsTableTableManager get lessonReads =>
       $$LessonReadsTableTableManager(_db, _db.lessonReads);
+  $$AgentConversationsTableTableManager get agentConversations =>
+      $$AgentConversationsTableTableManager(_db, _db.agentConversations);
+  $$AgentMessagesTableTableManager get agentMessages =>
+      $$AgentMessagesTableTableManager(_db, _db.agentMessages);
 }

@@ -81,6 +81,7 @@ class AgentMsg {
     this.note,
     this.attachments = const [],
     this.localImages = const {},
+    this.local = false,
   });
 
   final int id;
@@ -103,6 +104,9 @@ class AgentMsg {
   /// are fetched from the server to be shown.
   final Map<String, Uint8List> localImages;
 
+  /// The answer was written by the assistant on this device, because the server could not be reached.
+  final bool local;
+
   AgentMsg copyWith({
     String? text,
     List<ToolRow>? tools,
@@ -110,6 +114,7 @@ class AgentMsg {
     bool? streaming,
     String? error,
     String? note,
+    bool? local,
   }) => AgentMsg(
     id: id,
     role: role,
@@ -121,6 +126,7 @@ class AgentMsg {
     note: note ?? this.note,
     attachments: attachments,
     localImages: localImages,
+    local: local ?? this.local,
   );
 }
 
@@ -446,6 +452,11 @@ class AgentController extends Notifier<AgentState> {
     // Not while a stored conversation is being read, or when it could not be: its history is unknown.
     if (t.isEmpty || state.busy || state.uploading || state.opening || state.openError != null) return;
     final attachments = [for (final f in sending) f.attachment!];
+    // What was said so far, for the assistant on this device to carry on from if the server cannot be reached.
+    final history = [
+      for (final m in state.messages)
+        if (!m.streaming && m.error == null && m.text.trim().isNotEmpty) AgentHistoryMessage(m.role, m.text),
+    ];
     final user = AgentMsg(
       id: _nextId++,
       role: 'user',
@@ -472,6 +483,7 @@ class AgentController extends Notifier<AgentState> {
         deviceId: ref.read(settingsProvider).deviceId,
         message: t,
         attachmentIds: [for (final a in attachments) a.id],
+        history: history,
         context: AgentContext(
           bankId: args.bankId,
           lessonId: args.lessonId,
@@ -528,6 +540,8 @@ class AgentController extends Notifier<AgentState> {
     switch (ev) {
       case AgentStarted():
         break;
+      case AgentLocalEvent():
+        _patch(id, (m) => m.copyWith(local: true));
       case AgentDelta(:final text):
         _patch(id, (m) => m.copyWith(text: m.text + text));
       case AgentToolEvent():

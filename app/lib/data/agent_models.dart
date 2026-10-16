@@ -6,7 +6,7 @@ import 'dart:convert';
 
 /// Thrown when the assistant cannot be reached or refuses; [message] is safe to show.
 class AgentException implements Exception {
-  AgentException(this.message, {this.status, this.code});
+  AgentException(this.message, {this.status, this.code, this.unreachable = false});
 
   final String message;
 
@@ -15,6 +15,10 @@ class AgentException implements Exception {
 
   /// The server's error code, for failures inside the stream (budget_exceeded, timeout, …).
   final String? code;
+
+  /// No connection could be made at all (as against a server that answered with a refusal); the
+  /// assistant on this device may take over.
+  final bool unreachable;
 
   @override
   String toString() => message;
@@ -27,6 +31,7 @@ class AgentStatus {
     required this.model,
     required this.verified,
     this.vision = false,
+    this.local = false,
   });
 
   final bool available;
@@ -37,6 +42,9 @@ class AgentStatus {
 
   /// The model can look at pictures, so pictures may be attached to a message.
   final bool vision;
+
+  /// The server cannot be reached, and the assistant that runs on this device answers.
+  final bool local;
 
   factory AgentStatus.fromJson(Map<String, dynamic> j) => AgentStatus(
     available: j['available'] == true,
@@ -124,7 +132,12 @@ class AgentChatRequest {
     required this.message,
     this.attachmentIds = const [],
     this.context = const AgentContext(),
+    this.history = const [],
   });
+
+  /// What was said before, as the app shows it. The server keeps the conversation itself and ignores
+  /// this; the assistant on this device uses it to carry on a conversation that began on the server.
+  final List<AgentHistoryMessage> history;
 
   /// Chosen by the app; the server keeps the conversation under it and reads the history itself.
   final String conversationId;
@@ -144,6 +157,12 @@ class AgentChatRequest {
         'message': {'text': message, 'attachment_ids': attachmentIds},
         'context': context.toJson(),
       };
+}
+
+class AgentHistoryMessage {
+  const AgentHistoryMessage(this.role, this.text);
+  final String role; // user | assistant
+  final String text;
 }
 
 /// What became of a draft: still waiting, sent to review, or thrown away.
@@ -344,6 +363,11 @@ sealed class AgentEvent {
 class AgentStarted extends AgentEvent {
   const AgentStarted(this.conversationId);
   final String conversationId;
+}
+
+/// The server could not be reached, so the assistant on this device answers. Comes before everything else.
+class AgentLocalEvent extends AgentEvent {
+  const AgentLocalEvent();
 }
 
 class AgentDelta extends AgentEvent {

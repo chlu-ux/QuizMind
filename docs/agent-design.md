@@ -20,6 +20,7 @@
 | 第 7 期 | 图片附件：助手模型要在后台标记为“支持识图”，学习者才能发图 | 已提交（`b0bf01d`、`628458a`、`425c4af`）；已用真实模型（DeepSeek）、浏览器（H5）和 Android 模拟器（Flutter）验证 | Go 全过（含 `-race`）；H5 305 个、Flutter 351 个、后台 24 个测试通过；详见 [`agent-history-and-files.md`](agent-history-and-files.md) §13 |
 | 第 8 期 | 依据上传的文件出题 | 设计已写，未开始 | — |
 | 第 9 期 | **合并学习与出题；出的题默认采纳，可取消采纳；Flutter 底部中间的 AI 页；一批题折叠成一张卡片**（见下） | 代码与自动化测试完成（Go 全部、Flutter 355、H5 310）；未在真机和真实模型上验收 | — |
+| 第 10 期 | **连不上服务器时在手机上继续用助手**（Flutter 本机助手、`/agent/local-spec`、`/agent/questions`），见 [`agent-offline.md`](agent-offline.md) | 代码与自动化测试完成；未在真机和真实模型上验收 | — |
 
 **第 9 期：改了什么（2026-10-09）**
 

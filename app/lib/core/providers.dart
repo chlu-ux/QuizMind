@@ -11,6 +11,11 @@ import '../data/api.dart';
 import '../data/models.dart';
 import '../data/database.dart';
 import '../data/exam_store.dart';
+import '../data/local_agent/agent_spec.dart';
+import '../data/local_agent/anthropic_chat.dart';
+import '../data/local_agent/library.dart';
+import '../data/local_agent/local_agent_api.dart';
+import '../data/local_agent/local_agent_store.dart';
 import '../data/media_store.dart';
 import '../data/repository.dart';
 import '../data/session_store.dart';
@@ -85,12 +90,36 @@ final aiUsageReporterProvider = Provider<AiUsageReporter>(
 /// How explanations are fetched from the model; overridden in tests.
 final aiChatProvider = Provider<AiChat>((ref) => HttpAiChat());
 
-/// The study assistant on the server. Rebuilt when the server address or the access token changes;
-/// overridden in tests.
+/// What the assistant needs to run on this device, fetched at sync (instructions, tools, the model's address).
+final agentSpecStoreProvider = Provider<AgentSpecStore>((ref) => AgentSpecStore(ref.watch(sharedPrefsProvider)));
+
+/// How the on-device assistant talks to its model; overridden in tests.
+final anthropicChatProvider = Provider<AnthropicChat>((ref) => HttpAnthropicChat());
+
+final localAgentStoreProvider = Provider<LocalAgentStore>((ref) => LocalAgentStore(ref.watch(databaseProvider)));
+
+/// The assistant running on this device, with the library it keeps; it answers when the server cannot be reached.
+final localAgentApiProvider = Provider<LocalAgentApi>((ref) {
+  final specs = ref.watch(agentSpecStoreProvider);
+  final reporter = ref.watch(aiUsageReporterProvider);
+  return LocalAgentApi(
+    store: ref.watch(localAgentStoreProvider),
+    library: DbAgentLibrary(ref.watch(databaseProvider)),
+    specOf: () => specs.spec,
+    llm: ref.watch(anthropicChatProvider),
+    reportUsage: (u) => unawaited(reporter.record(u).catchError((Object _) {})),
+  );
+});
+
+/// The study assistant: the server's while the server answers, this device's when it cannot be reached.
+/// Rebuilt when the server address or the access token changes; overridden in tests.
 final agentApiProvider = Provider<AgentApi>((ref) {
   final baseUrl = ref.watch(settingsProvider.select((s) => s.baseUrl));
   final token = ref.watch(aiSettingsProvider.select((s) => s.token));
-  return HttpAgentApi(baseUrl: baseUrl, token: token);
+  return HybridAgentApi(
+    server: HttpAgentApi(baseUrl: baseUrl, token: token),
+    local: ref.watch(localAgentApiProvider),
+  );
 });
 
 /// Rebuilt whenever the server address changes.
@@ -151,6 +180,7 @@ class SyncController extends Notifier<SyncStatus> {
         sessions: ref.read(sessionStoreProvider),
         aiConfig: ref.read(aiConfigStoreProvider),
         aiUsage: ref.read(aiUsageReporterProvider),
+        agentSpec: ref.read(agentSpecStoreProvider),
         media: ref.read(mediaStoreProvider),
         deviceId: ref.read(settingsProvider).deviceId,
       );

@@ -39,6 +39,16 @@ class Questions extends Table {
   IntColumn get syncSeq => integer()();
   BoolColumn get hidden => boolean().withDefault(const Constant(false))();
 
+  /// A question the assistant wrote on this device while the server was out of reach. '' for every question
+  /// the server knows; `pending` waits to be uploaded (it is part of the bank here meanwhile, its [syncSeq]
+  /// is 0); `refused` was turned down by the server's checks (hidden, the reason is in [localNote]). The
+  /// next sync that brings the question back from the server clears it.
+  TextColumn get localState => text().withDefault(const Constant(''))();
+  TextColumn get localNote => text().withDefault(const Constant(''))();
+
+  /// The assistant conversation that wrote the question, for the ones written on this device.
+  TextColumn get agentConv => text().withDefault(const Constant(''))();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -178,13 +188,43 @@ class LessonReads extends Table {
   Set<Column> get primaryKey => {lessonId};
 }
 
-@DriftDatabase(tables: [Banks, Questions, Attempts, QuestionStates, PendingFlags, SyncMeta, Exams, ExamDrafts, AiNotes, Lessons, LessonReads])
+/// A conversation with the assistant that ran on this device (the server could not be reached). The ones
+/// on the server are not copied here.
+class AgentConversations extends Table {
+  TextColumn get id => text()();
+  TextColumn get mode => text().withDefault(const Constant(''))();
+  TextColumn get title => text().withDefault(const Constant(''))();
+  TextColumn get bankId => text().withDefault(const Constant(''))();
+  TextColumn get lessonId => text().withDefault(const Constant(''))();
+  TextColumn get questionId => text().withDefault(const Constant(''))();
+  IntColumn get createdAt => integer()();
+  IntColumn get updatedAt => integer()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// One message of a local conversation. [toolsJson] is the status lines of the tools an answer used,
+/// [draftsJson] the ids of the questions it wrote (the questions themselves are in [Questions]).
+class AgentMessages extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  TextColumn get conversationId => text()();
+  TextColumn get role => text()(); // user | assistant
+  TextColumn get body => text().withDefault(const Constant(''))();
+  TextColumn get toolsJson => text().withDefault(const Constant('[]'))();
+  TextColumn get draftsJson => text().withDefault(const Constant('[]'))();
+  TextColumn get note => text().withDefault(const Constant(''))();
+  TextColumn get error => text().withDefault(const Constant(''))();
+  IntColumn get createdAt => integer()();
+}
+
+@DriftDatabase(tables: [Banks, Questions, Attempts, QuestionStates, PendingFlags, SyncMeta, Exams, ExamDrafts, AiNotes, Lessons, LessonReads, AgentConversations, AgentMessages])
 class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'quizmind'));
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -212,6 +252,13 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(questions, questions.chunkId);
             await m.createTable(lessons);
             await m.createTable(lessonReads);
+          }
+          if (from < 8) {
+            await m.addColumn(questions, questions.localState);
+            await m.addColumn(questions, questions.localNote);
+            await m.addColumn(questions, questions.agentConv);
+            await m.createTable(agentConversations);
+            await m.createTable(agentMessages);
           }
         },
       );

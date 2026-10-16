@@ -96,4 +96,27 @@ void main() {
     await db.into(db.pendingFlags).insert(PendingFlagsCompanion.insert(questionId: 'q2', createdAt: 8, reason: const Value('typo')));
     expect((await (db.select(db.pendingFlags)..where((f) => f.questionId.equals('q2'))).getSingle()).reason, 'typo');
   });
+
+  test('upgrading a version-7 database marks the questions as the server\'s own and adds the assistant\'s conversation tables', () async {
+    final db = AppDatabase(NativeDatabase.memory(setup: (raw) {
+      raw.execute('''
+        CREATE TABLE questions (
+          id TEXT NOT NULL PRIMARY KEY, bank_id TEXT NOT NULL, type TEXT NOT NULL, stem TEXT NOT NULL,
+          options_json TEXT NOT NULL, answer_json TEXT NOT NULL, explanation TEXT NOT NULL DEFAULT '',
+          difficulty INTEGER NOT NULL DEFAULT 3, tags_json TEXT NOT NULL DEFAULT '[]',
+          source_quote TEXT NOT NULL DEFAULT '', document_id TEXT NOT NULL DEFAULT '', document_title TEXT NOT NULL DEFAULT '',
+          document_order INTEGER NOT NULL DEFAULT 0, chunk_id TEXT NOT NULL DEFAULT '',
+          sync_seq INTEGER NOT NULL, hidden INTEGER NOT NULL DEFAULT 0
+        )''');
+      raw.execute("INSERT INTO questions (id, bank_id, type, stem, options_json, answer_json, sync_seq) VALUES ('q', 'b', 'single', 's', '[]', '[0]', 3)");
+      raw.execute('PRAGMA user_version = 7');
+    }));
+    addTearDown(db.close);
+
+    final q = (await db.select(db.questions).get()).single;
+    expect((q.id, q.syncSeq, q.localState, q.localNote, q.agentConv), ('q', 3, '', '', ''));
+    await db.into(db.agentConversations).insert(AgentConversationsCompanion.insert(id: 'c', createdAt: 1, updatedAt: 1));
+    await db.into(db.agentMessages).insert(AgentMessagesCompanion.insert(conversationId: 'c', role: 'user', createdAt: 2));
+    expect((await db.select(db.agentMessages).get()).single.toolsJson, '[]');
+  });
 }

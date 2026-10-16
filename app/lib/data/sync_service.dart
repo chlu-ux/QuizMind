@@ -6,6 +6,8 @@ import 'ai_config_store.dart';
 import 'ai_usage.dart';
 import 'api.dart';
 import 'database.dart';
+import 'local_agent/agent_spec.dart';
+import 'local_agent/local_agent_store.dart';
 import 'media_store.dart';
 import 'media_text.dart';
 import 'models.dart';
@@ -29,6 +31,9 @@ class SyncReport {
     this.picturesDownloaded = 0,
     this.aiConfigUpdated = false,
     this.aiWarning,
+    this.agentQuestionsUploaded = 0,
+    this.agentQuestionsRefused = 0,
+    this.agentSpecUpdated = false,
   });
 
   final int questionsUpdated;
@@ -64,6 +69,13 @@ class SyncReport {
   /// Why the AI configuration could not be fetched (wrong token), if that was tried.
   final String? aiWarning;
 
+  /// Questions the assistant wrote on this device that the server took / turned down.
+  final int agentQuestionsUploaded;
+  final int agentQuestionsRefused;
+
+  /// What the assistant needs to run on this device was fetched (a new or changed one).
+  final bool agentSpecUpdated;
+
   String get summary {
     final parts = <String>[
       if (questionsUpdated > 0) '新增/更新 $questionsUpdated 题',
@@ -77,6 +89,9 @@ class SyncReport {
       if (notesPulled > 0) '同步了 $notesPulled 条 AI 解读',
       if (picturesDownloaded > 0) '下载了 $picturesDownloaded 张题目配图',
       if (aiConfigUpdated) '已更新 AI 配置',
+      if (agentSpecUpdated) '已更新本机助手配置',
+      if (agentQuestionsUploaded > 0) '上传了离线出的 $agentQuestionsUploaded 道题',
+      if (agentQuestionsRefused > 0) '有 $agentQuestionsRefused 道离线出的题没通过服务器检查，已下线',
       ?aiWarning,
     ];
     return parts.isEmpty ? '已是最新' : parts.join('，');
@@ -86,7 +101,8 @@ class SyncReport {
 /// Uploads the outbox, then pulls server changes. Uploading first means a
 /// device never loses local progress to a stale pull.
 class SyncService {
-  SyncService(this.db, this.api, {this.sessions, this.aiConfig, this.aiUsage, this.media, this.deviceId = '', DateTime Function()? clock})
+  SyncService(this.db, this.api,
+      {this.sessions, this.aiConfig, this.aiUsage, this.agentSpec, this.media, this.deviceId = '', DateTime Function()? clock})
       : _clock = clock ?? DateTime.now;
 
   final AppDatabase db;
@@ -100,6 +116,9 @@ class SyncService {
 
   /// Where the cost of AI explanations waits to be reported; null skips that.
   final AiUsageReporter? aiUsage;
+
+  /// Where what the assistant needs to run on this device is kept; null skips fetching it.
+  final AgentSpecStore? agentSpec;
 
   /// Where the pictures of questions are saved; null leaves them to be loaded when shown.
   final MediaStore? media;
@@ -127,6 +146,9 @@ class SyncService {
   }
 
   Future<SyncReport> run() async {
+    // First: the questions the assistant wrote here must exist on the server before the answers to them arrive.
+    final agentUp = await _pushAgentQuestions();
+    await _pushAgentDecisions();
     final attempts = await _pushAttempts();
     await _pushFlags();
     final statesUp = await _pushStates();
@@ -144,6 +166,7 @@ class SyncService {
     final lessonsDown = await _pullLessons();
     final notesDown = await _pullNotes();
     final ai = await _fetchAiConfig();
+    final specUpdated = await _fetchAgentSpec();
     await _replaceBanks(banks);
     await _setMeta(lastSyncAt, _clock().millisecondsSinceEpoch);
     final pictures = await _downloadPictures();
@@ -164,6 +187,9 @@ class SyncService {
       picturesDownloaded: pictures,
       aiConfigUpdated: ai.updated,
       aiWarning: ai.warning,
+      agentQuestionsUploaded: agentUp.$1,
+      agentQuestionsRefused: agentUp.$2,
+      agentSpecUpdated: specUpdated,
     );
   }
 
@@ -221,6 +247,105 @@ class SyncService {
         }
       });
       total += rows.length;
+    }
+  }
+
+  /// Sends the questions the assistant wrote on this device and the server does not know. Returns (taken,
+  /// turned down). A server from before this (404) or a wrong token (401) leaves them for a later sync.
+  Future<(int, int)> _pushAgentQuestions() async {
+    final token = aiConfig?.token ?? '';
+    if (token.isEmpty) return (0, 0);
+    var taken = 0, refused = 0;
+    final done = <String>{};
+    while (true) {
+      final rows = await (db.select(db.questions)
+            ..where((q) => q.localState.equals(LocalState.pending) & q.hidden.equals(false) & q.id.isNotIn(done))
+            ..orderBy([(q) => OrderingTerm.asc(q.id)])
+            ..limit(20))
+          .get();
+      if (rows.isEmpty) return (taken, refused);
+      final model = agentSpec?.spec?.model.model ?? '';
+      final List<AgentUploadResult> results;
+      try {
+        results = await api.uploadAgentQuestions([
+          for (final r in rows)
+            AgentUpload(
+              id: r.id,
+              lessonId: r.chunkId,
+              conversationId: r.agentConv,
+              deviceId: deviceId,
+              model: model,
+              type: r.type,
+              stem: r.stem,
+              options: [for (final o in jsonDecode(r.optionsJson) as List) '$o'],
+              answerIndex: ((jsonDecode(r.answerJson) as List).first as num).toInt(),
+              explanation: r.explanation,
+              difficulty: r.difficulty,
+              tags: [for (final t in jsonDecode(r.tagsJson) as List) '$t'],
+              sourceQuote: r.sourceQuote,
+            ),
+        ], token: token);
+      } on ApiException catch (e) {
+        if (e.status == 401 || e.status == 404) return (taken, refused);
+        rethrow;
+      }
+      done.addAll(rows.map((r) => r.id));
+      final byId = {for (final r in results) r.id: r};
+      await db.transaction(() async {
+        for (final r in rows) {
+          final res = byId[r.id];
+          if (res == null) continue; // not answered: it goes again next time
+          final where = db.update(db.questions)..where((q) => q.id.equals(r.id));
+          if (!res.ok) {
+            await where.write(QuestionsCompanion(
+                hidden: const Value(true), localState: const Value(LocalState.refused), localNote: Value(res.error)));
+            refused++;
+          } else {
+            // A question that waits in the review queue is not in the bank until a reviewer publishes it.
+            final inBank = res.status == 'published';
+            await where.write(QuestionsCompanion(localState: const Value(''), hidden: Value(!inBank)));
+            taken++;
+          }
+        }
+      });
+    }
+  }
+
+  /// Tells the server what the learner decided about questions it already knew while it could not be
+  /// reached. A question the server does not have (any more) is let go.
+  Future<void> _pushAgentDecisions() async {
+    final token = aiConfig?.token ?? '';
+    if (token.isEmpty) return;
+    final rows = await (db.select(db.questions)
+          ..where((q) => q.localState.isIn([LocalState.adopt, LocalState.discard])))
+        .get();
+    for (final r in rows) {
+      final adopt = r.localState == LocalState.adopt;
+      try {
+        await api.decideAgentQuestion(r.id, adopt: adopt, token: token);
+      } on ApiException catch (e) {
+        if (e.status == 401) return;
+        if (e.status != 400 && e.status != 404 && e.status != 409) rethrow;
+      }
+      await (db.update(db.questions)..where((q) => q.id.equals(r.id)))
+          .write(const QuestionsCompanion(localState: Value('')));
+    }
+  }
+
+  /// Fetches what the assistant needs to run on this device. Never fails the sync.
+  Future<bool> _fetchAgentSpec() async {
+    final store = agentSpec;
+    final token = aiConfig?.token ?? '';
+    if (store == null || token.isEmpty) return false;
+    try {
+      final fresh = await api.agentLocalSpec(token: token);
+      final old = store.spec;
+      await store.save(fresh);
+      return old == null || old.version != fresh.version || old.model.apiKey != fresh.model.apiKey;
+    } on ApiException catch (e) {
+      // The server has no assistant (any more): the copy goes. A wrong token is already reported with the AI configuration.
+      if (e.status == 404) await store.save(null);
+      return false;
     }
   }
 
@@ -607,6 +732,8 @@ class SyncService {
                 chunkId: Value(q.chunkId),
                 syncSeq: q.syncSeq,
                 hidden: const Value(false),
+                // The server has it now (a question written here comes back under its own id).
+                localState: const Value(''),
               ));
         }
         if (page.deleted.isNotEmpty) {

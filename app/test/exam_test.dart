@@ -184,6 +184,9 @@ void main() {
     Question tq(String id, List<String> tags, {int difficulty = 2}) => Question(
           id: id,
           bankId: 'b1',
+          localState: '',
+          localNote: '',
+          agentConv: '',
           type: 'single',
           stem: id,
           optionsJson: '["A","B","C","D"]',

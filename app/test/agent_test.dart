@@ -1199,6 +1199,30 @@ void main() {
       );
     });
 
+    testWidgets('on the device: the banner says the server is out of reach, the answer is tagged, and what was said goes along', (
+      tester,
+    ) async {
+      final api = FakeAgentApi()
+        ..statusValue = const AgentStatus(available: true, model: 'm', verified: false, local: true)
+        ..events = [const AgentLocalEvent(), const AgentDelta('本机的回答'), const AgentDone(stop: 'end_turn')];
+      await pump(tester, api);
+      expect(find.byKey(const ValueKey('agent-local-banner')), findsOneWidget);
+      expect(find.textContaining('本机助手'), findsOneWidget);
+
+      await type(tester, '第一个问题');
+      await tester.tap(find.byKey(const ValueKey('agent-send')));
+      await tester.pumpAndSettle();
+      expect(find.text('本机的回答'), findsOneWidget);
+      expect(find.byKey(const ValueKey('agent-local-tag')), findsOneWidget);
+      expect(api.requests.single.history, isEmpty);
+
+      await type(tester, '第二个问题');
+      await tester.tap(find.byKey(const ValueKey('agent-send')));
+      await tester.pumpAndSettle();
+      expect([for (final m in api.requests.last.history) '${m.role}:${m.text}'], ['user:第一个问题', 'assistant:本机的回答']);
+      expect(find.byKey(const ValueKey('agent-local-tag')), findsNWidgets(2));
+    });
+
     testWidgets(
       'a quick prompt asks right away; the answer and its lookups show',
       (tester) async {

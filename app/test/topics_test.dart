@@ -15,6 +15,9 @@ import 'support.dart';
 Question q(String id, List<String> tags) => Question(
       id: id,
       bankId: 'b',
+      localState: '',
+      localNote: '',
+      agentConv: '',
       type: 'single',
       stem: id,
       optionsJson: '["甲","乙","丙","丁"]',

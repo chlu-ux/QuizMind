@@ -15,6 +15,9 @@ Question q(
     Question(
       id: id,
       bankId: 'b',
+      localState: '',
+      localNote: '',
+      agentConv: '',
       type: 'single',
       stem: stem ?? '题干 $id',
       optionsJson: jsonEncode(options),

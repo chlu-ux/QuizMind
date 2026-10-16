@@ -29,6 +29,9 @@ Lesson lesson(String id, {String path = '', String doc = 'd1', String docTitle =
 Question question(String id, [String chunk = '']) => Question(
       id: id,
       bankId: 'b1',
+      localState: '',
+      localNote: '',
+      agentConv: '',
       type: 'single',
       stem: id,
       optionsJson: '["a","b","c","d"]',

@@ -106,6 +106,8 @@ func New(svc *service.Service, hub *events.Hub, token string, static fs.FS, log 
 		r.Post("/ai/usage", a.uploadAIUsage)
 		// The study assistant. Also needs the access token: every answer costs model tokens.
 		r.Get("/agent/status", a.agentStatus)
+		r.Get("/agent/local-spec", a.agentLocalSpec)
+		r.Post("/agent/questions", a.agentUploadQuestions)
 		r.Post("/agent/chat", a.agentChat)
 		r.Get("/agent/conversations", a.agentConversations)
 		r.Get("/agent/conversations/{id}", a.agentConversation)

@@ -33,6 +33,33 @@ func (a *API) agentStatus(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, st)
 }
 
+// agentLocalSpec hands an app what it needs to run the assistant itself while the server is out of reach.
+func (a *API) agentLocalSpec(w http.ResponseWriter, r *http.Request) {
+	spec, err := a.svc.LocalAgentSpec(r.Context(), bearer(r))
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	writeJSON(w, http.StatusOK, spec)
+}
+
+// agentUploadQuestions takes the questions an app wrote offline.
+func (a *API) agentUploadQuestions(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Questions []service.AgentQuestionIn `json:"questions"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	res, err := a.svc.UploadAgentQuestions(r.Context(), bearer(r), in.Questions)
+	if err != nil {
+		a.fail(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"results": res})
+}
+
 // agentDrafts lists a conversation's drafts that still wait for a decision.
 func (a *API) agentDrafts(w http.ResponseWriter, r *http.Request) {
 	drafts, err := a.svc.AgentDrafts(r.Context(), bearer(r), r.URL.Query().Get("conversation_id"))

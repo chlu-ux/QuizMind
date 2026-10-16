@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io' show SocketException;
 import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
@@ -229,8 +230,10 @@ class HttpAgentApi implements AgentApi {
     return switch (e.type) {
       DioExceptionType.connectionTimeout ||
       DioExceptionType.connectionError =>
-        AgentException('连不上服务器，请确认地址正确并已联网'),
+        AgentException('连不上服务器，请确认地址正确并已联网', unreachable: true),
       DioExceptionType.receiveTimeout || DioExceptionType.sendTimeout => AgentException('服务器长时间没有响应，请重试'),
+      DioExceptionType.unknown when e.error is SocketException =>
+        AgentException('连不上服务器，请确认地址正确并已联网', unreachable: true),
       _ => AgentException('网络错误：${e.message ?? e.type.name}'),
     };
   }

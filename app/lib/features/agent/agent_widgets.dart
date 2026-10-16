@@ -273,6 +273,15 @@ class AssistantMessage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (m.local)
+              Padding(
+                key: const ValueKey('agent-local-tag'),
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Text(
+                  '本机助手（离线）',
+                  style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ),
             for (final t in m.tools) ToolStatusRow(t),
             if (m.text.isNotEmpty)
               QuizMarkdown(m.text, selectable: !m.streaming, onTapLink: onLink),
@@ -620,31 +629,33 @@ class AgentBanner extends StatelessWidget {
     required this.message,
     this.actionLabel,
     this.onAction,
+    this.info = false,
   });
 
   final String message;
   final String? actionLabel;
   final VoidCallback? onAction;
 
+  /// A remark, not a problem: shown in the calmer colour.
+  final bool info;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final bg = info ? theme.colorScheme.secondaryContainer : theme.colorScheme.errorContainer;
+    final fg = info ? theme.colorScheme.onSecondaryContainer : theme.colorScheme.onErrorContainer;
     return Material(
-      color: theme.colorScheme.errorContainer,
+      color: bg,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Row(
           children: [
-            Icon(
-              Icons.info_outline,
-              size: 18,
-              color: theme.colorScheme.onErrorContainer,
-            ),
+            Icon(info ? Icons.cloud_off_outlined : Icons.info_outline, size: 18, color: fg),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
                 message,
-                style: TextStyle(color: theme.colorScheme.onErrorContainer),
+                style: TextStyle(color: fg),
               ),
             ),
             if (actionLabel != null)

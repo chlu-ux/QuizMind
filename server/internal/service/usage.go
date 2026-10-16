@@ -137,7 +137,9 @@ const maxUsagePerRequest = 100
 // UsageIn is one AI-explanation call as an app reports it. The app picks the id (a ULID), so a report
 // that is sent twice, for instance after a lost response, counts once.
 type UsageIn struct {
-	ID           string `json:"id"`
+	ID string `json:"id"`
+	// Role is what the call was for: "explain" (the default) or "agent", whose question_id is the conversation id.
+	Role         string `json:"role"`
 	QuestionID   string `json:"question_id"`
 	DeviceID     string `json:"device_id"`
 	Model        string `json:"model"`
@@ -170,6 +172,8 @@ func (s *Service) UploadAIUsage(ctx context.Context, token string, in []UsageIn)
 	latest := time.Now().Add(24 * time.Hour).UnixMilli()
 	for i, u := range in {
 		switch {
+		case u.Role != "" && u.Role != string(llm.RoleExplain) && u.Role != string(llm.RoleAgent):
+			return UploadResult{}, invalid("usage %d: role must be explain or agent", i)
 		case u.ID == "" || len(u.ID) > 64:
 			return UploadResult{}, invalid("usage %d: id is required and at most 64 characters", i)
 		case len(u.Model) > 200 || len(u.QuestionID) > 64 || len(u.DeviceID) > 64:
@@ -198,8 +202,12 @@ func (s *Service) UploadAIUsage(ctx context.Context, token string, in []UsageIn)
 			if u.Estimated {
 				est = 1
 			}
+			role, protocol := llm.RoleExplain, llm.ProtocolOpenAI
+			if u.Role == string(llm.RoleAgent) {
+				role, protocol = llm.RoleAgent, llm.ProtocolAnthropic
+			}
 			rows, err := q.InsertClientLLMCall(ctx, store.InsertClientLLMCallParams{
-				ID: u.ID, Role: string(llm.RoleExplain), Provider: string(llm.ProtocolOpenAI), Model: u.Model,
+				ID: u.ID, Role: string(role), Provider: string(protocol), Model: u.Model,
 				InputTokens: u.InputTokens, OutputTokens: u.OutputTokens, CachedTokens: u.CachedTokens,
 				LatencyMs: u.LatencyMs, Ok: ok, Error: msg, CreatedAt: u.CreatedAt,
 				DeviceID: u.DeviceID, RefID: u.QuestionID, Estimated: est,
