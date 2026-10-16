@@ -1,0 +1,6 @@
+#!/bin/bash
+# 升级后：同上；app.db 已经存在，不会被内置题库覆盖。
+mkdir -p "$TRIM_PKGVAR/data" "$TRIM_PKGETC"
+chmod +x "$TRIM_APPDEST/bin/"* 2>/dev/null
+"$TRIM_APPDEST/bin/quizmind-env.sh" write
+exit 0

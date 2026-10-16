@@ -1,0 +1,13 @@
+appname=quizmind
+version=0.1.0
+display_name=QuizMind 刷题
+desc=自托管刷题服务：软件设计师题库（含下午题六 Java / C++ 设计模式代码填空），手机网页版刷题、后台管理，数据都在自己的 NAS 上。
+source=thirdparty
+platform=x86
+maintainer=chlu
+desktop_uidir=ui
+desktop_applaunchname=quizmind.main
+service_port=8090
+checkport=true
+ctl_stop=true
+changelog=首个版本：内置题库（软件设计师 5 个题库、UML 专项、下午题六 Java / C++）；安装时设置管理口令

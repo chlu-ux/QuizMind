@@ -1,0 +1,5 @@
+#!/bin/bash
+# 向导里改了设置：把 wizard_* 变量落盘到 $TRIM_PKGETC/quizmind.env，下次启动时生效。
+mkdir -p "$TRIM_PKGVAR" "$TRIM_PKGETC"
+"$TRIM_APPDEST/bin/quizmind-env.sh" write
+exit 0

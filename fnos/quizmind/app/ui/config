@@ -1,0 +1,13 @@
+{
+  ".url": {
+    "quizmind.main": {
+      "title": "QuizMind 刷题",
+      "icon": "images/icon_{0}.png",
+      "type": "url",
+      "protocol": "http",
+      "port": "8090",
+      "url": "/m/",
+      "allUsers": true
+    }
+  }
+}

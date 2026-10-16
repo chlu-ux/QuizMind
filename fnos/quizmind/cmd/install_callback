@@ -1,0 +1,6 @@
+#!/bin/bash
+# 安装后：准备运行目录，写入默认配置（已有的配置不覆盖）。题库在第一次启动时由 service.sh 载入。
+mkdir -p "$TRIM_PKGVAR/data" "$TRIM_PKGETC"
+chmod +x "$TRIM_APPDEST/bin/"* 2>/dev/null
+"$TRIM_APPDEST/bin/quizmind-env.sh" write
+exit 0

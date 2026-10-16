@@ -1,0 +1,42 @@
+[
+  {
+    "stepTitle": "服务设置",
+    "items": [
+      {
+        "type": "tips",
+        "helpText": "设置后台管理口令（打开 http://NAS地址:8090/ 管理后台时输入）。刷题页面 /m/ 和 App 同步不需要口令，仅限局域网使用；要放到外网，请走飞牛自带的 HTTPS / 域名转发。"
+      },
+      {
+        "type": "password",
+        "field": "wizard_token",
+        "label": "管理口令（8-64 位）",
+        "rules": [
+          {
+            "required": true,
+            "message": "请设置管理口令"
+          },
+          {
+            "pattern": "^[A-Za-z0-9_.@!#%^*+=-]{8,64}$",
+            "message": "8-64 位，只能用字母、数字和 _ . @ ! # % ^ * + = -"
+          }
+        ]
+      },
+      {
+        "type": "radio",
+        "field": "wizard_bind",
+        "label": "监听地址",
+        "initValue": "0.0.0.0",
+        "options": [
+          {
+            "label": "局域网可访问（手机、平板、电脑都能用）",
+            "value": "0.0.0.0"
+          },
+          {
+            "label": "仅本机",
+            "value": "127.0.0.1"
+          }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,55 @@
+#!/bin/bash
+# 飞牛生命周期入口：start / stop / status。
+# 真正的工作由 bin/service.sh 完成（保持 quizmind 运行，挂了自动重启），这里只管它的启停。
+VAR="$TRIM_PKGVAR"
+PID_FILE="$VAR/service.pid"
+
+fail() { echo "$1" > "$TRIM_TEMP_LOGFILE"; exit 1; }
+
+is_running() {
+  [ -f "$PID_FILE" ] || return 1
+  local pid
+  pid="$(head -n 1 "$PID_FILE" | tr -d '[:space:]')"
+  [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
+}
+
+case "$1" in
+  start)
+    is_running && exit 0
+    mkdir -p "$VAR" "$TRIM_PKGETC" || fail "无法创建运行目录"
+    [ -x "$TRIM_APPDEST/bin/quizmind" ] || fail "缺少 quizmind 程序（安装包不完整或架构不符）"
+    "$TRIM_APPDEST/bin/quizmind-env.sh" write
+    if command -v setsid >/dev/null 2>&1; then
+      nohup setsid "$TRIM_APPDEST/bin/service.sh" >> "$VAR/service.log" 2>&1 &
+    else
+      nohup "$TRIM_APPDEST/bin/service.sh" >> "$VAR/service.log" 2>&1 &
+    fi
+    echo $! > "$PID_FILE"
+    sleep 1
+    is_running || fail "后台服务启动失败，日志见应用数据目录下的 service.log"
+    exit 0
+    ;;
+  stop)
+    if is_running; then
+      pid="$(head -n 1 "$PID_FILE" | tr -d '[:space:]')"
+      kill -TERM "$pid" 2>/dev/null
+      for _ in $(seq 1 20); do is_running || break; sleep 1; done
+      is_running && kill -KILL "$pid" 2>/dev/null
+    fi
+    rm -f "$PID_FILE"
+    # 守护进程没来得及收拾的话，补一刀（pid 文件里记的 quizmind）
+    if [ -f "$VAR/quizmind.pid" ]; then
+      spid="$(head -n 1 "$VAR/quizmind.pid" | tr -d '[:space:]')"
+      [ -n "$spid" ] && kill -TERM "$spid" 2>/dev/null
+      rm -f "$VAR/quizmind.pid"
+    fi
+    exit 0
+    ;;
+  status)
+    is_running && exit 0 || exit 3
+    ;;
+  *)
+    echo "Unknown command: $1" > "$TRIM_TEMP_LOGFILE"
+    exit 1
+    ;;
+esac
