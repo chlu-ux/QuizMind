@@ -144,15 +144,8 @@ class _AgentPageState extends ConsumerState<AgentPage> {
     }
     return status.when(
       loading: () => null,
-      data: (s) => s.local
-          ? AgentBanner(
-              key: const ValueKey('agent-local-banner'),
-              info: true,
-              message: '连不上服务器，正在用本机助手回答（离线）。出的题会先放进本机题库，联网同步后上传到服务器。',
-              actionLabel: '重试',
-              onAction: () => ref.invalidate(agentStatusProvider),
-            )
-          : s.available
+      // On the device (the server is out of reach) there is nothing to warn about: each answer is tagged.
+      data: (s) => s.available
           ? null
           : AgentBanner(message: 'AI 助手暂时不可用'),
       error: (e, _) {

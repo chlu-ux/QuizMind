@@ -1199,15 +1199,15 @@ void main() {
       );
     });
 
-    testWidgets('on the device: the banner says the server is out of reach, the answer is tagged, and what was said goes along', (
+    testWidgets('on the device: no banner, the answer is tagged, and what was said goes along', (
       tester,
     ) async {
       final api = FakeAgentApi()
         ..statusValue = const AgentStatus(available: true, model: 'm', verified: false, local: true)
         ..events = [const AgentLocalEvent(), const AgentDelta('本机的回答'), const AgentDone(stop: 'end_turn')];
       await pump(tester, api);
-      expect(find.byKey(const ValueKey('agent-local-banner')), findsOneWidget);
-      expect(find.textContaining('本机助手'), findsOneWidget);
+      expect(find.byKey(const ValueKey('agent-local-banner')), findsNothing);
+      expect(find.textContaining('连不上服务器'), findsNothing);
 
       await type(tester, '第一个问题');
       await tester.tap(find.byKey(const ValueKey('agent-send')));
