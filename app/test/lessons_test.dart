@@ -6,6 +6,7 @@ import 'package:quizmind_app/data/database.dart';
 import 'package:quizmind_app/data/models.dart';
 import 'package:quizmind_app/data/repository.dart';
 import 'package:quizmind_app/data/sync_service.dart';
+import 'package:quizmind_app/features/agent/agent_page.dart';
 import 'package:quizmind_app/features/home/banks_page.dart';
 import 'package:quizmind_app/features/quiz/learn_page.dart';
 import 'package:quizmind_app/features/quiz/lesson_page.dart';
@@ -322,6 +323,19 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('chapter-d2')));
       await tester.pump();
       expect(find.text('2.1 网络'), findsOneWidget);
+      await tearDownUi(tester, db);
+    });
+
+    testWidgets('the catalogue has a way into the assistant, on this bank', (tester) async {
+      final db = await seeded(tester);
+      await pumpWith(tester, db, LearnPage(bank: bank));
+      await settleUi(tester);
+      await tester.tap(find.byKey(const ValueKey('learn-ask-ai')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      final page = tester.widget<AgentPage>(find.byType(AgentPage));
+      expect(page.args.bankId, bank.id);
+      expect(page.args.lessonId, isEmpty);
       await tearDownUi(tester, db);
     });
 

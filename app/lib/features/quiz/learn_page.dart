@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../data/database.dart';
+import '../agent/agent_controller.dart';
+import '../agent/agent_page.dart';
 import 'lesson_page.dart';
 import 'lesson_style.dart';
 import 'lessons.dart';
@@ -54,6 +56,11 @@ class _LearnPageState extends ConsumerState<LearnPage> {
     if (mounted) _load();
   }
 
+  /// Opens the assistant on this bank: to ask about the study text, find the weak points, or be quizzed.
+  void _openAgent() {
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => AgentPage(args: AgentArgs(bankId: widget.bank.id))));
+  }
+
   bool _isOpen(Chapter c, Lesson? next) => _forced[c.id] ?? (next != null && c.lessons.any((l) => l.id == next.id));
 
   @override
@@ -61,7 +68,17 @@ class _LearnPageState extends ConsumerState<LearnPage> {
     // A sync that brought new study text re-reads the bank rows.
     ref.listen(banksProvider, (_, _) => _load());
     return Scaffold(
-      appBar: AppBar(title: Text('学习 · ${widget.bank.title}')),
+      appBar: AppBar(
+        title: Text('学习 · ${widget.bank.title}'),
+        actions: [
+          IconButton(
+            key: const ValueKey('learn-ask-ai'),
+            tooltip: '问 AI',
+            icon: const Icon(Icons.auto_awesome_outlined),
+            onPressed: _openAgent,
+          ),
+        ],
+      ),
       body: !_loaded
           ? const Center(child: CircularProgressIndicator())
           : _lessons.isEmpty

@@ -6,7 +6,10 @@ import 'agent_page.dart';
 /// The assistant as a tab of the home screen. It keeps its conversation while the learner looks at
 /// other tabs; "new conversation" starts over in place.
 class AgentTab extends StatefulWidget {
-  const AgentTab({super.key});
+  const AgentTab({super.key, this.onBack});
+
+  /// Leaves the tab (the bottom bar is hidden over it); null where the menu stays in view.
+  final VoidCallback? onBack;
 
   @override
   State<AgentTab> createState() => _AgentTabState();
@@ -19,5 +22,5 @@ class _AgentTabState extends State<AgentTab> {
 
   @override
   Widget build(BuildContext context) =>
-      AgentPage(key: ValueKey(_args), args: _args, onNewConversation: _startOver);
+      AgentPage(key: ValueKey(_args), args: _args, onNewConversation: _startOver, onBack: widget.onBack);
 }

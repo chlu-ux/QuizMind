@@ -21,13 +21,17 @@ final agentStatusProvider = FutureProvider.autoDispose<AgentStatus>(
 /// The conversation with the study assistant: ask about the lessons and the weak points, be quizzed,
 /// or have it write questions, which join the question bank at once and can be taken back.
 class AgentPage extends ConsumerStatefulWidget {
-  const AgentPage({super.key, required this.args, this.initialText = '', this.onNewConversation});
+  const AgentPage({super.key, required this.args, this.initialText = '', this.onNewConversation, this.onBack});
 
   final AgentArgs args;
 
   /// Set when the page is a tab of the home screen rather than a page pushed onto it: "new
   /// conversation" then asks the tab to start over instead of replacing the page.
   final VoidCallback? onNewConversation;
+
+  /// Set when the page is the home screen's assistant tab, which hides the bottom bar to leave room
+  /// for the conversation: a back arrow in the app bar then leads out.
+  final VoidCallback? onBack;
 
   /// Put in the text box, not sent: the learner finishes the sentence.
   final String initialText;
@@ -44,6 +48,15 @@ class _AgentPageState extends ConsumerState<AgentPage> {
   final _scroll = ScrollController();
 
   AgentArgs get args => widget.args;
+
+  @override
+  void initState() {
+    super.initState();
+    // A notice left over from the page before would sit on the input box.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    });
+  }
 
   @override
   void dispose() {
@@ -187,6 +200,9 @@ class _AgentPageState extends ConsumerState<AgentPage> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
+        leading: widget.onBack == null
+            ? null
+            : BackButton(key: const ValueKey('agent-back'), onPressed: widget.onBack),
         title: const Text('AI 助手'),
         actions: [
           if (state.messages.isNotEmpty)

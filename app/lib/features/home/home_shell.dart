@@ -6,6 +6,7 @@ import '../../core/settings.dart';
 import '../agent/agent_tab.dart';
 import '../settings/settings_page.dart';
 import 'banks_page.dart';
+import 'home_menu.dart';
 import 'question_list_page.dart';
 
 /// Top-level navigation: a rail on wide windows (macOS), a bottom bar on phones.
@@ -17,18 +18,10 @@ class HomeShell extends ConsumerStatefulWidget {
 }
 
 class _HomeShellState extends ConsumerState<HomeShell> {
-  static const _destinations = [
-    (icon: Icons.menu_book_outlined, selected: Icons.menu_book, label: '题库'),
-    (icon: Icons.error_outline, selected: Icons.error, label: '错题本'),
-    (icon: Icons.auto_awesome_outlined, selected: Icons.auto_awesome, label: 'AI'),
-    (icon: Icons.star_border, selected: Icons.star, label: '收藏'),
-    (icon: Icons.settings_outlined, selected: Icons.settings, label: '设置'),
-  ];
-
-  static const _aiIndex = 2;
-  static const _settingsIndex = 4;
-
   late int _index;
+
+  /// The tab the assistant's back arrow returns to: the one the learner came from.
+  int _previous = 0;
 
   /// The assistant tab is built when first opened, not at start-up, so it asks the server nothing
   /// until the learner wants it.
@@ -38,53 +31,39 @@ class _HomeShellState extends ConsumerState<HomeShell> {
   void initState() {
     super.initState();
     final configured = ref.read(settingsProvider).configured;
-    _index = configured ? 0 : _settingsIndex; // first run: go straight to the server settings
+    _index = configured ? 0 : homeSettingsIndex; // first run: go straight to the server settings
     if (configured) Future.microtask(() => ref.read(syncProvider.notifier).run());
   }
 
-  void _select(int i) => setState(() {
-    _index = i;
-    if (i == _aiIndex) _aiOpened = true;
-  });
+  void _select(int i) {
+    if (i == homeAiIndex) {
+      // A notice left over from another tab would sit on the assistant's input box.
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    }
+    setState(() {
+      if (i != _index && _index != homeAiIndex) _previous = _index;
+      _index = i;
+      if (i == homeAiIndex) _aiOpened = true;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final wide = MediaQuery.sizeOf(context).width >= 700;
     final pages = [
       const BanksPage(),
       const QuestionListPage(kind: QuestionListKind.wrongBook),
-      _aiOpened ? const AgentTab() : const SizedBox.shrink(),
+      _aiOpened ? AgentTab(onBack: wide ? null : () => _select(_previous)) : const SizedBox.shrink(),
       const QuestionListPage(kind: QuestionListKind.favorites),
       const SettingsPage(),
     ];
-    final body = IndexedStack(index: _index, children: pages);
-    final wide = MediaQuery.sizeOf(context).width >= 700;
-    if (wide) {
-      return Scaffold(
-        body: Row(children: [
-          NavigationRail(
-            selectedIndex: _index,
-            onDestinationSelected: _select,
-            labelType: NavigationRailLabelType.all,
-            destinations: [
-              for (final d in _destinations)
-                NavigationRailDestination(icon: Icon(d.icon), selectedIcon: Icon(d.selected), label: Text(d.label)),
-            ],
-          ),
-          const VerticalDivider(width: 1),
-          Expanded(child: body),
-        ]),
-      );
-    }
-    return Scaffold(
-      body: body,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: _select,
-        destinations: [
-          for (final d in _destinations)
-            NavigationDestination(icon: Icon(d.icon), selectedIcon: Icon(d.selected), label: d.label),
-        ],
-      ),
+    return homeChrome(
+      context: context,
+      selected: _index,
+      onSelect: _select,
+      // The assistant gets the whole height; its back arrow leads out.
+      hideBar: _index == homeAiIndex,
+      body: IndexedStack(index: _index, children: pages),
     );
   }
 }

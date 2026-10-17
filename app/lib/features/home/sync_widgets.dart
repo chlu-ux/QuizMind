@@ -16,7 +16,10 @@ class SyncButton extends ConsumerWidget {
     final pending = ref.watch(pendingUploadsProvider).value ?? 0;
     ref.listen(syncProvider, (prev, next) {
       final done = (prev?.running ?? false) && !next.running;
-      if (done && next.message != null && context.mounted) {
+      // Only on the page the learner is looking at: a notice at the bottom would sit on the assistant's
+      // input box, and the other tabs' buttons would all show the same one.
+      final visible = context.mounted && Visibility.of(context) && (ModalRoute.of(context)?.isCurrent ?? true);
+      if (done && next.message != null && visible) {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(
