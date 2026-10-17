@@ -113,6 +113,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   child: Text(_result!, style: TextStyle(color: _resultOk ? Colors.green : theme.colorScheme.error)),
                 ),
               const Divider(height: 40),
+              const AppearanceSection(),
+              const Divider(height: 40),
               const GoalSettingsSection(),
               const Divider(height: 40),
               Text('同步', style: theme.textTheme.titleMedium),
@@ -138,6 +140,34 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ),
       ),
     );
+  }
+}
+
+/// 外观: light, dark, or following the device.
+class AppearanceSection extends ConsumerWidget {
+  const AppearanceSection({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(themeModeProvider);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('外观', style: Theme.of(context).textTheme.titleMedium),
+      const SizedBox(height: 12),
+      SizedBox(
+        width: double.infinity,
+        child: SegmentedButton<ThemeMode>(
+          key: const ValueKey('theme-mode'),
+          showSelectedIcon: false,
+          segments: const [
+            ButtonSegment(value: ThemeMode.system, icon: Icon(Icons.brightness_auto_outlined), label: Text('跟随系统')),
+            ButtonSegment(value: ThemeMode.light, icon: Icon(Icons.light_mode_outlined), label: Text('浅色')),
+            ButtonSegment(value: ThemeMode.dark, icon: Icon(Icons.dark_mode_outlined), label: Text('深色')),
+          ],
+          selected: {mode},
+          onSelectionChanged: (s) => ref.read(themeModeProvider.notifier).set(s.single),
+        ),
+      ),
+    ]);
   }
 }
 

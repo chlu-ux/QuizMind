@@ -8,6 +8,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import '../../core/providers.dart';
 import '../../data/media_store.dart';
 import '../../data/media_text.dart';
+import 'quiz_math.dart';
 
 /// An `<svg>` element (group 1), with the fence around it if it has one: models leave the fence off, or
 /// open it and forget to close it. Or else any other fenced block, matched only to be skipped. A diagram
@@ -49,6 +50,9 @@ class QuizMarkdown extends ConsumerWidget {
     data: text,
     selectable: selectable,
     styleSheet: styleSheet,
+    inlineSyntaxes: [MathInlineSyntax()],
+    blockSyntaxes: const [MathBlockSyntax()],
+    builders: {mathTag: MathBuilder()},
     onTapLink: onTapLink == null ? null : (text, href, title) => onTapLink!(href),
     imageBuilder: (uri, title, alt) {
       if (uri.scheme == 'media') {

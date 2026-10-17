@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -50,5 +51,24 @@ class SettingsNotifier extends Notifier<AppSettings> {
     final url = normalizeBaseUrl(baseUrl);
     await prefs.setString(_kUrl, url);
     state = state.copyWith(baseUrl: url);
+  }
+}
+
+/// Light, dark, or whatever the device is set to (the default). Kept on this device.
+final themeModeProvider = NotifierProvider<ThemeModeNotifier, ThemeMode>(ThemeModeNotifier.new);
+
+class ThemeModeNotifier extends Notifier<ThemeMode> {
+  static const _key = 'theme_mode';
+
+  @override
+  ThemeMode build() => switch (ref.watch(sharedPrefsProvider).getString(_key)) {
+    'light' => ThemeMode.light,
+    'dark' => ThemeMode.dark,
+    _ => ThemeMode.system,
+  };
+
+  Future<void> set(ThemeMode mode) async {
+    state = mode;
+    await ref.read(sharedPrefsProvider).setString(_key, mode.name);
   }
 }
