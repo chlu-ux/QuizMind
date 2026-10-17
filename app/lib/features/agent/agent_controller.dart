@@ -82,6 +82,8 @@ class AgentMsg {
     this.attachments = const [],
     this.localImages = const {},
     this.local = false,
+    this.withQuestion = false,
+    this.withLesson = false,
   });
 
   final int id;
@@ -107,6 +109,11 @@ class AgentMsg {
   /// The answer was written by the assistant on this device, because the server could not be reached.
   final bool local;
 
+  /// The question / the lesson the page was opened on went along for the first time with this message
+  /// (it is shown as a tag on it); later messages carry it silently.
+  final bool withQuestion;
+  final bool withLesson;
+
   AgentMsg copyWith({
     String? text,
     List<ToolRow>? tools,
@@ -127,6 +134,8 @@ class AgentMsg {
     attachments: attachments,
     localImages: localImages,
     local: local ?? this.local,
+    withQuestion: withQuestion,
+    withLesson: withLesson,
   );
 }
 
@@ -216,9 +225,16 @@ class AgentState {
     this.opening = false,
     this.openError,
     this.files = const [],
+    this.questionDropped = false,
+    this.lessonDropped = false,
   });
 
   final List<AgentMsg> messages;
+
+  /// The learner took the question / the lesson the page was opened on off the conversation: it is
+  /// no longer sent along.
+  final bool questionDropped;
+  final bool lessonDropped;
   final Map<String, DraftEntry> drafts;
 
   /// Files chosen for the next message.
@@ -267,7 +283,11 @@ class AgentState {
     String? openError,
     bool clearOpenError = false,
     List<PendingFile>? files,
+    bool? questionDropped,
+    bool? lessonDropped,
   }) => AgentState(
+    questionDropped: questionDropped ?? this.questionDropped,
+    lessonDropped: lessonDropped ?? this.lessonDropped,
     files: files ?? this.files,
     messages: messages ?? this.messages,
     drafts: drafts ?? this.drafts,
@@ -340,6 +360,12 @@ class AgentController extends Notifier<AgentState> {
       if (ref.mounted) state = state.copyWith(opening: false, openError: '出错了：$e');
     }
   }
+
+  /// Stops sending the question this conversation was opened on; the assistant is no longer told about it.
+  void dropQuestion() => state = state.copyWith(questionDropped: true);
+
+  /// Stops sending the lesson this conversation was opened on.
+  void dropLesson() => state = state.copyWith(lessonDropped: true);
 
   // ---- files ----
 
@@ -457,10 +483,14 @@ class AgentController extends Notifier<AgentState> {
       for (final m in state.messages)
         if (!m.streaming && m.error == null && m.text.trim().isNotEmpty) AgentHistoryMessage(m.role, m.text),
     ];
+    final withQuestion = args.questionId.isNotEmpty && !state.questionDropped;
+    final withLesson = args.lessonId.isNotEmpty && !state.lessonDropped;
     final user = AgentMsg(
       id: _nextId++,
       role: 'user',
       text: t,
+      withQuestion: withQuestion && !state.messages.any((m) => m.withQuestion),
+      withLesson: withLesson && !state.messages.any((m) => m.withLesson),
       attachments: attachments,
       localImages: {
         for (final f in sending)
@@ -486,9 +516,9 @@ class AgentController extends Notifier<AgentState> {
         history: history,
         context: AgentContext(
           bankId: args.bankId,
-          lessonId: args.lessonId,
-          questionId: args.questionId,
-          selected: args.selected,
+          lessonId: withLesson ? args.lessonId : '',
+          questionId: withQuestion ? args.questionId : '',
+          selected: withQuestion ? args.selected : const [],
         ),
       );
       await for (final ev

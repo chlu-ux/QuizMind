@@ -1139,6 +1139,18 @@ void main() {
       await tester.pump();
     }
 
+    testWidgets('one button ends the box: plus while it is empty, send once there is text', (tester) async {
+      await pump(tester, FakeAgentApi());
+      expect(find.byKey(const ValueKey('agent-attach')), findsOneWidget);
+      expect(find.byKey(const ValueKey('agent-send')), findsNothing);
+      await type(tester, '你好');
+      expect(find.byKey(const ValueKey('agent-send')), findsOneWidget);
+      expect(find.byKey(const ValueKey('agent-attach')), findsNothing);
+      await type(tester, '   ');
+      expect(find.byKey(const ValueKey('agent-attach')), findsOneWidget, reason: 'blanks are nothing to send');
+      expect(find.byKey(const ValueKey('agent-send')), findsNothing);
+    });
+
     testWidgets('asks for a token when there is none, and cannot send', (
       tester,
     ) async {
@@ -1281,7 +1293,8 @@ void main() {
         expect(find.byKey(const ValueKey('agent-stop')), findsOneWidget);
         await tester.tap(find.byKey(const ValueKey('agent-stop')));
         await tester.pumpAndSettle();
-        expect(find.byKey(const ValueKey('agent-send')), findsOneWidget);
+        expect(find.byKey(const ValueKey('agent-send')), findsNothing, reason: 'the box is empty: the plus is back');
+        expect(find.byKey(const ValueKey('agent-attach')), findsOneWidget);
         expect(find.text('已停止'), findsOneWidget);
         expect(
           find.textContaining('正在写', findRichText: true),
@@ -1368,7 +1381,13 @@ void main() {
         await pump(tester, api, overrides: [picker([for (var i = 1; i <= 4; i++) pick('$i.md')])]);
         expect(tester.widget<IconButton>(find.byKey(const ValueKey('agent-attach'))).onPressed, isNotNull);
         await attach(tester);
-        expect(tester.widget<IconButton>(find.byKey(const ValueKey('agent-attach'))).onPressed, isNull);
+        expect(find.byKey(const ValueKey('agent-file')), findsNWidgets(4));
+        // With files chosen the button is the send button, and the files can only be sent or taken off.
+        expect(find.byKey(const ValueKey('agent-attach')), findsNothing);
+        expect(find.byKey(const ValueKey('agent-send')), findsOneWidget);
+        await tester.tap(find.byKey(const ValueKey('agent-file-remove')).first);
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('agent-file')), findsNWidgets(3));
       });
 
       group('pictures', () {
@@ -1758,6 +1777,11 @@ void main() {
       await tester.runAsync(db.close);
     }
 
+    Future<void> type(WidgetTester tester, String text) async {
+      await tester.enterText(find.byKey(const ValueKey('agent-input')), text);
+      await tester.pump();
+    }
+
     Future<void> settle(WidgetTester tester) async {
       await tester.runAsync(
         () => Future<void>.delayed(const Duration(milliseconds: 100)),
@@ -1813,8 +1837,14 @@ void main() {
               .widget<TextField>(find.byKey(const ValueKey('agent-input')))
               .controller!
               .text,
-          '我还是没懂，',
+          isEmpty,
+          reason: 'the learner writes their own question',
         );
+        // The question is shown above the box, with what was picked and the right answer.
+        expect(find.byKey(const ValueKey('agent-question-card')), findsOneWidget);
+        expect(find.text('题干 q1'), findsOneWidget);
+        expect(find.text('你选了 C · 标准答案 B'), findsOneWidget);
+        await type(tester, '为什么选 C 不对');
         await tester.tap(find.byKey(const ValueKey('agent-send')));
         await tester.pumpAndSettle();
         final req = api.requests.single;
@@ -1823,8 +1853,67 @@ void main() {
         expect(req.context.selected, [
           2,
         ], reason: 'the assistant is told what the learner picked');
+        // It stays on the conversation, and shows on the message that first carried it.
+        expect(find.byKey(const ValueKey('agent-question-card')), findsOneWidget);
+        expect(find.byKey(const ValueKey('agent-question-tag')), findsOneWidget);
+
+        // Taking it off stops it going along with later messages.
+        await tester.tap(find.byKey(const ValueKey('agent-question-close')));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const ValueKey('agent-question-card')), findsNothing);
+        await type(tester, '换个问题');
+        await tester.tap(find.byKey(const ValueKey('agent-send')));
+        await tester.pumpAndSettle();
+        expect(api.requests.last.context.questionId, isEmpty);
+        expect(api.requests.last.context.selected, isEmpty);
+        expect(api.requests.last.context.bankId, 'b1', reason: 'the bank is still where the learner is');
+        expect(find.byKey(const ValueKey('agent-question-tag')), findsOneWidget, reason: 'only the first message carries the tag');
         await closeDb(tester, db);
       },
     );
+
+    testWidgets('a lesson the page was opened on shows as a card, which can be taken off', (tester) async {
+      final sp = await prefs(const {'ai.token': 'tok'});
+      final db = AppDatabase(NativeDatabase.memory());
+      await tester.runAsync(
+        () => db.into(db.lessons).insert(
+          LessonsCompanion.insert(
+            id: 'L1',
+            bankId: 'b1',
+            documentId: 'd1',
+            documentTitle: '操作系统',
+            documentOrder: 1,
+            seq: 1,
+            headingPath: '考点 > 2.1 进程',
+            body: '进程是资源分配的单位。',
+          ),
+        ),
+      );
+      final api = FakeAgentApi()..events = [const AgentDone(stop: 'end_turn')];
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPrefsProvider.overrideWithValue(sp),
+            databaseProvider.overrideWithValue(db),
+            agentApiProvider.overrideWithValue(api),
+          ],
+          child: const MaterialApp(home: AgentPage(args: AgentArgs(bankId: 'b1', lessonId: 'L1'))),
+        ),
+      );
+      await settle(tester);
+      expect(find.byKey(const ValueKey('agent-lesson-card')), findsOneWidget);
+      expect(find.text('2.1 进程'), findsOneWidget);
+      expect(find.byKey(const ValueKey('agent-question-card')), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('agent-lesson-close')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('agent-lesson-card')), findsNothing);
+      await type(tester, '讲一下');
+      await tester.tap(find.byKey(const ValueKey('agent-send')));
+      await tester.pumpAndSettle();
+      expect(api.requests.single.context.lessonId, isEmpty);
+      expect(api.requests.single.context.bankId, 'b1');
+      await closeDb(tester, db);
+    });
   });
 }

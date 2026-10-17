@@ -5,7 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../../data/agent_models.dart';
+import '../../data/database.dart';
 import '../../data/media_text.dart';
+import '../../data/progress.dart';
+import '../quiz/lesson_widgets.dart';
+import '../quiz/lessons.dart';
 import '../quiz/quiz_media.dart';
 import 'agent_controller.dart';
 import 'agent_files.dart';
@@ -17,9 +21,14 @@ class UserBubble extends StatelessWidget {
     super.key,
     this.attachments = const [],
     this.localImages = const {},
+    this.tags = const [],
   });
 
   final String text;
+
+  /// What went along with the words besides files (the question or the lesson being asked about),
+  /// shown above them.
+  final List<Widget> tags;
 
   /// The files this message carried: pictures as thumbnails, the others as tags under the words.
   final List<AgentAttachment> attachments;
@@ -43,6 +52,8 @@ class UserBubble extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            for (final t in tags)
+              Padding(padding: const EdgeInsets.only(bottom: 6), child: t),
             SelectableText(
               text,
               style: TextStyle(color: theme.colorScheme.onPrimaryContainer),
@@ -696,7 +707,8 @@ class QuickPrompts extends StatelessWidget {
   }
 }
 
-/// The text box with its send / stop button.
+/// The text box with one round button at its end: "+" (add a file) while there is nothing to send,
+/// send once there is something, stop while an answer is being written.
 class AgentInputBar extends StatelessWidget {
   const AgentInputBar({
     super.key,
@@ -707,6 +719,7 @@ class AgentInputBar extends StatelessWidget {
     required this.hint,
     required this.onSend,
     required this.onStop,
+    this.cards = const [],
     this.files = const [],
     this.canAttach = false,
     this.vision = false,
@@ -723,6 +736,10 @@ class AgentInputBar extends StatelessWidget {
   final VoidCallback onSend;
   final VoidCallback onStop;
 
+  /// What goes along with the next message besides the words: the question or the lesson the
+  /// conversation is about, each a card the learner can take off.
+  final List<Widget> cards;
+
   /// Files chosen for the next message.
   final List<PendingFile> files;
   final bool canAttach;
@@ -733,6 +750,48 @@ class AgentInputBar extends StatelessWidget {
   final void Function(AttachKind kind)? onAttach;
   final void Function(int key)? onRemoveFile;
 
+  Widget _plus(ThemeData theme) {
+    if (vision && canSend && canAttach) {
+      return PopupMenuButton<AttachKind>(
+        key: const ValueKey('agent-attach'),
+        tooltip: '添加文件或图片',
+        onSelected: onAttach,
+        child: Container(
+          width: 40,
+          height: 40,
+          decoration: ShapeDecoration(
+            color: theme.colorScheme.secondaryContainer,
+            shape: const CircleBorder(),
+          ),
+          child: Icon(Icons.add, color: theme.colorScheme.onSecondaryContainer),
+        ),
+        itemBuilder: (_) => [
+          const PopupMenuItem(
+            key: ValueKey('agent-attach-file'),
+            value: AttachKind.file,
+            child: Text('添加文件'),
+          ),
+          PopupMenuItem(
+            key: const ValueKey('agent-attach-image'),
+            value: AttachKind.image,
+            enabled: canAttachImage,
+            child: const Text('添加图片'),
+          ),
+        ],
+      );
+    }
+    return IconButton.filledTonal(
+      key: const ValueKey('agent-attach'),
+      tooltip: canAttach
+          ? (vision ? '添加文件或图片' : '添加 .md / .txt 等文本文件')
+          : '文件数量到上限了',
+      onPressed: canSend && canAttach
+          ? () => onAttach?.call(AttachKind.file)
+          : null,
+      icon: const Icon(Icons.add),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -742,14 +801,19 @@ class AgentInputBar extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(4, 8, 8, 8),
+          padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              for (final c in cards)
+                Padding(
+                  padding: const EdgeInsets.only(right: 4, bottom: 6),
+                  child: c,
+                ),
               if (files.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(left: 8, bottom: 6),
+                  padding: const EdgeInsets.only(right: 4, bottom: 6),
                   child: Column(
                     key: const ValueKey('agent-files'),
                     children: [
@@ -764,37 +828,6 @@ class AgentInputBar extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  if (vision && canSend && canAttach)
-                    PopupMenuButton<AttachKind>(
-                      key: const ValueKey('agent-attach'),
-                      tooltip: '添加文件或图片',
-                      icon: const Icon(Icons.add_circle_outline),
-                      onSelected: onAttach,
-                      itemBuilder: (_) => [
-                        const PopupMenuItem(
-                          key: ValueKey('agent-attach-file'),
-                          value: AttachKind.file,
-                          child: Text('添加文件'),
-                        ),
-                        PopupMenuItem(
-                          key: const ValueKey('agent-attach-image'),
-                          value: AttachKind.image,
-                          enabled: canAttachImage,
-                          child: const Text('添加图片'),
-                        ),
-                      ],
-                    )
-                  else
-                    IconButton(
-                      key: const ValueKey('agent-attach'),
-                      tooltip: canAttach
-                          ? (vision ? '添加文件或图片' : '添加 .md / .txt 等文本文件')
-                          : '文件数量到上限了',
-                      onPressed: canSend && canAttach
-                          ? () => onAttach?.call(AttachKind.file)
-                          : null,
-                      icon: const Icon(Icons.add_circle_outline),
-                    ),
                   Expanded(
                     child: TextField(
                       key: const ValueKey('agent-input'),
@@ -818,20 +851,30 @@ class AgentInputBar extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  if (busy)
-                    IconButton.filledTonal(
-                      key: const ValueKey('agent-stop'),
-                      tooltip: '停止',
-                      onPressed: onStop,
-                      icon: const Icon(Icons.stop),
-                    )
-                  else
-                    IconButton.filled(
-                      key: const ValueKey('agent-send'),
-                      tooltip: '发送',
-                      onPressed: canSend ? onSend : null,
-                      icon: const Icon(Icons.arrow_upward),
-                    ),
+                  ValueListenableBuilder<TextEditingValue>(
+                    valueListenable: controller,
+                    builder: (context, value, _) {
+                      // A file alone is enough to send.
+                      final hasContent =
+                          value.text.trim().isNotEmpty ||
+                          files.any((f) => f.status == FileStatus.ready);
+                      return busy
+                          ? IconButton.filledTonal(
+                              key: const ValueKey('agent-stop'),
+                              tooltip: '停止',
+                              onPressed: onStop,
+                              icon: const Icon(Icons.stop),
+                            )
+                          : hasContent
+                          ? IconButton.filled(
+                              key: const ValueKey('agent-send'),
+                              tooltip: '发送',
+                              onPressed: canSend ? onSend : null,
+                              icon: const Icon(Icons.arrow_upward),
+                            )
+                          : _plus(theme);
+                    },
+                  ),
                 ],
               ),
             ],
@@ -840,6 +883,308 @@ class AgentInputBar extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A card for what is sent along with the next message: [icon], [title], up to two lines of [body],
+/// a [detail] line, and a cross that takes it off. A tap on the card opens it in full.
+class AgentContextCard extends StatelessWidget {
+  const AgentContextCard({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.body,
+    required this.closeKey,
+    required this.closeTooltip,
+    required this.onClose,
+    required this.onOpen,
+    this.detail = '',
+  });
+
+  final IconData icon;
+  final String title;
+  final String body;
+  final String detail;
+  final Key closeKey;
+  final String closeTooltip;
+  final VoidCallback onClose;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.labelSmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onOpen,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 8, 2, 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(top: 2, right: 8),
+                child: Icon(icon, size: 18, color: theme.colorScheme.primary),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: theme.colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      body,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    if (detail.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        detail,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: muted,
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              IconButton(
+                key: closeKey,
+                tooltip: closeTooltip,
+                visualDensity: VisualDensity.compact,
+                onPressed: onClose,
+                icon: const Icon(Icons.close, size: 18),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The question and the lesson are read from this device's database.
+final agentQuestionProvider = FutureProvider.autoDispose
+    .family<Question?, String>(
+      (ref, id) => ref.watch(repositoryProvider).question(id),
+    );
+final agentLessonProvider = FutureProvider.autoDispose.family<Lesson?, String>(
+  (ref, id) => ref.watch(repositoryProvider).lesson(id),
+);
+
+String _letters(Iterable<int> idx) => [
+  for (final i in idx)
+    if (i >= 0 && i < 26) String.fromCharCode(65 + i),
+].join();
+
+/// The question a conversation was opened on, as a card above the text box, with a cross to stop
+/// sending it. Shows nothing until the question is found.
+class QuestionContextCard extends ConsumerWidget {
+  const QuestionContextCard({
+    super.key,
+    required this.questionId,
+    required this.selected,
+    required this.onClose,
+  });
+
+  final String questionId;
+  final List<int> selected;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final q = ref.watch(agentQuestionProvider(questionId)).value;
+    if (q == null) return const SizedBox.shrink();
+    return AgentContextCard(
+      key: const ValueKey('agent-question-card'),
+      icon: Icons.push_pin_outlined,
+      title: '正在问这道题',
+      body: q.stem,
+      detail: [
+        if (selected.isNotEmpty) '你选了 ${_letters(selected)}',
+        '标准答案 ${_letters(q.answer)}',
+      ].join(' · '),
+      closeKey: const ValueKey('agent-question-close'),
+      closeTooltip: '不再带上这道题',
+      onClose: onClose,
+      onOpen: () => showQuestionSheet(context, q, selected),
+    );
+  }
+}
+
+/// The lesson a conversation was opened on, as a card above the text box.
+class LessonContextCard extends ConsumerWidget {
+  const LessonContextCard({
+    super.key,
+    required this.lessonId,
+    required this.onClose,
+  });
+
+  final String lessonId;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = ref.watch(agentLessonProvider(lessonId)).value;
+    if (l == null) return const SizedBox.shrink();
+    return AgentContextCard(
+      key: const ValueKey('agent-lesson-card'),
+      icon: Icons.menu_book_outlined,
+      title: '正在读这一节',
+      body: lessonTitle(l),
+      detail: l.documentTitle,
+      closeKey: const ValueKey('agent-lesson-close'),
+      closeTooltip: '不再带上这一节',
+      onClose: onClose,
+      onOpen: () => showLessonSheet(context, l),
+    );
+  }
+}
+
+/// A small tag on the message that first carried the question or the lesson; a tap opens it in full.
+class ContextTag extends ConsumerWidget {
+  const ContextTag.question({
+    super.key,
+    required this.id,
+    this.selected = const [],
+  }) : isQuestion = true;
+  const ContextTag.lesson({super.key, required this.id})
+    : isQuestion = false,
+      selected = const [];
+
+  final bool isQuestion;
+  final String id;
+  final List<int> selected;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final String? label;
+    final VoidCallback? open;
+    if (isQuestion) {
+      final q = ref.watch(agentQuestionProvider(id)).value;
+      label = q == null ? null : '题目：${q.stem}';
+      open = q == null ? null : () => showQuestionSheet(context, q, selected);
+    } else {
+      final l = ref.watch(agentLessonProvider(id)).value;
+      label = l == null ? null : '讲义：${lessonTitle(l)}';
+      open = l == null ? null : () => showLessonSheet(context, l);
+    }
+    if (label == null) return const SizedBox.shrink();
+    return InkWell(
+      key: ValueKey(isQuestion ? 'agent-question-tag' : 'agent-lesson-tag'),
+      borderRadius: BorderRadius.circular(8),
+      onTap: open,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isQuestion ? Icons.push_pin_outlined : Icons.menu_book_outlined,
+              size: 14,
+            ),
+            const SizedBox(width: 4),
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelSmall,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The whole question in a sheet: the stem, the options marked with the right answer and the learner's pick, the explanation.
+Future<void> showQuestionSheet(
+  BuildContext context,
+  Question q,
+  List<int> selected,
+) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
+    builder: (context) {
+      final theme = Theme.of(context);
+      final answer = q.answer;
+      final options = q.options;
+      return DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.7,
+        minChildSize: 0.4,
+        maxChildSize: 0.95,
+        builder: (context, controller) => ListView(
+          key: const ValueKey('agent-question-sheet'),
+          controller: controller,
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+          children: [
+            Text(q.stem, style: theme.textTheme.titleMedium),
+            const SizedBox(height: 12),
+            for (var i = 0; i < options.length; i++)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${String.fromCharCode(65 + i)}. ',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                    Expanded(child: Text(options[i])),
+                    if (answer.contains(i))
+                      const Icon(Icons.check, size: 18, color: Colors.green),
+                    if (selected.contains(i) && !answer.contains(i))
+                      Icon(
+                        Icons.close,
+                        size: 18,
+                        color: theme.colorScheme.error,
+                      ),
+                  ],
+                ),
+              ),
+            if (selected.isNotEmpty)
+              Text(
+                '你选了 ${_letters(selected)}',
+                style: theme.textTheme.labelMedium,
+              ),
+            if (q.explanation.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              Text('解析', style: theme.textTheme.labelLarge),
+              const SizedBox(height: 4),
+              Text(q.explanation),
+            ],
+            const SizedBox(height: 8),
+            OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('关闭'),
+            ),
+          ],
+        ),
+      );
+    },
+  );
 }
 
 class _FileRow extends StatelessWidget {

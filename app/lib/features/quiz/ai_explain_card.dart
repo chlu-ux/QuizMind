@@ -237,7 +237,7 @@ class _AiExplainCardState extends ConsumerState<AiExplainCard> {
   void _askMore() {
     final q = widget.question;
     final args = AgentArgs(bankId: q.bankId, questionId: q.id, selected: widget.selected);
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => AgentPage(args: args, initialText: '我还是没懂，')));
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => AgentPage(args: args)));
   }
 
   @override
