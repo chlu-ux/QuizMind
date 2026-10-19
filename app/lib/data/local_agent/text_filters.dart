@@ -171,4 +171,10 @@ class LinkFilter {
     }
     return null;
   }
+
+  static final _link = RegExp(r'\]\((?:lesson|question):([^)\s]+)\)');
+
+  /// The ids of the lesson: and question: links in [text]. Links in an earlier answer passed the filter
+  /// then, so the model may link to them again.
+  static Iterable<String> idsIn(String text) => _link.allMatches(text).map((m) => m.group(1)!);
 }

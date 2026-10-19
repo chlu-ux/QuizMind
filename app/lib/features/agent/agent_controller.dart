@@ -240,6 +240,11 @@ class AgentState {
   /// Files chosen for the next message.
   final List<PendingFile> files;
 
+  /// The question / lesson card above the input box: gone once a message has carried it (the
+  /// message shows its tag), or when the learner took it off.
+  bool get showQuestionCard => !questionDropped && !messages.any((m) => m.withQuestion);
+  bool get showLessonCard => !lessonDropped && !messages.any((m) => m.withLesson);
+
   bool get uploading => files.any((f) => f.status == FileStatus.uploading);
 
   List<PendingFile> get readyFiles => [
@@ -310,6 +315,19 @@ class AgentController extends Notifier<AgentState> {
   int _nextFile = 1;
   CancelToken? _cancel;
 
+  /// The conversation exists where the answers are written (the server's `start` event came, or it was
+  /// opened from the history). What the learner was looking at is said until then and not after: the
+  /// conversation keeps it from its first message.
+  bool _begun = false;
+
+  /// The answer being written comes from the assistant on this device, which is not where the conversation
+  /// lives: the server still has to be told about it with the next message.
+  bool _onDevice = false;
+
+  /// What the conversation began with, kept for the assistant on this device: if it has to take over a
+  /// conversation it does not have, this is what it was about. Never sent to the server.
+  AgentContext _began = const AgentContext();
+
   @override
   AgentState build() {
     ref.onDispose(() => _cancel?.cancel());
@@ -318,6 +336,7 @@ class AgentController extends Notifier<AgentState> {
       return const AgentState();
     }
     _conversationId = args.conversationId;
+    _begun = true;
     Future.microtask(_open);
     return const AgentState(opening: true);
   }
@@ -332,6 +351,7 @@ class AgentController extends Notifier<AgentState> {
     try {
       final stored = await ref.read(agentApiProvider).conversation(_conversationId);
       if (!ref.mounted) return;
+      _began = AgentContext(bankId: stored.item.bankId, lessonId: stored.item.lessonId, questionId: stored.item.questionId);
       final drafts = <String, DraftEntry>{};
       final messages = <AgentMsg>[];
       for (final m in stored.messages) {
@@ -505,6 +525,15 @@ class AgentController extends Notifier<AgentState> {
       files: const [],
     );
 
+    if (!_begun) {
+      _began = AgentContext(
+        bankId: args.bankId,
+        lessonId: withLesson ? args.lessonId : '',
+        questionId: withQuestion ? args.questionId : '',
+        selected: withQuestion ? args.selected : const [],
+      );
+    }
+    _onDevice = false;
     final cancel = _cancel = CancelToken();
     try {
       final request = AgentChatRequest(
@@ -514,12 +543,8 @@ class AgentController extends Notifier<AgentState> {
         message: t,
         attachmentIds: [for (final a in attachments) a.id],
         history: history,
-        context: AgentContext(
-          bankId: args.bankId,
-          lessonId: withLesson ? args.lessonId : '',
-          questionId: withQuestion ? args.questionId : '',
-          selected: withQuestion ? args.selected : const [],
-        ),
+        context: _begun ? const AgentContext() : _began,
+        began: _began,
       );
       await for (final ev
           in ref.read(agentApiProvider).chat(request, cancel: cancel)) {
@@ -569,8 +594,9 @@ class AgentController extends Notifier<AgentState> {
   void _apply(int id, AgentEvent ev) {
     switch (ev) {
       case AgentStarted():
-        break;
+        if (!_onDevice) _begun = true;
       case AgentLocalEvent():
+        _onDevice = true;
         _patch(id, (m) => m.copyWith(local: true));
       case AgentDelta(:final text):
         _patch(id, (m) => m.copyWith(text: m.text + text));

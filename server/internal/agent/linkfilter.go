@@ -1,6 +1,9 @@
 package agent
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+)
 
 // linkFilter checks the lesson: and question: links in streamed Markdown. A link whose id the
 // assistant never saw (from a tool result or the request's context) is invented, so the link is
@@ -71,6 +74,18 @@ func (f *linkFilter) Flush() string {
 	rest := f.buf
 	f.buf = ""
 	return rest
+}
+
+var linkRE = regexp.MustCompile(`\]\((?:lesson|question):([^)\s]+)\)`)
+
+// linkIDsIn returns the ids of the lesson: and question: links in text. Links in an earlier answer
+// passed the filter then, so the model may link to them again.
+func linkIDsIn(text string) []string {
+	var out []string
+	for _, m := range linkRE.FindAllStringSubmatch(text, -1) {
+		out = append(out, m[1])
+	}
+	return out
 }
 
 // linkID extracts the id of a lesson: or question: link target.

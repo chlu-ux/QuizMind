@@ -63,5 +63,5 @@ func TestRun_NoFilesNoTool(t *testing.T) {
 	for _, spec := range conv.Requests()[0].Tools {
 		assert.NotEqual(t, "read_attachment", spec.Name)
 	}
-	assert.NotContains(t, conv.Requests()[0].System[1], "attachment")
+	assert.Len(t, conv.Requests()[0].System, 1)
 }

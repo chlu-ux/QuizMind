@@ -3,7 +3,6 @@ package agent
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -51,11 +50,12 @@ type Request struct {
 	DeviceID string
 	// Messages is the text history; the last one is from the user.
 	Messages []llm.Message
-	Context  Context
+	// Context is where the conversation began; its bank is where the tools look by default.
+	Context Context
+	// Known are the ids of the lessons and questions the opening context named, which the model may link to.
+	Known []string
 	// Files are the text files of this conversation the model may read.
 	Files []File
-	// HasImages says some message in Messages shows a picture.
-	HasImages bool
 	// MaxTokens caps one model turn; zero uses the model's setting.
 	MaxTokens int
 }
@@ -80,33 +80,27 @@ func (a *Agent) Run(ctx context.Context, req Request, emit func(Event)) {
 	emit(Start{ConversationID: req.ConversationID})
 
 	e := newEnv(a.Lib, req.Context.BankID, now)
-	extra, err := a.contextText(ctx, e, req.Context)
-	if err != nil {
-		emit(Error{Code: "internal", Message: "读取资料失败，请稍后再试。"})
-		return
-	}
-	list := readTools()
-	addExtra := func(t string) {
-		if extra == "" {
-			extra = t
-		} else {
-			extra += "\n\n" + t
+	e.see(req.Known...)
+	for _, m := range req.Messages {
+		for _, b := range m.Blocks {
+			if m.Role == "assistant" && b.Kind == llm.BlockText {
+				e.see(linkIDsIn(b.Text)...)
+			}
 		}
 	}
-	if a.Files != nil && len(req.Files) > 0 {
-		list = append(list, toolReadAttachment(a.Files, req.Files))
-		addExtra(filesText(req.Files))
-	}
-	if req.HasImages {
-		addExtra(imagesText)
-	}
+	list := readTools()
 	// Every conversation can write questions unless it is an old read-only (learn) one.
 	if req.Mode != ModeLearn && a.Drafter != nil {
 		scope := DraftScope{ConversationID: req.ConversationID, DeviceID: req.DeviceID}
 		list = append(list, toolProposeQuestions(a.Drafter, scope), toolListDrafts(a.Drafter, scope))
 	}
+	// Last, because it comes only with the first file: the tools before it, and the cache of them, stay as they were.
+	if a.Files != nil && len(req.Files) > 0 {
+		list = append(list, toolReadAttachment(a.Files, req.Files))
+	}
 	tools := newToolSet(list...)
-	system := systemPrompts(now(), req.Mode, extra)
+	// One fixed instruction text per mode; what the learner was looking at is in their first message.
+	system := []string{SystemPrompt(req.Mode)}
 	history := append([]llm.Message(nil), req.Messages...)
 
 	var usage Usage
@@ -160,10 +154,16 @@ func (a *Agent) Run(ctx context.Context, req Request, emit func(Event)) {
 		}
 	}
 
-	// Out of rounds: one last turn without tools, so the user still gets an answer.
+	// Out of rounds: one last turn, so the user still gets an answer. The tools stay declared, since
+	// leaving them out would change the start of the request and lose the cache; the nudge asks for
+	// none. A model that calls one anyway without saying anything gets a turn without tools.
 	last := &history[len(history)-1] // the tool results, which the nudge joins
 	last.Blocks = append(last.Blocks, llm.Block{Kind: llm.BlockText, Text: wrapUpNudge})
-	if _, err := turn(nil); err != nil && !errors.Is(err, llm.ErrTruncated) {
+	t, err := turn(tools.specs())
+	if err == nil && len(t.ToolCalls()) > 0 && !hasText(t.Blocks) {
+		_, err = turn(nil)
+	}
+	if err != nil && !errors.Is(err, llm.ErrTruncated) {
 		fail(err)
 		return
 	}
@@ -207,49 +207,13 @@ func (a *Agent) runTools(ctx context.Context, e *env, tools *toolSet, calls []ll
 	return results
 }
 
-// contextText turns the request's context into text for the instructions and marks the ids in it as known.
-func (a *Agent) contextText(ctx context.Context, e *env, c Context) (string, error) {
-	var sb strings.Builder
-	if c.LessonID != "" {
-		l, err := e.lib.Lesson(ctx, c.LessonID)
-		if err != nil {
-			return "", err
-		}
-		if l != nil {
-			e.see(l.ID)
-			fmt.Fprintf(&sb, "用户正在阅读这一节讲义：\n<lesson id=%q path=%q>\n%s\n</lesson>\n", l.ID, l.HeadingPath, l.Text)
+func hasText(blocks []llm.Block) bool {
+	for _, b := range blocks {
+		if b.Kind == llm.BlockText && strings.TrimSpace(b.Text) != "" {
+			return true
 		}
 	}
-	if c.Question != nil {
-		questions, err := e.lib.Questions(ctx)
-		if err != nil {
-			return "", err
-		}
-		for _, q := range questions {
-			if q.ID != c.Question.ID {
-				continue
-			}
-			e.see(q.ID, q.LessonID)
-			sb.WriteString("用户正在看这道题：\n")
-			fmt.Fprintf(&sb, "<question id=%q>\n题干：%s\n", q.ID, q.Stem)
-			for i, o := range q.Options {
-				fmt.Fprintf(&sb, "%c. %s\n", 'A'+i, o)
-			}
-			fmt.Fprintf(&sb, "标准答案：%s\n解析：%s\n", letters(q.Answer), q.Explanation)
-			if len(c.Question.Selected) > 0 {
-				fmt.Fprintf(&sb, "用户选了：%s\n", letters(c.Question.Selected))
-			}
-			if q.LessonID != "" {
-				fmt.Fprintf(&sb, "出自小节 lesson_id=%s\n", q.LessonID)
-			}
-			sb.WriteString("</question>\n")
-			break
-		}
-	}
-	if c.BankID != "" {
-		fmt.Fprintf(&sb, "用户当前所在的题库 bank_id=%s；工具默认只在这个题库里查。\n", c.BankID)
-	}
-	return strings.TrimSpace(sb.String()), nil
+	return false
 }
 
 func letters(idx []int) string {

@@ -762,7 +762,8 @@ void main() {
       expect(api.requests.single.conversationId, 'old-1');
       expect(api.requests.single.mode, 'create');
       expect(api.requests.single.message, '再出两道');
-      expect(api.requests.single.context.lessonId, 'L1');
+      expect(api.requests.single.context.lessonId, isEmpty, reason: 'the conversation keeps what it began with');
+      expect(api.requests.single.began?.lessonId, 'L1', reason: 'for the assistant on this device, which may have to take over');
       await controller.accept('D3');
       expect(api.accepted, ['D3']);
       expect(c.read(agentControllerProvider(open)).drafts['D3']!.phase, DraftPhase.accepted);
@@ -1709,8 +1710,9 @@ void main() {
       expect(req.conversationId, 'c-make');
       expect(req.mode, isEmpty, reason: 'a stored conversation carries on as the whole assistant');
       expect(req.message, '再出一道');
-      expect(req.context.bankId, 'b1');
-      expect(req.context.lessonId, 'L1');
+      expect(req.context.bankId, isEmpty, reason: 'the conversation keeps what it began with');
+      expect(req.began?.bankId, 'b1');
+      expect(req.began?.lessonId, 'L1');
     });
 
     testWidgets('a stored conversation opens at its end, where the last answer is', (tester) async {
@@ -1828,7 +1830,7 @@ void main() {
         await closeDb(tester, db);
 
         final api = FakeAgentApi()
-          ..events = [const AgentDelta('好'), const AgentDone(stop: 'end_turn')];
+          ..events = [const AgentStarted('c'), const AgentDelta('好'), const AgentDone(stop: 'end_turn')];
         db = await pumpCard(const {'ai.token': 'tok'}, api);
         await tester.tap(find.byKey(const ValueKey('ask-ai-more')));
         await tester.pumpAndSettle();
@@ -1853,20 +1855,17 @@ void main() {
         expect(req.context.selected, [
           2,
         ], reason: 'the assistant is told what the learner picked');
-        // It stays on the conversation, and shows on the message that first carried it.
-        expect(find.byKey(const ValueKey('agent-question-card')), findsOneWidget);
+        // The card leaves the box once sent; the message that first carried it shows a tag instead.
+        expect(find.byKey(const ValueKey('agent-question-card')), findsNothing);
         expect(find.byKey(const ValueKey('agent-question-tag')), findsOneWidget);
 
-        // Taking it off stops it going along with later messages.
-        await tester.tap(find.byKey(const ValueKey('agent-question-close')));
-        await tester.pumpAndSettle();
-        expect(find.byKey(const ValueKey('agent-question-card')), findsNothing);
-        await type(tester, '换个问题');
+        // The conversation keeps what it began with: follow-ups do not send the question again.
+        await type(tester, '再解释一下');
         await tester.tap(find.byKey(const ValueKey('agent-send')));
         await tester.pumpAndSettle();
         expect(api.requests.last.context.questionId, isEmpty);
         expect(api.requests.last.context.selected, isEmpty);
-        expect(api.requests.last.context.bankId, 'b1', reason: 'the bank is still where the learner is');
+        expect(find.byKey(const ValueKey('agent-question-card')), findsNothing);
         expect(find.byKey(const ValueKey('agent-question-tag')), findsOneWidget, reason: 'only the first message carries the tag');
         await closeDb(tester, db);
       },
@@ -1913,6 +1912,45 @@ void main() {
       await tester.pumpAndSettle();
       expect(api.requests.single.context.lessonId, isEmpty);
       expect(api.requests.single.context.bankId, 'b1');
+      await closeDb(tester, db);
+    });
+
+    testWidgets('what the page was opened on is sent until the conversation has begun', (tester) async {
+      final sp = await prefs(const {'ai.token': 'tok'});
+      final db = AppDatabase(NativeDatabase.memory());
+      final api = FakeAgentApi()..chatError = AgentException('连不上', status: 500);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPrefsProvider.overrideWithValue(sp),
+            databaseProvider.overrideWithValue(db),
+            agentApiProvider.overrideWithValue(api),
+          ],
+          child: const MaterialApp(home: AgentPage(args: AgentArgs(bankId: 'b1', questionId: 'q1', selected: [2]))),
+        ),
+      );
+      await settle(tester);
+      await type(tester, '第一次');
+      await tester.tap(find.byKey(const ValueKey('agent-send')));
+      await tester.pumpAndSettle();
+      expect(api.requests.single.context.questionId, 'q1');
+
+      // The server never started the conversation, so the retry says it again.
+      api
+        ..chatError = null
+        ..events = [const AgentStarted('c'), const AgentDone(stop: 'end_turn')];
+      await type(tester, '再试一次');
+      await tester.tap(find.byKey(const ValueKey('agent-send')));
+      await tester.pumpAndSettle();
+      expect(api.requests.last.context.questionId, 'q1');
+      expect(api.requests.last.context.selected, [2]);
+
+      await type(tester, '第三次');
+      await tester.tap(find.byKey(const ValueKey('agent-send')));
+      await tester.pumpAndSettle();
+      expect(api.requests.last.context.questionId, isEmpty);
+      expect(api.requests.last.context.bankId, isEmpty);
+      expect(api.requests.last.began?.questionId, 'q1', reason: 'the assistant on this device is still told what it began with');
       await closeDb(tester, db);
     });
   });

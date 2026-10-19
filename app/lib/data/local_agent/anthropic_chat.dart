@@ -131,6 +131,16 @@ class HttpAnthropicChat implements AnthropicChat {
   }) async {
     final base = config.baseUrl.replaceAll(RegExp(r'/+$'), '');
     final sys = [for (final s in system) if (s.isNotEmpty) s];
+    final msgs = [
+      for (final m in messages)
+        if (m.blocks.isNotEmpty) {'role': m.role, 'content': [for (final b in m.blocks) b.toJson()]},
+    ];
+    // The second breakpoint goes after the last block: the next call of the same answer (another tool round)
+    // and the next question read everything up to here from the cache instead of paying for it again.
+    if (msgs.isNotEmpty) {
+      final last = (msgs.last['content'] as List).last as Map<String, dynamic>;
+      if (last['type'] != 'thinking') last['cache_control'] = {'type': 'ephemeral'};
+    }
     final body = {
       'model': config.model,
       'max_tokens': maxTokens > 0 ? maxTokens : config.maxTokens,
@@ -141,10 +151,7 @@ class HttpAnthropicChat implements AnthropicChat {
           {'type': 'text', 'text': sys[i], if (i == 0) 'cache_control': {'type': 'ephemeral'}},
       ],
       if (tools.isNotEmpty) 'tools': [for (final t in tools) t.toApi()],
-      'messages': [
-        for (final m in messages)
-          if (m.blocks.isNotEmpty) {'role': m.role, 'content': [for (final b in m.blocks) b.toJson()]},
-      ],
+      'messages': msgs,
       if (config.effort.isNotEmpty) 'output_config': {'effort': config.effort},
     };
     Response<ResponseBody> res;

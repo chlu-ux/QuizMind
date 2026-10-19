@@ -43,7 +43,7 @@ func (q *Queries) DeleteEmptyAgentConversations(ctx context.Context, updatedAt i
 }
 
 const getAgentConversation = `-- name: GetAgentConversation :one
-SELECT id, mode, title, device_id, bank_id, lesson_id, question_id, created_at, updated_at FROM agent_conversation WHERE id = ?
+SELECT id, mode, title, device_id, bank_id, lesson_id, question_id, created_at, updated_at, briefing FROM agent_conversation WHERE id = ?
 `
 
 func (q *Queries) GetAgentConversation(ctx context.Context, id string) (AgentConversation, error) {
@@ -59,6 +59,7 @@ func (q *Queries) GetAgentConversation(ctx context.Context, id string) (AgentCon
 		&i.QuestionID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.Briefing,
 	)
 	return i, err
 }
@@ -299,6 +300,20 @@ func (q *Queries) RejectConversationDrafts(ctx context.Context, arg RejectConver
 	return result.RowsAffected()
 }
 
+const setAgentConversationBriefing = `-- name: SetAgentConversationBriefing :exec
+UPDATE agent_conversation SET briefing = ? WHERE id = ?
+`
+
+type SetAgentConversationBriefingParams struct {
+	Briefing string `json:"briefing"`
+	ID       string `json:"id"`
+}
+
+func (q *Queries) SetAgentConversationBriefing(ctx context.Context, arg SetAgentConversationBriefingParams) error {
+	_, err := q.db.ExecContext(ctx, setAgentConversationBriefing, arg.Briefing, arg.ID)
+	return err
+}
+
 const setAgentConversationTitle = `-- name: SetAgentConversationTitle :exec
 UPDATE agent_conversation SET title = ? WHERE id = ?
 `
@@ -328,8 +343,8 @@ func (q *Queries) TouchAgentConversation(ctx context.Context, arg TouchAgentConv
 }
 
 const upsertAgentConversation = `-- name: UpsertAgentConversation :exec
-INSERT INTO agent_conversation (id, mode, device_id, bank_id, lesson_id, question_id, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO agent_conversation (id, mode, device_id, bank_id, lesson_id, question_id, briefing, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO UPDATE SET device_id = excluded.device_id, updated_at = excluded.updated_at
 `
 
@@ -340,6 +355,7 @@ type UpsertAgentConversationParams struct {
 	BankID     string `json:"bank_id"`
 	LessonID   string `json:"lesson_id"`
 	QuestionID string `json:"question_id"`
+	Briefing   string `json:"briefing"`
 	CreatedAt  int64  `json:"created_at"`
 	UpdatedAt  int64  `json:"updated_at"`
 }
@@ -353,6 +369,7 @@ func (q *Queries) UpsertAgentConversation(ctx context.Context, arg UpsertAgentCo
 		arg.BankID,
 		arg.LessonID,
 		arg.QuestionID,
+		arg.Briefing,
 		arg.CreatedAt,
 		arg.UpdatedAt,
 	)

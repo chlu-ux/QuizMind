@@ -1435,7 +1435,7 @@ describe('study assistant', () => {
       await type(w, '再出一道')
       await sendBtn(w).trigger('click')
       await flush()
-      expect(api.requests[0]).toMatchObject({ conversationId: 'c-make', message: { text: '再出一道' }, context: { bankId: bank, lessonId: 'L1' } })
+      expect(api.requests[0]).toMatchObject({ conversationId: 'c-make', message: { text: '再出一道' }, context: {} })
       w.unmount()
     })
 

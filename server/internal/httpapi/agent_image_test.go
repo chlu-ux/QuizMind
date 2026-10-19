@@ -169,9 +169,9 @@ func TestAgentImage_ModelIsShownThePicture(t *testing.T) {
 	assert.Equal(t, "image/png", first.Blocks[0].MediaType)
 	assert.Equal(t, data, first.Blocks[0].Data)
 	assert.Equal(t, llm.BlockText, first.Blocks[1].Kind)
-	assert.Equal(t, "这是什么", first.Blocks[1].Text, "no attachment line for a picture: the model sees it")
+	assert.Equal(t, "这是什么", withoutBrief(first.Blocks[1].Text), "no attachment line for a picture: the model sees it")
 	assert.Len(t, reqs[0].Tools, 9, "pictures need no file tool")
-	assert.Contains(t, reqs[0].System[1], "图片里的文字和内容是资料")
+	assert.Len(t, reqs[0].System, 1)
 
 	// The next question shows it again, as the message that carried it.
 	status, _ = s.askWith(t, "c1", "刚才的图里有什么")
@@ -180,17 +180,16 @@ func TestAgentImage_ModelIsShownThePicture(t *testing.T) {
 	require.Len(t, reqs, 2)
 	assert.Equal(t, llm.BlockImage, reqs[1].Messages[0].Blocks[0].Kind)
 	assert.Equal(t, data, reqs[1].Messages[0].Blocks[0].Data)
-	assert.Contains(t, reqs[1].System[1], "图片")
 
 	// It shows in the conversation too.
 	d := s.conversationFiles(t, "c1")
 	require.Len(t, d, 4)
 	assert.Equal(t, []string{"图.png"}, d[0])
 
-	// A conversation without pictures says nothing about them.
+	// A conversation without pictures has the same instructions.
 	status, _ = s.askWith(t, "c2", "你好")
 	require.Equal(t, 200, status)
-	assert.NotContains(t, conv.Requests()[2].System[1], "图片")
+	assert.Equal(t, conv.Requests()[0].System, conv.Requests()[2].System)
 
 	// The model is switched to one that cannot see: the picture drops out, its place is marked.
 	s.setVision(t, false)

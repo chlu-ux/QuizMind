@@ -42,7 +42,7 @@ type SpecLimits struct {
 func BuildSpec() Spec {
 	list := append(readTools(), toolProposeQuestions(nil, DraftScope{}), toolListDrafts(nil, DraftScope{}))
 	s := Spec{
-		Prompt: stablePrompt + "\n\n" + createPrompt,
+		Prompt: SystemPrompt(ModeCreate),
 		Limits: SpecLimits{MaxRounds: DefaultMaxRounds, MaxProposePerCall: MaxProposePerCall,
 			MaxDraftsPerChat: MaxDraftsPerChat, MaxToolResult: maxToolResult, WrapUpNudge: wrapUpNudge},
 	}

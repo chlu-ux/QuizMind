@@ -25,6 +25,9 @@ const agentTitleRunes = 30
 // agentEmptyConversationTTL is how long a conversation row nobody spoke in may linger.
 const agentEmptyConversationTTL = 24 * time.Hour
 
+// agentDropStep is how many of the oldest messages go at once when the history is too long.
+const agentDropStep = 10
+
 // AgentUserMessage is the one new message of a stored conversation; the earlier ones are read from
 // the database.
 type AgentUserMessage struct {
@@ -51,16 +54,21 @@ func normalizeAgentHistory(in []AgentMessage) []AgentMessage {
 			out = append(out, AgentMessage{Role: m.Role, Content: text, imageIDs: m.imageIDs})
 		}
 	}
-	chars := func() int {
-		n := 0
-		for _, m := range out {
-			n += utf8.RuneCountInString(m.Content)
-		}
-		return n
+	chars := 0
+	for _, m := range out {
+		chars += utf8.RuneCountInString(m.Content)
 	}
-	for len(out) > agentMaxMessages || (len(out) > 1 && chars() > agentMaxChars) {
-		out = out[1:]
+	drop := 0
+	for len(out)-drop > agentMaxMessages || (len(out)-drop > 1 && chars > agentMaxChars) {
+		chars -= utf8.RuneCountInString(out[drop].Content)
+		drop++
 	}
+	// The oldest messages go agentDropStep at a time, not one by one: the history then begins with the
+	// same message for several questions, so the cached start of the request stays good.
+	if drop > 0 {
+		drop = min((drop+agentDropStep-1)/agentDropStep*agentDropStep, len(out)-1)
+	}
+	out = out[drop:]
 	for len(out) > 0 && out[0].Role != "user" {
 		out = out[1:]
 	}
@@ -77,9 +85,14 @@ func agentTitle(text string) string {
 }
 
 type storedChat struct {
-	id, mode  string
-	files     []agent.File // the text files the assistant may read
-	hasImages bool         // some message in the history shows a picture
+	id, mode string
+	files    []agent.File // the text files the assistant may read
+	// resumed says the conversation already existed: its context is the one it began with, whatever
+	// the request carries. briefing is what it was written as then (empty for one from before briefings),
+	// startedAt when it began.
+	resumed   bool
+	briefing  string
+	startedAt time.Time
 }
 
 // imageIDsOf returns the pictures among the files a message carried.
@@ -134,6 +147,7 @@ func (s *Service) prepareStoredChat(ctx context.Context, in AgentChatRequest) (A
 	}
 	mode := in.Mode
 	var history []AgentMessage
+	resumed, briefing, startedAt := false, "", time.Time{}
 	conv, err := s.reader().GetAgentConversation(ctx, in.ConversationID)
 	switch {
 	case err == nil:
@@ -145,6 +159,9 @@ func (s *Service) prepareStoredChat(ctx context.Context, in AgentChatRequest) (A
 		case mode != conv.Mode:
 			return in, storedChat{}, invalid("this is a %s conversation; start a new one for %s", conv.Mode, mode)
 		}
+		// What the learner was looking at is fixed when the conversation begins; the app says it once.
+		in.Context = conversationContext(conv)
+		resumed, briefing, startedAt = true, conv.Briefing, time.UnixMilli(conv.CreatedAt)
 		rows, err := s.reader().ListAgentMessages(ctx, conv.ID)
 		if err != nil {
 			return in, storedChat{}, err
@@ -170,11 +187,20 @@ func (s *Service) prepareStoredChat(ctx context.Context, in AgentChatRequest) (A
 	// A question whose answer never came (or came empty) is joined with the new one, so roles still alternate.
 	in.Messages = normalizeAgentHistory(append(history, AgentMessage{Role: "user", Content: in.Message.Text + files.fileNote(in.Message.AttachmentIDs),
 		imageIDs: files.imageIDsOf(in.Message.AttachmentIDs)}))
-	hasImages, err := s.attachImages(ctx, in.Messages, files, vision)
+	_, err = s.attachImages(ctx, in.Messages, files, vision)
 	if err != nil {
 		return in, storedChat{}, err
 	}
-	return in, storedChat{id: in.ConversationID, mode: mode, files: files.files, hasImages: hasImages}, nil
+	return in, storedChat{id: in.ConversationID, mode: mode, files: files.files, resumed: resumed, briefing: briefing, startedAt: startedAt}, nil
+}
+
+// conversationContext is what a conversation began with, as far as the row says (not what the learner picked).
+func conversationContext(c store.AgentConversation) AgentContext {
+	out := AgentContext{BankID: c.BankID, LessonID: c.LessonID}
+	if c.QuestionID != "" {
+		out.Question = &AgentQuestionContext{ID: c.QuestionID}
+	}
+	return out
 }
 
 // lockAgentConversation allows one answer at a time per conversation; two would interleave in the history.
@@ -196,7 +222,7 @@ func (s *Service) lockAgentConversation(id string) (unlock func(), err error) {
 }
 
 // saveAgentQuestion records the learner's message, creating the conversation on the first one.
-func (s *Service) saveAgentQuestion(ctx context.Context, in AgentChatRequest, mode string) error {
+func (s *Service) saveAgentQuestion(ctx context.Context, in AgentChatRequest, mode, briefing string) error {
 	now := nowMs()
 	return s.DB.WithTx(ctx, func(tx *sql.Tx) error {
 		qs := store.New(tx)
@@ -206,13 +232,20 @@ func (s *Service) saveAgentQuestion(ctx context.Context, in AgentChatRequest, mo
 		}
 		if err := qs.UpsertAgentConversation(ctx, store.UpsertAgentConversationParams{
 			ID: in.ConversationID, Mode: mode, DeviceID: in.DeviceID, BankID: in.Context.BankID,
-			LessonID: in.Context.LessonID, QuestionID: questionID, CreatedAt: now, UpdatedAt: now,
+			LessonID: in.Context.LessonID, QuestionID: questionID, Briefing: briefing, CreatedAt: now, UpdatedAt: now,
 		}); err != nil {
 			return err
 		}
-		if conv, err := qs.GetAgentConversation(ctx, in.ConversationID); err != nil {
+		conv, err := qs.GetAgentConversation(ctx, in.ConversationID)
+		if err != nil {
 			return err
-		} else if conv.Title == "" {
+		}
+		if conv.Briefing == "" { // from before briefings were kept
+			if err := qs.SetAgentConversationBriefing(ctx, store.SetAgentConversationBriefingParams{Briefing: briefing, ID: in.ConversationID}); err != nil {
+				return err
+			}
+		}
+		if conv.Title == "" {
 			if err := qs.SetAgentConversationTitle(ctx, store.SetAgentConversationTitleParams{
 				Title: agentTitle(in.Message.Text), ID: in.ConversationID,
 			}); err != nil {

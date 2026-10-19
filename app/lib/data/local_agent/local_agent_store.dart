@@ -3,6 +3,7 @@
 library;
 
 import 'dart:convert';
+import 'dart:math' show min;
 
 import 'package:drift/drift.dart';
 
@@ -25,6 +26,9 @@ class LocalState {
 /// How many messages of the history go to the model, and how many characters (the server's limits).
 const historyMaxMessages = 30;
 const historyMaxChars = 24000;
+
+/// How many of the oldest messages go at once when the history is too long (the server's agentDropStep).
+const historyDropStep = 10;
 
 class LocalAgentStore {
   LocalAgentStore(this.db);
@@ -145,6 +149,7 @@ class LocalAgentStore {
     required String bankId,
     required String lessonId,
     required String questionId,
+    String briefing = '',
     required String firstText,
     List<AgentHistoryMessage> seed = const [],
   }) async {
@@ -160,6 +165,7 @@ class LocalAgentStore {
             bankId: Value(bankId),
             lessonId: Value(lessonId),
             questionId: Value(questionId),
+            briefing: Value(briefing),
             createdAt: now,
             updatedAt: now,
           ));
@@ -168,6 +174,20 @@ class LocalAgentStore {
       }
     });
     return true;
+  }
+
+  /// What the conversation began with, as far as the row says (not what the learner picked); null when it
+  /// is not here.
+  Future<AgentContext?> contextOf(String id) async {
+    final c = await (db.select(db.agentConversations)..where((c) => c.id.equals(id))).getSingleOrNull();
+    if (c == null) return null;
+    return AgentContext(bankId: c.bankId, lessonId: c.lessonId, questionId: c.questionId);
+  }
+
+  /// The brief the conversation began with; empty when there is none (or it is not here).
+  Future<String> briefingOf(String id) async {
+    final c = await (db.select(db.agentConversations)..where((c) => c.id.equals(id))).getSingleOrNull();
+    return c?.briefing ?? '';
   }
 
   String _title(String text) {
@@ -230,16 +250,27 @@ class LocalAgentStore {
           ..where((m) => m.conversationId.equals(conversationId))
           ..orderBy([(m) => OrderingTerm.asc(m.id)]))
         .get();
-    final all = [for (final m in rows) if (m.body.trim().isNotEmpty) AgentHistoryMessage(m.role, m.body)];
-    var chars = 0;
-    var from = all.length;
-    while (from > 0 && all.length - from < historyMaxMessages) {
-      final n = all[from - 1].text.runes.length;
-      if (chars + n > historyMaxChars) break;
-      chars += n;
-      from--;
+    // Neighbours with the same role (a question whose answer failed, and the next one) are joined, so roles alternate.
+    final all = <AgentHistoryMessage>[];
+    for (final m in rows) {
+      final text = m.body.trim();
+      if (text.isEmpty) continue;
+      if (all.isNotEmpty && all.last.role == m.role) {
+        all.last = AgentHistoryMessage(m.role, '${all.last.text}\n\n$text');
+      } else {
+        all.add(AgentHistoryMessage(m.role, text));
+      }
     }
-    var kept = all.sublist(from);
+    var chars = all.fold(0, (n, m) => n + m.text.runes.length);
+    var drop = 0;
+    while (all.length - drop > historyMaxMessages || (all.length - drop > 1 && chars > historyMaxChars)) {
+      chars -= all[drop].text.runes.length;
+      drop++;
+    }
+    // The oldest messages go historyDropStep at a time, not one by one: the history then begins with the
+    // same message for several questions, so the cached start of the request stays good.
+    if (drop > 0) drop = min((drop + historyDropStep - 1) ~/ historyDropStep * historyDropStep, all.length - 1);
+    var kept = all.sublist(drop);
     while (kept.isNotEmpty && kept.first.role != 'user') {
       kept = kept.sublist(1);
     }

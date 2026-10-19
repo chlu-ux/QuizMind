@@ -119,6 +119,19 @@ describe('AgentChat', () => {
     expect(api.requests[0].context).toEqual({ bankId: 'b1', lessonId: '', questionId: 'q9', selected: [2, 0] })
   })
 
+  it('says what the learner is looking at until the conversation has begun, not after', async () => {
+    const api = new FakeAgentApi()
+    api.events = [{ kind: 'error', code: 'unavailable', message: '连不上' }]
+    const chat = make(api, agentArgs({ bankId: 'b1', questionId: 'q9', selected: [2] }))
+    await chat.send('第一次')
+    // No `start` came: the server has no conversation yet, so the retry says it again.
+    api.events = [{ kind: 'start', conversationId: chat.conversationId }, { kind: 'done', stop: 'end_turn', inputTokens: 0, outputTokens: 0 }]
+    await chat.send('再试')
+    expect(api.requests[1].context).toMatchObject({ questionId: 'q9', selected: [2] })
+    await chat.send('追问')
+    expect(api.requests[2].context).toEqual({})
+  })
+
   describe('drafts', () => {
     it('a drafts event adds the questions under the answer, adopted already', async () => {
       const api = new FakeAgentApi()
@@ -242,7 +255,7 @@ describe('AgentChat', () => {
       api.events = [{ kind: 'delta', text: '好' }]
       const chat = reactive(new AgentChat(agentArgs({ bankId: 'b1', lessonId: 'L1' }), 'dev1', api, stored())) as AgentChat
       await chat.send('再出两道')
-      expect(api.requests[0]).toMatchObject({ conversationId: 'old-1', message: { text: '再出两道' }, context: { bankId: 'b1', lessonId: 'L1' } })
+      expect(api.requests[0]).toMatchObject({ conversationId: 'old-1', message: { text: '再出两道' }, context: {} })
       expect(chat.messages).toHaveLength(6)
       await chat.accept('D3')
       expect(api.accepted).toEqual(['D3'])

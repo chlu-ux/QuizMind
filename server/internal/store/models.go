@@ -34,6 +34,7 @@ type AgentConversation struct {
 	QuestionID string `json:"question_id"`
 	CreatedAt  int64  `json:"created_at"`
 	UpdatedAt  int64  `json:"updated_at"`
+	Briefing   string `json:"briefing"`
 }
 
 type AgentDraft struct {

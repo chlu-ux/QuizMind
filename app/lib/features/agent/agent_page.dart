@@ -67,10 +67,10 @@ class _AgentPageState extends ConsumerState<AgentPage> {
   }
 
   List<String> _prompts(AgentState state) {
-    if (args.questionId.isNotEmpty && !state.questionDropped) {
+    if (args.questionId.isNotEmpty && state.showQuestionCard) {
       return const ['为什么我选的不对？', '再讲细一点', '举个例子帮我记住'];
     }
-    if (args.lessonId.isNotEmpty && !state.lessonDropped) {
+    if (args.lessonId.isNotEmpty && state.showLessonCard) {
       return const ['讲一下这一节', '这一节有哪些考点？', '用这一节出 3 道单选题'];
     }
     return const ['我哪里比较薄弱？', '帮我安排一下复习顺序', '出几道题考考我', '帮我出 5 道单选题'];
@@ -319,9 +319,9 @@ class _AgentPageState extends ConsumerState<AgentPage> {
                 state.openError == null &&
                 !state.uploading,
             cards: [
-              if (args.lessonId.isNotEmpty && !state.lessonDropped)
+              if (args.lessonId.isNotEmpty && state.showLessonCard)
                 LessonContextCard(lessonId: args.lessonId, onClose: controller.dropLesson),
-              if (args.questionId.isNotEmpty && !state.questionDropped)
+              if (args.questionId.isNotEmpty && state.showQuestionCard)
                 QuestionContextCard(
                   questionId: args.questionId,
                   selected: args.selected,

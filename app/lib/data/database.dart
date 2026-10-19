@@ -197,6 +197,10 @@ class AgentConversations extends Table {
   TextColumn get bankId => text().withDefault(const Constant(''))();
   TextColumn get lessonId => text().withDefault(const Constant(''))();
   TextColumn get questionId => text().withDefault(const Constant(''))();
+
+  /// What the learner was looking at when the conversation began, written as the model is told it. It goes
+  /// in front of the first message of every request, as part of what the learner said.
+  TextColumn get briefing => text().withDefault(const Constant(''))();
   IntColumn get createdAt => integer()();
   IntColumn get updatedAt => integer()();
 
@@ -224,7 +228,7 @@ class AppDatabase extends _$AppDatabase {
       : super(executor ?? driftDatabase(name: 'quizmind'));
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -259,6 +263,10 @@ class AppDatabase extends _$AppDatabase {
             await m.addColumn(questions, questions.agentConv);
             await m.createTable(agentConversations);
             await m.createTable(agentMessages);
+          }
+          if (from == 8) {
+            // Older databases create the table above, with this column already in it.
+            await m.addColumn(agentConversations, agentConversations.briefing);
           }
         },
       );

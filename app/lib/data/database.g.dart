@@ -5276,6 +5276,18 @@ class $AgentConversationsTable extends AgentConversations
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _briefingMeta = const VerificationMeta(
+    'briefing',
+  );
+  @override
+  late final GeneratedColumn<String> briefing = GeneratedColumn<String>(
+    'briefing',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -5306,6 +5318,7 @@ class $AgentConversationsTable extends AgentConversations
     bankId,
     lessonId,
     questionId,
+    briefing,
     createdAt,
     updatedAt,
   ];
@@ -5354,6 +5367,12 @@ class $AgentConversationsTable extends AgentConversations
       context.handle(
         _questionIdMeta,
         questionId.isAcceptableOrUnknown(data['question_id']!, _questionIdMeta),
+      );
+    }
+    if (data.containsKey('briefing')) {
+      context.handle(
+        _briefingMeta,
+        briefing.isAcceptableOrUnknown(data['briefing']!, _briefingMeta),
       );
     }
     if (data.containsKey('created_at')) {
@@ -5405,6 +5424,10 @@ class $AgentConversationsTable extends AgentConversations
         DriftSqlType.string,
         data['${effectivePrefix}question_id'],
       )!,
+      briefing: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}briefing'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_at'],
@@ -5430,6 +5453,10 @@ class AgentConversation extends DataClass
   final String bankId;
   final String lessonId;
   final String questionId;
+
+  /// What the learner was looking at when the conversation began, written as the model is told it. It goes
+  /// in front of the first message of every request, as part of what the learner said.
+  final String briefing;
   final int createdAt;
   final int updatedAt;
   const AgentConversation({
@@ -5439,6 +5466,7 @@ class AgentConversation extends DataClass
     required this.bankId,
     required this.lessonId,
     required this.questionId,
+    required this.briefing,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -5451,6 +5479,7 @@ class AgentConversation extends DataClass
     map['bank_id'] = Variable<String>(bankId);
     map['lesson_id'] = Variable<String>(lessonId);
     map['question_id'] = Variable<String>(questionId);
+    map['briefing'] = Variable<String>(briefing);
     map['created_at'] = Variable<int>(createdAt);
     map['updated_at'] = Variable<int>(updatedAt);
     return map;
@@ -5464,6 +5493,7 @@ class AgentConversation extends DataClass
       bankId: Value(bankId),
       lessonId: Value(lessonId),
       questionId: Value(questionId),
+      briefing: Value(briefing),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -5481,6 +5511,7 @@ class AgentConversation extends DataClass
       bankId: serializer.fromJson<String>(json['bankId']),
       lessonId: serializer.fromJson<String>(json['lessonId']),
       questionId: serializer.fromJson<String>(json['questionId']),
+      briefing: serializer.fromJson<String>(json['briefing']),
       createdAt: serializer.fromJson<int>(json['createdAt']),
       updatedAt: serializer.fromJson<int>(json['updatedAt']),
     );
@@ -5495,6 +5526,7 @@ class AgentConversation extends DataClass
       'bankId': serializer.toJson<String>(bankId),
       'lessonId': serializer.toJson<String>(lessonId),
       'questionId': serializer.toJson<String>(questionId),
+      'briefing': serializer.toJson<String>(briefing),
       'createdAt': serializer.toJson<int>(createdAt),
       'updatedAt': serializer.toJson<int>(updatedAt),
     };
@@ -5507,6 +5539,7 @@ class AgentConversation extends DataClass
     String? bankId,
     String? lessonId,
     String? questionId,
+    String? briefing,
     int? createdAt,
     int? updatedAt,
   }) => AgentConversation(
@@ -5516,6 +5549,7 @@ class AgentConversation extends DataClass
     bankId: bankId ?? this.bankId,
     lessonId: lessonId ?? this.lessonId,
     questionId: questionId ?? this.questionId,
+    briefing: briefing ?? this.briefing,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -5529,6 +5563,7 @@ class AgentConversation extends DataClass
       questionId: data.questionId.present
           ? data.questionId.value
           : this.questionId,
+      briefing: data.briefing.present ? data.briefing.value : this.briefing,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -5543,6 +5578,7 @@ class AgentConversation extends DataClass
           ..write('bankId: $bankId, ')
           ..write('lessonId: $lessonId, ')
           ..write('questionId: $questionId, ')
+          ..write('briefing: $briefing, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -5557,6 +5593,7 @@ class AgentConversation extends DataClass
     bankId,
     lessonId,
     questionId,
+    briefing,
     createdAt,
     updatedAt,
   );
@@ -5570,6 +5607,7 @@ class AgentConversation extends DataClass
           other.bankId == this.bankId &&
           other.lessonId == this.lessonId &&
           other.questionId == this.questionId &&
+          other.briefing == this.briefing &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -5581,6 +5619,7 @@ class AgentConversationsCompanion extends UpdateCompanion<AgentConversation> {
   final Value<String> bankId;
   final Value<String> lessonId;
   final Value<String> questionId;
+  final Value<String> briefing;
   final Value<int> createdAt;
   final Value<int> updatedAt;
   final Value<int> rowid;
@@ -5591,6 +5630,7 @@ class AgentConversationsCompanion extends UpdateCompanion<AgentConversation> {
     this.bankId = const Value.absent(),
     this.lessonId = const Value.absent(),
     this.questionId = const Value.absent(),
+    this.briefing = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -5602,6 +5642,7 @@ class AgentConversationsCompanion extends UpdateCompanion<AgentConversation> {
     this.bankId = const Value.absent(),
     this.lessonId = const Value.absent(),
     this.questionId = const Value.absent(),
+    this.briefing = const Value.absent(),
     required int createdAt,
     required int updatedAt,
     this.rowid = const Value.absent(),
@@ -5615,6 +5656,7 @@ class AgentConversationsCompanion extends UpdateCompanion<AgentConversation> {
     Expression<String>? bankId,
     Expression<String>? lessonId,
     Expression<String>? questionId,
+    Expression<String>? briefing,
     Expression<int>? createdAt,
     Expression<int>? updatedAt,
     Expression<int>? rowid,
@@ -5626,6 +5668,7 @@ class AgentConversationsCompanion extends UpdateCompanion<AgentConversation> {
       if (bankId != null) 'bank_id': bankId,
       if (lessonId != null) 'lesson_id': lessonId,
       if (questionId != null) 'question_id': questionId,
+      if (briefing != null) 'briefing': briefing,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -5639,6 +5682,7 @@ class AgentConversationsCompanion extends UpdateCompanion<AgentConversation> {
     Value<String>? bankId,
     Value<String>? lessonId,
     Value<String>? questionId,
+    Value<String>? briefing,
     Value<int>? createdAt,
     Value<int>? updatedAt,
     Value<int>? rowid,
@@ -5650,6 +5694,7 @@ class AgentConversationsCompanion extends UpdateCompanion<AgentConversation> {
       bankId: bankId ?? this.bankId,
       lessonId: lessonId ?? this.lessonId,
       questionId: questionId ?? this.questionId,
+      briefing: briefing ?? this.briefing,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -5677,6 +5722,9 @@ class AgentConversationsCompanion extends UpdateCompanion<AgentConversation> {
     if (questionId.present) {
       map['question_id'] = Variable<String>(questionId.value);
     }
+    if (briefing.present) {
+      map['briefing'] = Variable<String>(briefing.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<int>(createdAt.value);
     }
@@ -5698,6 +5746,7 @@ class AgentConversationsCompanion extends UpdateCompanion<AgentConversation> {
           ..write('bankId: $bankId, ')
           ..write('lessonId: $lessonId, ')
           ..write('questionId: $questionId, ')
+          ..write('briefing: $briefing, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -9036,6 +9085,7 @@ typedef $$AgentConversationsTableCreateCompanionBuilder =
       Value<String> bankId,
       Value<String> lessonId,
       Value<String> questionId,
+      Value<String> briefing,
       required int createdAt,
       required int updatedAt,
       Value<int> rowid,
@@ -9048,6 +9098,7 @@ typedef $$AgentConversationsTableUpdateCompanionBuilder =
       Value<String> bankId,
       Value<String> lessonId,
       Value<String> questionId,
+      Value<String> briefing,
       Value<int> createdAt,
       Value<int> updatedAt,
       Value<int> rowid,
@@ -9089,6 +9140,11 @@ class $$AgentConversationsTableFilterComposer
 
   ColumnFilters<String> get questionId => $composableBuilder(
     column: $table.questionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get briefing => $composableBuilder(
+    column: $table.briefing,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9142,6 +9198,11 @@ class $$AgentConversationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get briefing => $composableBuilder(
+    column: $table.briefing,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -9181,6 +9242,9 @@ class $$AgentConversationsTableAnnotationComposer
     column: $table.questionId,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get briefing =>
+      $composableBuilder(column: $table.briefing, builder: (column) => column);
 
   GeneratedColumn<int> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -9235,6 +9299,7 @@ class $$AgentConversationsTableTableManager
                 Value<String> bankId = const Value.absent(),
                 Value<String> lessonId = const Value.absent(),
                 Value<String> questionId = const Value.absent(),
+                Value<String> briefing = const Value.absent(),
                 Value<int> createdAt = const Value.absent(),
                 Value<int> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -9245,6 +9310,7 @@ class $$AgentConversationsTableTableManager
                 bankId: bankId,
                 lessonId: lessonId,
                 questionId: questionId,
+                briefing: briefing,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -9257,6 +9323,7 @@ class $$AgentConversationsTableTableManager
                 Value<String> bankId = const Value.absent(),
                 Value<String> lessonId = const Value.absent(),
                 Value<String> questionId = const Value.absent(),
+                Value<String> briefing = const Value.absent(),
                 required int createdAt,
                 required int updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -9267,6 +9334,7 @@ class $$AgentConversationsTableTableManager
                 bankId: bankId,
                 lessonId: lessonId,
                 questionId: questionId,
+                briefing: briefing,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

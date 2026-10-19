@@ -125,6 +125,9 @@ func TestConverse_ToolTurnStreamsTextAndKeepsThinking(t *testing.T) {
 	require.Len(t, system, 2)
 	assert.Contains(t, system[0], "cache_control")
 	assert.NotContains(t, system[1], "cache_control")
+	msgs := body["messages"].([]any)
+	content := msgs[len(msgs)-1].(map[string]any)["content"].([]any)
+	assert.Contains(t, content[len(content)-1], "cache_control", "the history is cached up to its last block")
 }
 
 func TestConverse_ReplaysThinkingAndToolResult(t *testing.T) {

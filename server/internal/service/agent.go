@@ -112,9 +112,29 @@ func (s *Service) StartAgentChat(ctx context.Context, token string, in AgentChat
 		return nil, err
 	}
 	lib := agentLibrary{s}
-	if err := checkAgentContext(ctx, lib, in.Context); err != nil {
+	// A resumed conversation keeps the context it began with, even if a lesson or question has gone
+	// since: the assistant just is not shown it. Only a new context has to point at something real.
+	if stored == nil || !stored.resumed {
+		if err := checkAgentContext(ctx, lib, in.Context); err != nil {
+			return nil, err
+		}
+	}
+	// What the learner was looking at goes in front of the conversation's first message, as part of what
+	// they said; the instructions are one fixed text. A conversation keeps the brief it began with.
+	startedAt := time.Now()
+	if stored != nil && stored.resumed {
+		startedAt = stored.startedAt
+	}
+	brief, err := agent.NewBrief(ctx, lib, req.Context, startedAt)
+	if err != nil {
 		return nil, err
 	}
+	if stored != nil && stored.briefing != "" {
+		brief.Text = stored.briefing
+	}
+	agent.PutBrief(req.Messages, brief.Text)
+	agent.PutToday(req.Messages, startedAt, time.Now())
+	req.Known = brief.Known
 	unlock := func() {}
 	if stored != nil {
 		if unlock, err = s.lockAgentConversation(stored.id); err != nil {
@@ -136,7 +156,7 @@ func (s *Service) StartAgentChat(ctx context.Context, token string, in AgentChat
 	if stored != nil {
 		s.cleanAgentHistory(ctx)
 		// The question is kept before the answer starts, so a stopped or dropped answer still leaves it.
-		if err := s.saveAgentQuestion(ctx, in, stored.mode); err != nil {
+		if err := s.saveAgentQuestion(ctx, in, stored.mode, brief.Text); err != nil {
 			release()
 			unlock()
 			return nil, err
@@ -146,7 +166,6 @@ func (s *Service) StartAgentChat(ctx context.Context, token string, in AgentChat
 	a := &agent.Agent{Conv: conv, Lib: lib}
 	if stored != nil {
 		req.Files = stored.files
-		req.HasImages = stored.hasImages
 		a.Files = agentFiles{s: s, conversation: stored.id}
 	}
 	if req.Mode != agent.ModeLearn {

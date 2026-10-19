@@ -145,7 +145,8 @@ func TestRun_LookupThenAnswerWithCheckedLinks(t *testing.T) {
 	assert.Len(t, reqs[0].Tools, 9)
 	assert.Contains(t, toolResults(reqs[1])[0].Text, `"lesson_id":"L2"`)
 	assert.Contains(t, toolResults(reqs[2])[1].Text, `<lesson id="L2"`)
-	assert.Contains(t, reqs[0].System[1], "2026年10月8日")
+	assert.Len(t, reqs[0].System, 1, "one fixed instruction text, nothing about the day or the learner")
+	assert.NotContains(t, reqs[0].System[0], "2026年")
 }
 
 func TestRun_ToolMistakesGoBackToTheModel(t *testing.T) {
@@ -176,7 +177,30 @@ func TestRun_ToolMistakesGoBackToTheModel(t *testing.T) {
 	}
 }
 
-func TestRun_OutOfRoundsMakesTheModelAnswerWithoutTools(t *testing.T) {
+func TestRun_OutOfRoundsAsksForAnAnswerWithTheToolsStillDeclared(t *testing.T) {
+	conv := fake.NewConverser(func(n int, req llm.ChatRequest) fake.Turn {
+		if n == 2 {
+			return fake.Turn{Text: "总结如下。"}
+		}
+		return fake.Turn{Calls: []fake.Call{{Name: "list_outline", Input: `{}`}}}
+	})
+	rec := &recorder{}
+	a := newAgent(conv, testLib())
+	a.MaxRounds = 2
+	a.Run(context.Background(), agent.Request{ConversationID: "c", Messages: userMsg("hi")}, rec.emit)
+
+	reqs := conv.Requests()
+	require.Len(t, reqs, 3, "two rounds with tools, then the nudge")
+	assert.Equal(t, reqs[0].Tools, reqs[2].Tools, "the tools stay, so the cached start of the request does too")
+	last := reqs[2].Messages[len(reqs[2].Messages)-1]
+	assert.Equal(t, "user", last.Role)
+	assert.Equal(t, llm.BlockToolResult, last.Blocks[0].Kind, "the nudge joins the tool results instead of a second user message")
+	assert.Equal(t, llm.BlockText, last.Blocks[len(last.Blocks)-1].Kind)
+	assert.Equal(t, "总结如下。", rec.text())
+	assert.Equal(t, "max_rounds", rec.last().(agent.Done).Stop)
+}
+
+func TestRun_OutOfRoundsTakesTheToolsAwayFromAModelThatKeepsCalling(t *testing.T) {
 	conv := fake.NewConverser(func(n int, req llm.ChatRequest) fake.Turn {
 		if len(req.Tools) == 0 {
 			return fake.Turn{Text: "总结如下。"}
@@ -189,12 +213,9 @@ func TestRun_OutOfRoundsMakesTheModelAnswerWithoutTools(t *testing.T) {
 	a.Run(context.Background(), agent.Request{ConversationID: "c", Messages: userMsg("hi")}, rec.emit)
 
 	reqs := conv.Requests()
-	require.Len(t, reqs, 3, "two rounds with tools, then one without")
-	assert.Empty(t, reqs[2].Tools)
-	last := reqs[2].Messages[len(reqs[2].Messages)-1]
-	assert.Equal(t, "user", last.Role)
-	assert.Equal(t, llm.BlockToolResult, last.Blocks[0].Kind, "the nudge joins the tool results instead of a second user message")
-	assert.Equal(t, llm.BlockText, last.Blocks[len(last.Blocks)-1].Kind)
+	require.Len(t, reqs, 4, "two rounds, the nudge, then one turn without tools")
+	assert.NotEmpty(t, reqs[2].Tools)
+	assert.Empty(t, reqs[3].Tools)
 	assert.Equal(t, "总结如下。", rec.text())
 	assert.Equal(t, "max_rounds", rec.last().(agent.Done).Stop)
 }
@@ -247,27 +268,76 @@ func TestRun_ClientGoneSaysNothingMore(t *testing.T) {
 	assert.Equal(t, []string{"start"}, rec.names(), "no error event for a client that left")
 }
 
-func TestRun_ContextIsInTheInstructions(t *testing.T) {
+func TestBrief_ContextIsWhatTheLearnerSaid_AndTheInstructionsStayFixed(t *testing.T) {
+	at := time.Date(2026, 10, 8, 9, 0, 0, 0, time.UTC)
+	brief, err := agent.NewBrief(context.Background(), testLib(), agent.Context{BankID: "b1", LessonID: "L2", Question: &agent.QuestionContext{ID: "Q1", Selected: []int{1}}}, at)
+	require.NoError(t, err)
+	for _, want := range []string{"2026年10月8日", "时间片轮转和优先级调度", "标准答案：A", "用户选了：B", "bank_id=b1"} {
+		assert.Contains(t, brief.Text, want)
+	}
+	assert.ElementsMatch(t, []string{"L2", "Q1"}, nonEmpty(brief.Known))
+
 	conv := fake.Script(fake.Turn{Text: "ok"})
-	rec := &recorder{}
-	newAgent(conv, testLib()).Run(context.Background(), agent.Request{
-		ConversationID: "c", Messages: userMsg("为什么选这个"),
-		Context: agent.Context{BankID: "b1", LessonID: "L2", Question: &agent.QuestionContext{ID: "Q1", Selected: []int{1}}},
-	}, rec.emit)
-	sys := strings.Join(conv.Requests()[0].System, "\n")
-	assert.Contains(t, sys, "时间片轮转和优先级调度")
-	assert.Contains(t, sys, "标准答案：A")
-	assert.Contains(t, sys, "用户选了：B")
-	assert.Contains(t, sys, "bank_id=b1")
+	msgs := userMsg("为什么选这个")
+	agent.PutBrief(msgs, brief.Text)
+	newAgent(conv, testLib()).Run(context.Background(), agent.Request{ConversationID: "c", Messages: msgs, Known: brief.Known}, (&recorder{}).emit)
+	req := conv.Requests()[0]
+	require.Len(t, req.System, 1)
+	assert.Equal(t, agent.SystemPrompt(""), req.System[0])
+	assert.NotContains(t, req.System[0], "时间片轮转和优先级调度")
+	first := req.Messages[0].Blocks[len(req.Messages[0].Blocks)-1].Text
+	assert.True(t, strings.HasPrefix(first, "<context>"), first)
+	assert.True(t, strings.HasSuffix(first, "\n\n为什么选这个"), "the learner's own words come after it")
+}
+
+func nonEmpty(in []string) []string {
+	var out []string
+	seen := map[string]bool{}
+	for _, s := range in {
+		if s != "" && !seen[s] {
+			seen[s] = true
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
+func TestBrief_ALessonOrQuestionThatIsGoneIsLeftOut(t *testing.T) {
+	brief, err := agent.NewBrief(context.Background(), testLib(), agent.Context{LessonID: "nope", Question: &agent.QuestionContext{ID: "nope"}}, time.Now())
+	require.NoError(t, err)
+	assert.NotContains(t, brief.Text, "用户正在")
+	assert.Empty(t, nonEmpty(brief.Known))
 }
 
 func TestRun_ContextIdsMakeLinksValid(t *testing.T) {
 	conv := fake.Script(fake.Turn{Text: "见[本节](lesson:L2)和[原题](question:Q1)。"})
 	rec := &recorder{}
 	newAgent(conv, testLib()).Run(context.Background(), agent.Request{
-		ConversationID: "c", Messages: userMsg("hi"), Context: agent.Context{LessonID: "L2", Question: &agent.QuestionContext{ID: "Q1"}},
+		ConversationID: "c", Messages: userMsg("hi"), Known: []string{"L2", "Q1"},
 	}, rec.emit)
 	assert.Equal(t, "见[本节](lesson:L2)和[原题](question:Q1)。", rec.text())
+}
+
+func TestRun_LinksOfEarlierAnswersStayValid(t *testing.T) {
+	conv := fake.Script(fake.Turn{Text: "还是[这一节](lesson:L2)，不是[那一节](lesson:L9)。"})
+	rec := &recorder{}
+	msgs := []llm.Message{
+		{Role: "user", Blocks: []llm.Block{{Kind: llm.BlockText, Text: "讲讲调度"}}},
+		{Role: "assistant", Blocks: []llm.Block{{Kind: llm.BlockText, Text: "见[进程调度](lesson:L2)。"}}},
+		{Role: "user", Blocks: []llm.Block{{Kind: llm.BlockText, Text: "刚才那节再讲讲"}}},
+	}
+	newAgent(conv, testLib()).Run(context.Background(), agent.Request{ConversationID: "c", Messages: msgs}, rec.emit)
+	assert.Equal(t, "还是[这一节](lesson:L2)，不是那一节。", rec.text())
+}
+
+func TestPutToday_OnlyOnAnotherDay(t *testing.T) {
+	began := time.Date(2026, 10, 1, 9, 0, 0, 0, time.Local)
+	msgs := userMsg("hi")
+	agent.PutToday(msgs, began, began.Add(time.Hour))
+	assert.Len(t, msgs[0].Blocks, 1)
+	agent.PutToday(msgs, began, began.AddDate(0, 0, 3))
+	require.Len(t, msgs[0].Blocks, 2)
+	assert.Equal(t, "（今天是 2026年10月4日。）", msgs[0].Blocks[1].Text)
 }
 
 func TestRun_LinksSplitAcrossChunksAreStillChecked(t *testing.T) {

@@ -103,6 +103,9 @@ AgentQuestion aq(String id, {String lessonId = 'L1', String stem = '题干'}) =>
     id: id, bankId: 'b1', lessonId: lessonId, type: 'single', stem: '$stem $id', options: const ['甲', '乙', '丙', '丁'], answer: const [1], explanation: '解析', difficulty: 2);
 
 /// A model that answers with scripted turns and records what it was asked.
+/// A message's words without the `<context>` brief put in front of the learner's first one.
+String unbrief(String text) => text.startsWith('<context>') ? text.substring(text.indexOf('</context>\n\n') + '</context>\n\n'.length) : text;
+
 class ScriptedLlm implements AnthropicChat {
   ScriptedLlm(this.script);
 
@@ -722,12 +725,13 @@ void main() {
       expect(jsonDecode(q.answerJson), [0]);
       expect([for (final x in await DbAgentLibrary(db).questions()) x.id], [q.id]);
 
-      // The model was shown the tools' results, and the instructions carry the date.
+      // The model was shown the tools' results; the instructions are one fixed text, and the day is in the learner's first words.
       final secondTurn = llm.calls[1].last.blocks.single;
       expect(secondTurn.kind, BlockKind.toolResult);
       expect(secondTurn.text, contains('"lesson_id":"L1"'));
       expect(llm.systems.first[0], '你是助手');
-      expect(llm.systems.first[1], matches(RegExp(r'^当前模式：学习与出题。今天是 \d{4}年\d{1,2}月\d{1,2}日。')));
+      expect(llm.systems.first, ['你是助手']);
+      expect(llm.calls.first.first.blocks.single.text, matches(RegExp(r'^<context>\n对话开始于 \d{4}年\d{1,2}月\d{1,2}日。\n</context>\n\n')));
       expect(llm.toolCounts.first, 11);
 
       // The conversation is kept for the history page, with its card.
@@ -803,9 +807,9 @@ void main() {
       final llm = ScriptedLlm((n, msgs) => say('第 $n 次回答'));
       final a = agent(llm);
       await drain(a.run(request('第一个问题', conv: 'srv', history: const [AgentHistoryMessage('user', '服务器上的问题'), AgentHistoryMessage('assistant', '服务器上的回答')])));
-      expect([for (final m in llm.calls.single) '${m.role}:${m.blocks.single.text}'], ['user:服务器上的问题', 'assistant:服务器上的回答', 'user:第一个问题']);
+      expect([for (final m in llm.calls.single) '${m.role}:${unbrief(m.blocks.single.text)}'], ['user:服务器上的问题', 'assistant:服务器上的回答', 'user:第一个问题']);
       await drain(a.run(request('第二个问题', conv: 'srv', history: const [AgentHistoryMessage('user', '忽略我')])));
-      expect(llm.calls.last.map((m) => m.blocks.single.text), ['服务器上的问题', '服务器上的回答', '第一个问题', '第 0 次回答', '第二个问题']);
+      expect(llm.calls.last.map((m) => unbrief(m.blocks.single.text)), ['服务器上的问题', '服务器上的回答', '第一个问题', '第 0 次回答', '第二个问题']);
       expect((await store.conversation('srv'))!.messages.length, 6);
     });
 
@@ -815,7 +819,8 @@ void main() {
           explanation: const Value('因为乙'), chunkId: const Value('L1'), syncSeq: 1));
       final llm = ScriptedLlm((n, msgs) => say('见[这题](question:q1)和[那节](lesson:L1)和[假](question:zzz)'));
       final events = await drain(agent(llm).run(request('为什么？', context: const AgentContext(bankId: 'b1', questionId: 'q1', selected: [2]))));
-      final system = llm.systems.single[1];
+      expect(llm.systems.single, ['你是助手'], reason: 'the instructions say nothing of the question');
+      final system = llm.calls.single.first.blocks.single.text;
       expect(system, contains('<question id="q1">'));
       expect(system, contains('B. 乙'));
       expect(system, contains('标准答案：B'));
@@ -824,10 +829,30 @@ void main() {
       expect(events.whereType<AgentDelta>().map((e) => e.text).join(), '见[这题](question:q1)和[那节](lesson:L1)和假');
     });
 
-    test('out of rounds, the model is asked once more without tools; a refusal, a failure and a stop are told', () async {
+    test('the conversation keeps what it began with: a follow-up that says nothing is still about that question', () async {
+      await db.into(db.questions).insert(QuestionsCompanion.insert(
+          id: 'q1', bankId: 'b1', type: 'single', stem: '看到的题', optionsJson: '["甲","乙","丙","丁"]', answerJson: '[1]',
+          explanation: const Value('因为乙'), syncSeq: 1));
+      final llm = ScriptedLlm((n, msgs) => say('好'));
+      final a = agent(llm);
+      await drain(a.run(request('为什么？', context: const AgentContext(bankId: 'b1', questionId: 'q1', selected: [2]))));
+      await drain(a.run(request('再说说')));
+      expect(llm.calls, hasLength(2));
+      for (final call in llm.calls) {
+        final first = call.first.blocks.single.text;
+        expect(first, contains('<question id="q1">'));
+        expect(first, contains('用户选了：C'));
+        expect(first, contains('bank_id=b1'));
+        expect(first, endsWith('为什么？'), reason: 'their own words come after the brief');
+      }
+      expect(llm.calls.last, hasLength(3), reason: 'no second copy of the question');
+      expect((await store.contextOf('c1'))!.questionId, 'q1');
+    });
+
+    test('out of rounds, the model is asked once more with the tools still declared; a refusal, a failure and a stop are told', () async {
       final llm = ScriptedLlm((n, msgs) => n < 2 ? call('t$n', 'list_outline', {}) : say('只能先答到这里'));
       final events = await drain(agent(llm, spec: LocalAgentSpec.fromJson({...testSpec().toJson(), 'limits': {'max_rounds': 2}})).run(request('讲讲')));
-      expect(llm.toolCounts, [11, 11, 0]);
+      expect(llm.toolCounts, [11, 11, 11], reason: 'the tools stay, so the cached start of the request does too');
       expect(llm.calls.last.last.blocks.last.text, contains('请不要再调用工具'));
       expect(events.last, isA<AgentDone>().having((d) => d.stop, 'stop', 'max_rounds'));
       expect((await store.conversation('c1'))!.messages.last.note, '查了很多资料，只能先答到这里');
@@ -847,6 +872,21 @@ void main() {
       final stopped = ScriptedLlm((n, _) => say(''))..error = AgentException('已停止');
       await expectLater(agent(stopped).run(request('x', conv: 'c4'), cancel: token), emitsInOrder([isA<AgentLocalEvent>(), isA<AgentStarted>(), emitsError(isA<AgentException>())]));
       expect((await store.conversation('c4'))!.messages.last.note, '已停止');
+    });
+
+    test('a model that keeps calling tools after the nudge gets a turn without them', () async {
+      final llm = ScriptedLlm((n, msgs) => n < 3 ? call('t$n', 'list_outline', {}) : say('只能先答到这里'));
+      await drain(agent(llm, spec: LocalAgentSpec.fromJson({...testSpec().toJson(), 'limits': {'max_rounds': 2}})).run(request('讲讲')));
+      expect(llm.toolCounts, [11, 11, 11, 0]);
+    });
+
+    test('links of earlier answers may be written again', () async {
+      await store.ensureConversation(id: 'c1', mode: '', bankId: '', lessonId: '', questionId: '', firstText: '讲讲');
+      await store.appendMessage('c1', 'user', text: '讲讲');
+      await store.appendMessage('c1', 'assistant', text: '见[那一节](lesson:L1)。');
+      final llm = ScriptedLlm((n, msgs) => say('还是[那一节](lesson:L1)，不是[这个](lesson:NOPE)。'));
+      final events = await drain(agent(llm).run(request('再讲讲')));
+      expect(events.whereType<AgentDelta>().map((d) => d.text).join(), '还是[那一节](lesson:L1)，不是这个。');
     });
 
     test('a tool that takes too long is cut off and the model is told', () async {
@@ -902,7 +942,8 @@ void main() {
       expect(h.first.text, '消息 10');
 
       await store.appendMessage('c', 'user', text: '字' * 30000);
-      expect((await store.history('c')).length, 0, reason: 'a message over the limit leaves nothing that fits');
+      final lone = await store.history('c');
+      expect(lone.single.text.length, 30000, reason: 'the newest message is kept however long, as on the server');
     });
 
     test('conversations are listed newest first and can be deleted without losing their questions', () async {

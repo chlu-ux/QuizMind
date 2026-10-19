@@ -67,30 +67,46 @@ class LocalAgent {
     emit(const AgentLocalEvent());
     emit(AgentStarted(req.conversationId));
 
-    final c = req.context;
+    final first = req.began ?? req.context;
+    // What the learner was looking at is fixed when the conversation begins: it is written once, as the
+    // start of what the learner said, and the instructions stay one fixed text.
+    final fresh = await _brief(ToolEnv(library, first.bankId, clock: _clock), first, _clock());
     await store.ensureConversation(
       id: req.conversationId,
       mode: req.mode,
-      bankId: c.bankId,
-      lessonId: c.lessonId,
-      questionId: c.questionId,
+      bankId: first.bankId,
+      lessonId: first.lessonId,
+      questionId: first.questionId,
+      briefing: fresh,
       firstText: req.message,
       seed: req.history,
     );
+    final c = await store.contextOf(req.conversationId) ?? first;
+    final brief = await store.briefingOf(req.conversationId);
     await store.appendMessage(req.conversationId, 'user', text: req.message);
     final stored = await store.history(req.conversationId);
     final history = [for (final m in stored) LlmMessage.text(m.role, m.text)];
+    final head = history.indexWhere((m) => m.role == 'user');
+    final opening = brief.isEmpty ? fresh : brief;
+    if (head >= 0) history[head] = LlmMessage.text('user', '$opening\n\n${stored[head].text}');
+    // A conversation taken up on a later day: the newest message says what day it is, so the model does not
+    // take the day the brief gives for today. It goes last, where it costs no cache.
+    final now = _clock();
+    final today = '${now.year}年${now.month}月${now.day}日';
+    if (history.isNotEmpty && !opening.contains('对话开始于 $today')) {
+      final last = history.last;
+      history[history.length - 1] = LlmMessage(last.role, [...last.blocks, LlmBlock.text('（今天是 $today。）')]);
+    }
 
     final env = ToolEnv(library, c.bankId, clock: _clock);
-    final extra = await _contextText(env, c);
+    await _brief(env, c, _clock()); // marks the lesson and question in it as ones the model may link to
+    for (final m in stored) {
+      if (m.role == 'assistant') env.see(LinkFilter.idsIn(m.text));
+    }
     final drafter = LocalDrafter(store: store, env: env, conversationId: req.conversationId, spec: spec);
     final tools = ToolSet(env, drafter: drafter, maxResult: spec.maxToolResult);
     final specs = [for (final t in spec.tools) if (tools.has(t.name)) t];
-    final now = _clock();
-    final system = [
-      spec.prompt,
-      '当前模式：学习与出题。今天是 ${now.year}年${now.month}月${now.day}日。${extra.isEmpty ? '' : '\n\n$extra'}',
-    ];
+    final system = [spec.prompt];
 
     // What the learner will see of the answer, kept so it is stored however the answer ends.
     final text = StringBuffer();
@@ -167,10 +183,14 @@ class LocalAgent {
         if (cancel?.isCancelled ?? false) throw AgentException('已停止');
       }
 
-      // Out of rounds: one last turn without tools, so the learner still gets an answer.
+      // Out of rounds: one last turn, so the learner still gets an answer. The tools stay declared, since
+      // leaving them out would change the start of the request and lose the cache; the nudge asks for none.
+      // A model that calls one anyway without saying anything gets a turn without tools.
       final last = history.last;
       history[history.length - 1] = LlmMessage(last.role, [...last.blocks, LlmBlock.text(spec.wrapUpNudge)]);
-      await turn(const []);
+      final t = await turn(specs);
+      final said = t.blocks.any((b) => b.kind == BlockKind.text && b.text.trim().isNotEmpty);
+      if (t.toolCalls.isNotEmpty && !said) await turn(const []);
       note = '查了很多资料，只能先答到这里';
       emit(done('max_rounds'));
       finished = true;
@@ -236,14 +256,18 @@ class LocalAgent {
     ));
   }
 
-  /// Turns what the learner is looking at into text for the instructions, and marks its ids as known.
-  Future<String> _contextText(ToolEnv env, AgentContext c) async {
-    final sb = StringBuffer();
+  /// What the learner was looking at when a conversation began, as the start of what they said, and marks
+  /// its ids as known. A lesson or question that is not in the library is left out.
+  Future<String> _brief(ToolEnv env, AgentContext c, DateTime at) async {
+    final sb = StringBuffer('<context>\n对话开始于 ${at.year}年${at.month}月${at.day}日。\n');
     if (c.lessonId.isNotEmpty) {
       final l = await env.lib.lesson(c.lessonId);
       if (l != null) {
         env.see([l.id]);
-        sb.write('用户正在阅读这一节讲义：\n<lesson id="${l.id}" path="${l.headingPath}">\n${l.text}\n</lesson>\n');
+        // No more of it than get_lesson would give: the brief is not counted in the history's budget.
+        final runes = l.text.runes;
+        final text = runes.length <= spec.maxToolResult ? l.text : '${String.fromCharCodes(runes.take(spec.maxToolResult))}…';
+        sb.write('用户正在阅读这一节讲义：\n<lesson id="${l.id}" path="${l.headingPath}">\n$text\n</lesson>\n');
       }
     }
     if (c.questionId.isNotEmpty) {
@@ -262,7 +286,8 @@ class LocalAgent {
       }
     }
     if (c.bankId.isNotEmpty) sb.write('用户当前所在的题库 bank_id=${c.bankId}；工具默认只在这个题库里查。\n');
-    return sb.toString().trim();
+    sb.write('</context>');
+    return sb.toString();
   }
 
   String _letters(List<int> idx) => [for (final i in idx) if (i >= 0 && i < 26) String.fromCharCode(65 + i)].join();

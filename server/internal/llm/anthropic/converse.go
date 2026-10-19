@@ -136,6 +136,12 @@ func (c *Client) chatParams(req llm.ChatRequest) (sdk.MessageNewParams, error) {
 	if len(params.Messages) == 0 {
 		return params, fmt.Errorf("anthropic: no messages")
 	}
+	// The second breakpoint goes after the last block: the next call of the same answer (another tool
+	// round) and the next question read everything up to here from the cache instead of paying for it again.
+	last := params.Messages[len(params.Messages)-1].Content
+	if cc := last[len(last)-1].GetCacheControl(); cc != nil {
+		*cc = sdk.NewCacheControlEphemeralParam()
+	}
 	return params, nil
 }
 

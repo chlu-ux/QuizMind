@@ -1,6 +1,7 @@
 package service
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 
@@ -35,6 +36,25 @@ func TestNormalizeAgentHistory(t *testing.T) {
 		long := strings.Repeat("字", agentMaxChars*6/10)
 		got = normalizeAgentHistory([]AgentMessage{m("user", long), m("assistant", long), m("user", "最后一问")})
 		assert.Equal(t, []AgentMessage{m("user", "最后一问")}, got)
+	})
+
+	t.Run("drops the oldest in steps, so the history begins at the same message for several questions", func(t *testing.T) {
+		history := func(n int) []AgentMessage {
+			var out []AgentMessage
+			for i := 0; i < n; i++ {
+				role := "user"
+				if i%2 == 1 {
+					role = "assistant"
+				}
+				out = append(out, m(role, fmt.Sprint(i)))
+			}
+			return out
+		}
+		first := normalizeAgentHistory(history(agentMaxMessages + 1))[0]
+		for n := agentMaxMessages + 3; n <= agentMaxMessages+agentDropStep-1; n += 2 {
+			assert.Equal(t, first, normalizeAgentHistory(history(n))[0], "%d messages", n)
+		}
+		assert.NotEqual(t, first, normalizeAgentHistory(history(agentMaxMessages+agentDropStep+1))[0])
 	})
 
 	t.Run("a lone message is kept however long, for the request check to refuse", func(t *testing.T) {

@@ -1,11 +1,14 @@
 -- name: UpsertAgentConversation :exec
 -- Creates the conversation, or marks it as just spoken in (its mode and starting context stay as they were).
-INSERT INTO agent_conversation (id, mode, device_id, bank_id, lesson_id, question_id, created_at, updated_at)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+INSERT INTO agent_conversation (id, mode, device_id, bank_id, lesson_id, question_id, briefing, created_at, updated_at)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT(id) DO UPDATE SET device_id = excluded.device_id, updated_at = excluded.updated_at;
 
 -- name: GetAgentConversation :one
 SELECT * FROM agent_conversation WHERE id = ?;
+
+-- name: SetAgentConversationBriefing :exec
+UPDATE agent_conversation SET briefing = ? WHERE id = ?;
 
 -- name: SetAgentConversationTitle :exec
 UPDATE agent_conversation SET title = ? WHERE id = ?;

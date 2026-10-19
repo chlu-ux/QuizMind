@@ -132,6 +132,7 @@ class AgentChatRequest {
     required this.message,
     this.attachmentIds = const [],
     this.context = const AgentContext(),
+    this.began,
     this.history = const [],
   });
 
@@ -148,7 +149,14 @@ class AgentChatRequest {
   /// The new question; the earlier ones are on the server.
   final String message;
   final List<String> attachmentIds;
+
+  /// What the server is told about what the learner is looking at: the conversation's first message says it,
+  /// the rest leave it empty because the conversation keeps it.
   final AgentContext context;
+
+  /// What the conversation began with, whatever this message carries. Only the assistant on this device
+  /// reads it (to take over a conversation it does not have); it is not sent. Null: [context] is it.
+  final AgentContext? began;
 
   Map<String, dynamic> toJson() => {
         'conversation_id': conversationId,

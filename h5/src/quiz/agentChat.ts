@@ -84,6 +84,11 @@ export class AgentChat {
   private images = new Map<string, Promise<string>>()
   private abort: AbortController | null = null
   private disposed = false
+  /**
+   * The server has the conversation (its `start` event came, or it was read back from there). What the
+   * learner was looking at is said until then and not after: the conversation keeps it from its first message.
+   */
+  private begun = false
 
   /**
    * [stored] is a conversation read back from the server, to look at it again and carry on; without
@@ -96,6 +101,7 @@ export class AgentChat {
     stored?: AgentConversationDetail,
   ) {
     this.conversationId = stored?.id ?? newUlid()
+    this.begun = !!stored
     for (const m of stored?.messages ?? []) {
       this.messages.push({
         id: this.nextId++,
@@ -260,12 +266,14 @@ export class AgentChat {
         conversationId: this.conversationId,
         deviceId: this.deviceId,
         message: { text: t, attachmentIds: attachments.map((a) => a.id) },
-        context: {
-          bankId: this.args.bankId,
-          lessonId: this.args.lessonId,
-          questionId: this.args.questionId,
-          selected: this.args.selected,
-        },
+        context: this.begun
+          ? {}
+          : {
+              bankId: this.args.bankId,
+              lessonId: this.args.lessonId,
+              questionId: this.args.questionId,
+              selected: this.args.selected,
+            },
       }
       for await (const ev of this.api.chat(request, abort.signal)) {
         if (this.disposed) return
@@ -297,6 +305,7 @@ export class AgentChat {
   private apply(id: number, ev: AgentEvent) {
     switch (ev.kind) {
       case 'start':
+        this.begun = true
         break
       case 'delta':
         this.patch(id, (m) => (m.text += ev.text))

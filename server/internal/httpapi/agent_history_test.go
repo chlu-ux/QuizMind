@@ -40,6 +40,7 @@ type convItem struct {
 	Mode          string `json:"mode"`
 	Title         string `json:"title"`
 	BankID        string `json:"bank_id"`
+	QuestionID    string `json:"question_id"`
 	MessageCount  int    `json:"message_count"`
 	PendingDrafts int    `json:"pending_drafts"`
 	UpdatedAt     int64  `json:"updated_at"`
@@ -95,6 +96,16 @@ func (s *server) conversation(t *testing.T, id string, want int) convDetail {
 	return d
 }
 
+// withoutBrief is a user's words without the <context> brief put in front of the first one.
+func withoutBrief(text string) string {
+	if strings.HasPrefix(text, "<context>") {
+		if _, rest, ok := strings.Cut(text, "</context>\n\n"); ok {
+			return rest
+		}
+	}
+	return text
+}
+
 func roles(req llm.ChatRequest) []string {
 	var out []string
 	for _, m := range req.Messages {
@@ -104,7 +115,7 @@ func roles(req llm.ChatRequest) []string {
 				text += b.Text
 			}
 		}
-		out = append(out, m.Role+":"+text)
+		out = append(out, m.Role+":"+withoutBrief(text))
 	}
 	return out
 }
@@ -416,4 +427,48 @@ func TestAgentHistory_ContextIsKeptWithTheConversation(t *testing.T) {
 	d := s.conversation(t, "c-1", 200)
 	assert.Equal(t, banks[0].ID, d.BankID, "what the learner was looking at when it began")
 	assert.Equal(t, banks[0].ID, s.conversations(t, "").Items[0].BankID)
+}
+
+func TestAgentHistory_TheQuestionIsSentOnceAndStaysWithTheConversation(t *testing.T) {
+	s := newServer(t)
+	qid := s.publishOne(t)
+	conv := fake.NewConverser(func(int, llm.ChatRequest) fake.Turn { return fake.Turn{Text: "好"} })
+	enableAgent(t, s, conv)
+	s.guard.SetLimits(llm.Limits{MaxConcurrency: 4})
+
+	ctx := map[string]any{"context": map[string]any{"question": map[string]any{"id": qid, "selected": []int{2}}}}
+	s.ask(t, "c-1", "learn", "为什么选 C 不对", ctx)
+	// Later messages say nothing of the question, and an id that has gone is not an error either.
+	s.ask(t, "c-1", "learn", "再解释一下", nil)
+	s.ask(t, "c-1", "learn", "还有吗", map[string]any{"context": map[string]any{"lesson_id": "nope"}})
+
+	reqs := conv.Requests()
+	require.Len(t, reqs, 3)
+	firstWords := func(r llm.ChatRequest) string {
+		bs := r.Messages[0].Blocks
+		return bs[len(bs)-1].Text
+	}
+	for i, r := range reqs {
+		require.Len(t, r.System, 1, "message %d: the instructions are one fixed text", i)
+		assert.Equal(t, reqs[0].System, r.System, "message %d", i)
+		assert.NotContains(t, r.System[0], qid)
+		// The question is part of what the learner said, at the head of the conversation.
+		first := firstWords(r)
+		assert.Contains(t, first, `<question id="`+qid+`">`, "message %d", i)
+		assert.Contains(t, first, "用户选了：C", "message %d", i)
+		assert.NotContains(t, first, "nope", "message %d: the context is the one it began with", i)
+		assert.Equal(t, firstWords(reqs[0]), first, "message %d: the same words every time, so the start of the request can be cached", i)
+	}
+	assert.Equal(t, "user:为什么选 C 不对", roles(reqs[0])[0])
+	assert.Len(t, reqs[2].Messages, 5, "the earlier questions and answers follow, with no second copy of the question")
+	assert.Equal(t, qid, s.conversations(t, "").Items[0].QuestionID)
+}
+
+func TestAgentHistory_ANewConversationStillChecksItsContext(t *testing.T) {
+	s := newServer(t)
+	enableAgent(t, s, fake.NewConverser(func(int, llm.ChatRequest) fake.Turn { return fake.Turn{Text: "好"} }))
+	resp := s.agentReq(t, "POST", "/api/v1/agent/chat", appToken,
+		storedBody("c-1", "learn", "问", map[string]any{"context": map[string]any{"question": map[string]any{"id": "nope"}}}))
+	resp.Body.Close()
+	assert.Equal(t, 400, resp.StatusCode)
 }
